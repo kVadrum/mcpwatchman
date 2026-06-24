@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "auditmcp"
+version = "0.0.0"
+description = "Independent security and quality audit for Model Context Protocol servers."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "kVadrum" }]
+keywords = ["mcp", "model-context-protocol", "security", "audit", "static-analysis", "supply-chain"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Security",
+  "Programming Language :: Python :: 3.12",
+]
+# Core deps = the CLI + API client only, so `pip install auditmcp` stays light.
+# Scanner/worker and API deps live in optional groups below.
+dependencies = [
+  "click>=8.1",
+  "rich>=13.7",
+  "httpx>=0.27",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+]
+
+[project.optional-dependencies]
+api = [
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+]
+workers = [
+  # DB: ADR-004 (Postgres + SQLAlchemy 2.x + Alembic)
+  "sqlalchemy>=2.0",
+  "alembic>=1.13",
+  # Static analysis: ADR-002 (semgrep core; osv-scanner is an external Go binary)
+  "semgrep>=1.75",
+  "detect-secrets>=1.5",
+  # Queue: leaning Procrastinate (Postgres-native) over RQ — see STATE.md.
+  # Uncomment when the worker queue lands and the choice is ratified.
+  # "procrastinate>=2.0",
+]
+dev = [
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "pytest>=8.2",
+]
+
+[project.urls]
+Homepage = "https://auditmcp.dev"
+Repository = "https://github.com/kVadrum/auditmcp"
+
+[project.scripts]
+auditmcp = "auditmcp.cli.main:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/auditmcp"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["src", "tests"]

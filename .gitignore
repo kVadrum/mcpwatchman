@@ -1,0 +1,45 @@
+# ── Internal design docs — NEVER committed (workspace policy) ──
+# Strategy, methodology internals, and project memory stay local-only.
+CLAUDE.md
+STATE.md
+.claude/
+/[0-9][0-9]-*.md
+/adrs/
+SPEC*.md
+/scratch/
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.python-version
+
+# ── Node / Astro (site/) ──
+node_modules/
+site/dist/
+site/.astro/
+.astro/
+
+# ── Env / secrets ──
+.env
+.env.*
+!.env.example
+*.local
+
+# ── OS / editor ──
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
