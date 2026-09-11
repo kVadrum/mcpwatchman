@@ -45,7 +45,8 @@ workers = [
   # "procrastinate>=2.0",
 ]
 dev = [
-  "ruff>=0.5",
+  # Pinned to a minor: ruff gates CI, and new lint rules ship in 0.x releases.
+  "ruff~=0.16.7",
   "mypy>=1.10",
   "pytest>=8.2",
 ]

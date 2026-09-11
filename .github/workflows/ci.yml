@@ -5,6 +5,10 @@ on:
     branches: [dev, main]
   pull_request:
 
+# A lint job reads the checkout and writes nothing; the default grant is wider.
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -13,7 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff
+      # Via the dev extra so CI and a local `ruff check` share one pinned
+      # version — a floating ruff reds CI the day a release adds a rule.
+      - run: pip install -e ".[dev]"
       - run: ruff check .
 
 # A test job is added once there are tests to run (workspace policy: no empty
