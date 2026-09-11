@@ -67,7 +67,7 @@ The full methodology is published openly — anyone can audit our auditing.
   A finding with no linked artifact doesn't appear.
 - **Facts, not characterizations.**
   We describe observed code patterns, never intent.
-  Maintainers can appeal any finding.
+  Any finding can be appealed.
 - **Collaborative, not competitive.**
   We overlay the official registry; we don't replace it.
   A server exists here only if the official registry lists it.
@@ -88,8 +88,8 @@ Default embargo is **14 days** from maintainer contact, shortened to **7** where
 If we cannot reach a maintainer within 48 hours of the first attempt the clock still starts, with a longer target — being slow to check email is not the same as being unresponsive, and we don't punish it.
 
 **Appeals.**
-Any maintainer can contest any finding.
-Scores are recomputed, not negotiated: if the evidence is wrong the finding goes, and if the code changed a rescan reflects it.
+Anyone can contest a finding — maintainers and third parties alike, per finding, by ID.
+Scores are recomputed, not negotiated: if the evidence is wrong the finding goes, if the code changed a rescan reflects it, and where a finding is technically valid but mitigated by context our rules don't model, it stays on the page with the maintainer's explanation attached.
 
 ## Surfaces
 
