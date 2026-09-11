@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # Release actions are SHA-pinned, which is only safe with something moving
+  # the pins — an unmaintained pin is a stale dependency that looks deliberate.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
