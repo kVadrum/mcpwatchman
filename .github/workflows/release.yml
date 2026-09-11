@@ -61,3 +61,8 @@ jobs:
           name: dist
           path: dist/
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33  # v1.14.2
+        with:
+          # Explicit: the action's canonical `packages-dir` declares no default,
+          # and `dist` reaches it only via the deprecated `packages_dir` alias
+          # that upstream has marked for removal in v3+.
+          packages-dir: dist/
