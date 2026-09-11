@@ -1,14 +1,14 @@
-"""auditmcp command-line interface (scaffold)."""
+"""mcpwatchman command-line interface (scaffold)."""
 
 from __future__ import annotations
 
 import click
 
-from auditmcp import __version__
+from mcpwatchman import __version__
 
 
 @click.group()
-@click.version_option(__version__, prog_name="auditmcp")
+@click.version_option(__version__, prog_name="mcpwatchman")
 def cli() -> None:
     """Independent security and quality audit for MCP servers."""
 
@@ -19,8 +19,8 @@ def check(server: str) -> None:
     """Show the trust score for SERVER (not implemented yet)."""
     # Output formats (--format pretty/json/compact) return once scanning lands.
     raise click.ClickException(
-        f"scanning {server!r} is not implemented yet — auditmcp is pre-v0.1. "
-        "Follow https://github.com/kVadrum/auditmcp"
+        f"scanning {server!r} is not implemented yet — mcpwatchman is pre-v0.1. "
+        "Follow https://github.com/kVadrum/mcpwatchman"
     )
 
 

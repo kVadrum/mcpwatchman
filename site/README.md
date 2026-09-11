@@ -1,4 +1,4 @@
-# auditmcp site (Astro)
+# mcpwatchman site (Astro)
 
 The public site — per-server pages, search/filter, methodology pages, badges,
 and RSS feeds — is built here as a separate Astro project (static-first,

@@ -1,6 +1,6 @@
-# auditmcp semgrep rules
+# mcpwatchman semgrep rules
 
-The custom MCP-specific semgrep ruleset — the differentiating asset of auditmcp.
+The custom MCP-specific semgrep ruleset — the differentiating asset of mcpwatchman.
 Published openly under [MIT](../LICENSE).
 
 Organized by language and category:

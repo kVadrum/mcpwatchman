@@ -1,15 +1,15 @@
-# auditmcp
+# mcpwatchman
 
 **Independent security and quality audit for [Model Context Protocol](https://modelcontextprotocol.io) servers.**
 
-`auditmcp` continuously scans every server in the official MCP registry and
+`mcpwatchman` continuously scans every server in the official MCP registry and
 publishes a transparent, evidence-linked trust score for each one — so you can
 answer "is this MCP server safe to install?" before you wire it into your agent.
 
 > **Status: early — building in public.** The methodology and architecture are
 > settled; the scanner, scoring engine, site, and CLI are under active
 > construction. Nothing here is production-ready yet. Watch the repo (and
-> [auditmcp.dev](https://auditmcp.dev), when it's live) to follow along.
+> [mcpwatchman.com](https://mcpwatchman.com), when it's live) to follow along.
 
 ---
 
@@ -22,7 +22,7 @@ widespread server-side request forgery, unsafe command execution, and servers
 exposed over HTTP with no authentication at all.
 
 The official registry is **metadata-only by design** — it lists what exists, not
-what's safe. `auditmcp` is the independent safety layer on top of it. The closest
+what's safe. `mcpwatchman` is the independent safety layer on top of it. The closest
 analogues are [Mozilla Observatory](https://observatory.mozilla.org/) and
 [OpenSSF Scorecard](https://scorecard.dev/): independent, transparent, free, and
 trusted precisely because they aren't selling anything to the projects they score.
@@ -56,10 +56,10 @@ execute the code we scan.
 ## Install
 
 ```sh
-pip install auditmcp     # coming soon
+pip install mcpwatchman     # coming soon
 ```
 
-The CLI (`auditmcp check <server>`), public site, JSON API, and RSS feeds are all
+The CLI (`mcpwatchman check <server>`), public site, JSON API, and RSS feeds are all
 free and MIT-licensed, and they stay that way.
 
 ## License
@@ -68,6 +68,6 @@ free and MIT-licensed, and they stay that way.
 
 ### Trademarks
 
-The "auditmcp" name is a trademark of KeMeK Network. It is not covered by the
+The "mcpwatchman" name is a trademark of KeMeK Network. It is not covered by the
 code or content licenses. No rights to use the name are granted by this
 repository. Independent forks must replace the brand name with their own.

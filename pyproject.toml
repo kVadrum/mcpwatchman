@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "auditmcp"
-version = "0.0.0"
+name = "mcpwatchman"
+version = "0.0.1"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -18,7 +18,7 @@ classifiers = [
   "Topic :: Security",
   "Programming Language :: Python :: 3.12",
 ]
-# Core deps = the CLI + API client only, so `pip install auditmcp` stays light.
+# Core deps = the CLI + API client only, so `pip install mcpwatchman` stays light.
 # Scanner/worker and API deps live in optional groups below.
 dependencies = [
   "click>=8.1",
@@ -51,14 +51,14 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://auditmcp.dev"
-Repository = "https://github.com/kVadrum/auditmcp"
+Homepage = "https://mcpwatchman.com"
+Repository = "https://github.com/kVadrum/mcpwatchman"
 
 [project.scripts]
-auditmcp = "auditmcp.cli.main:cli"
+mcpwatchman = "mcpwatchman.cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/auditmcp"]
+packages = ["src/mcpwatchman"]
 
 [tool.ruff]
 target-version = "py312"

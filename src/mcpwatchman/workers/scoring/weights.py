@@ -1,4 +1,4 @@
-"""Versioned axis weights for the auditmcp composite score.
+"""Versioned axis weights for the mcpwatchman composite score.
 
 These are PROVISIONAL starting values informed by the threat literature, not
 calibration outputs. The composite they produce MUST NOT be published on public

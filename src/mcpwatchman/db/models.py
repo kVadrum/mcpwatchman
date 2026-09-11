@@ -11,4 +11,4 @@ from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    """Declarative base for all auditmcp models."""
+    """Declarative base for all mcpwatchman models."""

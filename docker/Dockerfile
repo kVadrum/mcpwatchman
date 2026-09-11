@@ -1,4 +1,4 @@
-# Worker image for auditmcp scanners (scaffold). See ADR-002 for the tool stack.
+# Worker image for mcpwatchman scanners (scaffold). See ADR-002 for the tool stack.
 #
 # The production image also installs osv-scanner (a Go binary) and pins the base
 # by SHA digest; this scaffold installs the Python worker deps only.
