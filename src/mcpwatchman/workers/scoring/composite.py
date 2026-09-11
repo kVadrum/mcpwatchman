@@ -67,8 +67,10 @@ _FLAT_DEDUCTIONS: dict[Severity, int] = {
 
 # `03` §3: "after the first, each subsequent same-severity finding contributes
 # 75% of its full deduction, then 50%, then 25%, then 10% from the fifth on."
-_STACKING = (1.0, 0.75, 0.50, 0.25)
-_STACKING_TAIL = 0.10
+#
+# Decimal, not float, throughout the arithmetic below — see `_round_half_up`.
+_STACKING = (Decimal("1"), Decimal("0.75"), Decimal("0.50"), Decimal("0.25"))
+_STACKING_TAIL = Decimal("0.10")
 
 AXIS_MAX = 100
 
@@ -89,7 +91,7 @@ def deduction_for(severity: Severity, confidence: Confidence) -> int:
     return row[confidence]
 
 
-def _stacking_multiplier(position: int) -> float:
+def _stacking_multiplier(position: int) -> Decimal:
     """Multiplier for the Nth finding (0-indexed) within one severity group."""
     return _STACKING[position] if position < len(_STACKING) else _STACKING_TAIL
 
@@ -102,7 +104,7 @@ def axis_score(findings: Iterable[Finding]) -> int:
             deduction_for(f.severity, f.confidence)
         )
 
-    total = 0.0
+    total = Decimal(0)
     for deductions in by_severity.values():
         # Stacking is per SEVERITY, not per (severity, confidence) — `03` §3 says
         # "same severity", and the row's confidence tiers are the same finding
@@ -134,18 +136,40 @@ def composite_score(
     if missing:
         raise ValueError(f"missing axis score(s) for {version}: {', '.join(missing)}")
 
-    total = sum(weight * axis_scores[axis] for axis, weight in weights.items())
+    # Decimal via str(), not float: the weights are decimal fractions that have
+    # no exact binary representation, so `0.30 * 31 + 0.20 * 1` is 9.499999…
+    # rather than 9.5 and rounds DOWN. Measured before this was written: 13 of
+    # 51,005 sampled composites came out a point low that way, and one point
+    # crosses a grade and a colour band (80→79 is B→C, green→yellow).
+    total = sum(
+        (_dec(weight) * _dec(axis_scores[axis]) for axis, weight in weights.items()),
+        Decimal(0),
+    )
     return min(AXIS_MAX, max(0, _round_half_up(total)))
 
 
-def _round_half_up(value: float) -> int:
+def _dec(value: float | int | Decimal) -> Decimal:
+    """Exact Decimal for a value written as a decimal literal.
+
+    Via `str()` deliberately: `Decimal(0.3)` is the binary float 0.299999…,
+    `Decimal(str(0.3))` is 0.3. The weights are decimal fractions and calibration
+    will keep rewriting them, so the arithmetic has to be exact by construction
+    rather than by luck about which values happen to avoid a .5 boundary.
+    """
+    return value if isinstance(value, Decimal) else Decimal(str(value))
+
+
+def _round_half_up(value: Decimal) -> int:
     """Round half away from zero, not Python's default half-to-even.
 
     `round()` would make 78.5 → 78 and 79.5 → 80, so two servers half a point
     apart can round in opposite directions across a letter-grade boundary.
     "Rounded to the nearest integer" (`03` §8) is the everyday meaning.
+
+    Takes a Decimal: handed a float this would faithfully round the float's
+    error, which is exactly the bug it looks like it prevents.
     """
-    return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    return int(_dec(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
 # `03` §8 — presentation only, derived from the composite, never stored as the

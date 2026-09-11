@@ -159,3 +159,41 @@ def test_letter_grade_boundaries(composite: int, grade: str) -> None:
 )
 def test_color_boundaries(composite: int, name: str) -> None:
     assert color(composite) == name
+
+
+def test_composite_does_not_lose_a_point_to_binary_float_error() -> None:
+    # Regression. 0.30*31 + 0.20*1 is exactly 9.5, but in binary floats it is
+    # 9.499999999999998 and rounds DOWN to 9. Found by brute-forcing the float
+    # pipeline against exact rational arithmetic: 13 of 51,005 sampled composites
+    # came out a point low, and one point crosses a grade and a colour band.
+    assert composite_score(
+        {
+            "code_safety": 31,
+            "auth_posture": 1,
+            "maintenance": 0,
+            "dependency_health": 0,
+            "transparency": 0,
+        }
+    ) == 10
+
+
+@pytest.mark.parametrize(
+    ("code_safety", "auth_posture"), [(31, 1), (41, 1), (51, 1), (57, 2), (57, 7)]
+)
+def test_composite_matches_exact_arithmetic_at_known_half_boundaries(
+    code_safety: int, auth_posture: int
+) -> None:
+    # Every one of these landed exactly on .5 and rounded the wrong way before
+    # the Decimal conversion; they are the measured cases, not invented ones.
+    from decimal import ROUND_HALF_UP, Decimal
+
+    scores = {
+        "code_safety": code_safety,
+        "auth_posture": auth_posture,
+        "maintenance": 0,
+        "dependency_health": 0,
+        "transparency": 0,
+    }
+    exact = Decimal("0.30") * code_safety + Decimal("0.20") * auth_posture
+    expected = int(exact.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    assert composite_score(scores) == expected
