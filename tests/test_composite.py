@@ -197,3 +197,12 @@ def test_composite_matches_exact_arithmetic_at_known_half_boundaries(
     exact = Decimal("0.30") * code_safety + Decimal("0.20") * auth_posture
     expected = int(exact.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
     assert composite_score(scores) == expected
+
+
+def test_axis_rounds_the_score_not_the_deduction() -> None:
+    # Two critical/high deduct 30 + 22.5 = 52.5, so the axis is 47.5 and half-up
+    # gives 48. Rounding the DEDUCTION first gives 100 - 53 = 47, i.e. half-up on
+    # the deduction is half-DOWN on the score. This is the smallest and most
+    # common stacked case, and the original suite tested 4/5/6 findings — all of
+    # which land on whole numbers and so could never have caught it.
+    assert axis_score([CRITICAL_HIGH] * 2) == 48

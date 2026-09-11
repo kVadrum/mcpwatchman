@@ -118,7 +118,11 @@ def axis_score(findings: Iterable[Finding]) -> int:
         for position, deduction in enumerate(sorted(deductions, reverse=True)):
             total += deduction * _stacking_multiplier(position)
 
-    return max(0, AXIS_MAX - _round_half_up(total))
+    # Round the SCORE, not the deduction. Rounding the deduction first inverts
+    # half-up into half-down for the thing we actually publish: two critical/high
+    # findings deduct 52.5, so the axis is 47.5 and must round to 48 — subtracting
+    # a deduction rounded to 53 gives 47.
+    return max(0, _round_half_up(AXIS_MAX - total))
 
 
 def composite_score(
