@@ -32,4 +32,23 @@ COMPOSITE_PUBLISHED: dict[str, bool] = {
 
 def weights_for(version: str = CURRENT_METHODOLOGY_VERSION) -> dict[str, float]:
     """Return the axis-weight map for a methodology version."""
-    return AXIS_WEIGHTS[version]
+    try:
+        return AXIS_WEIGHTS[version]
+    except KeyError:
+        known = ", ".join(sorted(AXIS_WEIGHTS))
+        raise ValueError(f"unknown methodology version {version!r}; known: {known}") from None
+
+
+def composite_published(version: str = CURRENT_METHODOLOGY_VERSION) -> bool:
+    """Whether the composite may be shown publicly for this methodology version.
+
+    Fails CLOSED: an unknown version answers False rather than raising, so a
+    version added to AXIS_WEIGHTS and forgotten here cannot publish an
+    uncalibrated composite. The omission is caught in CI by test_weights.py
+    instead — safe in production, loud where a human is looking.
+
+    Exists so no caller indexes COMPOSITE_PUBLISHED directly: a caller supplying
+    its own `.get(version, True)` default would reintroduce exactly the failure
+    this gate prevents.
+    """
+    return COMPOSITE_PUBLISHED.get(version, False)
