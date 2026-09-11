@@ -9,22 +9,52 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# Split deliberately: `pip install` executes arbitrary code from transitive
+# dependencies, so it must not run in a job that can mint a publish credential.
+# The build job holds no id-token; the publish job installs nothing.
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # OIDC: the runner mints a short-lived token PyPI verifies against the
-      # trusted publisher. No API token exists anywhere, so none can leak.
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install build
+      - run: pip install build twine
       - run: python -m build
-      # Fails loudly if the artifact's metadata is malformed — PyPI rejects on
-      # upload otherwise, and a rejected upload still burns the version number.
-      - run: pip install twine && twine check dist/*
+      # Malformed metadata is rejected at upload — and a rejected upload still
+      # burns the version number, which PyPI never lets you reuse.
+      - run: twine check dist/*
+      # The tag is the only value a human types; everything else is derived from
+      # the tree. Three files must already agree (bump-audit checks one of them),
+      # and __version__ is what `mcpwatchman --version` reports, so a half-bump
+      # would ship a CLI that lies about itself — permanently, at this registry.
+      - name: Tag, artifact and source versions agree
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          built=$(python -c "import glob,os; print(os.path.basename(glob.glob('dist/*.whl')[0]).split('-')[1])")
+          proj=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          init=$(python -c "import re; print(re.search(r'__version__ = \"([^\"]+)\"', open('src/mcpwatchman/__init__.py').read()).group(1))")
+          echo "tag=$tag wheel=$built pyproject=$proj __version__=$init"
+          for v in "$built" "$proj" "$init"; do
+            [ "$v" = "$tag" ] || { echo "::error::version mismatch — tag $tag vs $v"; exit 1; }
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
       - uses: pypa/gh-action-pypi-publish@release/v1
