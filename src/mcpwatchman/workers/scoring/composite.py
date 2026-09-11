@@ -1,0 +1,166 @@
+"""Axis scoring and the composite formula (methodology `03` §3, §8).
+
+Pure functions over plain values: no I/O, no database, no network. That is
+deliberate — this is the module the gold-set calibration runs against, so it has
+to be cheap to call a few thousand times and trivial to reason about.
+
+**The composite is computed here and gated elsewhere.** `weights.composite_published()`
+decides whether a *surface* may render it; it must never gate this computation,
+because calibration's whole job is to compare composites while they are still
+unpublished. Wiring the gate in here would make the thing that lifts the gate
+impossible to run.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
+from enum import StrEnum
+
+from mcpwatchman.workers.scoring.weights import (
+    CURRENT_METHODOLOGY_VERSION,
+    weights_for,
+)
+
+
+class Severity(StrEnum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    INFORMATIONAL = "informational"
+
+
+class Confidence(StrEnum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+@dataclass(frozen=True, slots=True)
+class Finding:
+    """The scoring-relevant projection of a finding.
+
+    Deliberately not the persisted row (`05-data-model.md` owns that): scoring
+    depends on exactly these two fields, and saying so keeps the calibration
+    harness from having to build database objects.
+    """
+
+    severity: Severity
+    confidence: Confidence
+
+
+# `03` §3. Severities whose deduction varies by confidence; the Low-confidence
+# value is DERIVED from these rows rather than listed (see `deduction_for`).
+_GRADED_DEDUCTIONS: dict[Severity, dict[Confidence, int]] = {
+    Severity.CRITICAL: {Confidence.HIGH: 30, Confidence.MEDIUM: 20},
+    Severity.HIGH: {Confidence.HIGH: 20, Confidence.MEDIUM: 12},
+    Severity.MEDIUM: {Confidence.HIGH: 8, Confidence.MEDIUM: 5},
+}
+
+# `03` §3 scores these "Any" confidence — the row has one value, not a range.
+_FLAT_DEDUCTIONS: dict[Severity, int] = {
+    Severity.LOW: 2,
+    Severity.INFORMATIONAL: 0,
+}
+
+# `03` §3: "after the first, each subsequent same-severity finding contributes
+# 75% of its full deduction, then 50%, then 25%, then 10% from the fifth on."
+_STACKING = (1.0, 0.75, 0.50, 0.25)
+_STACKING_TAIL = 0.10
+
+AXIS_MAX = 100
+
+
+def deduction_for(severity: Severity, confidence: Confidence) -> int:
+    """Full (unstacked) deduction for one finding.
+
+    Low confidence is "deducted at the floor of their severity row" (`03` §3),
+    which is derived from the row rather than tabulated separately — a future
+    weight change to the row cannot leave a hardcoded floor behind disagreeing
+    with it.
+    """
+    if severity in _FLAT_DEDUCTIONS:
+        return _FLAT_DEDUCTIONS[severity]
+    row = _GRADED_DEDUCTIONS[severity]
+    if confidence is Confidence.LOW:
+        return min(row.values())
+    return row[confidence]
+
+
+def _stacking_multiplier(position: int) -> float:
+    """Multiplier for the Nth finding (0-indexed) within one severity group."""
+    return _STACKING[position] if position < len(_STACKING) else _STACKING_TAIL
+
+
+def axis_score(findings: Iterable[Finding]) -> int:
+    """Score one axis from its findings: starts at 100, floors at 0 (`03` §3)."""
+    by_severity: dict[Severity, list[int]] = {}
+    for f in findings:
+        by_severity.setdefault(f.severity, []).append(
+            deduction_for(f.severity, f.confidence)
+        )
+
+    total = 0.0
+    for deductions in by_severity.values():
+        # Stacking is per SEVERITY, not per (severity, confidence) — `03` §3 says
+        # "same severity", and the row's confidence tiers are the same finding
+        # class seen with more or less certainty.
+        #
+        # Order within a group is NOT specified. Largest-first is chosen so the
+        # worst finding takes the undiminished hit, which is what §3's own
+        # rationale asks for ("still letting the worst offender score plausibly
+        # low"). It is load-bearing: a Critical/High (-30) and a Critical/Medium
+        # (-20) score 55 largest-first and 58 smallest-first.
+        for position, deduction in enumerate(sorted(deductions, reverse=True)):
+            total += deduction * _stacking_multiplier(position)
+
+    return max(0, AXIS_MAX - _round_half_up(total))
+
+
+def composite_score(
+    axis_scores: Mapping[str, float],
+    version: str = CURRENT_METHODOLOGY_VERSION,
+) -> int:
+    """Weighted sum of the five axis scores (`03` §8).
+
+    Every axis the methodology version declares must be present. Absence raises
+    rather than defaulting: a missing axis silently scored as 0 reads as a very
+    unsafe server, and scored as 100 hides one.
+    """
+    weights = weights_for(version)
+    missing = sorted(set(weights) - set(axis_scores))
+    if missing:
+        raise ValueError(f"missing axis score(s) for {version}: {', '.join(missing)}")
+
+    total = sum(weight * axis_scores[axis] for axis, weight in weights.items())
+    return min(AXIS_MAX, max(0, _round_half_up(total)))
+
+
+def _round_half_up(value: float) -> int:
+    """Round half away from zero, not Python's default half-to-even.
+
+    `round()` would make 78.5 → 78 and 79.5 → 80, so two servers half a point
+    apart can round in opposite directions across a letter-grade boundary.
+    "Rounded to the nearest integer" (`03` §8) is the everyday meaning.
+    """
+    return int(Decimal(str(value)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
+# `03` §8 — presentation only, derived from the composite, never stored as the
+# primary representation.
+def letter_grade(composite: int) -> str:
+    """A–F band for a composite score."""
+    for floor, grade in ((90, "A"), (80, "B"), (70, "C"), (60, "D")):
+        if composite >= floor:
+            return grade
+    return "F"
+
+
+def color(composite: int) -> str:
+    """Traffic-light band for a composite score."""
+    for floor, name in ((80, "green"), (60, "yellow"), (40, "orange")):
+        if composite >= floor:
+            return name
+    return "red"
