@@ -35,7 +35,8 @@ We read published source, manifests and lockfiles.
 **We never execute the code we scan**, and we never connect to a running server instance.
 
 **So here is what a good score cannot tell you.**
-A server that behaves badly only when a tool is actually invoked is invisible to static analysis, and no score here should be read as a runtime guarantee.
+Static analysis reads what a server *publishes*, so the blind spot is whatever that source does not determine: behavior gated on remote configuration, code fetched or generated at runtime, or a deployed server that differs from the repository it declares.
+An unsafe pattern that merely *executes* at tool-invocation time is still detectable — catching those is the ruleset's core job — but a score here is evidence about published source, never a runtime guarantee.
 Running every server we scan is a substantially larger sandboxing problem than reading it, and we would rather be narrow and honest about it than broad and quietly wrong.
 
 ## How it scores
@@ -85,7 +86,7 @@ Maintainer notification before publication is the right courtesy; delaying a fac
 
 **Track B — findings that warrant coordination.**
 Default embargo is **14 days** from maintainer contact, shortened to **7** where there is evidence of active exploitation, and extended up to **45 days total** when a maintainer comes back with a concrete fix timeline.
-If we cannot reach a maintainer within 48 hours of the first attempt the clock still starts, with a longer target — being slow to check email is not the same as being unresponsive, and we don't punish it.
+If we cannot reach a maintainer within 48 hours of the first attempt the clock still starts, and the target becomes **21 days from that first attempt** rather than 14 — being slow to check email is not the same as being unresponsive, and we don't punish it.
 
 **Appeals.**
 Anyone can contest a finding — maintainers and third parties alike, per finding, by ID.
