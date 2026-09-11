@@ -23,4 +23,4 @@ jobs:
       - run: ruff check .
 
 # A test job is added once there are tests to run (workspace policy: no empty
-# test CI). Trusted-publishing release.yml lands when the package first ships.
+# test CI). Publishing lives in release.yml, fired by a vX.Y.Z tag.

@@ -1,0 +1,30 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # OIDC: the runner mints a short-lived token PyPI verifies against the
+      # trusted publisher. No API token exists anywhere, so none can leak.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      # Fails loudly if the artifact's metadata is malformed — PyPI rejects on
+      # upload otherwise, and a rejected upload still burns the version number.
+      - run: pip install twine && twine check dist/*
+      - uses: pypa/gh-action-pypi-publish@release/v1
