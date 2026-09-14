@@ -286,6 +286,11 @@ class SourceResolution:
     primary: str | None = None
     supplement: str | None = None
     kind: SourceKind | None = None
+    # ⚠ Always the REPOSITORY's subfolder, never the primary's — they differ
+    # whenever a package wins as primary and a repo is the supplement. Both spec
+    # strings carry their own `#fragment`, so this is a convenience for callers
+    # that already know which one they are looking at; do not join it onto a
+    # fetched tree without checking which source produced that tree.
     subfolder: str | None = None
     skip_reason: str | None = None
 

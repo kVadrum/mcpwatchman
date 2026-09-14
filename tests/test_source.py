@@ -407,7 +407,10 @@ def test_the_subfolder_SURVIVES_into_the_spec_string():
     )
     job = plan_from_diff(ManifestDiff(added=(entry,))).jobs[0]
     assert SourceSpec.parse(job.source_spec).subfolder == "src/fetch"
-    assert job.subfolder == "src/fetch"  # the field agrees with the string
+    # And there is no second copy to disagree with it — `ScanJob` deliberately
+    # has no `subfolder` field, because the value meant different things for a
+    # git primary and an npm primary.
+    assert not hasattr(job, "subfolder")
 
 
 def test_declared_size_is_checked_BEFORE_extraction(tmp_path):

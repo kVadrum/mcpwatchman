@@ -51,6 +51,14 @@ class ScanJob:
     that the entry still matches what the poll saw. An overnight queue can be
     hours deep, and scanning a version the registry has since replaced attaches
     a score to the wrong artifact.
+
+    **There is deliberately no `subfolder` field.** A monorepo path belongs to a
+    SOURCE, and `source_spec` already carries it as a `#fragment`. A second copy
+    beside the string meant two different things depending on which source won:
+    for a git primary it described the thing being fetched, and for an npm
+    primary it described the *supplement*, so a worker that joined it onto the
+    tarball root would be reading a path that does not exist there. One value,
+    one home — which was the point of putting it in the string.
     """
 
     key: str
@@ -60,7 +68,6 @@ class ScanJob:
     content_hash: str
     lane: Lane = Lane.DEFAULT
     supplement_spec: str | None = None
-    subfolder: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,7 +151,6 @@ def plan_from_diff(
                 content_hash=entry.content_hash,
                 lane=lane,
                 supplement_spec=resolution.supplement,
-                subfolder=resolution.subfolder,
             )
         )
 

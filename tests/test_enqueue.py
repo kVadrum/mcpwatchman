@@ -69,13 +69,32 @@ def test_job_carries_the_repo_supplement_alongside_the_package():
     assert job.supplement_spec == "github:acme/server@1.0.0"
 
 
-def test_monorepo_subfolder_reaches_the_job():
+def test_monorepo_subfolder_reaches_the_job_via_the_spec_string():
+    """The path reaches the worker in `source_spec`, which is the only place it
+    lives. `ScanJob` carries no `subfolder` field: as a second copy it meant the
+    PRIMARY's subfolder for a git source and the SUPPLEMENT's for an npm one, so
+    a worker joining it onto the fetched tree was right only half the time."""
     e = entry(
         repository={
             "url": "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch"
         }
     )
-    assert plan_from_diff(ManifestDiff(added=(e,))).jobs[0].subfolder == "src/fetch"
+    job = plan_from_diff(ManifestDiff(added=(e,))).jobs[0]
+    assert job.source_spec.endswith("#src/fetch")
+    assert not hasattr(job, "subfolder")
+
+
+def test_a_package_primary_does_not_smuggle_the_repos_subfolder():
+    """The case that made the removed field ambiguous: the tarball has no
+    `src/fetch` in it, so a subfolder taken from the repository and applied to
+    the package root names a path that does not exist."""
+    e = entry(
+        packages=NPM,
+        repository={"url": "https://github.com/m/s/tree/main/src/fetch"},
+    )
+    job = plan_from_diff(ManifestDiff(added=(e,))).jobs[0]
+    assert "#" not in job.source_spec          # the npm primary carries none
+    assert job.supplement_spec.endswith("#src/fetch")  # the repo carries its own
 
 
 def test_removals_are_reported_not_applied():
