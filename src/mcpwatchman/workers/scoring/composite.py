@@ -106,15 +106,10 @@ def axis_score(findings: Iterable[Finding]) -> int:
 
     total = Decimal(0)
     for deductions in by_severity.values():
-        # Stacking is per SEVERITY, not per (severity, confidence) — `03` §3 says
-        # "same severity", and the row's confidence tiers are the same finding
-        # class seen with more or less certainty.
-        #
-        # Order within a group is NOT specified. Largest-first is chosen so the
-        # worst finding takes the undiminished hit, which is what §3's own
-        # rationale asks for ("still letting the worst offender score plausibly
-        # low"). It is load-bearing: a Critical/High (-30) and a Critical/Medium
-        # (-20) score 55 largest-first and 58 smallest-first.
+        # Grouping is per SEVERITY and ordering within a group is largest-first:
+        # both are specified in `03` §3, which also carries the worked example
+        # and the reason. Cited rather than restated — the doc is canonical, and
+        # a second copy here would be free to drift from it.
         for position, deduction in enumerate(sorted(deductions, reverse=True)):
             total += deduction * _stacking_multiplier(position)
 

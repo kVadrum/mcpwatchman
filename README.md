@@ -14,7 +14,15 @@
 ## Why
 
 MCP adoption is accelerating across Claude Code, Cursor, Continue, Zed, Goose and more — and people are installing servers with the same blind trust they once gave `curl | bash`.
-Research on thousands of public MCP servers has found widespread server-side request forgery, unsafe command execution, and servers exposed over HTTP with no authentication at all.
+
+The measured picture is not reassuring, and it is worth being precise about who measured what:
+
+- A 2026 measurement study of **7,973 live remote MCP servers** found [**40.55% expose tools with no authentication at all**](https://arxiv.org/abs/2605.22333). Of the 119 servers with testable OAuth deployments, *every one* carried at least one authentication flaw.
+- A survey of [**8,060 servers across six registries**](https://arxiv.org/abs/2509.25292) found fewer than half of listed projects valid or non-trivial, and 21.9% with no update in over a year.
+- Vendor scans report SSRF patterns in roughly a third of servers and command-injection paths in over 40% ([BlueRock](https://www.bluerock.io/mcp-trust-registry), Equixly). We cite these as motivation, not as fact: their sample construction and false-positive rates are unpublished, and the firms reporting them sell products in this space.
+
+That last bullet is the whole problem in miniature — the numbers everyone quotes come from parties with something to sell, and nobody can check them.
+`mcpwatchman` publishes its rules, its evidence, and its false-positive rate, so ours can be checked.
 
 The official registry is **metadata-only by design** — it lists what exists, not what's safe.
 `mcpwatchman` is the independent safety layer on top of it.
