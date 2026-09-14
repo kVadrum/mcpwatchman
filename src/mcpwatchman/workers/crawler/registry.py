@@ -54,9 +54,16 @@ USER_AGENT = f"mcpwatchman/{__version__} (+https://github.com/kVadrum/mcpwatchma
 #     the client timeout. So sub-second pacing is definitely wrong.
 #   - Eight consecutive pages at 1.0s apart returned clean, 1.9s worst case.
 #   - **But a sustained crawl at that same 1.0s pacing, later the same session,
-#     hit repeated slow pages (9.4s, 12.9s).** Eight pages was too short a probe
-#     to see it: the limiter appears to have a longer window that a short burst
-#     does not exhaust, and by then the session had spent it.
+#     hit repeated slow pages** — 9.4s, 12.9s, 13.3s, 19.2s, 21.1s, 20.1s, 12.5s
+#     across 12 pages, with fast pages interleaved (3-5 and 10 stayed under 3s).
+#     Eight pages was too short a probe to see it: the limiter appears to have a
+#     longer window that a short burst does not exhaust.
+#
+#     Note what this is NOT: latency fluctuates in a ~9-21s band rather than
+#     escalating, so it does not look like a per-client penalty that grows until
+#     the crawl dies. That distinction decides whether a full crawl is merely
+#     slow or impossible, and it is NOT established either way here — 12 pages
+#     with a fluctuating signal is too few to tell a plateau from a slow climb.
 #
 # So 1.0 fixes the obvious failure and is not known to be sustainable for a
 # whole-registry crawl. **The sustainable rate, the limiter's window, and the
