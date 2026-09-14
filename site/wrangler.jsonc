@@ -1,0 +1,18 @@
+{
+  // Static-only Worker: no `main`, so there is no Worker script and every
+  // response is served straight from the asset store. That is deliberate —
+  // mcpwatchman's API is FastAPI on a fleet box (see STATE § Hosting), not an
+  // edge function, so nothing here should grow a runtime.
+  //
+  // `_headers` and `_redirects` live in site/public/ and Astro copies them into
+  // dist/, which is the asset directory — Workers reads them from there exactly
+  // as Pages does. They are NOT applied to Worker-generated responses, which is
+  // irrelevant while there is no Worker code and would stop being irrelevant the
+  // moment someone adds `main`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mcpwatchman",
+  "compatibility_date": "2026-09-14",
+  "assets": {
+    "directory": "./dist"
+  }
+}
