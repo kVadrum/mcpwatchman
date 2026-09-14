@@ -50,7 +50,10 @@ Running every server we scan is a substantially larger sandboxing problem than r
 **And that bounds our coverage, so here is the number.**
 In a 100-server sample of the registry taken on 2026-09-14, **50 declared a source we can fetch** (24 a Git repository, 26 a published npm or PyPI package) and **48 were remote-only servers with no published source at all**.
 Those we cannot analyse statically, and we will say so on their page rather than showing you a score that looks like a verdict.
-It is an uncomfortable number to lead with, because remote servers are also the population the authentication research above measured — but publishing a coverage figure we would rather were higher is the entire point of the thing.
+Publishing a coverage figure we would rather were higher is the entire point of the thing.
+
+We are deliberately *not* claiming those unreadable servers are the dangerous ones.
+That would be an appealing inference and an unsupported one: the authentication study cited above found its servers by internet-wide scanning, not from this registry, so its population and this one overlap without being the same — and no correlation between "ships no source" and "unauthenticated" has been measured by anyone, us included.
 
 ## How it scores
 
