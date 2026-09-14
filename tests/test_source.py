@@ -384,3 +384,81 @@ def test_git_commands_terminate_options_before_positionals(monkeypatch, tmp_path
     assert "--" in clone and clone.index("--") < clone.index(str(tmp_path))
     sparse = next(c for c in seen if "sparse-checkout" in c)
     assert sparse[-2] == "--" and sparse[-1] == "src/x"
+
+
+# --- Codex leg findings, 2026-09-14 ---------------------------------------
+
+
+def test_the_subfolder_SURVIVES_into_the_spec_string():
+    """⚠ The hole in this file's own round-trip test.
+
+    `test_scan_jobs_from_a_plan_carry_parseable_specs` asserted the IDENTIFIER
+    survived and never checked the subfolder — so a monorepo job carried its
+    path in `ScanJob.subfolder` while `source_spec` had no fragment, and parsing
+    the spec yielded `subfolder=None`. The scanner would have scanned the entire
+    repository instead of the declared server directory, succeeding the whole
+    way. A contract test that checks one field of a contract is not a contract
+    test.
+    """
+    from mcpwatchman.workers.crawler.enqueue import plan_from_diff
+
+    entry = parse_entry(
+        make_raw(repository={"url": "https://github.com/mcp/servers/tree/main/src/fetch"})
+    )
+    job = plan_from_diff(ManifestDiff(added=(entry,))).jobs[0]
+    assert SourceSpec.parse(job.source_spec).subfolder == "src/fetch"
+    assert job.subfolder == "src/fetch"  # the field agrees with the string
+
+
+def test_declared_size_is_checked_BEFORE_extraction(tmp_path):
+    """A zip bomb must be refused on its declared size, not after it has already
+    filled the scratch disk — checking afterwards reports a failure the attacker
+    has already caused."""
+    from mcpwatchman.workers.scanner.source import MAX_UNPACKED_BYTES
+
+    payload = tmp_path / "bomb.zip"
+    with zipfile.ZipFile(payload, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("big", b"\0" * (MAX_UNPACKED_BYTES + 1))
+    dest = tmp_path / "out"
+    with pytest.raises(FetchError, match="declares"):
+        _safe_extract(payload, dest, _spec())
+    # Nothing was written: the refusal happened before extraction.
+    assert not dest.exists() or not any(dest.rglob("*"))
+
+
+def test_resource_cap_counts_excluded_directories(tmp_path):
+    """`_tree_size` omits node_modules because it is not SCANNABLE. That is the
+    right answer for 'how much source is here' and the wrong one for 'how much
+    disk did this consume' — a payload hidden there was invisible to the cap."""
+    from mcpwatchman.workers.scanner.source import _measure_all, _tree_size
+
+    (tmp_path / "node_modules").mkdir()
+    (tmp_path / "node_modules" / "blob").write_bytes(b"x" * 5000)
+    (tmp_path / "index.js").write_text("ok")
+    assert _tree_size(tmp_path)[0] == 2        # scannable source only
+    assert _measure_all(tmp_path) == 5002      # everything, for the cap
+
+
+def test_a_zip_sdist_is_detected_by_magic_not_by_name(tmp_path):
+    """PyPI sdists are usually .tar.gz and legitimately sometimes .zip. Naming
+    the download by assumption and dispatching on that name handed a zip to
+    tarfile — unfetchable, failing like corruption rather than like a format we
+    declined to notice."""
+    from mcpwatchman.workers.scanner.source import _is_zip
+
+    misnamed = tmp_path / "pkg.tar.gz"
+    with zipfile.ZipFile(misnamed, "w") as zf:
+        zf.writestr("package/index.js", "ok")
+    assert _is_zip(misnamed)
+    dest = tmp_path / "out"
+    _safe_extract(misnamed, dest, _spec())
+    assert (dest / "package" / "index.js").exists()
+
+
+@pytest.mark.parametrize("d", [".git", "node_modules", ".venv"])
+def test_an_excluded_directory_cannot_be_the_scan_root(d):
+    """`_is_excluded` tests paths RELATIVE to the chosen root, so `#.git` puts
+    the `.git` component outside every relative path and git metadata reports as
+    scannable source — the exclusion defeating itself."""
+    with pytest.raises(FetchError, match="excluded directory"):
+        SourceSpec.parse(f"github:acme/repo@1.0.0#{d}")

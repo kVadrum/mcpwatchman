@@ -99,6 +99,14 @@ class SourceSpec:
                 raise FetchError(
                     f"{field} {value!r} traverses or looks like a flag: {spec!r}"
                 )
+            # An excluded directory as the scan ROOT defeats its own exclusion:
+            # `_is_excluded` tests paths RELATIVE to the chosen root, so with
+            # `#.git` the `.git` component is no longer in any relative path and
+            # git metadata reports as scannable source.
+            if field == "subfolder" and parts and parts[0] in EXCLUDED_DIRS:
+                raise FetchError(
+                    f"subfolder {value!r} names an excluded directory: {spec!r}"
+                )
         if version.startswith("-"):
             raise FetchError(f"version {version!r} looks like a flag: {spec!r}")
         return cls(kind, identifier, version, subfolder or None)
@@ -179,6 +187,56 @@ def _guard_members(names: Iterator[str], spec: SourceSpec) -> None:
             raise FetchError(f"archive exceeds {MAX_MEMBERS} members: {spec}")
 
 
+def _guard_declared_size(sizes: Iterator[int], spec: SourceSpec) -> None:
+    """Refuse an archive whose DECLARED uncompressed size exceeds the cap.
+
+    **Before extraction, which is the whole point.** Checking the tree after
+    unpacking means a highly compressible archive — a zip bomb — has already
+    been written to the worker's scratch disk by the time the cap is consulted,
+    so the guard reports a failure the attacker has already caused. A few
+    hundred bytes of archive can declare gigabytes.
+
+    Declared sizes are attacker-controlled and may lie LOW, so this is a cheap
+    first gate rather than the only one; `_measure_all` re-checks after
+    extraction for an archive that under-declared.
+    """
+    total = 0
+    for size in sizes:
+        total += size
+        if total > MAX_UNPACKED_BYTES:
+            raise FetchError(
+                f"archive declares {total}+ bytes, over the "
+                f"{MAX_UNPACKED_BYTES} cap: {spec}"
+            )
+
+
+def _measure_all(root: Path) -> int:
+    """Total bytes on disk, INCLUDING excluded directories.
+
+    Distinct from `_tree_size`, and the distinction was a bug: that function
+    omits `node_modules`, `.git` and friends because they are not *scannable*,
+    which is the right answer for "how much source is here" and the wrong one
+    for "how much disk did this consume". A payload hidden under `node_modules/`
+    was invisible to the resource cap while filling the scratch budget.
+    """
+    return sum(
+        p.stat().st_size for p in root.rglob("*") if p.is_file() and not p.is_symlink()
+    )
+
+
+def _is_zip(archive: Path) -> bool:
+    """Detect a zip by its MAGIC, not by the suffix we happened to write.
+
+    PyPI sdists are usually `.tar.gz` and legitimately sometimes `.zip`; naming
+    the download by assumption and then dispatching on that name meant a zip
+    sdist was handed to `tarfile` and failed with `ReadError` — the package
+    unfetchable for a reason that looks like corruption rather than a format we
+    declined to notice.
+    """
+    with archive.open("rb") as fh:
+        return fh.read(4) in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+
+
 def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
     """Unpack an untrusted archive.
 
@@ -202,10 +260,12 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
     interpreter that proves it matters is the one in CI.
     """
     dest.mkdir(parents=True, exist_ok=True)
-    if archive.suffix == ".zip" or archive.name.endswith(".whl"):
+    if _is_zip(archive):
         with zipfile.ZipFile(archive) as zf:
-            _guard_members(iter(zf.namelist()), spec)
-            for member in zf.infolist():
+            infos = zf.infolist()
+            _guard_members((i.filename for i in infos), spec)
+            _guard_declared_size((i.file_size for i in infos), spec)
+            for member in infos:
                 name = member.filename
                 # zipfile has no `filter=`, so the traversal check is ours.
                 if name.startswith("/") or ".." in Path(name).parts:
@@ -213,10 +273,16 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
             zf.extractall(dest)  # noqa: S202 - members validated immediately above
     else:
         with tarfile.open(archive) as tf:
-            _guard_members((m.name for m in tf), spec)
+            members = tf.getmembers()
+            _guard_members((m.name for m in members), spec)
+            _guard_declared_size((m.size for m in members), spec)
             tf.extractall(dest, filter="data")
 
-    size, _ = _tree_size(dest)
+    # Second gate: the declared sizes above are attacker-controlled and may lie
+    # low. This measures what actually landed, and counts EXCLUDED directories
+    # too — the resource question is "how much disk did this consume", not "how
+    # much of it will we scan".
+    size = _measure_all(dest)
     if size > MAX_UNPACKED_BYTES:
         raise FetchError(
             f"unpacked to {size} bytes, over the {MAX_UNPACKED_BYTES} cap: {spec}"
@@ -370,8 +436,11 @@ def fetch_pypi(spec: SourceSpec, dest: Path, workdir: Path) -> Path:
     if not chosen:
         raise FetchError(f"no sdist or wheel published for {spec}")
 
-    suffix = ".whl" if chosen["packagetype"] == "bdist_wheel" else ".tar.gz"
-    archive = _download(chosen["url"], workdir / f"pkg{suffix}")
+    # Name the download after what PyPI actually published. `_is_zip` dispatches
+    # on content so this is belt-and-braces, but a file named for its real
+    # format is what makes a failure legible in a log.
+    filename = chosen.get("filename") or chosen["url"].rsplit("/", 1)[-1]
+    archive = _download(chosen["url"], workdir / Path(filename).name)
     _safe_extract(archive, dest, spec)
     return _single_wrapper_dir(dest)
 

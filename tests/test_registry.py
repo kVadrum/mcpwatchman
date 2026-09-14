@@ -205,7 +205,10 @@ def test_monorepo_subfolder_is_recovered_from_a_deep_link():
         )
     )
     r = resolve_source(entry)
-    assert r.primary == "github:modelcontextprotocol/servers@1.0.0"
+    # The subfolder rides the SPEC STRING as a fragment, not only the field —
+    # `source_spec` is the wire format the scanner parses, and a path carried
+    # beside it was silently dropped (Codex leg, 2026-09-14).
+    assert r.primary == "github:modelcontextprotocol/servers@1.0.0#src/fetch"
     assert r.subfolder == "src/fetch"
 
 
@@ -516,3 +519,24 @@ def test_crawler_never_emits_a_traversing_subfolder():
     # positive control
     ok = Repository(url="https://github.com/a/b", subfolder="src/fetch")
     assert ok.path_subfolder == "src/fetch"
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        ("https://github.com/a/b/blob/main/src/server.py", "src"),
+        ("https://github.com/a/b/blob/main/server.py", None),
+        ("https://gitlab.com/a/b/-/blob/main/src/server.py", "src"),
+        ("https://github.com/a/b/tree/main/src/fetch", "src/fetch"),
+    ],
+)
+def test_blob_links_resolve_to_the_containing_directory(url, expected):
+    """A `/blob/` link names a FILE; the scan root must be a directory. Returning
+    the file made every blob-linked source unfetchable at the `is_dir()` guard."""
+    assert Repository(url=url).path_subfolder == expected
+
+
+def test_subfolder_rides_the_spec_string_not_just_the_field():
+    """`source_spec` is the wire format; a path carried beside it was dropped."""
+    e = parse_entry(make_raw(repository={"url": "https://github.com/m/s/tree/main/src/fetch"}))
+    assert resolve_source(e).primary == "github:m/s@1.0.0#src/fetch"

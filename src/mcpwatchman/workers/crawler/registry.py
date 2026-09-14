@@ -226,11 +226,21 @@ class Repository:
             # GitLab: <project path>/-/tree/<ref>/<subdir>
             tail = [p for p in path.split("/-/", 1)[1].split("/") if p]
             if len(tail) > 2 and tail[0] in ("tree", "blob"):
-                return _safe_subpath("/".join(tail[2:]))
+                sub = "/".join(tail[2:])
+                if tail[0] == "blob":
+                    sub = sub.rsplit("/", 1)[0] if "/" in sub else ""
+                return _safe_subpath(sub)
             return None
         parts = [p for p in path.split("/") if p]
         if len(parts) > 3 and parts[2] in ("tree", "blob"):
-            return _safe_subpath("/".join(parts[4:]))
+            tail = "/".join(parts[4:])
+            # `/blob/<ref>/<file>` names a FILE. The scan root must be a
+            # directory, so take the file's parent — that is the server's
+            # directory, which is what the link was pointing at. Returning the
+            # file made every blob-linked source unfetchable.
+            if parts[2] == "blob":
+                tail = tail.rsplit("/", 1)[0] if "/" in tail else ""
+            return _safe_subpath(tail)
         return None
 
 
@@ -437,7 +447,15 @@ def resolve_source(entry: RegistryEntry) -> SourceResolution:
     repo = entry.repository
     supplement = None
     if repo is not None and (slug := repo.slug):
+        # The subfolder rides the SPEC STRING as a `#fragment`, not only the
+        # separate field. `source_spec` is the wire format the scanner parses,
+        # and a monorepo path carried beside it rather than in it was silently
+        # dropped — the scanner parsed the spec, got subfolder=None, and would
+        # have scanned the entire repository instead of the declared server.
+        sub = repo.path_subfolder
         supplement = f"{repo.kind.value}:{slug}@{entry.version}"
+        if sub:
+            supplement = f"{supplement}#{sub}"
 
     for package in entry.packages:
         if package.kind in _SCANNABLE_PACKAGE_KINDS and package.identifier:
