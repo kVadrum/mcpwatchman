@@ -1,4 +1,9 @@
 {
+  // ⚠ NOT THE ACTIVE DEPLOY PATH. This site deploys via Cloudflare PAGES
+  // (operator decision, 2026-09-14). This config is kept as a working fallback
+  // should the project ever move to Workers — validated with `wrangler deploy
+  // --dry-run`, which reads 22 files from dist. Nothing reads it today.
+  //
   // Static-only Worker: no `main`, so there is no Worker script and every
   // response is served straight from the asset store. That is deliberate —
   // mcpwatchman's API is FastAPI on a fleet box (see STATE § Hosting), not an
