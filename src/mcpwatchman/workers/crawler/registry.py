@@ -28,6 +28,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from mcpwatchman import __version__
+from mcpwatchman.workers.excluded import EXCLUDED_DIRS
 
 REGISTRY_BASE_URL = "https://registry.modelcontextprotocol.io"
 SERVERS_PATH = "/v0/servers"
@@ -129,10 +130,19 @@ def _safe_subpath(raw: str | None) -> str | None:
     would point the file walk and the semgrep run at the host filesystem
     instead of the repository.
 
-    Rejected: absolute paths, any `..` component, and a leading `-` (which git
-    would parse as a flag rather than a path). Returning None degrades to
-    scanning the repository root, which is wrong-but-safe; the alternative is
-    wrong-and-exploitable.
+    Rejected: absolute paths, any `..` component, a leading `-` (which git would
+    parse as a flag rather than a path), and any component naming an excluded
+    directory. Returning None degrades to scanning the repository root, which is
+    wrong-but-safe; the alternative is wrong-and-exploitable.
+
+    ⚠ **The excluded-directory arm exists so this agrees with `SourceSpec.parse`.**
+    Without it the crawler accepted `apps/server/dist` and emitted it into a
+    source spec that the scanner's parser then rejected — so the planner
+    enqueued a job the worker could never run. Neither side was wrong on its own
+    terms and neither reported anything: the crawler logged a resolution, the
+    scanner logged a parse failure, and the server was silently never scanned.
+    Both arms now read the one `EXCLUDED_DIRS`, which is why it lives in
+    `workers.excluded` rather than in either module.
     """
     if not raw:
         return None
@@ -141,6 +151,8 @@ def _safe_subpath(raw: str | None) -> str | None:
         return None
     parts = [p for p in cleaned.split("/") if p and p != "."]
     if not parts or any(p == ".." for p in parts) or parts[0].startswith("-"):
+        return None
+    if any(p in EXCLUDED_DIRS for p in parts):
         return None
     return "/".join(parts)
 

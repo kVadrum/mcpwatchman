@@ -13,10 +13,12 @@ download-and-unpack only, and the unpack is the dangerous half: see `_safe_extra
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -24,6 +26,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from mcpwatchman.workers.crawler.registry import SourceKind
+from mcpwatchman.workers.excluded import EXCLUDED_DIRS
 
 # A published artifact that unpacks to more than this is not a plausible MCP
 # server; it is a decompression bomb or a vendored toolchain. `04` §9 budgets
@@ -31,6 +34,14 @@ from mcpwatchman.workers.crawler.registry import SourceKind
 # the one job rather than the disk.
 MAX_UNPACKED_BYTES = 512 * 1024 * 1024
 MAX_MEMBERS = 50_000
+
+# A cap on ENTRY COUNT for a tree already on disk. `MAX_UNPACKED_BYTES` sums
+# logical file lengths, so a repository of millions of empty files sits far
+# under it while consuming inodes and allocated blocks without limit — a bound
+# that measures the wrong resource is not a bound. Set above `inventory`'s
+# `MAX_FILES` so a tree this large is refused here rather than silently
+# truncated there.
+MAX_TREE_ENTRIES = 250_000
 
 # Per-step wall clock. `04` §9 gives a scan 15 minutes total; fetching is meant
 # to be a small part of that, and a repository that cannot be cloned in two
@@ -162,9 +173,10 @@ def _run(cmd: list[str], cwd: Path | None = None, timeout: int = FETCH_TIMEOUT_S
 # `modelcontextprotocol/servers`, it was the majority of a 1.9 MB checkout — and
 # because semgrep matching inside object storage produces findings about bytes
 # that are not source. `04` §3 names the rest.
-EXCLUDED_DIRS = frozenset(
-    {".git", "node_modules", ".venv", "venv", "vendor", "dist", "build", "__pycache__"}
-)
+# Re-exported so existing importers of this module keep working; the constant
+# itself lives in `workers.excluded` because the crawler needs it too and cannot
+# import this module without closing a cycle.
+__all__ = ["EXCLUDED_DIRS"]
 
 
 def _is_excluded(path: Path, root: Path) -> bool:
@@ -226,10 +238,43 @@ def _measure_all(root: Path) -> int:
     which is the right answer for "how much source is here" and the wrong one
     for "how much disk did this consume". A payload hidden under `node_modules/`
     was invisible to the resource cap while filling the scratch budget.
+
+    ⚠ Bounded and early-exiting, which `sum(root.rglob("*"))` was neither. That
+    form enumerated the whole tree before returning a total nobody could act on
+    until it was complete, so for a git source — where no member cap applies,
+    because a clone is not an archive — a hostile repository forced an unbounded
+    walk before the size cap could fire.
     """
-    return sum(
-        p.stat().st_size for p in root.rglob("*") if p.is_file() and not p.is_symlink()
-    )
+    total = 0
+    visited = 0
+    stack: list[Path] = [root]
+
+    while stack:
+        try:
+            scanner = os.scandir(stack.pop())
+        except OSError:
+            continue
+        with scanner:
+            for entry in scanner:
+                visited += 1
+                if visited > MAX_TREE_ENTRIES:
+                    raise FetchError(
+                        f"tree exceeds {MAX_TREE_ENTRIES} entries at {root}"
+                    )
+                if entry.is_symlink():
+                    continue
+                try:
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append(Path(entry.path))
+                    elif entry.is_file(follow_symlinks=False):
+                        total += entry.stat(follow_symlinks=False).st_size
+                        if total > MAX_UNPACKED_BYTES:
+                            raise FetchError(
+                                f"tree exceeds {MAX_UNPACKED_BYTES} bytes at {root}"
+                            )
+                except OSError:
+                    continue
+    return total
 
 
 def _is_zip(archive: Path) -> bool:
@@ -243,6 +288,60 @@ def _is_zip(archive: Path) -> bool:
     """
     with archive.open("rb") as fh:
         return fh.read(4) in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+
+
+_EOCD_SIG = b"PK\x05\x06"
+_ZIP64_LOCATOR_SIG = b"PK\x06\x07"
+_ZIP64_EOCD_SIG = b"PK\x06\x06"
+_MAX_ZIP_COMMENT = 65_535
+
+
+def _zip_entry_count(archive: Path) -> int | None:
+    """Entry count read from the end-of-central-directory, in BOUNDED work.
+
+    ⚠ This exists because `MAX_MEMBERS` could not reach the zip path at all.
+    `zipfile.ZipFile(...)` parses the ENTIRE central directory and builds a
+    `ZipInfo` for every entry in its constructor — so by the time `infolist()`
+    returns and the member cap is consulted, the allocation has already
+    happened. A ZIP64 archive of millions of empty entries compresses to almost
+    nothing and stays far under the download cap.
+
+    The tar path was given a lazy, guard-during-the-walk form at v0.7.2 and this
+    one was left eager — the same asymmetry, the third instance in this file.
+
+    Returns None when the record cannot be located, in which case `ZipFile` will
+    fail to open the archive anyway. The count is attacker-controlled and may
+    understate the truth, so `_guard_members` still runs afterwards as the
+    second gate — exactly the arrangement the declared-size cap already uses.
+    """
+    size = archive.stat().st_size
+    if size < 22:
+        return None
+    tail_len = min(size, _MAX_ZIP_COMMENT + 22)
+    with archive.open("rb") as fh:
+        fh.seek(size - tail_len)
+        tail = fh.read(tail_len)
+
+        pos = tail.rfind(_EOCD_SIG)
+        if pos < 0 or len(tail) - pos < 22:
+            return None
+        count = int.from_bytes(tail[pos + 10 : pos + 12], "little")
+        if count != 0xFFFF:
+            return count
+
+        # ZIP64: the 16-bit field is saturated and the real count lives in the
+        # ZIP64 end-of-central-directory, found via its locator.
+        loc = tail.rfind(_ZIP64_LOCATOR_SIG, 0, pos)
+        if loc < 0 or len(tail) - loc < 20:
+            return None
+        z64_offset = int.from_bytes(tail[loc + 8 : loc + 16], "little")
+        if z64_offset >= size:
+            return None
+        fh.seek(z64_offset)
+        head = fh.read(40)
+        if len(head) < 40 or not head.startswith(_ZIP64_EOCD_SIG):
+            return None
+        return int.from_bytes(head[32:40], "little")
 
 
 def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
@@ -269,6 +368,12 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
     """
     dest.mkdir(parents=True, exist_ok=True)
     if _is_zip(archive):
+        declared = _zip_entry_count(archive)
+        if declared is not None and declared > MAX_MEMBERS:
+            raise FetchError(
+                f"archive declares {declared} members, over the "
+                f"{MAX_MEMBERS} cap: {spec}"
+            )
         with zipfile.ZipFile(archive) as zf:
             infos = zf.infolist()
             _guard_members((i.filename for i in infos), spec)
@@ -332,10 +437,35 @@ def _confine(candidate: Path, root: Path) -> Path:
     host filesystem. Resolves first because a symlink inside the fetched tree
     can redirect a path that looks confined.
     """
-    resolved = candidate.resolve()
     root_resolved = root.resolve()
+
+    # ⚠ REFUSE A SYMLINKED COMPONENT BEFORE RESOLVING, because containment
+    # cannot see this one. A repository may TRACK a symlink, so a declared
+    # subfolder `server -> .git` resolves to a path that is still inside the
+    # workspace — the check below passes, and the scanner is aimed at the git
+    # object store. `_is_excluded` cannot catch it either: it tests the declared
+    # name (`server`), and once `.git` becomes the scan ROOT it sits outside
+    # every path taken relative to it, so the exclusion defeats itself.
+    #
+    # This is the third route to the same place. v0.7.1 closed traversal
+    # (`../../../etc`), v0.7.2 closed the literal `#.git`, and both guards were
+    # written without the symlink in mind. Resolving an internal link is never
+    # something we want: the declared path is the contract, not wherever the
+    # repository decides to point it.
+    probe = root_resolved
+    for part in candidate.relative_to(root).parts if candidate != root else ():
+        probe = probe / part
+        if probe.is_symlink():
+            raise FetchError(
+                f"subfolder component {part!r} is a symlink ({probe} -> "
+                f"{probe.readlink()}); refusing to follow it"
+            )
+
+    resolved = candidate.resolve()
     if resolved != root_resolved and root_resolved not in resolved.parents:
         raise FetchError(f"scan root {resolved} escapes the workspace {root_resolved}")
+    if _is_excluded(resolved, root_resolved) or resolved.name in EXCLUDED_DIRS:
+        raise FetchError(f"scan root {resolved} is an excluded directory")
     return resolved
 
 
@@ -353,6 +483,17 @@ def _head_is_detached(repo: Path) -> bool:
     return False
 
 
+def _git_url(spec: SourceSpec) -> str:
+    """The clone URL for a forge-hosted spec.
+
+    A named seam rather than an inline f-string so a test can point `fetch_git`
+    at a local remote and exercise real git ref resolution — which is where the
+    branch-shadows-tag defect lives, and which no stubbed `_run` can reproduce.
+    """
+    host = {SourceKind.GITHUB: "github.com", SourceKind.GITLAB: "gitlab.com"}[spec.kind]
+    return f"https://{host}/{spec.identifier}.git"
+
+
 def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     """Shallow, optionally sparse clone (`04` §2).
 
@@ -361,8 +502,7 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     checkout when the server lives in a monorepo subdirectory — one repository
     in the registry holds dozens of servers.
     """
-    host = {SourceKind.GITHUB: "github.com", SourceKind.GITLAB: "gitlab.com"}[spec.kind]
-    url = f"https://{host}/{spec.identifier}.git"
+    url = _git_url(spec)
 
     # ⚠ THE REF MUST BE REQUESTED EXPLICITLY. `--single-branch` alone clones the
     # remote's default branch and SILENTLY IGNORES the version — so a scan of
@@ -401,10 +541,36 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
         shutil.rmtree(dest, ignore_errors=True)
     if resolved_ref is None:
         _run([*base, "--", url, str(dest)])
+        # ⚠ `--branch` resolves `refs/heads/` FIRST, so a repository carrying both
+        # a branch and a tag named `1.2.3` hands back the branch above, the
+        # detached-HEAD test correctly rejects it, and we land on the default
+        # branch — having never asked for the tag that does exist. Scoring the
+        # default branch and attaching the result to a release it never read is
+        # the exact failure v0.7.0 fixed for the no-tag case; this is the same
+        # failure by a different route. Name the namespace and the ambiguity
+        # cannot arise.
+        for candidate in (spec.version, f"v{spec.version}"):
+            try:
+                _run(
+                    ["git", "fetch", "--depth", "1", "origin", f"refs/tags/{candidate}"],
+                    cwd=dest,
+                )
+                _run(["git", "checkout", "--detach", "FETCH_HEAD"], cwd=dest)
+            except FetchError:
+                continue
+            resolved_ref = candidate
+            break
 
     if spec.subfolder:
+        # ⚠ CONE MODE, because `--no-cone` reads its argument as a
+        # `.gitignore` PATTERN rather than a literal path. A perfectly valid
+        # declared directory containing pattern metacharacters — `apps/[server]`,
+        # or one whose name begins with `!` — is then matched wrongly or not at
+        # all, while the code that follows goes looking for the literal path.
+        # Cone mode takes directory paths literally, which is the contract this
+        # call actually wants.
         _run(
-            ["git", "sparse-checkout", "set", "--no-cone", "--", spec.subfolder],
+            ["git", "sparse-checkout", "set", "--cone", "--", spec.subfolder],
             cwd=dest,
         )
     # Reclaim packfile space immediately; a job's 5 GB scratch is shared with
@@ -437,8 +603,18 @@ def _download(url: str, dest: Path, timeout: int = FETCH_TIMEOUT_S) -> Path:
         ) as response:
             response.raise_for_status()
             written = 0
+            # ⚠ A WALL-CLOCK DEADLINE, because httpx's timeout is per network
+            # OPERATION and resets on every one. A server that dribbles a byte
+            # inside each interval never trips it, so a download could hold a
+            # worker far past the 15-minute scan budget (`04` §9) while looking
+            # healthy the whole time — the cap on SIZE cannot see a slow read.
+            deadline = time.monotonic() + timeout
             with dest.open("wb") as fh:
                 for chunk in response.iter_bytes(64 * 1024):
+                    if time.monotonic() > deadline:
+                        raise FetchError(
+                            f"download exceeded {timeout}s wall clock: {url}"
+                        )
                     written += len(chunk)
                     if written > MAX_UNPACKED_BYTES:
                         raise FetchError(f"download exceeded cap: {url}")

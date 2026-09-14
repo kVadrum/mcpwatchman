@@ -35,7 +35,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 
-from mcpwatchman.workers.scanner.source import EXCLUDED_DIRS
+from mcpwatchman.workers.excluded import EXCLUDED_DIRS
 
 # `04` §3: "Files larger than 1 MB are flagged but not deeply inspected (they're
 # typically generated, vendored, or data files)." Flagged, not dropped — the size
@@ -227,10 +227,43 @@ def _language_from_shebang(path: Path) -> Language:
     return Language.UNKNOWN
 
 
+# ⚠ DERIVED, not hand-listed. The hand-written tuple omitted every JSX/TSX
+# variant — `component.test.tsx` does not end in `.test.ts` — so common React
+# test files classified as served source and their findings would have scored as
+# production risk. An enumeration that has to be kept in sync with the language
+# table by hand will drift again; this one cannot.
+_TEST_SUFFIXES: tuple[str, ...] = tuple(
+    f".{kind}.{ext}"
+    for kind in ("test", "spec")
+    for ext in ("js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts")
+) + ("_test.go", "_test.py", "_test.rb", "_spec.rb")
+
+_TEST_DIRS = {"test", "tests", "__tests__", "spec", "specs", "e2e", "fixtures", "testdata"}
+
+
+def _is_test(rel: Path, lower: str, parts_lower: set[str]) -> bool:
+    return bool(
+        parts_lower & _TEST_DIRS
+        or lower.startswith(("test_", "spec_"))
+        or lower.endswith(_TEST_SUFFIXES)
+    )
+
+
 def _role_of(rel: Path, language: Language) -> Role:
     name = rel.name
     lower = name.lower()
     parts_lower = {p.lower() for p in rel.parts[:-1]}
+
+    # ⚠ LOCATION BEATS FILENAME, and this ordering is the whole point.
+    # The filename roles used to run first, so `tests/fixtures/server.json`
+    # returned `MCP_MANIFEST` and became `Inventory.mcp_manifest` — the auth and
+    # transparency checks would then have assessed a deliberately-crafted test
+    # fixture as the server's own declaration. That defeats the very separation
+    # the comment below describes: `03` §3 grades what runs, and a fixture is
+    # evidence of testing, not of risk. Same for a lockfile or a README under a
+    # test tree — none of them is the served artifact.
+    if _is_test(rel, lower, parts_lower):
+        return Role.TEST
 
     if name in _MCP_MANIFEST_NAMES:
         return Role.MCP_MANIFEST
@@ -245,9 +278,7 @@ def _role_of(rel: Path, language: Language) -> Role:
     # Tests are separated so a finding in a fixture does not score like a finding
     # in the served code — `03` §3 grades what runs, and a deliberately-unsafe
     # test fixture is evidence of testing, not of risk.
-    if parts_lower & {"test", "tests", "__tests__", "spec", "e2e"} or lower.startswith(
-        ("test_", "spec_")
-    ) or lower.endswith((".test.js", ".test.ts", ".spec.js", ".spec.ts", "_test.go", "_test.py")):
+    if _is_test(rel, lower, parts_lower):
         return Role.TEST
     if language in (Language.JSON, Language.YAML, Language.TOML):
         return Role.CONFIG
@@ -321,7 +352,13 @@ def _entry_points(root: Path) -> tuple[str, ...]:
             data = tomllib.loads(_read_manifest(pyproject))
         except (tomllib.TOMLDecodeError, OSError):
             data = {}
-        scripts = data.get("project", {}).get("scripts", {}) if isinstance(data, dict) else {}
+        # ⚠ Each level is checked separately. `data.get("project", {}).get(...)`
+        # raises AttributeError on a syntactically VALID file whose `project` is
+        # not a table (`project = "invalid"`), which this function's docstring
+        # promises cannot happen — a malformed manifest must degrade to "nothing
+        # declared", never fail the scan.
+        project = data.get("project") if isinstance(data, dict) else None
+        scripts = project.get("scripts") if isinstance(project, dict) else None
         if isinstance(scripts, dict):
             found.extend(v for v in scripts.values() if isinstance(v, str))
 
@@ -347,88 +384,95 @@ def enumerate_tree(root: Path) -> Inventory:
     def skip(reason: str) -> None:
         skipped[reason] = skipped.get(reason, 0) + 1
 
-    # ⚠ `os.walk`, not `rglob`, and both halves of that are load-bearing.
+    # ⚠ `os.scandir` directly, not `os.walk` and not `rglob`. Three bounds
+    # failures sit behind this loop's shape, each defeating the SAME advertised
+    # cap in a different way:
     #
-    # STREAMING: `sorted(root.rglob("*"))` materialises the ENTIRE tree before
-    # the first `MAX_FILES` check can run, so the cap bounded the record list
-    # and not the peak memory it exists to bound. A repository is not an
-    # archive — `source.py`'s member-count cap does not cover the git path, so
-    # nothing upstream bounds a clone's file count. Same shape as the eager
-    # `getmembers()` the Codex leg found in `source.py` at v0.7.2; the guard was
-    # written in one walk and omitted from the neighbouring one.
+    # 1. `sorted(root.rglob("*"))` materialises the ENTIRE tree before the first
+    #    cap check can run. A repository is not an archive — `source.py`'s
+    #    member-count cap covers the npm and PyPI paths, and nothing upstream
+    #    bounds a clone's file count.
+    # 2. `os.walk` streams BETWEEN directories but builds the complete `dirnames`
+    #    and `filenames` lists for EACH one before yielding, so a single
+    #    directory holding millions of entries exhausts memory before the loop
+    #    ever reaches a cap check. Fixing (1) with `os.walk` narrowed the bound
+    #    from the whole tree to the widest directory and left it unbounded.
+    # 3. The cap counted ACCEPTED records, so skipped entries never advanced it:
+    #    a repository of >MAX_FILES symlinks or device nodes was walked in full
+    #    and then reported `truncated=False` — the bound both absent and denied.
     #
-    # EXPLICIT SYMLINK REFUSAL: `followlinks=False` is a documented stdlib
-    # contract, where `rglob`'s non-descent into symlinked directories is
+    # Scanning entry-by-entry off the iterator fixes all three: it can stop in
+    # the middle of a directory, and `visited` counts what the walk TOUCHED
+    # rather than what it kept.
+    #
+    # Symlinks are refused explicitly rather than inherited from a traversal
+    # helper's defaults. `rglob`'s non-descent into symlinked directories is
     # interpreter behaviour this box cannot test — the venv here is 3.14 and CI
-    # runs 3.12, which is exactly the split the `filter="data"` note in
-    # `source.py` records. A tree containing a symlink to `/` would have the
-    # walk enumerate the host. Depending on a contract beats depending on a
-    # version whose behaviour we can assert but not measure.
-    #
-    # Pruning `dirnames` in place is the third win: an excluded `node_modules`
-    # now costs nothing instead of being walked in full and then discarded.
-    truncated_early = False
-    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
-        if truncated_early:
-            break
-        here = Path(dirpath)
+    # runs 3.12, the same split the `filter="data"` note in `source.py` records.
+    # A tree containing a symlink to `/` would have the walk enumerate the host.
+    visited = 0
+    stopped = False
+    stack: list[Path] = [root]
 
-        keep: list[str] = []
-        for name in sorted(dirnames):
-            if name in EXCLUDED_DIRS:
-                continue  # not "skipped" — excluded by policy, not by failure
-            if (here / name).is_symlink():
-                skip("symlink")
-                continue
-            keep.append(name)
-        dirnames[:] = keep
+    while stack and not stopped:
+        current = stack.pop()
+        try:
+            scanner = os.scandir(current)
+        except OSError:
+            skip("unreadable")
+            continue
 
-        for name in sorted(filenames):
-            if len(records) >= MAX_FILES:
-                truncated = True
-                truncated_early = True
-                break
+        with scanner:
+            for entry in scanner:
+                if visited >= MAX_FILES:
+                    truncated = True
+                    stopped = True
+                    break
+                visited += 1
 
-            path = here / name
-            rel = path.relative_to(root)
-            if any(part in EXCLUDED_DIRS for part in rel.parts):
-                continue
-            if path.is_symlink():
-                skip("symlink")
-                continue
-            if not path.is_file():
-                # FIFOs, sockets, devices. `is_file()` is False for all of them,
-                # and opening one can block the worker indefinitely.
-                skip("not a regular file")
-                continue
+                path = Path(entry.path)
+                rel = path.relative_to(root)
 
-            try:
-                size = path.stat().st_size
-                oversized = size > LARGE_FILE_BYTES
-                language = _language_of(path)
-                digest, _ = _sha256_of(path, HASH_PREFIX_BYTES if oversized else None)
-            except OSError:
-                skip("unreadable")
-                continue
+                # Before any type test: a type test on a symlink follows it.
+                if entry.is_symlink():
+                    skip("symlink")
+                    continue
+                if entry.name in EXCLUDED_DIRS:
+                    continue  # not "skipped" — excluded by policy, not by failure
+                try:
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append(path)
+                        continue
+                    if not entry.is_file(follow_symlinks=False):
+                        # FIFOs, sockets, devices. Opening one can block forever.
+                        skip("not a regular file")
+                        continue
+                    size = entry.stat(follow_symlinks=False).st_size
+                    oversized = size > LARGE_FILE_BYTES
+                    language = _language_of(path)
+                    digest, _ = _sha256_of(path, HASH_PREFIX_BYTES if oversized else None)
+                except OSError:
+                    skip("unreadable")
+                    continue
 
-            total += size
-            records.append(
-                FileRecord(
-                    path=rel.as_posix(),
-                    language=language,
-                    role=_role_of(rel, language),
-                    size_bytes=size,
-                    sha256=digest,
-                    oversized=oversized,
+                total += size
+                records.append(
+                    FileRecord(
+                        path=rel.as_posix(),
+                        language=language,
+                        role=_role_of(rel, language),
+                        size_bytes=size,
+                        sha256=digest,
+                        oversized=oversized,
+                    )
                 )
-            )
 
-    # Sort by path COMPONENTS, which is how the previous `sorted(rglob(...))`
+    # Sort by path COMPONENTS, which is how the original `sorted(rglob(...))`
     # ordered records — a plain string sort differs, because "/" (0x2f) sorts
     # after "." (0x2e) and so puts `a.py` before `a/b.py` where the component
     # comparison puts `a/b.py` first. Sorting after the walk rather than during
-    # it keeps the ordering while leaving the traversal streaming; the list is
-    # bounded by MAX_FILES, so this sort is too.
+    # it is what lets the traversal stay unordered and therefore streaming; the
+    # list is bounded by MAX_FILES, so this sort is too.
     records.sort(key=lambda r: r.path.split("/"))
 
     manifest = next((f for f in records if f.role is Role.MCP_MANIFEST), None)

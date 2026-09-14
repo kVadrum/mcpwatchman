@@ -297,34 +297,54 @@ def test_walk_does_not_descend_into_a_symlinked_directory(tmp_path: Path) -> Non
 
 @contextlib.contextmanager
 def _count_scandir():
-    """Count `os.scandir` calls, the primitive BOTH traversals go through.
+    """Count `os.scandir` CALLS and the directory ENTRIES pulled off its iterator.
 
-    ⚠ This replaced a probe that counted `Path.is_file` calls, which could not
-    have failed on the defect: the eager `sorted(rglob(...))` form materialises
-    every path but the loop still breaks at the cap, so it makes the same small
-    number of `is_file` calls the streaming form does. The cost is in building
-    the list, and `os.scandir` is where that cost is spent — measured 82 calls
-    eager vs 8 streaming on a 40-directory tree.
+    ⚠ Two different bounds need two different counters, and an earlier version of
+    this helper had only the first — which is why the `os.walk` form passed the
+    cap test while still materialising a whole directory:
+
+    * CALLS separate a streaming traversal from `sorted(rglob("*"))`, which
+      scandirs every directory in the tree before the first cap check (measured:
+      82 calls vs 8 over a 40-directory tree).
+    * ENTRIES separate entry-by-entry consumption from `os.walk`, which builds a
+      directory's complete listing before yielding it. Call counts cannot see
+      that difference — one wide directory is one call either way.
     """
-    calls: list[str] = []
+    counts = {"calls": 0, "entries": 0}
     real = os.scandir
 
-    def counting(path=".", *a, **kw):  # type: ignore[no-untyped-def]
-        calls.append(str(path))
-        return real(path, *a, **kw)
+    def counting(path="."):  # type: ignore[no-untyped-def]
+        counts["calls"] += 1
+        inner = real(path)
+
+        class _Counting:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return inner.__exit__(*exc)
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                entry = next(inner)
+                counts["entries"] += 1
+                return entry
+
+        return _Counting()
 
     with mock.patch.object(os, "scandir", counting):
-        yield calls
+        yield counts
 
 
-def test_file_count_cap_bounds_the_walk_not_just_the_result(
+def test_cap_stops_the_traversal_between_directories(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """`MAX_FILES` must stop the TRAVERSAL, not only truncate the record list.
 
-    Negative control for the eager form: `sorted(root.rglob("*"))` enumerates
-    the whole tree before the first cap check can run, so the cap bounded the
-    list it built and not the peak work it exists to bound.
+    Negative control for `sorted(root.rglob("*"))`, which enumerates the whole
+    tree before the first cap check can run.
     """
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -335,18 +355,74 @@ def test_file_count_cap_bounds_the_walk_not_just_the_result(
 
     monkeypatch.setattr(inventory, "MAX_FILES", 5)
 
-    with _count_scandir() as calls:
+    with _count_scandir() as counts:
         inv = enumerate_tree(repo)
 
     assert inv.truncated is True
-    assert len(inv.files) == 5
-    # Positive control: the instrument ran. Without this the assertion below
-    # would also pass on a probe that was never invoked — which is exactly how
-    # the first version of this test passed on the broken code.
-    assert calls, "os.scandir was never called — the probe did not run"
-    assert len(calls) < 20, (
-        f"traversal did not stop at the cap: {len(calls)} scandir calls over a "
-        f"40-directory tree (streaming is ~6, eager is ~82)"
+    # Positive control: the instrument ran. Without it the assertion below also
+    # passes on a probe that was never invoked — which is how the first version
+    # of this test passed on the broken code.
+    assert counts["calls"], "os.scandir was never called — the probe did not run"
+    assert counts["calls"] < 20, (
+        f"traversal did not stop at the cap: {counts['calls']} scandir calls over "
+        f"a 40-directory tree (bounded is ~2, eager rglob is ~82)"
+    )
+
+
+def test_cap_stops_the_traversal_WITHIN_one_wide_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cap must bite mid-directory, not only between directories.
+
+    Negative control for `os.walk`, which materialises a directory's complete
+    `filenames` list before yielding it — so one hostile directory holding
+    millions of entries exhausts memory before any cap check is reached. The
+    between-directories test above cannot detect this: one wide directory is a
+    single `scandir` call either way.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for i in range(200):
+        (repo / f"f{i:03d}.py").write_text("x = 1")
+
+    monkeypatch.setattr(inventory, "MAX_FILES", 10)
+
+    with _count_scandir() as counts:
+        inv = enumerate_tree(repo)
+
+    assert inv.truncated is True
+    assert len(inv.files) == 10
+    assert counts["entries"], "the scandir iterator was never advanced"
+    assert counts["entries"] <= 15, (
+        f"consumed {counts['entries']} of 200 entries at a cap of 10 — the "
+        f"directory was materialised rather than streamed"
+    )
+
+
+def test_skipped_entries_advance_the_cap(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Entries the walk REJECTS still cost work, so they must count.
+
+    Negative control for a cap keyed on `len(records)`: a repository of more
+    than `MAX_FILES` symlinks or device nodes was traversed in full and then
+    reported `truncated=False` — the bound both absent and denied.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for i in range(50):
+        (repo / f"s{i:02d}.py").symlink_to("/nonexistent")
+    (repo / "real.py").write_text("x = 1")
+
+    monkeypatch.setattr(inventory, "MAX_FILES", 5)
+
+    with _count_scandir() as counts:
+        inv = enumerate_tree(repo)
+
+    assert inv.truncated is True, "50 symlinks past a cap of 5 reported as complete"
+    assert counts["entries"] <= 10, (
+        f"walked {counts['entries']} entries at a cap of 5 — skipped entries did "
+        f"not advance it"
     )
 
 
@@ -358,13 +434,13 @@ def test_excluded_directory_is_pruned_not_walked(tmp_path: Path) -> None:
         (repo / "node_modules" / "deep" / f"v{i}.js").write_text("x")
     (repo / "index.js").write_text("x")
 
-    with _count_scandir() as calls:
+    with _count_scandir() as counts:
         inv = enumerate_tree(repo)
 
     assert [f.path for f in inv.files] == ["index.js"]
-    assert calls, "os.scandir was never called — the probe did not run"
-    assert not any("node_modules" in c for c in calls), (
-        f"walked into an excluded directory: {[c for c in calls if 'node_modules' in c]}"
+    assert counts["calls"], "os.scandir was never called — the probe did not run"
+    assert counts["calls"] == 1, (
+        f"descended into an excluded directory: {counts['calls']} scandir calls"
     )
 
 
@@ -405,3 +481,92 @@ def test_oversized_manifest_degrades_to_no_entry_points(tmp_path: Path) -> None:
     # point, so the test above is measuring the cap and not a broken parser.
     (repo / "package.json").write_text(json.dumps({"bin": {"cli": "./cli.js"}}))
     assert enumerate_tree(repo).entry_points == ("./cli.js",)
+
+
+# ── Codex leg (v0.9.2): classification and manifest-parse defects ────────────
+
+
+def test_malformed_pyproject_project_table_degrades(tmp_path: Path) -> None:
+    """A syntactically VALID toml whose `project` is not a table must not crash.
+
+    `data.get("project", {}).get("scripts", {})` raised AttributeError on
+    `project = "invalid"` — an attacker-controlled manifest failing the whole
+    scan, which is exactly what `_entry_points`' docstring promises cannot
+    happen.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "pyproject.toml").write_text('project = "invalid"\n')
+
+    inv = enumerate_tree(repo)  # must not raise
+    assert inv.entry_points == ()
+
+    # Positive control: a well-formed table still yields its scripts, so the
+    # test above is measuring the guard and not a parser that stopped working.
+    (repo / "pyproject.toml").write_text(
+        '[project]\nname = "x"\n[project.scripts]\nsrv = "pkg.mod:main"\n'
+    )
+    assert enumerate_tree(repo).entry_points == ("pkg.mod:main",)
+
+
+def test_a_test_fixture_never_becomes_the_mcp_manifest(tmp_path: Path) -> None:
+    """Location beats filename: `tests/fixtures/server.json` is TEST, not manifest.
+
+    The filename roles used to be checked first, so a crafted fixture populated
+    `Inventory.mcp_manifest` and the auth and transparency checks would have
+    assessed it as the server's own declaration — inverting the separation
+    `_role_of` exists to draw.
+    """
+    repo = tmp_path / "repo"
+    (repo / "tests" / "fixtures").mkdir(parents=True)
+    (repo / "tests" / "fixtures" / "server.json").write_text("{}")
+    (repo / "app.py").write_text("x = 1")
+
+    inv = enumerate_tree(repo)
+    fixture = next(f for f in inv.files if f.path == "tests/fixtures/server.json")
+
+    assert fixture.role is Role.TEST
+    assert inv.mcp_manifest is None
+
+    # Positive control: a REAL manifest at the root is still found.
+    (repo / "server.json").write_text("{}")
+    inv2 = enumerate_tree(repo)
+    assert inv2.mcp_manifest is not None
+    assert inv2.mcp_manifest.path == "server.json"
+
+
+def test_a_lockfile_under_a_test_tree_is_test_not_lockfile(tmp_path: Path) -> None:
+    """The same inversion reaches every filename role, not just the manifest."""
+    repo = tmp_path / "repo"
+    (repo / "tests").mkdir(parents=True)
+    (repo / "tests" / "package-lock.json").write_text("{}")
+    (repo / "tests" / "README.md").write_text("# fixtures")
+
+    roles = {f.path: f.role for f in enumerate_tree(repo).files}
+    assert roles["tests/package-lock.json"] is Role.TEST
+    assert roles["tests/README.md"] is Role.TEST
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "component.test.tsx",
+        "widget.spec.jsx",
+        "hook.test.mjs",
+        "util.spec.cts",
+        "legacy.test.js",
+        "legacy.spec.ts",
+    ],
+)
+def test_test_suffixes_cover_every_supported_js_variant(tmp_path: Path, name: str) -> None:
+    """JSX and TSX test files were classified as served source.
+
+    `component.test.tsx` does not end in `.test.ts`, so the hand-written suffix
+    tuple missed every JSX/TSX variant — and a finding in a React test file
+    would have scored as production risk. The tuple is now derived from the
+    extension list so it cannot drift from it again.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / name).write_text("x")
+    assert enumerate_tree(repo).files[0].role is Role.TEST

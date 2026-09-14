@@ -540,3 +540,39 @@ def test_subfolder_rides_the_spec_string_not_just_the_field():
     """`source_spec` is the wire format; a path carried beside it was dropped."""
     e = parse_entry(make_raw(repository={"url": "https://github.com/m/s/tree/main/src/fetch"}))
     assert resolve_source(e).primary == "github:m/s@1.0.0#src/fetch"
+
+
+@pytest.mark.parametrize(
+    "sub", ["apps/server/dist", "a/node_modules/x", "pkg/.git/objects", "x/vendor"]
+)
+def test_crawler_never_emits_a_subfolder_the_scanner_will_reject(sub):
+    """⚠ The two ends of one wire format must agree, and they did not.
+
+    The crawler accepted `apps/server/dist` and wrote it into a source spec that
+    `SourceSpec.parse` then refused, so the planner enqueued jobs the worker
+    could never run. Nothing failed loudly: the crawler logged a resolution, the
+    scanner logged a parse failure, and the server was silently never scanned.
+
+    Both sides now read one `EXCLUDED_DIRS`, which is why it lives in
+    `workers.excluded` — `scanner.source` already imports `crawler.registry`, so
+    the constant could not sit in either module without closing a cycle.
+    """
+    from mcpwatchman.workers.crawler.registry import _safe_subpath
+    from mcpwatchman.workers.scanner.source import FetchError, SourceSpec
+
+    assert _safe_subpath(sub) is None, f"crawler would emit {sub!r}"
+
+    # And the scanner's end still rejects it, so the agreement is mutual rather
+    # than the crawler having simply gone quiet.
+    with pytest.raises(FetchError, match="excluded directory"):
+        SourceSpec.parse(f"github:a/b@1.0.0#{sub}")
+
+
+def test_crawler_still_emits_an_ordinary_subfolder():
+    """Positive control: the fix must not reject every monorepo path, which
+    would pass the test above by disabling the feature."""
+    from mcpwatchman.workers.crawler.registry import _safe_subpath
+    from mcpwatchman.workers.scanner.source import SourceSpec
+
+    assert _safe_subpath("apps/server") == "apps/server"
+    assert SourceSpec.parse("github:a/b@1.0.0#apps/server").subfolder == "apps/server"

@@ -9,6 +9,7 @@ with no outward signal, since the scan succeeds and only the subject is wrong.
 
 from __future__ import annotations
 
+import subprocess
 import tarfile
 import zipfile
 
@@ -282,7 +283,12 @@ def test_no_matching_tag_falls_back_to_default_branch_and_SAYS_SO(monkeypatch, t
     from mcpwatchman.workers.scanner import source as S
 
     def fake_run(cmd, **kw):
-        if "--branch" in cmd:
+        # ⚠ The stub must model the TAG FETCH too. It previously only rejected
+        # `--branch`, so when the explicit `refs/tags/` lookup was added the
+        # fake returned success for a tag that does not exist and the test
+        # asserted a fallback that real git would not have taken. A stub that
+        # does not model a call silently answers for it.
+        if "--branch" in cmd or any(str(a).startswith("refs/tags/") for a in cmd):
             raise FetchError("no such ref")
 
     monkeypatch.setattr(S, "_run", fake_run)
@@ -361,16 +367,46 @@ def test_confine_rejects_a_scan_root_outside_the_workspace(tmp_path):
         _confine(root / ".." / ".." / "etc", root)
 
 
-def test_confine_follows_symlinks_before_judging(tmp_path):
-    """A symlink INSIDE the fetched tree can redirect a path that looks
-    confined — the tree is attacker-controlled, so the check must resolve."""
+def test_confine_refuses_a_symlinked_component_outright(tmp_path):
+    """A symlink INSIDE the fetched tree can redirect a path that looks confined.
+
+    Previously this was caught by resolving and then testing containment, which
+    only works when the link points OUT of the workspace. It is now refused
+    before resolution, so the inward case below is covered by the same guard.
+    """
     from mcpwatchman.workers.scanner.source import _confine
 
     root = tmp_path / "ws"
     root.mkdir()
     (root / "evil").symlink_to("/etc")
-    with pytest.raises(FetchError, match="escapes the workspace"):
+    with pytest.raises(FetchError, match="is a symlink"):
         _confine(root / "evil", root)
+
+
+def test_confine_refuses_a_symlink_pointing_INSIDE_the_workspace(tmp_path):
+    """The case containment cannot see, and the one that was exploitable.
+
+    A repository may TRACK a symlink, so a declared subfolder `server -> .git`
+    resolves to a path still inside the workspace: the containment test passes
+    and the scanner is aimed at the git object store. `_is_excluded` misses it
+    too — it tests the declared name, and once `.git` is the scan ROOT it sits
+    outside every path taken relative to it.
+
+    Third route to the same place: v0.7.1 closed `../../../etc`, v0.7.2 closed
+    the literal `#.git`, and both guards were written without the symlink.
+    """
+    from mcpwatchman.workers.scanner.source import _confine
+
+    root = tmp_path / "ws"
+    (root / ".git").mkdir(parents=True)
+    (root / "server").symlink_to(".git")
+
+    with pytest.raises(FetchError, match="is a symlink"):
+        _confine(root / "server", root)
+
+    # Positive control: an ordinary subdirectory still resolves.
+    (root / "real").mkdir()
+    assert _confine(root / "real", root) == (root / "real").resolve()
 
 
 def test_git_commands_terminate_options_before_positionals(monkeypatch, tmp_path):
@@ -533,6 +569,10 @@ def test_a_branch_named_like_the_version_is_not_reported_as_a_tag(monkeypatch, t
 
     def fake_run(cmd, **kw):
         calls.append(cmd)
+        # This scenario is a branch `1.2.3` with NO tag of that name, so the
+        # explicit tag fetch must fail — see the stub note above.
+        if any(str(a).startswith("refs/tags/") for a in cmd):
+            raise FetchError("no such ref")
         # symbolic-ref SUCCEEDS => HEAD is on a branch => not a tag.
         if "symbolic-ref" in cmd:
             return None
@@ -574,3 +614,209 @@ def test_an_oversized_checkout_is_refused(monkeypatch, tmp_path):
     monkeypatch.setattr(S, "_measure_all", lambda p: S.MAX_UNPACKED_BYTES + 1)
     with pytest.raises(FetchError, match="over the"):
         S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
+
+
+# ── Codex leg (v0.9.2): real-git verification of ref resolution ──────────────
+
+
+def _git(repo, *args):
+    """Run git in a fixture repo. Fixed argv, fixture-only paths — the S603/S607
+    warnings are about untrusted input and a PATH lookup, neither of which
+    applies to a test driving its own tmp_path."""
+    subprocess.run(  # noqa: S603
+        ["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],  # noqa: S607
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_a_tag_SHADOWED_by_a_same_named_branch_is_still_found(tmp_path):
+    """⚠ Real git, not a stub — the defect lives in git's ref precedence.
+
+    `git clone --branch 1.2.3` resolves `refs/heads/` FIRST, so a repository
+    carrying both a branch and a tag named `1.2.3` hands back the branch. The
+    detached-HEAD test correctly rejects it, and the old code then fell through
+    to the default branch — having never asked for the tag that does exist. It
+    would have scored the wrong revision and attached the result to a release it
+    never read: the same failure v0.7.0 fixed for the no-tag case, by a
+    different route.
+
+    Stubbed `_run` cannot show this: the whole defect is which ref real git
+    picks for an ambiguous name.
+    """
+    # ⚠ THREE DISTINCT CONTENTS, and that is what makes this test able to fail.
+    # The first version of this fixture put the tag on a commit that was also
+    # `main`'s tip, so the buggy fallback-to-default-branch produced byte-identical
+    # content and the test passed with the fix removed — a fixture that cannot
+    # distinguish the right answer from the wrong one. Caught by the negative
+    # control, which is the only thing that could have caught it.
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    (origin / "release.py").write_text("RELEASE = 'tag'\n")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "the tagged release")
+    _git(origin, "tag", "1.2.3")
+
+    # A MOVING branch of the same name, with different content.
+    _git(origin, "checkout", "-qb", "1.2.3")
+    (origin / "release.py").write_text("RELEASE = 'branch'\n")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "branch tip, not the release")
+
+    # And `main` moves on past the tag, so falling back is distinguishable too.
+    _git(origin, "checkout", "-q", "main")
+    (origin / "release.py").write_text("RELEASE = 'main'\n")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "main tip")
+
+    from mcpwatchman.workers.scanner import source as S
+
+    spec = SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3")
+    dest = tmp_path / "checkout"
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    try:
+        S.fetch_git(spec, dest)
+    finally:
+        monkey.undo()
+
+    got = (dest / "release.py").read_text().strip()
+    assert got == "RELEASE = 'tag'", (
+        f"scanned {got} instead of the same-named release tag — "
+        f"'branch' means git's ref precedence won, 'main' means we fell back"
+    )
+    assert S._GIT_REF_USED.get(dest) == "1.2.3"
+
+
+def test_zip_member_cap_fires_BEFORE_zipfile_parses_the_directory(tmp_path, monkeypatch):
+    """⚠ `ZipFile(...)` builds a `ZipInfo` for EVERY entry in its constructor.
+
+    So `MAX_MEMBERS`, consulted on `infolist()`, could never protect the zip
+    path: by the time it ran the allocation had already happened. A ZIP64
+    archive of millions of empty entries compresses to almost nothing and stays
+    far under the download cap.
+
+    The tar path was given a lazy guard-during-the-walk form at v0.7.2 and this
+    one was left eager — the same asymmetry, a third time in this file.
+    """
+    from mcpwatchman.workers.scanner import source as S
+
+    archive = tmp_path / "bomb.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for i in range(60):
+            zf.writestr(f"f{i:03d}.txt", b"")
+
+    monkeypatch.setattr(S, "MAX_MEMBERS", 10)
+
+    def explode(*a, **kw):
+        raise AssertionError("ZipFile was constructed before the member cap ran")
+
+    monkeypatch.setattr(S.zipfile, "ZipFile", explode)
+
+    spec = SourceSpec(SourceKind.PYPI, "pkg", "1.0.0")
+    with pytest.raises(FetchError, match="declares 60 members"):
+        S._safe_extract(archive, tmp_path / "out", spec)
+
+
+def test_zip_entry_count_reads_a_real_archive(tmp_path):
+    """Positive control: the preflight must return the true count, not just
+    refuse things. A parser that returned None always would pass the cap test
+    above by disabling the guard entirely."""
+    from mcpwatchman.workers.scanner.source import _zip_entry_count
+
+    archive = tmp_path / "ok.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for i in range(7):
+            zf.writestr(f"f{i}.txt", b"x")
+    assert _zip_entry_count(archive) == 7
+
+    # A comment pushes the EOCD away from the very end of the file.
+    commented = tmp_path / "commented.zip"
+    with zipfile.ZipFile(commented, "w") as zf:
+        zf.writestr("a.txt", b"x")
+        zf.comment = b"c" * 400
+    assert _zip_entry_count(commented) == 1
+
+
+def test_measure_all_is_bounded_by_entry_count(tmp_path, monkeypatch):
+    """`MAX_UNPACKED_BYTES` sums logical lengths, so millions of EMPTY files sit
+    under it while consuming inodes without limit. A bound that measures the
+    wrong resource is not a bound — and a git clone has no member cap upstream,
+    because a clone is not an archive."""
+    from mcpwatchman.workers.scanner import source as S
+
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    for i in range(80):
+        (tree / f"f{i:03d}").write_text("")
+
+    monkeypatch.setattr(S, "MAX_TREE_ENTRIES", 20)
+    with pytest.raises(FetchError, match="exceeds 20 entries"):
+        S._measure_all(tree)
+
+    # Positive control: an ordinary tree still measures, and measures correctly.
+    monkeypatch.setattr(S, "MAX_TREE_ENTRIES", 250_000)
+    (tree / "sized.bin").write_bytes(b"x" * 1234)
+    assert S._measure_all(tree) == 1234
+
+
+def test_sparse_checkout_uses_cone_mode_for_a_literal_path(monkeypatch, tmp_path):
+    """`--no-cone` reads its argument as a `.gitignore` PATTERN, not a path.
+
+    A valid declared directory containing metacharacters — `apps/[server]`, or a
+    name beginning with `!` — is then matched wrongly or not at all, while the
+    code that follows looks for the literal path.
+    """
+    from mcpwatchman.workers.scanner import source as S
+
+    seen: list[list[str]] = []
+
+    def fake_run(cmd, **kw):
+        seen.append(cmd)
+        if "symbolic-ref" in cmd:
+            return None
+        return None
+
+    monkeypatch.setattr(S, "_run", fake_run)
+    monkeypatch.setattr(S, "_measure_all", lambda p: 0)
+    monkeypatch.setattr(S, "_confine", lambda c, r: c)
+    S.fetch_git(SourceSpec(SourceKind.GITHUB, "a/b", "1.0.0", "apps/server"), tmp_path)
+
+    sparse = next(c for c in seen if "sparse-checkout" in c)
+    assert "--cone" in sparse, f"sparse-checkout still in pattern mode: {sparse}"
+    assert "--no-cone" not in sparse
+
+
+def test_download_enforces_a_wall_clock_deadline(tmp_path, monkeypatch):
+    """httpx's timeout is per network OPERATION and resets on each one, so a
+    server dribbling a byte inside every interval never trips it. The cap on
+    SIZE cannot see a slow read."""
+    from mcpwatchman.workers.scanner import source as S
+
+    class _Response:
+        def raise_for_status(self):
+            return None
+
+        def iter_bytes(self, _n):
+            for _ in range(1000):
+                yield b"x"
+
+    class _Stream:
+        def __enter__(self):
+            return _Response()
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr(S, "_download_stream", lambda *a, **kw: _Stream(), raising=False)
+
+    clock = iter([0.0] + [100.0] * 50)
+    monkeypatch.setattr(S.time, "monotonic", lambda: next(clock))
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "stream", lambda *a, **kw: _Stream())
+    with pytest.raises(FetchError, match="wall clock"):
+        S._download("https://example.invalid/p.tgz", tmp_path / "out.tgz", timeout=30)
