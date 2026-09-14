@@ -7,10 +7,15 @@ must not follow, must not open, and must not silently omit.
 
 from __future__ import annotations
 
+import contextlib
+import json
 import os
+from pathlib import Path
+from unittest import mock
 
 import pytest
 
+from mcpwatchman.workers.scanner import inventory
 from mcpwatchman.workers.scanner.inventory import (
     LARGE_FILE_BYTES,
     Inventory,
@@ -253,3 +258,150 @@ def test_by_language_and_by_role(tree):
 def test_an_empty_tree_is_empty_not_an_error(tmp_path):
     inv = enumerate_tree(tmp_path)
     assert inv == Inventory()
+
+
+# ── v0.9.1 QA: the walk's bounds, and the manifest read's ────────────────────
+
+
+def test_walk_does_not_descend_into_a_symlinked_directory(tmp_path: Path) -> None:
+    """A symlink to a directory outside the tree must not be walked THROUGH.
+
+    The old `rglob` form got this right by interpreter behaviour rather than by
+    contract, and the interpreter CI runs (3.12) is not installable on the box
+    this was written on. `os.walk(followlinks=False)` is a documented guarantee,
+    so this test pins the property rather than the version.
+
+    ⚠ NEGATIVE CONTROL: INCONCLUSIVE, not passing. Reverting to `sorted(rglob)`
+    leaves this test green, because 3.14's `rglob` does not descend through a
+    symlinked directory either. That is the whole reason the fix exists — the
+    behaviour is correct on the interpreter we can measure and unverifiable on
+    the one CI runs — so this is a contract pin, not a regression test, and must
+    not be counted as evidence that the defect was reachable.
+    """
+    outside = tmp_path / "outside"
+    (outside / "nested").mkdir(parents=True)
+    (outside / "nested" / "host_secret.py").write_text("SECRET = 1")
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "real.py").write_text("x = 1")
+    (repo / "escape").symlink_to(outside)
+
+    inv = enumerate_tree(repo)
+    paths = {f.path for f in inv.files}
+
+    assert paths == {"real.py"}
+    assert not any("host_secret" in p for p in paths)
+    assert inv.skipped.get("symlink") == 1
+
+
+@contextlib.contextmanager
+def _count_scandir():
+    """Count `os.scandir` calls, the primitive BOTH traversals go through.
+
+    ⚠ This replaced a probe that counted `Path.is_file` calls, which could not
+    have failed on the defect: the eager `sorted(rglob(...))` form materialises
+    every path but the loop still breaks at the cap, so it makes the same small
+    number of `is_file` calls the streaming form does. The cost is in building
+    the list, and `os.scandir` is where that cost is spent — measured 82 calls
+    eager vs 8 streaming on a 40-directory tree.
+    """
+    calls: list[str] = []
+    real = os.scandir
+
+    def counting(path=".", *a, **kw):  # type: ignore[no-untyped-def]
+        calls.append(str(path))
+        return real(path, *a, **kw)
+
+    with mock.patch.object(os, "scandir", counting):
+        yield calls
+
+
+def test_file_count_cap_bounds_the_walk_not_just_the_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`MAX_FILES` must stop the TRAVERSAL, not only truncate the record list.
+
+    Negative control for the eager form: `sorted(root.rglob("*"))` enumerates
+    the whole tree before the first cap check can run, so the cap bounded the
+    list it built and not the peak work it exists to bound.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for i in range(40):
+        d = repo / f"d{i:02d}"
+        d.mkdir()
+        (d / "a.py").write_text("x = 1")
+
+    monkeypatch.setattr(inventory, "MAX_FILES", 5)
+
+    with _count_scandir() as calls:
+        inv = enumerate_tree(repo)
+
+    assert inv.truncated is True
+    assert len(inv.files) == 5
+    # Positive control: the instrument ran. Without this the assertion below
+    # would also pass on a probe that was never invoked — which is exactly how
+    # the first version of this test passed on the broken code.
+    assert calls, "os.scandir was never called — the probe did not run"
+    assert len(calls) < 20, (
+        f"traversal did not stop at the cap: {len(calls)} scandir calls over a "
+        f"40-directory tree (streaming is ~6, eager is ~82)"
+    )
+
+
+def test_excluded_directory_is_pruned_not_walked(tmp_path: Path) -> None:
+    """An excluded directory must cost nothing, not be walked and then discarded."""
+    repo = tmp_path / "repo"
+    (repo / "node_modules" / "deep").mkdir(parents=True)
+    for i in range(30):
+        (repo / "node_modules" / "deep" / f"v{i}.js").write_text("x")
+    (repo / "index.js").write_text("x")
+
+    with _count_scandir() as calls:
+        inv = enumerate_tree(repo)
+
+    assert [f.path for f in inv.files] == ["index.js"]
+    assert calls, "os.scandir was never called — the probe did not run"
+    assert not any("node_modules" in c for c in calls), (
+        f"walked into an excluded directory: {[c for c in calls if 'node_modules' in c]}"
+    )
+
+
+def test_ordering_is_by_path_component_not_by_string(tmp_path: Path) -> None:
+    """`a/b.py` sorts before `a.py`, as path-component comparison gives.
+
+    A plain string sort inverts this, because "/" (0x2f) > "." (0x2e). Pinned
+    because the streaming walk has to restore an order the global `sorted()`
+    used to provide for free.
+    """
+    repo = tmp_path / "repo"
+    (repo / "a").mkdir(parents=True)
+    (repo / "a" / "b.py").write_text("x = 1")
+    (repo / "a.py").write_text("x = 1")
+
+    inv = enumerate_tree(repo)
+    assert [f.path for f in inv.files] == ["a/b.py", "a.py"]
+
+
+def test_oversized_manifest_degrades_to_no_entry_points(tmp_path: Path) -> None:
+    """A manifest past `MANIFEST_MAX_BYTES` is not read into memory.
+
+    `source.py`'s archive caps allow a single member far larger than this, and
+    these two files are the only ones parsed whole — so their size becomes
+    resident memory where every other file's does not.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    padding = "A" * (inventory.MANIFEST_MAX_BYTES + 1024)
+    (repo / "package.json").write_text(
+        json.dumps({"bin": {"cli": "./cli.js"}, "_pad": padding})
+    )
+
+    inv = enumerate_tree(repo)
+    assert inv.entry_points == ()
+
+    # Positive control: the same manifest under the cap DOES yield the entry
+    # point, so the test above is measuring the cap and not a broken parser.
+    (repo / "package.json").write_text(json.dumps({"bin": {"cli": "./cli.js"}}))
+    assert enumerate_tree(repo).entry_points == ("./cli.js",)

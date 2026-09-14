@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import tomllib
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -52,6 +53,14 @@ MAX_FILES = 100_000
 # the whole thing while keeping a pathological tree from dominating the scan's
 # 15-minute budget (`04` §9).
 HASH_PREFIX_BYTES = LARGE_FILE_BYTES
+
+# `package.json` and `pyproject.toml` are parsed whole, so unlike every other
+# file here their size becomes resident memory. Both are attacker-controlled and
+# `source.py`'s archive caps permit a single member far larger than this, so the
+# read is bounded and an oversized manifest degrades to "nothing declared" —
+# truncating it instead would hand the parser a guaranteed-invalid document and
+# reach the same place by a route that looks like a parse bug.
+MANIFEST_MAX_BYTES = 1024 * 1024
 
 
 class Language(StrEnum):
@@ -262,6 +271,23 @@ def _sha256_of(path: Path, limit: int | None) -> tuple[str, int]:
     return digest.hexdigest(), read
 
 
+def _read_manifest(path: Path) -> str:
+    """Read a manifest file, bounded by `MANIFEST_MAX_BYTES`.
+
+    Returns "" for an oversized or unreadable file, which the callers' parse
+    step turns into "nothing declared" — the same degradation a malformed
+    manifest gets.
+    """
+    try:
+        with path.open("rb") as fh:
+            raw = fh.read(MANIFEST_MAX_BYTES + 1)
+    except OSError:
+        return ""
+    if len(raw) > MANIFEST_MAX_BYTES:
+        return ""
+    return raw.decode("utf-8", "replace")
+
+
 def _entry_points(root: Path) -> tuple[str, ...]:
     """Declared executables: `package.json` bin, `pyproject.toml` scripts.
 
@@ -276,7 +302,7 @@ def _entry_points(root: Path) -> tuple[str, ...]:
     pkg = root / "package.json"
     if pkg.is_file() and not pkg.is_symlink():
         try:
-            data = json.loads(pkg.read_text(encoding="utf-8", errors="replace"))
+            data = json.loads(_read_manifest(pkg))
         except (ValueError, OSError):
             data = {}
         if isinstance(data, dict):
@@ -292,7 +318,7 @@ def _entry_points(root: Path) -> tuple[str, ...]:
     pyproject = root / "pyproject.toml"
     if pyproject.is_file() and not pyproject.is_symlink():
         try:
-            data = tomllib.loads(pyproject.read_text(encoding="utf-8", errors="replace"))
+            data = tomllib.loads(_read_manifest(pyproject))
         except (tomllib.TOMLDecodeError, OSError):
             data = {}
         scripts = data.get("project", {}).get("scripts", {}) if isinstance(data, dict) else {}
@@ -321,45 +347,89 @@ def enumerate_tree(root: Path) -> Inventory:
     def skip(reason: str) -> None:
         skipped[reason] = skipped.get(reason, 0) + 1
 
-    for path in sorted(root.rglob("*")):
-        if len(records) >= MAX_FILES:
-            truncated = True
+    # ⚠ `os.walk`, not `rglob`, and both halves of that are load-bearing.
+    #
+    # STREAMING: `sorted(root.rglob("*"))` materialises the ENTIRE tree before
+    # the first `MAX_FILES` check can run, so the cap bounded the record list
+    # and not the peak memory it exists to bound. A repository is not an
+    # archive — `source.py`'s member-count cap does not cover the git path, so
+    # nothing upstream bounds a clone's file count. Same shape as the eager
+    # `getmembers()` the Codex leg found in `source.py` at v0.7.2; the guard was
+    # written in one walk and omitted from the neighbouring one.
+    #
+    # EXPLICIT SYMLINK REFUSAL: `followlinks=False` is a documented stdlib
+    # contract, where `rglob`'s non-descent into symlinked directories is
+    # interpreter behaviour this box cannot test — the venv here is 3.14 and CI
+    # runs 3.12, which is exactly the split the `filter="data"` note in
+    # `source.py` records. A tree containing a symlink to `/` would have the
+    # walk enumerate the host. Depending on a contract beats depending on a
+    # version whose behaviour we can assert but not measure.
+    #
+    # Pruning `dirnames` in place is the third win: an excluded `node_modules`
+    # now costs nothing instead of being walked in full and then discarded.
+    truncated_early = False
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        if truncated_early:
             break
+        here = Path(dirpath)
 
-        rel = path.relative_to(root)
-        if any(part in EXCLUDED_DIRS for part in rel.parts):
-            continue  # not "skipped" — excluded by policy, not by failure
-        if path.is_symlink():
-            skip("symlink")
-            continue
-        if path.is_dir():
-            continue
-        if not path.is_file():
-            # FIFOs, sockets, devices. `is_file()` is False for all of them, and
-            # opening one can block the worker indefinitely.
-            skip("not a regular file")
-            continue
+        keep: list[str] = []
+        for name in sorted(dirnames):
+            if name in EXCLUDED_DIRS:
+                continue  # not "skipped" — excluded by policy, not by failure
+            if (here / name).is_symlink():
+                skip("symlink")
+                continue
+            keep.append(name)
+        dirnames[:] = keep
 
-        try:
-            size = path.stat().st_size
-            oversized = size > LARGE_FILE_BYTES
-            language = _language_of(path)
-            digest, _ = _sha256_of(path, HASH_PREFIX_BYTES if oversized else None)
-        except OSError:
-            skip("unreadable")
-            continue
+        for name in sorted(filenames):
+            if len(records) >= MAX_FILES:
+                truncated = True
+                truncated_early = True
+                break
 
-        total += size
-        records.append(
-            FileRecord(
-                path=rel.as_posix(),
-                language=language,
-                role=_role_of(rel, language),
-                size_bytes=size,
-                sha256=digest,
-                oversized=oversized,
+            path = here / name
+            rel = path.relative_to(root)
+            if any(part in EXCLUDED_DIRS for part in rel.parts):
+                continue
+            if path.is_symlink():
+                skip("symlink")
+                continue
+            if not path.is_file():
+                # FIFOs, sockets, devices. `is_file()` is False for all of them,
+                # and opening one can block the worker indefinitely.
+                skip("not a regular file")
+                continue
+
+            try:
+                size = path.stat().st_size
+                oversized = size > LARGE_FILE_BYTES
+                language = _language_of(path)
+                digest, _ = _sha256_of(path, HASH_PREFIX_BYTES if oversized else None)
+            except OSError:
+                skip("unreadable")
+                continue
+
+            total += size
+            records.append(
+                FileRecord(
+                    path=rel.as_posix(),
+                    language=language,
+                    role=_role_of(rel, language),
+                    size_bytes=size,
+                    sha256=digest,
+                    oversized=oversized,
+                )
             )
-        )
+
+    # Sort by path COMPONENTS, which is how the previous `sorted(rglob(...))`
+    # ordered records — a plain string sort differs, because "/" (0x2f) sorts
+    # after "." (0x2e) and so puts `a.py` before `a/b.py` where the component
+    # comparison puts `a/b.py` first. Sorting after the walk rather than during
+    # it keeps the ordering while leaving the traversal streaming; the list is
+    # bounded by MAX_FILES, so this sort is too.
+    records.sort(key=lambda r: r.path.split("/"))
 
     manifest = next((f for f in records if f.role is Role.MCP_MANIFEST), None)
     return Inventory(
