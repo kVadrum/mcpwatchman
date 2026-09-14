@@ -465,3 +465,112 @@ def test_an_excluded_directory_cannot_be_the_scan_root(d):
     scannable source — the exclusion defeating itself."""
     with pytest.raises(FetchError, match="excluded directory"):
         SourceSpec.parse(f"github:acme/repo@1.0.0#{d}")
+
+
+# --- Codex leg, second pass (2026-09-14) ---------------------------------
+
+
+def test_a_missing_binary_surfaces_as_FetchError(monkeypatch, tmp_path):
+    """⚠ The shipped worker image had no git at all (`python:3.12-slim` + pip),
+    so every git-sourced scan died on `FileNotFoundError` — which escaped past
+    every FetchError handler as a traceback rather than a scan result."""
+    from mcpwatchman.workers.scanner import source as S
+
+    def missing(*a, **kw):
+        raise FileNotFoundError(2, "No such file or directory", "git")
+
+    monkeypatch.setattr(S.subprocess, "run", missing)
+    with pytest.raises(FetchError, match="not installed in this image"):
+        S._run(["git", "--version"])
+
+
+def test_the_worker_image_provides_git():
+    """A contract between this module and `docker/Dockerfile`: the code shells
+    out to git, so the image must install it. Nothing else links the two, and
+    the failure only appears in a built container."""
+    import pathlib
+
+    dockerfile = pathlib.Path(__file__).resolve().parents[1] / "docker/Dockerfile"
+    if not dockerfile.is_file():
+        pytest.skip("no Dockerfile in this checkout")
+    assert "git" in dockerfile.read_text()
+
+
+def test_tar_member_limit_fires_during_the_walk_not_after(tmp_path):
+    """`getmembers()` builds a TarInfo for EVERY entry before any limit is
+    consulted, so millions of zero-length headers — which compress to almost
+    nothing — exhaust memory before the cap can fire. The guard has to run
+    during the walk."""
+    payload = tmp_path / "many.tar"
+    with tarfile.open(payload, "w") as tf:
+        for i in range(MAX_MEMBERS + 5):
+            info = tarfile.TarInfo(f"f{i}")
+            info.size = 0
+            tf.addfile(info)
+    with pytest.raises(FetchError, match="members"):
+        _safe_extract(payload, tmp_path / "out", _spec())
+
+
+@pytest.mark.parametrize(
+    "sub", ["apps/server/dist", "a/node_modules/x", "pkg/.git/objects", "x/vendor"]
+)
+def test_an_excluded_directory_is_rejected_at_ANY_depth(sub):
+    """Only the first component was checked. `_is_excluded` later sees paths
+    relative to the chosen root, so a root inside `dist` makes the excluded
+    component vanish and those files read as scannable source."""
+    with pytest.raises(FetchError, match="excluded directory"):
+        SourceSpec.parse(f"github:a/b@1.0.0#{sub}")
+
+
+def test_a_branch_named_like_the_version_is_not_reported_as_a_tag(monkeypatch, tmp_path):
+    """⚠ `git clone --branch` accepts a TAG OR A BRANCH, so a successful clone is
+    not evidence of a release. A repo with a moving branch called `1.2.3` would
+    otherwise be reported `ref_matched_version=True` and its branch tip scored as
+    tagged source. A tag detaches HEAD; a branch does not."""
+    from mcpwatchman.workers.scanner import source as S
+
+    calls: list[list[str]] = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        # symbolic-ref SUCCEEDS => HEAD is on a branch => not a tag.
+        if "symbolic-ref" in cmd:
+            return None
+        return None
+
+    monkeypatch.setattr(S, "_run", fake_run)
+    monkeypatch.setattr(S, "_measure_all", lambda p: 0)
+    S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
+    assert S._GIT_REF_USED[tmp_path] is None  # fell back, correctly
+
+
+def test_a_real_tag_detaches_head_and_IS_reported(monkeypatch, tmp_path):
+    """Positive control for the check above — otherwise rejecting every ref
+    would pass it while breaking the feature."""
+    from mcpwatchman.workers.scanner import source as S
+
+    def fake_run(cmd, **kw):
+        if "symbolic-ref" in cmd:
+            raise FetchError("detached")  # a tag
+        return None
+
+    monkeypatch.setattr(S, "_run", fake_run)
+    monkeypatch.setattr(S, "_measure_all", lambda p: 0)
+    S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
+    assert S._GIT_REF_USED[tmp_path] == "1.2.3"
+
+
+def test_an_oversized_checkout_is_refused(monkeypatch, tmp_path):
+    """A clone was the one fetch path with no ceiling — the archive caps applied
+    to archives only, and `_tree_size` merely measured afterwards."""
+    from mcpwatchman.workers.scanner import source as S
+
+    def fake_run(cmd, **kw):
+        if "symbolic-ref" in cmd:
+            raise FetchError("detached")
+        return None
+
+    monkeypatch.setattr(S, "_run", fake_run)
+    monkeypatch.setattr(S, "_measure_all", lambda p: S.MAX_UNPACKED_BYTES + 1)
+    with pytest.raises(FetchError, match="over the"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)

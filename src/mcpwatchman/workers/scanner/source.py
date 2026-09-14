@@ -103,7 +103,10 @@ class SourceSpec:
             # `_is_excluded` tests paths RELATIVE to the chosen root, so with
             # `#.git` the `.git` component is no longer in any relative path and
             # git metadata reports as scannable source.
-            if field == "subfolder" and parts and parts[0] in EXCLUDED_DIRS:
+            # ANY component, not just the first: `apps/server/dist` puts the
+            # scan root inside `dist`, and `_is_excluded` then sees paths
+            # relative to that root with the excluded component already gone.
+            if field == "subfolder" and any(p in EXCLUDED_DIRS for p in parts):
                 raise FetchError(
                     f"subfolder {value!r} names an excluded directory: {spec!r}"
                 )
@@ -144,6 +147,11 @@ def _run(cmd: list[str], cwd: Path | None = None, timeout: int = FETCH_TIMEOUT_S
         )
     except subprocess.TimeoutExpired as exc:
         raise FetchError(f"timed out after {timeout}s: {' '.join(cmd[:3])}") from exc
+    except FileNotFoundError as exc:
+        # The binary is absent from the image. Previously this escaped as a raw
+        # FileNotFoundError past every FetchError handler, so a worker built
+        # without git failed each job with a traceback rather than a scan result.
+        raise FetchError(f"{cmd[0]} is not installed in this image") from exc
     if proc.returncode != 0:
         tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-1:] or [""]
         raise FetchError(f"{cmd[0]} failed (rc={proc.returncode}): {tail[0][:200]}")
@@ -273,9 +281,21 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
             zf.extractall(dest)  # noqa: S202 - members validated immediately above
     else:
         with tarfile.open(archive) as tf:
-            members = tf.getmembers()
-            _guard_members((m.name for m in members), spec)
-            _guard_declared_size((m.size for m in members), spec)
+            # Iterate LAZILY and bail on the first breach. `getmembers()` builds
+            # a TarInfo for every entry before any limit is consulted, so an
+            # archive of millions of zero-length headers — which compresses to
+            # almost nothing — exhausts memory before the member cap can fire.
+            # The guard has to run DURING the walk, not after it.
+            declared = 0
+            for count, member in enumerate(tf, 1):
+                if count > MAX_MEMBERS:
+                    raise FetchError(f"archive exceeds {MAX_MEMBERS} members: {spec}")
+                declared += member.size
+                if declared > MAX_UNPACKED_BYTES:
+                    raise FetchError(
+                        f"archive declares {declared}+ bytes, over the "
+                        f"{MAX_UNPACKED_BYTES} cap: {spec}"
+                    )
             tf.extractall(dest, filter="data")
 
     # Second gate: the declared sizes above are attacker-controlled and may lie
@@ -319,6 +339,20 @@ def _confine(candidate: Path, root: Path) -> Path:
     return resolved
 
 
+def _head_is_detached(repo: Path) -> bool:
+    """True when HEAD points at a commit rather than a branch — i.e. a tag.
+
+    `git symbolic-ref HEAD` resolves for a branch checkout and fails for a
+    detached one, which is exactly the tag-vs-branch discriminator `--branch`
+    itself does not give us.
+    """
+    try:
+        _run(["git", "symbolic-ref", "-q", "HEAD"], cwd=repo, timeout=30)
+    except FetchError:
+        return True
+    return False
+
+
 def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     """Shallow, optionally sparse clone (`04` §2).
 
@@ -353,10 +387,18 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     for candidate in (spec.version, f"v{spec.version}"):
         try:
             _run([*base, "--branch", candidate, "--", url, str(dest)])
-            resolved_ref = candidate
-            break
         except FetchError:
             shutil.rmtree(dest, ignore_errors=True)
+            continue
+        # ⚠ `--branch` accepts a TAG OR A BRANCH, so a successful clone does not
+        # mean a release was found: a repository with a moving branch named
+        # `1.2.3` would otherwise be reported as tagged-release source. A tag
+        # produces a DETACHED head, a branch does not — so `symbolic-ref HEAD`
+        # succeeding means we got a branch, and the version is unmatched.
+        if _head_is_detached(dest):
+            resolved_ref = candidate
+            break
+        shutil.rmtree(dest, ignore_errors=True)
     if resolved_ref is None:
         _run([*base, "--", url, str(dest)])
 
@@ -368,6 +410,19 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     # Reclaim packfile space immediately; a job's 5 GB scratch is shared with
     # semgrep's own working set.
     _run(["git", "gc", "--prune=now", "--quiet"], cwd=dest, timeout=60)
+
+    # A clone was the one fetch path with NO size ceiling: `MAX_UNPACKED_BYTES`
+    # and `MAX_MEMBERS` were applied to archives only, and `_tree_size` merely
+    # measured afterwards. A listed repository with a huge working tree could
+    # therefore consume the whole scratch budget (`04` §9 allows 5 GB per job).
+    # Enforced after the fact rather than before, because git offers no
+    # pre-flight size for a tree — so this bounds the NEXT step rather than this
+    # one, and says so instead of implying a guarantee it cannot give.
+    cloned = _measure_all(dest)
+    if cloned > MAX_UNPACKED_BYTES:
+        raise FetchError(
+            f"checkout is {cloned} bytes, over the {MAX_UNPACKED_BYTES} cap: {spec}"
+        )
     _GIT_REF_USED[dest] = resolved_ref
     return _confine(dest / spec.subfolder, dest) if spec.subfolder else dest
 
