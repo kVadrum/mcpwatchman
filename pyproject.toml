@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.4.0"
+version = "0.4.1"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -77,3 +77,13 @@ select = ["E", "F", "I", "UP", "B", "SIM", "S"]
 
 [tool.pytest.ini_options]
 testpaths = ["src", "tests"]
+# Put the repo root on sys.path so `tests` is importable as a package and test
+# modules can share helpers.
+#
+# The real reason this line exists is that WITHOUT it the suite's result depends
+# on how it was invoked: `python -m pytest` puts the cwd on sys.path and passes,
+# bare `pytest` does not and fails at collection. CI runs the bare form. That is
+# a local green that cannot predict CI, which is worse than a red — it is a
+# verification that reports success without having tested what CI tests.
+# Pinning it here makes the two invocations identical.
+pythonpath = ["."]
