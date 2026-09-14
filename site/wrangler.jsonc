@@ -1,8 +1,8 @@
 {
-  // ⚠ NOT THE ACTIVE DEPLOY PATH. This site deploys via Cloudflare PAGES
-  // (operator decision, 2026-09-14). This config is kept as a working fallback
-  // should the project ever move to Workers — validated with `wrangler deploy
-  // --dry-run`, which reads 22 files from dist. Nothing reads it today.
+  // THE ACTIVE DEPLOY PATH (operator decision, 2026-09-14). Cloudflare's own
+  // Pages overview says "Start new projects with Workers" and the dashboard
+  // labels Pages Legacy; `10-operations.md` §2.2 carries the decision and the
+  // reversal that preceded it.
   //
   // Static-only Worker: no `main`, so there is no Worker script and every
   // response is served straight from the asset store. That is deliberate —
