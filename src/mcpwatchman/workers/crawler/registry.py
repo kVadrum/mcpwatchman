@@ -46,11 +46,24 @@ OFFICIAL_META_KEY = "io.modelcontextprotocol.registry/official"
 # only place it shows up is in someone else's access log.
 USER_AGENT = f"mcpwatchman/{__version__} (+https://github.com/kVadrum/mcpwatchman)"
 
-# Seconds between page requests. NOT a politeness default — a measured one.
+# Seconds between page requests. A measured FLOOR, not an established
+# sustainable rate — the distinction is load-bearing, so read the whole note.
 #
-# Measured 2026-09-14 against the live registry: four pages at ~0.1s apart
-# return in 0.1-0.3s each, and the fifth HANGS until the client timeout. Eight
-# consecutive pages at 1.0s apart returned clean with a 1.9s worst case.
+# Measured 2026-09-14 against the live registry:
+#   - Four pages at ~0.1s apart return in 0.1-0.3s each; the fifth HANGS until
+#     the client timeout. So sub-second pacing is definitely wrong.
+#   - Eight consecutive pages at 1.0s apart returned clean, 1.9s worst case.
+#   - **But a sustained crawl at that same 1.0s pacing, later the same session,
+#     hit repeated slow pages (9.4s, 12.9s).** Eight pages was too short a probe
+#     to see it: the limiter appears to have a longer window that a short burst
+#     does not exhaust, and by then the session had spent it.
+#
+# So 1.0 fixes the obvious failure and is not known to be sustainable for a
+# whole-registry crawl. **The sustainable rate, the limiter's window, and the
+# registry's total page count are all UNMEASURED** — establishing them needs a
+# clean window, not another probe appended to a session that has been hammering
+# the API. Do not raise this number on the strength of a short green run; that
+# is precisely the measurement that already misled once, here, in this comment.
 #
 # The failure mode is the dangerous part and the reason this is a constant
 # rather than a caller's problem: the throttle does not answer 429, it stops
@@ -419,6 +432,13 @@ def diff_entries(
     Takes hashes rather than entries so the caller can diff against a stored
     projection without rehydrating a whole snapshot.
 
+    **`current` MUST be a complete manifest.** This function infers removal from
+    absence, so handing it the result of an `updated_since` query — which returns
+    only what changed — marks every untouched server as removed. Use
+    `diff_incremental` for that. The two are separated precisely because the
+    mistake is invisible: both inputs are a list of entries, and the wrong one
+    produces a confident, catastrophic answer rather than an error.
+
     **An empty `previous` yields everything as added, which is correct for a
     first run and catastrophic as a failure mode.** A caller that silently
     substitutes `{}` for a failed snapshot read enqueues the entire registry.
@@ -441,6 +461,45 @@ def diff_entries(
         updated=tuple(updated),
         unchanged=tuple(unchanged),
         removed=removed,
+    )
+
+
+def diff_incremental(
+    previous: Mapping[str, str],
+    changed: Sequence[RegistryEntry],
+) -> ManifestDiff:
+    """Diff the result of an `updated_since` query (a changelog, not a manifest).
+
+    Two rules, both the opposite of `diff_entries`:
+
+    1. **Absence means unchanged, never removed.** An incremental response only
+       contains what moved, so nothing may be inferred about servers it omits.
+       `removed` here is derived from entries the registry explicitly marks
+       non-active — which is why it forces `include_deleted` on for these
+       queries.
+    2. **`unchanged` is always empty**, because this response cannot tell us
+       about unchanged servers. Reporting 0 rather than a count we did not
+       measure keeps "we did not look" from rendering as "we looked and found
+       none" (`base.md` § *Signal design*).
+    """
+    added, updated, removed = [], [], []
+    for entry in changed:
+        if entry.status != "active":
+            removed.append(entry.key)
+            continue
+        prior = previous.get(entry.key)
+        if prior is None:
+            added.append(entry)
+        elif prior != entry.content_hash:
+            updated.append(entry)
+        # An active entry whose hash matches is a no-op: the registry considered
+        # it updated, but nothing we score changed (see `parse_entry` on why
+        # `_meta` is excluded from the hash).
+    return ManifestDiff(
+        added=tuple(added),
+        updated=tuple(updated),
+        unchanged=(),
+        removed=tuple(sorted(removed)),
     )
 
 
@@ -502,6 +561,8 @@ def fetch_all(
     base_url: str = REGISTRY_BASE_URL,
     client: Any = None,
     limit: int = PAGE_LIMIT,
+    latest_only: bool = True,
+    updated_since: str | None = None,
     max_pages: int = 1000,
     attempts: int = 3,
     backoff: float = 1.0,
@@ -524,6 +585,21 @@ def fetch_all(
     `pause` defaults to `DEFAULT_PAUSE` because the registry throttles by
     timing out rather than by answering 429 — see that constant. Setting it to 0
     is a way to make a healthy registry look unreachable.
+
+    `latest_only` sends `version=latest`, so the registry returns one entry per
+    server instead of one per published version. On by default: the manifest we
+    diff is a list of *servers*, and pulling every historical version to throw
+    all but one away multiplies the page count — which, against a limiter that
+    penalises sustained crawling, is the difference between a poll that finishes
+    and one that degrades.
+
+    `updated_since` (RFC3339) asks for only what changed since a prior poll.
+    **It changes the meaning of the result, and therefore which diff you may
+    use.** The response is no longer a manifest — it is a changelog, and absence
+    from it means "unchanged", not "gone". Feed it to `diff_incremental`, never
+    to `diff_entries`, which would read every untouched server as removed. The
+    registry also forces `include_deleted` on for these queries, which is what
+    makes deletions visible at all.
     """
     import httpx
 
@@ -541,6 +617,10 @@ def fetch_all(
     try:
         for _ in range(max_pages):
             params: dict[str, Any] = {"limit": limit}
+            if latest_only:
+                params["version"] = "latest"
+            if updated_since:
+                params["updated_since"] = updated_since
             if cursor:
                 params["cursor"] = cursor
             payload = _get_json(

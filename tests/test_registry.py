@@ -18,6 +18,7 @@ from mcpwatchman.workers.crawler.registry import (
     coverage_report,
     current_entries,
     diff_entries,
+    diff_incremental,
     fetch_all,
     hashes_of,
     manifest_hash,
@@ -313,6 +314,18 @@ class _FakeResponse:
         return self._payload
 
 
+class _RecordingClient:
+    """Captures the query params each call was made with."""
+
+    def __init__(self, pages):
+        self._pages = list(pages)
+        self.params = []
+
+    def get(self, url, params=None):
+        self.params.append(dict(params or {}))
+        return _FakeResponse(self._pages.pop(0))
+
+
 class _FakeClient:
     def __init__(self, pages):
         self._pages = list(pages)
@@ -365,3 +378,65 @@ def test_default_pause_is_nonzero():
     from mcpwatchman.workers.crawler.registry import DEFAULT_PAUSE
 
     assert DEFAULT_PAUSE >= 1.0
+
+
+# --- incremental polling --------------------------------------------------
+
+
+def test_fetch_all_requests_latest_only_by_default():
+    """One entry per server, not per version — the page count is what the
+    registry's limiter punishes."""
+    client = _RecordingClient([{"servers": [], "metadata": {}}])
+    fetch_all(client=client, pause=0)
+    assert client.params[0]["version"] == "latest"
+
+
+def test_fetch_all_can_ask_for_every_version():
+    client = _RecordingClient([{"servers": [], "metadata": {}}])
+    fetch_all(client=client, pause=0, latest_only=False)
+    assert "version" not in client.params[0]
+
+
+def test_updated_since_is_passed_through():
+    client = _RecordingClient([{"servers": [], "metadata": {}}])
+    fetch_all(client=client, pause=0, updated_since="2026-09-13T00:00:00Z")
+    assert client.params[0]["updated_since"] == "2026-09-13T00:00:00Z"
+
+
+def test_incremental_diff_never_infers_removal_from_absence():
+    """THE footgun this function exists to prevent: an incremental response
+    omits unchanged servers, so `diff_entries` would delist the whole registry."""
+    previous = {"a/x@1.0.0": "h1", "b/y@1.0.0": "h2", "c/z@1.0.0": "h3"}
+    changed = [parse_entry(make_raw(name="b/y", description="new"))]
+    d = diff_incremental(previous, changed)
+    assert d.removed == ()
+    assert [e.name for e in d.updated] == ["b/y"]
+
+
+def test_full_diff_does_infer_removal_from_absence():
+    """The contrast that makes the pair worth having — same inputs, opposite
+    and correct answer, because a full manifest means absence is real."""
+    previous = {"a/x@1.0.0": "h1", "b/y@1.0.0": "h2"}
+    current = [parse_entry(make_raw(name="b/y", description="new"))]
+    d = diff_entries(previous, current)
+    assert d.removed == ("a/x@1.0.0",)
+
+
+def test_incremental_removal_comes_from_an_explicit_status():
+    previous = {"a/x@1.0.0": "h1"}
+    changed = [parse_entry(make_raw(name="a/x", status="deleted"))]
+    d = diff_incremental(previous, changed)
+    assert d.removed == ("a/x@1.0.0",) and d.added == () and d.updated == ()
+
+
+def test_incremental_reports_no_unchanged_rather_than_a_number_it_cannot_know():
+    """0 here means "not measured". A count would be a claim we never made."""
+    changed = [parse_entry(make_raw(name="a/x"))]
+    assert diff_incremental({"a/x@1.0.0": "h"}, changed).unchanged == ()
+
+
+def test_incremental_ignores_an_entry_the_registry_touched_but_did_not_change():
+    """`_meta` churn marks a server updated without changing what we score."""
+    e = parse_entry(make_raw(name="a/x"))
+    d = diff_incremental({e.key: e.content_hash}, [e])
+    assert d.added == () and d.updated == () and d.is_empty
