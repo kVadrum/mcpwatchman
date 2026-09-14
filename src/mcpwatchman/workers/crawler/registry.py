@@ -119,6 +119,32 @@ _REPO_HOST_TO_KIND: dict[str, SourceKind] = {
 }
 
 
+def _safe_subpath(raw: str | None) -> str | None:
+    """A monorepo subdirectory, or None if it is not one we will follow.
+
+    **This is a security boundary, not tidying.** `subfolder` is attacker
+    controlled — it comes from a public registry, either as a declared field or
+    parsed out of a `/tree/<ref>/...` URL — and the scanner joins it onto its
+    workspace path. `../../../etc` resolves clean out of the workspace, which
+    would point the file walk and the semgrep run at the host filesystem
+    instead of the repository.
+
+    Rejected: absolute paths, any `..` component, and a leading `-` (which git
+    would parse as a flag rather than a path). Returning None degrades to
+    scanning the repository root, which is wrong-but-safe; the alternative is
+    wrong-and-exploitable.
+    """
+    if not raw:
+        return None
+    cleaned = raw.strip("/")
+    if not cleaned:
+        return None
+    parts = [p for p in cleaned.split("/") if p and p != "."]
+    if not parts or any(p == ".." for p in parts) or parts[0].startswith("-"):
+        return None
+    return "/".join(parts)
+
+
 @dataclass(frozen=True, slots=True)
 class Package:
     """A published artifact the server is distributed as."""
@@ -194,17 +220,17 @@ class Repository:
         holds dozens of servers in subdirectories.
         """
         if self.subfolder:
-            return self.subfolder.strip("/") or None
+            return _safe_subpath(self.subfolder)
         path = urlparse(self.url).path
         if self.kind is SourceKind.GITLAB and "/-/" in path:
             # GitLab: <project path>/-/tree/<ref>/<subdir>
             tail = [p for p in path.split("/-/", 1)[1].split("/") if p]
             if len(tail) > 2 and tail[0] in ("tree", "blob"):
-                return "/".join(tail[2:]) or None
+                return _safe_subpath("/".join(tail[2:]))
             return None
         parts = [p for p in path.split("/") if p]
         if len(parts) > 3 and parts[2] in ("tree", "blob"):
-            return "/".join(parts[4:]) or None
+            return _safe_subpath("/".join(parts[4:]))
         return None
 
 

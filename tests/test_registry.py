@@ -500,3 +500,19 @@ def test_gitlab_subgroups_survive_slug_extraction(url, slug):
 def test_gitlab_deep_link_subfolder_uses_the_dash_separator():
     repo = Repository(url="https://gitlab.com/acme/platform/servers/-/tree/main/src/fetch")
     assert repo.path_subfolder == "src/fetch"
+
+
+def test_crawler_never_emits_a_traversing_subfolder():
+    """The scanner joins this onto its workspace path. Emitting `../../../etc`
+    would point the file walk at the host filesystem — so it is rejected at the
+    source, and re-rejected in the scanner (defence in depth, not redundancy)."""
+    for url in (
+        "https://github.com/acme/repo/tree/main/../../../etc",
+        "https://gitlab.com/acme/repo/-/tree/main/../../etc",
+    ):
+        assert Repository(url=url).path_subfolder is None
+    assert Repository(url="https://github.com/a/b", subfolder="../../etc").path_subfolder is None
+    assert Repository(url="https://github.com/a/b", subfolder="-x").path_subfolder is None
+    # positive control
+    ok = Repository(url="https://github.com/a/b", subfolder="src/fetch")
+    assert ok.path_subfolder == "src/fetch"

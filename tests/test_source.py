@@ -309,3 +309,78 @@ def test_vendored_directories_are_excluded(d):
     """`04` §3 — vendored trees are not the subject of the scan."""
 
     assert d in EXCLUDED_DIRS
+
+
+# --- traversal and argument injection (QA pass, 2026-09-14) --------------
+#
+# Every value here originates in a PUBLIC REGISTRY, so an attacker controls it
+# by publishing a server entry. The archive path was guarded from the start;
+# these tests exist because the GIT path was not, and the same traversal class
+# arrived through a different door.
+
+
+@pytest.mark.parametrize(
+    "sub",
+    ["../../../etc", "a/../../../../etc", "..", "../.ssh", "/etc/passwd", "-x", "--help"],
+)
+def test_traversing_or_flaglike_subfolder_is_refused_at_parse(sub):
+    """`scan_root` is what the file walk and semgrep are pointed at. A subfolder
+    that escapes aims the entire scanner at the host filesystem."""
+    with pytest.raises(FetchError):
+        SourceSpec.parse(f"github:acme/repo@1.0.0#{sub}")
+
+
+@pytest.mark.parametrize("ident", ["../../../etc", "acme/../../../etc", "-e"])
+def test_traversing_or_flaglike_identifier_is_refused(ident):
+    with pytest.raises(FetchError):
+        SourceSpec.parse(f"github:{ident}@1.0.0")
+
+
+def test_flaglike_version_is_refused():
+    """The version reaches `git clone --branch <value>`."""
+    with pytest.raises(FetchError):
+        SourceSpec.parse("github:acme/repo@--upload-pack=x")
+
+
+def test_a_legitimate_subfolder_still_parses():
+    """Positive control — the guards above would 'pass' vacuously if the parser
+    simply rejected everything."""
+    spec = SourceSpec.parse("github:mcp/servers@1.0.0#src/fetch")
+    assert spec.subfolder == "src/fetch"
+
+
+def test_confine_rejects_a_scan_root_outside_the_workspace(tmp_path):
+    """Last line of defence, and the only one that survives a bug in the two
+    validations upstream."""
+    from mcpwatchman.workers.scanner.source import _confine
+
+    root = tmp_path / "ws"
+    root.mkdir()
+    assert _confine(root / "sub", root) or True  # inside is fine (may not exist)
+    with pytest.raises(FetchError, match="escapes the workspace"):
+        _confine(root / ".." / ".." / "etc", root)
+
+
+def test_confine_follows_symlinks_before_judging(tmp_path):
+    """A symlink INSIDE the fetched tree can redirect a path that looks
+    confined — the tree is attacker-controlled, so the check must resolve."""
+    from mcpwatchman.workers.scanner.source import _confine
+
+    root = tmp_path / "ws"
+    root.mkdir()
+    (root / "evil").symlink_to("/etc")
+    with pytest.raises(FetchError, match="escapes the workspace"):
+        _confine(root / "evil", root)
+
+
+def test_git_commands_terminate_options_before_positionals(monkeypatch, tmp_path):
+    """Without `--`, a URL or path beginning with `-` is parsed as a flag."""
+    from mcpwatchman.workers.scanner import source as S
+
+    seen: list[list[str]] = []
+    monkeypatch.setattr(S, "_run", lambda cmd, **kw: seen.append(cmd))
+    S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.0.0", "src/x"), tmp_path)
+    clone = seen[0]
+    assert "--" in clone and clone.index("--") < clone.index(str(tmp_path))
+    sparse = next(c for c in seen if "sparse-checkout" in c)
+    assert sparse[-2] == "--" and sparse[-1] == "src/x"

@@ -85,6 +85,22 @@ class SourceSpec:
             kind = SourceKind(kind_str)
         except ValueError as exc:
             raise FetchError(f"unknown source kind {kind_str!r} in {spec!r}") from exc
+
+        # Re-validate rather than trust the emitter. The crawler already rejects
+        # a traversing subfolder, but this module joins these values onto a
+        # filesystem path and passes them to git, and a second reader of the
+        # same untrusted string is cheap. The crawler is not a trust boundary —
+        # it reads the same public registry this is defending against.
+        for field, value in (("identifier", identifier), ("subfolder", subfolder)):
+            if not value:
+                continue
+            parts = [p for p in value.split("/") if p]
+            if any(p == ".." for p in parts) or value.startswith(("-", "/")):
+                raise FetchError(
+                    f"{field} {value!r} traverses or looks like a flag: {spec!r}"
+                )
+        if version.startswith("-"):
+            raise FetchError(f"version {version!r} looks like a flag: {spec!r}")
         return cls(kind, identifier, version, subfolder or None)
 
 
@@ -221,6 +237,22 @@ def _single_wrapper_dir(root: Path) -> Path:
     return root
 
 
+def _confine(candidate: Path, root: Path) -> Path:
+    """Assert a path stays inside the workspace, after symlink resolution.
+
+    The LAST line of defence, and the only one that survives a bug in the two
+    validations upstream. `scan_root` is what the file walk and the semgrep run
+    are pointed at, so a value that escapes here aims the whole scanner at the
+    host filesystem. Resolves first because a symlink inside the fetched tree
+    can redirect a path that looks confined.
+    """
+    resolved = candidate.resolve()
+    root_resolved = root.resolve()
+    if resolved != root_resolved and root_resolved not in resolved.parents:
+        raise FetchError(f"scan root {resolved} escapes the workspace {root_resolved}")
+    return resolved
+
+
 def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     """Shallow, optionally sparse clone (`04` §2).
 
@@ -248,24 +280,30 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     if spec.subfolder:
         base += ["--filter=blob:none", "--sparse"]
 
+    # `--` before the positional arguments: without it a URL or path beginning
+    # with `-` is parsed as a flag. `SourceSpec.parse` already rejects those, so
+    # this is the second layer — and it costs nothing.
     resolved_ref: str | None = None
     for candidate in (spec.version, f"v{spec.version}"):
         try:
-            _run([*base, "--branch", candidate, url, str(dest)])
+            _run([*base, "--branch", candidate, "--", url, str(dest)])
             resolved_ref = candidate
             break
         except FetchError:
             shutil.rmtree(dest, ignore_errors=True)
     if resolved_ref is None:
-        _run([*base, url, str(dest)])
+        _run([*base, "--", url, str(dest)])
 
     if spec.subfolder:
-        _run(["git", "sparse-checkout", "set", "--no-cone", spec.subfolder], cwd=dest)
+        _run(
+            ["git", "sparse-checkout", "set", "--no-cone", "--", spec.subfolder],
+            cwd=dest,
+        )
     # Reclaim packfile space immediately; a job's 5 GB scratch is shared with
     # semgrep's own working set.
     _run(["git", "gc", "--prune=now", "--quiet"], cwd=dest, timeout=60)
     _GIT_REF_USED[dest] = resolved_ref
-    return dest / spec.subfolder if spec.subfolder else dest
+    return _confine(dest / spec.subfolder, dest) if spec.subfolder else dest
 
 
 def _download(url: str, dest: Path, timeout: int = FETCH_TIMEOUT_S) -> Path:
