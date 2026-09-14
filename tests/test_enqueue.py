@@ -166,3 +166,37 @@ def test_a_partial_enqueue_is_reported_rather_than_swallowed():
 
 def test_empty_plan_enqueues_nothing():
     assert enqueue_plan(PollPlan(), lambda job: pytest.fail("should not enqueue")) == (0, 0)
+
+
+# --- Codex review, 2026-09-14 ---------------------------------------------
+
+
+def test_a_poll_that_only_found_unscannable_servers_is_not_quiet():
+    """Five new remote-only servers is work, not silence: each is owed a page
+    saying why it was not analysed. A caller short-circuiting on `is_empty`
+    would otherwise drop the reasons, and the server renders as an absent score
+    instead of an explained one."""
+    plan = plan_from_diff(ManifestDiff(added=(entry(name="r/emote", remotes=REMOTE),)))
+    assert plan.jobs == () and plan.removed == ()
+    assert plan.skipped and not plan.is_empty
+
+
+def test_incremental_plan_reports_registry_metrics_as_ABSENT_not_zero():
+    """An incremental response carries only what moved, so coverage and the
+    manifest hash are NOT derivable from it. Computing them anyway describes the
+    delta while reading as a claim about the registry — a quiet poll would
+    report 0% coverage. Coverage is bound for a public page."""
+    from tests.test_registry import make_raw
+
+    from mcpwatchman.workers.crawler.registry import diff_incremental, parse_entry
+
+    e = parse_entry(make_raw(name="a/x", packages=NPM))
+    plan = plan_from_diff(diff_incremental({e.key: e.content_hash}, [e]))
+    assert plan.coverage is None
+    assert plan.manifest_hash is None
+
+
+def test_full_manifest_plan_still_reports_both():
+    """The contrast that makes the absence meaningful."""
+    plan = plan_from_diff(ManifestDiff(added=(entry(packages=NPM),)))
+    assert plan.coverage is not None and plan.manifest_hash

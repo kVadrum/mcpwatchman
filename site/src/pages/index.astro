@@ -20,7 +20,11 @@ const axes = [
 const ledger = [
   { label: "starting score", detail: "every axis opens at 100", value: 100, display: "100", kind: "start" },
   { label: "shell exec in a tool handler", detail: "critical severity · high confidence", value: -30, display: "−30.0", kind: "deduct" },
-  { label: "SSRF, no host allowlist", detail: "critical · medium · ×0.75, second of its severity", value: -22.5, display: "−22.5", kind: "deduct" },
+  // critical/HIGH, not medium. The deduction shown is 30 × 0.75; a Critical/Medium
+  // is -20, so labelling it medium would make the published example score 55 while
+  // the page claims 48 — a worked example contradicting our own shipped engine, on
+  // the one page whose entire argument is that our numbers can be checked.
+  { label: "SSRF, no host allowlist", detail: "critical · high · ×0.75, second of its severity", value: -22.5, display: "−22.5", kind: "deduct" },
 ];
 ---
 

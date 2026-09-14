@@ -440,3 +440,63 @@ def test_incremental_ignores_an_entry_the_registry_touched_but_did_not_change():
     e = parse_entry(make_raw(name="a/x"))
     d = diff_incremental({e.key: e.content_hash}, [e])
     assert d.added == () and d.updated == () and d.is_empty
+
+
+# --- malformed input (Codex review, 2026-09-14) ---------------------------
+
+
+def test_page_without_a_servers_array_raises_rather_than_reading_as_empty():
+    """A 200 with a malformed body must not look like an empty registry.
+
+    A proxy error page, a gateway's JSON, or a moved API version would otherwise
+    parse as zero entries with no cursor — a COMPLETE empty manifest — and the
+    next `diff_entries` would mark every known server removed. One bad response
+    delists the registry.
+    """
+    for bad in ({"error": "gateway"}, {"servers": None}, {"servers": "nope"}, {}):
+        with pytest.raises(RegistryUnavailableError, match="servers"):
+            parse_page(bad)
+
+
+@pytest.mark.parametrize("field", ["packages", "remotes"])
+def test_a_null_list_degrades_the_entry_instead_of_aborting_the_crawl(field):
+    """`.get(k, [])` returns None when the key is present and null, and
+    iterating that raises TypeError — which `parse_page` does not catch, so one
+    publisher's malformed entry would abort the whole poll."""
+    entry = parse_entry(make_raw(**{field: None}))
+    assert getattr(entry, field) == ()
+
+
+def test_parse_page_survives_a_null_list_in_one_entry():
+    payload = {
+        "servers": [make_raw(name="a/x", packages=None), make_raw(name="b/y")],
+        "metadata": {},
+    }
+    entries, _ = parse_page(payload)
+    assert [e.name for e in entries] == ["a/x", "b/y"]
+
+
+# --- GitLab subgroups (Codex review, 2026-09-14) --------------------------
+
+
+@pytest.mark.parametrize(
+    "url,slug",
+    [
+        ("https://gitlab.com/acme/platform/server", "acme/platform/server"),
+        ("https://gitlab.com/acme/a/b/c/server", "acme/a/b/c/server"),
+        ("https://gitlab.com/acme/platform/server.git", "acme/platform/server"),
+        ("https://gitlab.com/acme/platform/server/-/tree/main/src", "acme/platform/server"),
+        # GitHub does NOT nest — owner/repo, and the rest is a deep link.
+        ("https://github.com/acme/server/tree/main/src", "acme/server"),
+    ],
+)
+def test_gitlab_subgroups_survive_slug_extraction(url, slug):
+    """A GitLab subgroup path is ONE project. Taking the first two segments
+    names a different repository that may well exist — so the scan succeeds
+    against the wrong code rather than failing visibly."""
+    assert Repository(url=url).slug == slug
+
+
+def test_gitlab_deep_link_subfolder_uses_the_dash_separator():
+    repo = Repository(url="https://gitlab.com/acme/platform/servers/-/tree/main/src/fetch")
+    assert repo.path_subfolder == "src/fetch"

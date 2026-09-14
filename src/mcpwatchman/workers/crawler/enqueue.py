@@ -86,7 +86,9 @@ class PollPlan:
     skipped: tuple[SkippedEntry, ...] = ()
     removed: tuple[str, ...] = ()
     unchanged: int = 0
-    manifest_hash: str = ""
+    # None means NOT MEASURED — an incremental poll cannot know either. Distinct
+    # from a zero/empty value, which would assert something false.
+    manifest_hash: str | None = None
     coverage: CoverageReport | None = None
 
     @property
@@ -96,8 +98,15 @@ class PollPlan:
         Deliberately not a fault: the registry not changing is the expected
         case, and a signal that fires for it trains the operator to ignore the
         one that matters (`base.md` § *Signal design*).
+
+        **`skipped` counts as work.** A poll whose only change is five new
+        remote-only servers produced no jobs and no removals, but it is not a
+        quiet night — we owe each of those servers a page saying why it was not
+        analysed. Omitting it here let a caller short-circuit on `is_empty` and
+        silently drop the reasons, which is how an unscannable server ends up
+        rendering as an absent score instead of an explained one.
         """
-        return not (self.jobs or self.removed)
+        return not (self.jobs or self.removed or self.skipped)
 
 
 def plan_from_diff(
@@ -139,14 +148,21 @@ def plan_from_diff(
             )
         )
 
+    # Registry-wide figures are derivable ONLY from a full manifest. An
+    # incremental diff carries just what moved, so computing them over `seen`
+    # describes the DELTA while reading as a statement about the registry: a
+    # quiet incremental poll would report 0% coverage and hash an empty
+    # manifest. Coverage is bound for a public page, so that is a false claim
+    # about the world, not an internal detail — and `base.md` § *Signal design*
+    # is explicit that unknown must render as ABSENT, never as a number.
     seen = diff.added + diff.updated + diff.unchanged
     return PollPlan(
         jobs=tuple(jobs),
         skipped=tuple(skipped),
         removed=diff.removed,
         unchanged=len(diff.unchanged),
-        manifest_hash=manifest_hash(seen),
-        coverage=coverage_report(seen),
+        manifest_hash=None if diff.incremental else manifest_hash(seen),
+        coverage=None if diff.incremental else coverage_report(seen),
     )
 
 

@@ -162,7 +162,21 @@ class Repository:
         """
         if self.kind not in (SourceKind.GITHUB, SourceKind.GITLAB):
             return None
-        parts = [p for p in urlparse(self.url).path.split("/") if p]
+        path = urlparse(self.url).path
+        if self.kind is SourceKind.GITLAB:
+            # GitLab subgroups nest arbitrarily deep — `acme/platform/server` is
+            # one project, not a project inside `acme/platform`. Taking the first
+            # two segments names a DIFFERENT repository that may well exist, so
+            # the scan would succeed against the wrong code rather than fail.
+            # GitLab separates the project path from any deep link with `/-/`.
+            path = path.split("/-/", 1)[0]
+            parts = [p for p in path.split("/") if p]
+            if len(parts) < 2:
+                return None
+            if parts[-1].endswith(".git"):
+                parts[-1] = parts[-1][: -len(".git")]
+            return "/".join(parts)
+        parts = [p for p in path.split("/") if p]
         if len(parts) < 2:
             return None
         owner, repo = parts[0], parts[1]
@@ -181,7 +195,14 @@ class Repository:
         """
         if self.subfolder:
             return self.subfolder.strip("/") or None
-        parts = [p for p in urlparse(self.url).path.split("/") if p]
+        path = urlparse(self.url).path
+        if self.kind is SourceKind.GITLAB and "/-/" in path:
+            # GitLab: <project path>/-/tree/<ref>/<subdir>
+            tail = [p for p in path.split("/-/", 1)[1].split("/") if p]
+            if len(tail) > 2 and tail[0] in ("tree", "blob"):
+                return "/".join(tail[2:]) or None
+            return None
+        parts = [p for p in path.split("/") if p]
         if len(parts) > 3 and parts[2] in ("tree", "blob"):
             return "/".join(parts[4:]) or None
         return None
@@ -288,6 +309,12 @@ def parse_entry(raw: Mapping[str, Any]) -> RegistryEntry:
                 subfolder=_clean(raw_repo.get("subfolder")),
             )
 
+    # `.get(key, [])` returns None when the key is PRESENT and null, which a
+    # publisher can emit; iterating that raises TypeError, and `parse_page`
+    # catches only ValueError — so one malformed entry would abort the whole
+    # crawl, the precise outcome this function's tolerance exists to prevent.
+    raw_packages = server.get("packages")
+    raw_remotes = server.get("remotes")
     packages = tuple(
         Package(
             registry_type=_clean(p.get("registryType")) or "unknown",
@@ -297,13 +324,13 @@ def parse_entry(raw: Mapping[str, Any]) -> RegistryEntry:
             if isinstance(p.get("transport"), Mapping)
             else None,
         )
-        for p in server.get("packages", [])
+        for p in (raw_packages if isinstance(raw_packages, list) else [])
         if isinstance(p, Mapping)
     )
 
     remotes = tuple(
         Remote(type=_clean(r.get("type")) or "unknown", url=_clean(r.get("url")) or "")
-        for r in server.get("remotes", [])
+        for r in (raw_remotes if isinstance(raw_remotes, list) else [])
         if isinstance(r, Mapping)
     )
 
@@ -332,11 +359,25 @@ def parse_entry(raw: Mapping[str, Any]) -> RegistryEntry:
 def parse_page(payload: Mapping[str, Any]) -> tuple[list[RegistryEntry], str | None]:
     """Parse one API page into entries plus the next cursor.
 
-    Unparseable entries are dropped, not raised — see `parse_entry`. They are
+    Unparseable ENTRIES are dropped, not raised — see `parse_entry`. They are
     recoverable from the stored snapshot, which keeps the raw manifest.
+
+    An unparseable ENVELOPE is the opposite case and must raise. A 200 response
+    whose body has no `servers` array — a proxy error page, a gateway's JSON, an
+    API version that moved — would otherwise read as a page of zero entries with
+    no cursor, i.e. as a COMPLETE and EMPTY manifest. `diff_entries` would then
+    mark every known server removed and delist the entire registry from one bad
+    response. That is exactly the failure `fetch_all` refuses partial manifests
+    to prevent, arriving through the one door it did not cover.
     """
+    servers = payload.get("servers")
+    if not isinstance(servers, list):
+        raise RegistryUnavailableError(
+            "registry page has no 'servers' array — refusing to treat a "
+            "malformed response as an empty manifest"
+        )
     entries: list[RegistryEntry] = []
-    for raw in payload.get("servers", []):
+    for raw in servers:
         if not isinstance(raw, Mapping):
             continue
         try:
@@ -408,12 +449,21 @@ def resolve_source(entry: RegistryEntry) -> SourceResolution:
 
 @dataclass(frozen=True, slots=True)
 class ManifestDiff:
-    """What changed between two polls."""
+    """What changed between two polls.
+
+    `incremental` records WHICH KIND of poll produced this, because the answer
+    changes what may be computed from it. A full-manifest diff carries every
+    current server across its three entry tuples, so registry-wide figures
+    (coverage, manifest hash) are derivable. An incremental diff carries only
+    what moved, so those figures are NOT derivable and must be reported absent
+    rather than computed over a delta — see `plan_from_diff`.
+    """
 
     added: tuple[RegistryEntry, ...] = ()
     updated: tuple[RegistryEntry, ...] = ()
     unchanged: tuple[RegistryEntry, ...] = ()
     removed: tuple[str, ...] = ()
+    incremental: bool = False
 
     @property
     def to_scan(self) -> tuple[RegistryEntry, ...]:
@@ -507,6 +557,7 @@ def diff_incremental(
         updated=tuple(updated),
         unchanged=(),
         removed=tuple(sorted(removed)),
+        incremental=True,
     )
 
 
