@@ -2,7 +2,7 @@
 
 **Independent security and quality audit for [Model Context Protocol](https://modelcontextprotocol.io) servers.**
 
-`mcpwatchman` continuously scans every server in the official MCP registry and publishes a transparent, evidence-linked assessment of each one — so you can answer "is this MCP server safe to install?" before you wire it into your agent.
+`mcpwatchman` continuously scans the official MCP registry and publishes a transparent, evidence-linked assessment of every server that ships source we can read — so you can answer "is this MCP server safe to install?" before you wire it into your agent.
 
 > **Status: early — building in public.**
 > The methodology and architecture are settled and the repository is scaffolded; the scanner, scoring engine, site, and CLI are under active construction.
@@ -46,6 +46,11 @@ We read published source, manifests and lockfiles.
 Static analysis reads what a server *publishes*, so the blind spot is whatever that source does not determine: behavior gated on remote configuration, code fetched or generated at runtime, or a deployed server that differs from the repository it declares.
 An unsafe pattern that merely *executes* at tool-invocation time is still detectable — catching those is the ruleset's core job — but a score here is evidence about published source, never a runtime guarantee.
 Running every server we scan is a substantially larger sandboxing problem than reading it, and we would rather be narrow and honest about it than broad and quietly wrong.
+
+**And that bounds our coverage, so here is the number.**
+In a 100-server sample of the registry taken on 2026-09-14, **50 declared a source we can fetch** (24 a Git repository, 26 a published npm or PyPI package) and **48 were remote-only servers with no published source at all**.
+Those we cannot analyse statically, and we will say so on their page rather than showing you a score that looks like a verdict.
+It is an uncomfortable number to lead with, because remote servers are also the population the authentication research above measured — but publishing a coverage figure we would rather were higher is the entire point of the thing.
 
 ## How it scores
 
