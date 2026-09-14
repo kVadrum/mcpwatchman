@@ -220,39 +220,7 @@ const ledger = [
       </footer>
     </div>
 
-    <script>
-      // One orchestrated moment: the ledger tallies down to its final score.
-      // Everything else on this page is still — the subtraction IS the idea, so it
-      // is the only thing that moves.
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-      const final = document.querySelector<HTMLElement>(".final");
-
-      if (final && !reduce.matches) {
-        const target = Number(final.dataset.countTo ?? "48");
-        const observer = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (!entry.isIntersecting) continue;
-              observer.disconnect();
-              const start = performance.now();
-              const from = 100;
-              const duration = 900;
-              const tick = (now: number) => {
-                const t = Math.min((now - start) / duration, 1);
-                // ease-out cubic — decelerates into the answer
-                const eased = 1 - Math.pow(1 - t, 3);
-                final.textContent = String(Math.round(from + (target - from) * eased));
-                if (t < 1) requestAnimationFrame(tick);
-                else final.textContent = String(target);
-              };
-              requestAnimationFrame(tick);
-            }
-          },
-          { threshold: 0.6 },
-        );
-        observer.observe(final);
-      }
-    </script>
+    <script type="module" src="/ledger.js" defer></script>
 
     <style is:global>
       :root {

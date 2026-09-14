@@ -8,7 +8,12 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
   # Self-hosted fonts and no third-party anything, so the CSP can be strict.
   # 'unsafe-inline' for style only: Astro inlines the page's critical CSS.
-  Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  # No inline script and no inline style survive the build (the page script is
+  # a real file in public/, and astro.config pins inlineStylesheets:'never'), so
+  # this needs no 'unsafe-inline' anywhere. Verified against dist/, not assumed —
+  # an inlined script under script-src 'self' fails SILENTLY: the page renders
+  # and only the behaviour goes missing.
+  Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
 /_astro/*
   # Astro fingerprints these filenames, so they are safe to cache forever.

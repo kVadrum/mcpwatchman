@@ -1,4 +1,13 @@
-# Apex is canonical. Pages serves the www CNAME too once it is added, and two
-# hosts answering the same content splits SEO and makes the CSP/HSTS story
-# ambiguous — so www redirects rather than mirrors.
-https://www.mcpwatchman.com/* https://mcpwatchman.com/:splat 301
+# Intentionally empty of host-level rules.
+#
+# A `www.mcpwatchman.com/* -> mcpwatchman.com/:splat` rule used to live here and
+# it could never have worked: Cloudflare Pages matches a `_redirects` SOURCE as a
+# PATH, not a full URL, so a rule whose source carries a hostname matches nothing.
+# It was a silent no-op that read like a working redirect — worse than no rule,
+# because it documented behaviour the platform does not implement.
+#
+# The apex is the only custom domain. Do not add `www` as a second one: two hosts
+# answering identical content splits SEO and makes the HSTS/CSP story ambiguous.
+# If www is ever wanted, the mechanism is a dashboard-side Bulk Redirect (or a
+# redirect rule), which Cloudflare's own docs name for exactly this case — not a
+# file in this repo.
