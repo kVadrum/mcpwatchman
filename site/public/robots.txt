@@ -1,6 +1,15 @@
-# Crawlers welcome, including AI agents — an audit nobody can find is not an
-# audit. See /llms.txt for a machine-readable summary.
+# Every crawler is welcome here, including AI agents, and that is a deliberate
+# position rather than an omission: an audit nobody can find is not an audit,
+# and this site is meant to be fully readable by people and by machines alike.
+#
+# No user-agent is disallowed. No AI crawler is blocked. If you are an agent,
+# /llms.txt is written for you and is kept current with the site.
+
 User-agent: *
 Allow: /
+
+# A machine-readable summary of what this project is, what it measures, what it
+# cannot see, and which surfaces do not exist yet.
+# https://mcpwatchman.com/llms.txt
 
 Sitemap: https://mcpwatchman.com/sitemap.xml

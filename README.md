@@ -143,6 +143,27 @@ docker/                worker image
 site/                  public site (Astro)
 ```
 
+## Reporting a problem
+
+**A vulnerability in mcpwatchman itself** — the site, the CLI, the scanner or the
+published package — goes to [GitHub's private advisory form](https://github.com/kVadrum/mcpwatchman/security/advisories/new).
+Private vulnerability reporting is enabled on this repository, so the report is
+not public while it is being fixed. `/.well-known/security.txt` carries the same
+addresses in machine-readable form.
+
+**A mistake in the methodology or a wrong number** goes to [the issue tracker](https://github.com/kVadrum/mcpwatchman/issues),
+in public. These are the most useful contributions right now: several figures in
+this README have already been corrected by people checking them, and a
+methodology that cannot be audited is the thing this project exists to replace.
+
+**A vulnerability in an MCP server that mcpwatchman scores is not ours to
+receive.** Report it to that server's maintainer. If you believe we have scored a
+server wrongly — a false positive, a finding already fixed, a rule misfiring —
+open an issue and we will correct it and say that we did. When we find something
+in a server ourselves, we follow coordinated disclosure before publishing: the
+maintainer is contacted first and given a remediation window, and the schedule is
+documented rather than improvised.
+
 ## Contributing
 
 It is early, and the most useful contributions right now are adversarial ones: tell us where the methodology is wrong.

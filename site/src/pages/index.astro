@@ -46,6 +46,45 @@ const ledger = [
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://mcpwatchman.com" />
     <meta name="twitter:card" content="summary_large_image" />
+
+    {/* Structured data. An inline <script type="application/ld+json"> is a DATA
+      BLOCK, not executable script, so `script-src 'self'` does not block it —
+      verified in a browser against the production CSP rather than assumed,
+      since the same assumption about inline scripts was wrong once already.
+
+      It is here because an agent parsing this page should not have to infer the
+      project's identity, licence and status from prose. The `abstract` states
+      the pre-v0.1 position explicitly: a machine reading this must not conclude
+      that scores exist. */}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "mcpwatchman",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Linux, macOS, Windows",
+        "url": "https://mcpwatchman.com",
+        "abstract": "Independent, continuous security and quality audit of servers in the official Model Context Protocol registry. Pre-v0.1: no scores are published yet.",
+        "description": "Scans the published source of MCP registry servers and reports evidence-linked, per-axis scores. Five axes are scored 0-100 independently: Code Safety, Auth Posture, Dependency Health, Maintenance, Transparency. Analysis is static; code is never executed and no running server is contacted.",
+        "license": "https://spdx.org/licenses/MIT.html",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "codeRepository": "https://github.com/kVadrum/mcpwatchman",
+        "downloadUrl": "https://pypi.org/project/mcpwatchman/",
+        "softwareVersion": "0.9.0",
+        "releaseNotes": "https://github.com/kVadrum/mcpwatchman/commits/main",
+        "author": { "@type": "Organization", "name": "KeMeK Network", "url": "https://github.com/kVadrum" },
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "Developers and autonomous agents evaluating MCP servers before installation"
+        },
+        "about": {
+          "@type": "Thing",
+          "name": "Model Context Protocol",
+          "url": "https://modelcontextprotocol.io"
+        }
+      }
+    </script>
   </head>
   <body>
     <div class="frame">
@@ -61,7 +100,7 @@ const ledger = [
       </header>
 
       <main>
-        <!-- ─── hero: the ledger is the thesis ─── -->
+        {/* ─── hero: the ledger is the thesis ─── */}
         <section class="hero">
           <div class="hero__copy">
             <p class="eyebrow">Model Context Protocol · registry audit</p>
@@ -82,7 +121,7 @@ const ledger = [
             </p>
           </div>
 
-          <!-- the signature: a light evidence document inside dark instrument chrome -->
+          {/* the signature: a light evidence document inside dark instrument chrome */}
           <figure class="ledger" aria-labelledby="ledger-caption">
             <div class="ledger__head">
               <span class="ledger__axis">Code Safety</span>
@@ -124,7 +163,7 @@ const ledger = [
           </figure>
         </section>
 
-        <!-- ─── the honesty section: the differentiator ─── -->
+        {/* ─── the honesty section: the differentiator ─── */}
         <section class="band band--limits">
           <div class="band__inner">
             <p class="eyebrow">What this can and cannot see</p>
@@ -156,7 +195,7 @@ const ledger = [
           </div>
         </section>
 
-        <!-- ─── the axes: weights are real data, not decoration ─── -->
+        {/* ─── the axes: weights are real data, not decoration ─── */}
         <section class="band band--axes">
           <div class="band__inner">
             <p class="eyebrow">Five axes · weights provisional until calibration</p>
@@ -182,7 +221,7 @@ const ledger = [
           </div>
         </section>
 
-        <!-- ─── status ─── -->
+        {/* ─── status ─── */}
         <section class="band band--now">
           <div class="band__inner">
             <p class="eyebrow">Where it actually is</p>

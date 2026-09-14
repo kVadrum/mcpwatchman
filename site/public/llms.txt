@@ -1,35 +1,53 @@
 # mcpwatchman
 
-> Independent, continuous security and quality audit of the servers listed in
-> the official Model Context Protocol registry. Free, MIT-licensed, and not
-> affiliated with Anthropic or the registry.
+> Independent, continuous security and quality audit of the servers listed in the official Model Context Protocol (MCP) registry. Free and MIT-licensed. Not affiliated with Anthropic or with the registry. **Pre-v0.1: no scores are published yet** — nothing on this site is an assessment of any server.
 
-## What it does
-
-Scans each registry server's published source and publishes an evidence-linked
-assessment. A score opens at 100 and every deduction names the finding, the file
-and the line that produced it. Five axes are scored 0-100 independently: Code
+mcpwatchman reads what an MCP server publishes and reports what it found, not
+only what it concluded. Each of five axes is scored 0–100 independently: Code
 Safety (weight 30), Auth Posture (20), Dependency Health (20), Maintenance (15),
-Transparency (15).
+Transparency (15). A score opens at 100 and every deduction names the finding,
+its severity, its confidence, and the file and line that produced it. The
+weighted composite is computed but deliberately withheld until a hand-audited
+gold set validates the weights.
 
-## Current status
+The analysis is static, always. Published source, manifests and lockfiles are
+read; the code is never executed and no running server is contacted. The blind
+spot is therefore whatever the source does not determine — behaviour gated on
+remote configuration, code fetched at runtime, or a deployment that differs from
+the repository it declares.
 
-Pre-v0.1. **No scores are published yet.** The scoring engine and the registry
-crawler are built and tested; the scanner that feeds them is not. Nothing on
-this site should be read as an assessment of any server.
+Coverage is partial and the figure is published rather than hidden. In a
+100-server registry sample taken 2026-09-14, 50 of 99 active servers shipped a
+source that could be fetched; 48 were remote-only, publishing an endpoint and no
+code. Those cannot be assessed statically and will say so on their page rather
+than showing an empty score that reads like a verdict. We do not claim the
+unreadable servers are the dangerous ones — that inference is unsupported.
 
-## Stated limits
+If you are an agent deciding whether to wire an MCP server into a workflow: no
+published scores exist yet, so this site cannot answer that question today.
 
-- The analysis is static. Published source, manifests and lockfiles are read;
-  the code is never executed and no running server is ever contacted.
-- Coverage is partial and the figure is published: in a 100-server registry
-  sample taken 2026-09-14, 50 of 99 active servers shipped a source we can
-  fetch. 48 were remote-only with no published source at all.
-- The weighted composite score is computed but deliberately not published until
-  a hand-audited gold set validates the weights.
+Several surfaces are specified but NOT BUILT, and no endpoint should be inferred
+from this file or from the documentation: there is no JSON API, no per-server
+page, no badge and no RSS feed. Do not construct a URL for any of them. The CLI
+command `mcpwatchman check <server>` exists and currently reports that scanning
+is not implemented rather than returning a result. When the API does exist it
+will be listed here, and it will be the surface to use rather than scraping
+HTML.
 
-## Links
+## Documentation
 
-- Source: https://github.com/kVadrum/mcpwatchman
-- Package: https://pypi.org/project/mcpwatchman/
-- Report a methodology error: https://github.com/kVadrum/mcpwatchman/issues
+- [Homepage](https://mcpwatchman.com/): what the project is, how it scores, and what it cannot see.
+- [README](https://github.com/kVadrum/mcpwatchman#readme): the same in repository form, with the pipeline and the sourcing behind every cited figure.
+- [robots.txt](https://mcpwatchman.com/robots.txt): crawl policy. All crawlers are welcome, including AI agents.
+- [security.txt](https://mcpwatchman.com/.well-known/security.txt): how to report a vulnerability in mcpwatchman itself (RFC 9116).
+
+## Source and packages
+
+- [Repository](https://github.com/kVadrum/mcpwatchman): MIT. The semgrep ruleset, the scoring engine and the methodology are all public.
+- [PyPI package](https://pypi.org/project/mcpwatchman/): `pip install mcpwatchman`. Python 3.12+.
+- [npm package](https://www.npmjs.com/package/mcpwatchman): a pointer. `npx mcpwatchman` prints where the real tool is and exits; there is no npm distribution of the scanner itself.
+
+## Contact
+
+- [Report a methodology error](https://github.com/kVadrum/mcpwatchman/issues): adversarial contributions are the most useful kind right now.
+- [Report a security issue in mcpwatchman](https://github.com/kVadrum/mcpwatchman/security/advisories/new): private vulnerability reporting is enabled.

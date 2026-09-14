@@ -15,6 +15,13 @@
   # and only the behaviour goes missing.
   Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 
+/.well-known/security.txt
+  # RFC 9116 is explicit: "It MUST have a Content-Type of 'text/plain' with the
+  # default charset parameter set to 'utf-8'." Pinned rather than left to
+  # extension guessing, because a wrong type makes the file non-conforming while
+  # still looking fine in a browser.
+  Content-Type: text/plain; charset=utf-8
+
 /_astro/*
   # Astro fingerprints these filenames, so they are safe to cache forever.
   Cache-Control: public, max-age=31536000, immutable

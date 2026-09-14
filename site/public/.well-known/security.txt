@@ -1,0 +1,14 @@
+# RFC 9116. A project that publishes security assessments of other people's
+# software owes a documented way to report problems in its own.
+
+Contact: https://github.com/kVadrum/mcpwatchman/security/advisories/new
+Contact: https://github.com/kVadrum/mcpwatchman/issues
+Expires: 2027-09-14T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://mcpwatchman.com/.well-known/security.txt
+Policy: https://github.com/kVadrum/mcpwatchman#reporting-a-problem
+
+# Scope: this file covers mcpwatchman itself — the site, the CLI, the scanner
+# and the published package. It is NOT the channel for reporting a vulnerability
+# in a third-party MCP server that mcpwatchman scores; report those to the
+# server's own maintainer.
