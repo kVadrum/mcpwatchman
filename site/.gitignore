@@ -22,3 +22,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# `wrangler dev` local state (miniflare cache, D1/KV shims). Created by running
+# the Workers runtime locally to verify asset serving without deploying.
+.wrangler/
