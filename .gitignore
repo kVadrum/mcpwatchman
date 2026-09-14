@@ -49,3 +49,6 @@ ops/autonomous/.push-broken
 
 # Run-log scratch file — local-only, like STATE.md
 RUNLOG.md
+
+# Playwright MCP screenshots — local design review artifacts, not deliverables.
+.playwright-mcp/

@@ -1,0 +1,4 @@
+# Apex is canonical. Pages serves the www CNAME too once it is added, and two
+# hosts answering the same content splits SEO and makes the CSP/HSTS story
+# ambiguous — so www redirects rather than mirrors.
+https://www.mcpwatchman.com/* https://mcpwatchman.com/:splat 301

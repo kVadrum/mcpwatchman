@@ -1,0 +1,35 @@
+# mcpwatchman
+
+> Independent, continuous security and quality audit of the servers listed in
+> the official Model Context Protocol registry. Free, MIT-licensed, and not
+> affiliated with Anthropic or the registry.
+
+## What it does
+
+Scans each registry server's published source and publishes an evidence-linked
+assessment. A score opens at 100 and every deduction names the finding, the file
+and the line that produced it. Five axes are scored 0-100 independently: Code
+Safety (weight 30), Auth Posture (20), Dependency Health (20), Maintenance (15),
+Transparency (15).
+
+## Current status
+
+Pre-v0.1. **No scores are published yet.** The scoring engine and the registry
+crawler are built and tested; the scanner that feeds them is not. Nothing on
+this site should be read as an assessment of any server.
+
+## Stated limits
+
+- The analysis is static. Published source, manifests and lockfiles are read;
+  the code is never executed and no running server is ever contacted.
+- Coverage is partial and the figure is published: in a 100-server registry
+  sample taken 2026-09-14, 50 of 99 active servers shipped a source we can
+  fetch. 48 were remote-only with no published source at all.
+- The weighted composite score is computed but deliberately not published until
+  a hand-audited gold set validates the weights.
+
+## Links
+
+- Source: https://github.com/kVadrum/mcpwatchman
+- Package: https://pypi.org/project/mcpwatchman/
+- Report a methodology error: https://github.com/kVadrum/mcpwatchman/issues

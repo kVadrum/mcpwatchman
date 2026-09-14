@@ -1,0 +1,15 @@
+/*
+  # This is a security product; the headers are part of the claim.
+  # Pages serves these on every response — no server config to drift.
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  # Self-hosted fonts and no third-party anything, so the CSP can be strict.
+  # 'unsafe-inline' for style only: Astro inlines the page's critical CSS.
+  Content-Security-Policy: default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+
+/_astro/*
+  # Astro fingerprints these filenames, so they are safe to cache forever.
+  Cache-Control: public, max-age=31536000, immutable

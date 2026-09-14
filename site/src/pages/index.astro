@@ -1,0 +1,833 @@
+---
+// Latin subsets only. The unscoped imports pull Cyrillic, Greek and Vietnamese
+// too — 900 KB of fonts for an English-language page, against `06` §5's
+// performance targets. Revisit if the site is ever translated (`06` §7).
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-500.css";
+import "@fontsource/ibm-plex-sans-condensed/latin-500.css";
+import "@fontsource/ibm-plex-sans-condensed/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+
+const axes = [
+  { name: "Code Safety", weight: 30, reads: "Shell exec in tool handlers, unvalidated URL fetches, unsafe deserialization, path traversal — matched against an MCP-specific semgrep ruleset." },
+  { name: "Auth Posture", weight: 20, reads: "Whether a server requires a key, uses OAuth, or accepts anyone — read against the transport it declares." },
+  { name: "Dependency Health", weight: 20, reads: "Known CVEs in the resolved dependency set, via OSV. Transitive coverage where a lockfile exists, and said plainly where it doesn't." },
+  { name: "Maintenance", weight: 15, reads: "Last commit, release cadence, open-to-closed issue ratio, sole-maintainer risk." },
+  { name: "Transparency", weight: 15, reads: "License presence and SPDX validity, and whether the manifest's claims match what the code actually does." },
+];
+
+const ledger = [
+  { label: "starting score", detail: "every axis opens at 100", value: 100, display: "100", kind: "start" },
+  { label: "shell exec in a tool handler", detail: "critical severity · high confidence", value: -30, display: "−30.0", kind: "deduct" },
+  { label: "SSRF, no host allowlist", detail: "critical · medium · ×0.75, second of its severity", value: -22.5, display: "−22.5", kind: "deduct" },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mcpwatchman — independent security audit for MCP servers</title>
+    <meta
+      name="description"
+      content="Continuous, evidence-linked security and quality audit of the servers in the official Model Context Protocol registry. Every point subtracted for a reason you can read."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#10151B" />
+    <link rel="canonical" href="https://mcpwatchman.com/" />
+    <meta property="og:title" content="mcpwatchman" />
+    <meta property="og:description" content="Independent security audit for Model Context Protocol servers. Every point subtracted for a reason you can read." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mcpwatchman.com" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div class="frame">
+      <header class="masthead">
+        <a class="wordmark" href="/">
+          <span class="wordmark__mark" aria-hidden="true"></span>
+          mcpwatchman
+        </a>
+        <nav class="masthead__nav">
+          <a href="https://github.com/kVadrum/mcpwatchman">Source</a>
+          <a href="https://pypi.org/project/mcpwatchman/">PyPI</a>
+        </nav>
+      </header>
+
+      <main>
+        <!-- ─── hero: the ledger is the thesis ─── -->
+        <section class="hero">
+          <div class="hero__copy">
+            <p class="eyebrow">Model Context Protocol · registry audit</p>
+            <h1>
+              Every point is subtracted<br />
+              for a reason you can read.
+            </h1>
+            <p class="lede">
+              mcpwatchman scans the servers in the official MCP registry and publishes
+              what it found, not just what it concluded. A score is a ledger: it opens
+              at 100, and every deduction names the finding, the file and the line that
+              produced it.
+            </p>
+            <p class="status-line">
+              <span class="pill">Pre-v0.1</span>
+              No scores are published yet. The scoring engine and registry crawler are
+              built; the scanner that feeds them is not.
+            </p>
+          </div>
+
+          <!-- the signature: a light evidence document inside dark instrument chrome -->
+          <figure class="ledger" aria-labelledby="ledger-caption">
+            <div class="ledger__head">
+              <span class="ledger__axis">Code Safety</span>
+              <span class="ledger__meta">worked example</span>
+            </div>
+            <table class="ledger__table">
+              <caption class="sr-only">
+                How a Code Safety axis score of 48 is derived from two findings
+              </caption>
+              <tbody>
+                {ledger.map((row) => (
+                  <tr class={`row row--${row.kind}`}>
+                    <th scope="row">
+                      <span class="row__label">{row.label}</span>
+                      <span class="row__detail">{row.detail}</span>
+                    </th>
+                    <td class="row__value">{row.display}</td>
+                  </tr>
+                ))}
+                <tr class="row row--total">
+                  <th scope="row">
+                    <span class="row__label">axis score</span>
+                    <span class="row__detail">47.5, rounded half-up — the score rounds, never the deduction</span>
+                  </th>
+                  <td class="row__value">
+                    <span class="raw">47.5</span>
+                    <span class="arrow" aria-hidden="true">→</span>
+                    <span class="final" data-count-to="48">48</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <figcaption id="ledger-caption" class="ledger__foot">
+              Real arithmetic from the shipped engine. The second finding of a severity
+              contributes 75% of its deduction, the third 50% — so twenty criticals and
+              one critical don't score the same, and the worst finding still takes the
+              undiminished hit.
+            </figcaption>
+          </figure>
+        </section>
+
+        <!-- ─── the honesty section: the differentiator ─── -->
+        <section class="band band--limits">
+          <div class="band__inner">
+            <p class="eyebrow">What this can and cannot see</p>
+            <div class="limits">
+              <div class="limits__stat">
+                <span class="stat__figure">50.5<span class="stat__unit">%</span></span>
+                <span class="stat__label">of a 100-server registry sample ships source we can read</span>
+              </div>
+              <div class="limits__prose">
+                <p>
+                  48 of those 99 active servers were remote-only — an endpoint, no published
+                  source, nothing to analyse. We will say so on their page rather than show
+                  you an empty score that looks like a verdict.
+                </p>
+                <p>
+                  The analysis is static, always. We read published source, manifests and
+                  lockfiles; we never execute the code we scan and never connect to a running
+                  server. So the blind spot is whatever that source doesn't determine —
+                  behaviour gated on remote configuration, code fetched at runtime, or a
+                  deployment that differs from the repository it declares.
+                </p>
+                <p class="limits__note">
+                  Publishing a coverage figure we'd rather were higher is the point, not an
+                  aside. The numbers everyone quotes about MCP security come from parties
+                  with something to sell, and nobody can check them.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ─── the axes: weights are real data, not decoration ─── -->
+        <section class="band band--axes">
+          <div class="band__inner">
+            <p class="eyebrow">Five axes · weights provisional until calibration</p>
+            <ul class="axes">
+              {axes.map((axis) => (
+                <li class="axis">
+                  <span class="axis__weight" aria-label={`weight ${axis.weight} percent`}>
+                    {axis.weight}
+                  </span>
+                  <div class="axis__body">
+                    <h3>{axis.name}</h3>
+                    <p>{axis.reads}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <p class="gate">
+              Each axis ships its own 0–100 score. The weighted composite is computed
+              but <strong>not published</strong> until a hand-audited gold set says the weights
+              are right — publishing an uncalibrated single number is how a methodology
+              becomes marketing.
+            </p>
+          </div>
+        </section>
+
+        <!-- ─── status ─── -->
+        <section class="band band--now">
+          <div class="band__inner">
+            <p class="eyebrow">Where it actually is</p>
+            <dl class="now">
+              <div>
+                <dt>Built</dt>
+                <dd>Scoring engine and registry crawler, with tests. MIT, public.</dd>
+              </div>
+              <div>
+                <dt>Next</dt>
+                <dd>The scanner: source fetch, semgrep ruleset, dependency and auth checks.</dd>
+              </div>
+              <div>
+                <dt>Not yet</dt>
+                <dd>Any published score, the per-server pages, the API, the badge.</dd>
+              </div>
+            </dl>
+            <div class="cta">
+              <a class="cta__primary" href="https://github.com/kVadrum/mcpwatchman">
+                Read the source
+              </a>
+              <a class="cta__secondary" href="https://github.com/kVadrum/mcpwatchman/issues">
+                Tell us where the methodology is wrong
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="colophon">
+        <p>
+          <span class="colophon__brand">mcpwatchman</span> — an independent audit, free
+          and MIT-licensed, run by <a href="https://github.com/kVadrum">kVadrum</a>.
+        </p>
+        <p class="colophon__fine">
+          Not affiliated with Anthropic or the official MCP registry. We overlay trust
+          signal on registry metadata; the registry lists what exists, we assess what's safe.
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      // One orchestrated moment: the ledger tallies down to its final score.
+      // Everything else on this page is still — the subtraction IS the idea, so it
+      // is the only thing that moves.
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const final = document.querySelector<HTMLElement>(".final");
+
+      if (final && !reduce.matches) {
+        const target = Number(final.dataset.countTo ?? "48");
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              observer.disconnect();
+              const start = performance.now();
+              const from = 100;
+              const duration = 900;
+              const tick = (now: number) => {
+                const t = Math.min((now - start) / duration, 1);
+                // ease-out cubic — decelerates into the answer
+                const eased = 1 - Math.pow(1 - t, 3);
+                final.textContent = String(Math.round(from + (target - from) * eased));
+                if (t < 1) requestAnimationFrame(tick);
+                else final.textContent = String(target);
+              };
+              requestAnimationFrame(tick);
+            }
+          },
+          { threshold: 0.6 },
+        );
+        observer.observe(final);
+      }
+    </script>
+
+    <style is:global>
+      :root {
+        /* Instrument chrome — deep ink-slate, blue-shifted, never pure black. */
+        --ground: #10151b;
+        --ground-lift: #161d26;
+        --panel: #1a222c;
+        --rule: #27323f;
+        --ink: #e7ecf3;
+        --ink-dim: #8a97a8;
+        --ink-faint: #5d6a7a;
+
+        /* Amber reads as instrumentation, not alarm. Used for structure and emphasis. */
+        --signal: #e9a63f;
+        /* Reserved semantically: this colour ONLY ever marks a subtraction. */
+        --deduct: #d2654b;
+
+        /* The evidence document. Cool paper, not warm cream. */
+        --paper: #eceef0;
+        --paper-ink: #131920;
+        --paper-dim: #5a6673;
+        --paper-rule: #d2d7dc;
+
+        --measure: 68ch;
+        --gap: clamp(1.5rem, 4vw, 3rem);
+
+        --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+        --font-struct: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+        --font-data: "IBM Plex Mono", ui-monospace, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--signal);
+        outline-offset: 3px;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      .frame {
+        max-width: 78rem;
+        margin: 0 auto;
+        padding: 0 var(--gap);
+      }
+
+      /* ── masthead ───────────────────────────────────────────── */
+      .masthead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.75rem 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .wordmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-family: var(--font-struct);
+        font-weight: 600;
+        font-size: 1.0625rem;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+      }
+
+      .wordmark__mark {
+        width: 0.7rem;
+        height: 0.7rem;
+        border: 2px solid var(--signal);
+        border-radius: 50%;
+        position: relative;
+      }
+
+      .wordmark__mark::after {
+        content: "";
+        position: absolute;
+        inset: 2px;
+        border-radius: 50%;
+        background: var(--signal);
+      }
+
+      .masthead__nav {
+        display: flex;
+        gap: 1.5rem;
+        font-family: var(--font-struct);
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--ink-dim);
+      }
+
+      .masthead__nav a {
+        text-decoration: none;
+        padding-bottom: 2px;
+        border-bottom: 1px solid transparent;
+      }
+
+      .masthead__nav a:hover {
+        color: var(--ink);
+        border-bottom-color: var(--signal);
+      }
+
+      /* ── shared structure ───────────────────────────────────── */
+      .eyebrow {
+        font-family: var(--font-struct);
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--signal);
+        margin: 0 0 1.25rem;
+      }
+
+      /* ── hero ───────────────────────────────────────────────── */
+      .hero {
+        display: grid;
+        gap: clamp(2.5rem, 5vw, 4.5rem);
+        padding: clamp(3.5rem, 8vw, 6.5rem) 0 clamp(3rem, 6vw, 5rem);
+        align-items: start;
+      }
+
+      @media (min-width: 62rem) {
+        .hero {
+          grid-template-columns: 1.05fr 0.95fr;
+        }
+      }
+
+      .hero h1 {
+        font-family: var(--font-struct);
+        font-weight: 600;
+        font-size: clamp(2.25rem, 1.3rem + 4vw, 4rem);
+        line-height: 1.04;
+        letter-spacing: -0.02em;
+        margin: 0 0 1.5rem;
+        text-wrap: balance;
+      }
+
+      .lede {
+        margin: 0 0 1.75rem;
+        max-width: 46ch;
+        color: var(--ink-dim);
+        font-size: 1.0625rem;
+      }
+
+      .status-line {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin: 0;
+        max-width: 48ch;
+        font-size: 0.9375rem;
+        color: var(--ink-faint);
+        border-left: 2px solid var(--rule);
+        padding-left: 1rem;
+      }
+
+      .pill {
+        flex: none;
+        font-family: var(--font-data);
+        font-size: 0.6875rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--signal);
+        border: 1px solid color-mix(in srgb, var(--signal) 40%, transparent);
+        border-radius: 999px;
+        padding: 0.15rem 0.55rem;
+      }
+
+      /* ── the ledger: light document, dark chrome ────────────── */
+      .ledger {
+        margin: 0;
+        background: var(--paper);
+        color: var(--paper-ink);
+        border-radius: 3px;
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.06),
+          0 18px 50px -20px rgba(0, 0, 0, 0.7);
+        overflow: hidden;
+      }
+
+      .ledger__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.375rem;
+        border-bottom: 1px solid var(--paper-rule);
+        font-family: var(--font-struct);
+      }
+
+      .ledger__axis {
+        font-weight: 600;
+        font-size: 1rem;
+        letter-spacing: 0.01em;
+      }
+
+      .ledger__meta {
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--paper-dim);
+      }
+
+      .ledger__table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .ledger__table th {
+        text-align: left;
+        font-weight: 400;
+      }
+
+      .row > th,
+      .row > td {
+        padding: 0.8rem 1.375rem;
+        border-bottom: 1px solid var(--paper-rule);
+        vertical-align: baseline;
+      }
+
+      .row__label {
+        display: block;
+        font-size: 0.9375rem;
+        line-height: 1.35;
+      }
+
+      .row__detail {
+        display: block;
+        margin-top: 0.15rem;
+        font-family: var(--font-data);
+        font-size: 0.6875rem;
+        letter-spacing: 0.01em;
+        color: var(--paper-dim);
+      }
+
+      .row__value {
+        font-family: var(--font-data);
+        font-variant-numeric: tabular-nums;
+        font-size: 1.0625rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .row--deduct .row__value {
+        color: var(--deduct);
+      }
+
+      .row--total > th,
+      .row--total > td {
+        border-bottom: none;
+        border-top: 2px solid var(--paper-ink);
+        padding-top: 1rem;
+        padding-bottom: 1.125rem;
+      }
+
+      .row--total .row__label {
+        font-family: var(--font-struct);
+        font-weight: 600;
+      }
+
+      .row--total .row__value .raw {
+        color: var(--paper-dim);
+        font-size: 0.875rem;
+      }
+
+      .row--total .row__value .arrow {
+        color: var(--paper-dim);
+        margin: 0 0.3rem;
+        font-size: 0.8125rem;
+      }
+
+      .row--total .row__value .final {
+        font-weight: 500;
+        font-size: 1.75rem;
+      }
+
+      .ledger__foot {
+        padding: 1.125rem 1.375rem 1.375rem;
+        background: color-mix(in srgb, var(--paper) 92%, var(--paper-ink));
+        font-size: 0.8125rem;
+        line-height: 1.5;
+        color: var(--paper-dim);
+      }
+
+      /* ── bands ──────────────────────────────────────────────── */
+      .band {
+        border-top: 1px solid var(--rule);
+        padding: clamp(3rem, 7vw, 5rem) 0;
+      }
+
+      .band__inner {
+        max-width: var(--measure);
+      }
+
+      .band--limits .band__inner,
+      .band--axes .band__inner {
+        max-width: none;
+      }
+
+      /* ── limits ─────────────────────────────────────────────── */
+      .limits {
+        display: grid;
+        gap: clamp(1.75rem, 4vw, 3.5rem);
+      }
+
+      @media (min-width: 52rem) {
+        .limits {
+          grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr);
+          align-items: start;
+        }
+      }
+
+      .limits__stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .stat__figure {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+        gap: 0.08em;
+        font-family: var(--font-data);
+        font-variant-numeric: tabular-nums;
+        font-size: clamp(3rem, 2rem + 4vw, 4.5rem);
+        line-height: 1;
+        letter-spacing: -0.03em;
+        color: var(--signal);
+      }
+
+      .stat__unit {
+        font-size: 0.4em;
+        letter-spacing: 0;
+        color: var(--ink-faint);
+      }
+
+      .stat__label {
+        font-size: 0.875rem;
+        line-height: 1.45;
+        color: var(--ink-dim);
+        max-width: 26ch;
+      }
+
+      .limits__prose p {
+        margin: 0 0 1.1rem;
+        max-width: 62ch;
+        color: var(--ink-dim);
+      }
+
+      .limits__prose p:last-child {
+        margin-bottom: 0;
+      }
+
+      .limits__note {
+        border-left: 2px solid var(--signal);
+        padding-left: 1rem;
+        color: var(--ink) !important;
+      }
+
+      /* ── axes ───────────────────────────────────────────────── */
+      .axes {
+        list-style: none;
+        margin: 0 0 2.5rem;
+        padding: 0;
+        border-top: 1px solid var(--rule);
+      }
+
+      .axis {
+        display: grid;
+        grid-template-columns: 3.5rem minmax(0, 1fr);
+        gap: 1rem;
+        align-items: baseline;
+        padding: 1.375rem 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      @media (min-width: 52rem) {
+        .axis {
+          grid-template-columns: 5rem 16rem minmax(0, 1fr);
+          gap: 2rem;
+        }
+
+        .axis__body {
+          display: contents;
+        }
+      }
+
+      .axis__weight {
+        font-family: var(--font-data);
+        font-variant-numeric: tabular-nums;
+        font-size: 1.125rem;
+        color: var(--signal);
+      }
+
+      .axis__weight::after {
+        content: "%";
+        font-size: 0.65em;
+        color: var(--ink-faint);
+        margin-left: 0.06em;
+        vertical-align: baseline;
+      }
+
+      /* Block by default. `display: contents` promotes h3 and p to grid children,
+         which is only correct against the THREE-column desktop track list — on
+         the two-column mobile grid the paragraph lands in the 3.5rem weight
+         column and sets one word per line. Scoped to the wide breakpoint only. */
+      .axis__body {
+        min-width: 0;
+      }
+
+      .axis__body h3 {
+        margin: 0;
+        font-family: var(--font-struct);
+        font-weight: 600;
+        font-size: 1.0625rem;
+        letter-spacing: 0.01em;
+      }
+
+      .axis__body p {
+        margin: 0.35rem 0 0;
+        font-size: 0.9375rem;
+        color: var(--ink-dim);
+        max-width: 58ch;
+      }
+
+      @media (min-width: 52rem) {
+        .axis__body p {
+          margin-top: 0;
+        }
+      }
+
+      .gate {
+        margin: 0;
+        max-width: 62ch;
+        color: var(--ink-dim);
+      }
+
+      .gate strong {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      /* ── now ────────────────────────────────────────────────── */
+      .now {
+        margin: 0 0 2.5rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 46rem) {
+        .now {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 2rem;
+        }
+      }
+
+      .now dt {
+        font-family: var(--font-struct);
+        font-size: 0.6875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.13em;
+        color: var(--signal);
+        margin-bottom: 0.4rem;
+      }
+
+      .now dd {
+        margin: 0;
+        font-size: 0.9375rem;
+        color: var(--ink-dim);
+      }
+
+      .cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .cta__primary,
+      .cta__secondary {
+        font-family: var(--font-struct);
+        font-size: 0.875rem;
+        letter-spacing: 0.02em;
+        text-decoration: none;
+        padding: 0.7rem 1.25rem;
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+      }
+
+      .cta__primary {
+        background: var(--signal);
+        border-color: var(--signal);
+        color: #1a1204;
+        font-weight: 600;
+      }
+
+      .cta__primary:hover {
+        background: color-mix(in srgb, var(--signal) 88%, #fff);
+      }
+
+      .cta__secondary {
+        color: var(--ink-dim);
+      }
+
+      .cta__secondary:hover {
+        color: var(--ink);
+        border-color: var(--ink-faint);
+      }
+
+      /* ── colophon ───────────────────────────────────────────── */
+      .colophon {
+        border-top: 1px solid var(--rule);
+        padding: 2rem 0 3rem;
+        font-size: 0.8125rem;
+        color: var(--ink-faint);
+      }
+
+      .colophon p {
+        margin: 0 0 0.6rem;
+        max-width: 70ch;
+      }
+
+      .colophon__brand {
+        font-family: var(--font-struct);
+        font-weight: 600;
+        color: var(--ink-dim);
+      }
+
+      .colophon__fine {
+        margin-bottom: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </body>
+</html>

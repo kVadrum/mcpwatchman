@@ -1,0 +1,6 @@
+# Crawlers welcome, including AI agents — an audit nobody can find is not an
+# audit. See /llms.txt for a machine-readable summary.
+User-agent: *
+Allow: /
+
+Sitemap: https://mcpwatchman.com/sitemap.xml
