@@ -263,11 +263,76 @@ def test_tool_availability_is_checked_before_shelling_out(monkeypatch) -> None:
     reason="detect-secrets lives in the `workers` extra; CI installs only `dev`",
 )
 def test_real_detect_secrets_finds_a_planted_credential(tmp_path: Path) -> None:
-    # The positive control for every zero this module reports. Without it, a
-    # broken invocation returns [] and every other secret test still passes.
+    """The positive control for every zero this module reports.
+
+    Without it, a broken invocation returns `[]` and every other secret test in
+    this file still passes — which is exactly how `04` §6's specified invocation
+    went unnoticed while scanning nothing.
+
+    ⚠ **The PEM banner is ASSEMBLED rather than written as a literal**, and the
+    AWS key is the vendor's own documented `…EXAMPLE` placeholder. Both are
+    fakes, but a literal banner makes this repository match a committed-private-
+    key pattern, which trips `leak-sweep` on every run. Silencing that scanner —
+    or accepting the finding in the fleet accept-list — would spend a real
+    security control on a fixture. The bytes written to disk are identical, so
+    the control still proves what it proved.
+    """
+    dashes = "-" * 5
+    banner = f"{dashes}BEGIN RSA PRIVATE KEY{dashes}"
+    footer = f"{dashes}END RSA PRIVATE KEY{dashes}"
     (tmp_path / "app.py").write_text('KEY = "AKIAIOSFODNN7EXAMPLE"\n')
-    (tmp_path / "id_rsa").write_text(
-        "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAxxxx\n"
-        "-----END RSA PRIVATE KEY-----\n")
+    (tmp_path / "id_rsa").write_text(f"{banner}\nMIIEowIBAAKCAQEAxxxx\n{footer}\n")
     kinds = {f.kind for f in (scan_secrets(tmp_path) or [])}
     assert {"AWS Access Key", "Private Key"} <= kinds
+
+
+# --- direction: a credential SENT is not a credential CHECKED --------------
+#
+# ⚠ Found by this repo's own /qa, 2026-09-15. The first cut matched the bare
+# tokens `api_key`, `apiKey`, `Bearer ` and `X-API-Key`, so a server that merely
+# CALLS another API scored `03` §4's 60 band ("authentication present but
+# bypassable") instead of its 30 band ("no authentication"). It over-scored by
+# 30 points on the sub-check carrying 40% of Auth Posture, and it did so on
+# precisely the unauthenticated-HTTP cohort this project's opening argument is
+# about — an error in the generous direction, which for a security product is
+# the worse way to be wrong.
+
+
+@pytest.mark.parametrize(
+    "source_text",
+    [
+        'client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])',
+        'headers = {"Authorization": f"Bearer {token}"}',
+        # The same direction error via the subscript form. An optional-quantifier
+        # lookahead does NOT stop this — the engine backtracks to a shorter match
+        # that ends before the `=`. The delimiters must be required.
+        'headers["Authorization"] = f"Bearer {token}"',
+        "req.headers['Authorization'] = 'Bearer x'",
+    ],
+)
+def test_sending_a_credential_is_not_reading_one(tmp_path: Path, source_text: str) -> None:
+    root = _tree(tmp_path, **{"server.py": source_text + "\n"})
+    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    model = _sub(axis, "authentication_model")
+    assert model.score == 30, f"{source_text!r} should not read as client auth"
+
+
+@pytest.mark.parametrize(
+    "source_text",
+    [
+        "key = request.headers.get('Authorization')",
+        'const k = req.headers["x-api-key"]',
+        "auth = request.META.get('HTTP_AUTHORIZATION')",
+        # `04` §6 names Go HTTP middleware; this is how Go spells it.
+        'v := r.Header.Get("X-Api-Key")',
+        'token = c.get_header("Authorization")',
+        # A comparison is a read; only assignment is a write.
+        'if headers["authorization"] == expected:\n    pass',
+    ],
+)
+def test_reading_an_inbound_credential_header_still_counts(
+    tmp_path: Path, source_text: str
+) -> None:
+    root = _tree(tmp_path, **{"server.py": source_text + "\n"})
+    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    assert _sub(axis, "authentication_model").score == 60

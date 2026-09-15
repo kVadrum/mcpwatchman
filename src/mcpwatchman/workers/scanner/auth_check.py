@@ -66,13 +66,48 @@ _AUTH_MIDDLEWARE = (
     # Go
     "http.HandlerFunc", "middleware.Auth",
 )
-_CREDENTIAL_READS = (
-    "headers.get('Authorization')", 'headers.get("Authorization")',
-    "headers['authorization']", 'headers["authorization"]',
-    "headers.get('authorization')", 'headers.get("authorization")',
-    "headers['x-api-key']", 'headers["x-api-key"]',
-    "headers.get('x-api-key')", 'headers.get("x-api-key")',
-    "X-API-Key", "Bearer ", "api_key", "apiKey",
+# ⚠ **INBOUND header access only.** This list used to include the bare tokens
+# `api_key`, `apiKey`, `Bearer ` and `X-API-Key`, and that was a real defect in
+# the generous direction: a server that merely CALLS another API —
+# `OpenAI(api_key=os.environ["OPENAI_API_KEY"])` — matched, which lifted its
+# authentication model from `03` §4's 30 band ("no authentication") to its 60
+# band ("present but bypassable"). A credential the server SENDS says nothing
+# about whether it CHECKS one, and the population that mis-scores is exactly the
+# unauthenticated-HTTP cohort this project's opening argument is about.
+#
+# So every pattern here has to be a read of an INBOUND request header. The
+# regex covers the accessor shapes across ecosystems; a bare identifier cannot
+# distinguish direction and so cannot appear.
+# The header names that carry a client credential.
+_CREDENTIAL_HEADER = (
+    r"(?:HTTP_)?(?:authorization|x-api-key|x_api_key|api-key|apikey"
+    r"|x-auth-token|proxy-authorization)"
+)
+
+# Two accessor SHAPES, because they need different guards:
+#
+#   `.get("Authorization")` / `.Get(...)`  — inherently a read.
+#   `["Authorization"]`                    — a read ONLY if nothing assigns to it.
+#
+# ⚠ The subscript guard is the load-bearing half and an optional-quantifier
+# lookahead does NOT work here: with `["']?` and `\]?` optional, the engine
+# backtracks to a shorter match that ends before the `=` and the lookahead
+# passes anyway. The delimiters have to be REQUIRED for the guard to bind.
+# `headers["Authorization"] = f"Bearer {t}"` is the server SENDING a credential
+# — the same direction error the retired bare-token list made, arriving through
+# the subscript form.
+#
+# Go is covered because `04` §6 names Go HTTP middleware and `r.Header.Get(...)`
+# is how that ecosystem spells this. `get_header(...)` is its own branch: it is
+# a CALL, not an accessor, so it never matched the accessor shape at all.
+_CREDENTIAL_READ_RE = re.compile(
+    rf"""(?:
+        (?:headers?|META)\s*\.\s*(?:get|get_all|getlist|Get)\s*\(\s*
+            ["']{_CREDENTIAL_HEADER}["']
+      | (?:headers?|META)\s*\[\s*["']{_CREDENTIAL_HEADER}["']\s*\](?!\s*=[^=])
+      | (?:get_header|getHeader|header)\s*\(\s*["']{_CREDENTIAL_HEADER}["']
+    )""",
+    re.IGNORECASE | re.VERBOSE,
 )
 _OAUTH_INDICATORS = (
     "/oauth/", "oauth2", "OAuth2", "PKCE", "code_challenge", "/callback",
@@ -276,7 +311,7 @@ def _authentication_model(
         )
 
     has_middleware = any(t in source for t in _AUTH_MIDDLEWARE)
-    has_credential_read = any(t in source for t in _CREDENTIAL_READS)
+    has_credential_read = bool(_CREDENTIAL_READ_RE.search(source))
     has_oauth = any(t in source for t in _OAUTH_INDICATORS)
     documented = bool(readme) and any(
         t.lower() in readme.lower()

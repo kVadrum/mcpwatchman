@@ -81,9 +81,23 @@ _VAGUE_SCOPES = re.compile(
     re.IGNORECASE,
 )
 
+# ⚠ **A disclosure ROUTE, not a mention of security.** `\bCVE\b`, `GPG` and
+# `PGP` used to be alternatives here, and each produced a false 100 on a
+# sub-check worth 15% of Transparency: a CHANGELOG line reading "fixes
+# CVE-2024-1234" and a README saying "we sign releases with GPG" both scored as
+# a documented disclosure contact for a project offering no way to report
+# anything. `03` §7 asks whether a finder can reach the maintainer privately, so
+# the pattern now needs an address or an actual instruction to report.
 _SECURITY_CONTACT = re.compile(
-    r"(security@|vulnerabilit|responsible disclosure|report a (?:security )?issue|"
-    r"security\.txt|security policy|\bCVE\b|GPG|PGP)",
+    # ⚠ A ROLE address only — not any address. A generic `foo@example.com` for
+    # support questions is a contact, not a DISCLOSURE contact, and matching it
+    # awarded the full 15% to any README carrying an email. A README that does
+    # say "report vulns to foo@bar.com" still scores, via the report arm below.
+    r"(?:(?:security|secure|abuse|psirt|cve)@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+    r"|responsible disclosure|coordinated disclosure|security polic"
+    r"|security\.txt|/security/advisories|report (?:a |any )?"
+    r"(?:security |vulnerabilit)"
+    r"|(?:report|disclose|contact)[^.\n]{0,40}(?:vulnerabilit|security issue))",
     re.IGNORECASE,
 )
 

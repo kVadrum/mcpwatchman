@@ -5,6 +5,8 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+import pytest
+
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.transparency_check import (
     README_MIN_BYTES,
@@ -185,3 +187,61 @@ def test_well_documented_repository(tmp_path: Path) -> None:
     assert axis.score == 100
     # declared_scopes abstained, so the axis is scored on 80% of its weight.
     assert axis.assessed_weight == Decimal("0.80")
+
+
+# --- a disclosure ROUTE, not a mention of security -------------------------
+#
+# ⚠ Found by this repo's own /qa, 2026-09-15. `\bCVE\b`, `GPG` and `PGP` were
+# alternatives in the contact pattern, so a CHANGELOG line reading "fixes
+# CVE-2024-1234" and a README saying "we sign releases with GPG" each scored a
+# full 100 on a sub-check worth 15% of Transparency — for a project offering no
+# way to report anything. `03` §7 asks whether a finder can reach the maintainer
+# privately, which neither fact answers.
+
+
+@pytest.mark.parametrize(
+    "readme_body",
+    [
+        "Fixes CVE-2024-1234 in the parser.",
+        "We sign all releases with GPG.",
+        "Signed with PGP keys available on request.",
+        "This server had a security issue once.",
+    ],
+)
+def test_mentioning_security_is_not_a_disclosure_route(
+    tmp_path: Path, readme_body: str
+) -> None:
+    root = _tree(tmp_path, **{"README.md": readme_body + "\n" + "x" * 600})
+    assert _sub(_axis(root), "security_contact").score == 0
+
+
+@pytest.mark.parametrize(
+    "readme_body",
+    [
+        "Report vulnerabilities to security@example.com",
+        "Please report any security issue via our advisory page.",
+        "See our responsible disclosure policy.",
+        "File one at https://github.com/x/y/security/advisories/new",
+        "Contact us about vulnerabilities at the address below.",
+    ],
+)
+def test_a_real_disclosure_route_still_scores(tmp_path: Path, readme_body: str) -> None:
+    root = _tree(tmp_path, **{"README.md": readme_body + "\n" + "x" * 600})
+    assert _sub(_axis(root), "security_contact").score == 100
+
+
+def test_a_generic_contact_address_is_not_a_disclosure_route(tmp_path: Path) -> None:
+    # ⚠ Found by a negative control, 2026-09-15: the pattern accepted ANY email
+    # address, so a support contact scored the full 15%. Worse, no positive test
+    # exercised that arm — every one of them matched via a different
+    # alternative — so the over-broad branch was both wrong and untested.
+    root = _tree(tmp_path, **{
+        "README.md": "Questions? Email me at hello@example.com\n" + "x" * 600})
+    assert _sub(_axis(root), "security_contact").score == 0
+
+
+def test_a_security_role_address_alone_is_a_disclosure_route(tmp_path: Path) -> None:
+    # The arm the control found untested, now covered by a case that ONLY it
+    # can match — no "report", no "disclosure", no advisory URL.
+    root = _tree(tmp_path, **{"README.md": "security@example.com\n" + "x" * 600})
+    assert _sub(_axis(root), "security_contact").score == 100
