@@ -534,3 +534,98 @@ def test_reading_an_API_KEY_from_the_environment_still_registers(
     secret = _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling")
     assert secret.score == 70
     assert "OPENAI_API_KEY" in secret.evidence[0]
+
+
+# ── Codex leg 3: the narrowing that kept the mechanism ─────────────────────
+
+@pytest.mark.parametrize("line", [
+    "rows = db.introspection()",
+    "const parsed = validateTokenizer(input)",
+    "user.verify_tokenization()",
+])
+def test_ordinary_apis_are_not_inbound_token_verification(tmp_path: Path, line) -> None:
+    """The OAuth narrowing fixed the VOCABULARY and kept the MECHANISM.
+
+    Pruning `/oauth/` and `/callback` from the list left `t in source` matching
+    bare substrings, so `introspect` inside `db.introspection()` and
+    `validateToken` inside `validateTokenizer(` still read as inbound
+    verification — an unauthenticated server doing database or text work back at
+    `03` §4's 80 band, or 100 with a README that mentions auth. Each alternative
+    now has to end in a call or a word boundary.
+    """
+    root = _tree(tmp_path, **{
+        "server.py": f"import db\ndef handler(req):\n    {line}\n    return 1\n",
+        "README.md": "# srv\nSend an API key in the Authorization header.\n" + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 30, model.evidence
+
+
+@pytest.mark.parametrize("line", [
+    "claims = jwt.decode(tok, key, algorithms=['RS256'])",
+    "const payload = await jwtVerify(tok, JWKS)",
+    "res.setHeader('WWW-Authenticate', 'Bearer realm=\"api\"')",
+])
+def test_real_inbound_verification_still_registers(tmp_path: Path, line) -> None:
+    """Control for the narrowing above — it must not blind the detector."""
+    root = _tree(tmp_path, **{
+        "server.py": f"def guard(req):\n    {line}\n",
+        "README.md": "# srv\nEvery request must carry a bearer token.\n" + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 100
+
+
+def test_a_destructured_env_credential_is_not_a_clean_bill_of_health(
+    tmp_path: Path,
+) -> None:
+    """`const { OPENAI_API_KEY } = process.env` puts the accessor LAST.
+
+    The accessor-then-name regex captured nothing, so with a clean secret scan
+    the sub-check scored 100 and published "no environment variable with a
+    credential-shaped name is read anywhere in the source" about a server whose
+    first line reads an API key. It is the commonest form in modern JS/TS.
+    """
+    root = _tree(tmp_path, **{
+        "index.js": "const { OPENAI_API_KEY } = process.env;\n"
+                    "export const client = new OpenAI({ apiKey: OPENAI_API_KEY });\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    secret = _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling")
+    assert secret.score == 70
+    assert "OPENAI_API_KEY" in secret.evidence[0]
+
+
+def test_destructuring_only_non_credential_vars_is_still_clean(tmp_path: Path) -> None:
+    """Control: the name test still decides, destructured or not."""
+    root = _tree(tmp_path, **{
+        "index.js": "const { PORT, HOST } = process.env;\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    assert _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling").score == 100
+
+
+def test_resources_and_prompts_are_not_counted_as_tools(tmp_path: Path) -> None:
+    """MCP declares resources and prompts with the SAME `name`/`description`
+    shape as tools, so an unscoped object scan counted four resources beside
+    three real tools, crossed `03` §4's threshold, and turned an assessable 100
+    into an abstention — the conservative direction, and still a claim about a
+    server we could have assessed."""
+    resources = ",".join(
+        f'{{ name: "r{i}", description: "a resource" }}' for i in range(4)
+    )
+    tools = ",".join(
+        f'{{ name: "t{i}", description: "d", inputSchema: {{ type: "object" }} }}'
+        for i in range(3)
+    )
+    root = _tree(tmp_path, **{
+        "index.ts": f"const resources = [{resources}];\n"
+                    f"server.setRequestHandler(ListToolsRequestSchema, async () => ({{\n"
+                    f"  tools: [{tools}],\n}}));\n",
+    })
+    gran = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                "authorization_granularity")
+    assert gran.score == 100
+    assert "3 tool registration" in gran.evidence[0]

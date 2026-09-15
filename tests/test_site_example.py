@@ -431,3 +431,22 @@ def test_the_browser_chrome_colour_matches_the_page_ground():
         assert js[scheme].lower() == token, (
             f"{scheme}: theme.js GROUND {js[scheme]} != --ground {token}"
         )
+
+
+def test_the_stored_theme_paints_the_browser_chrome_before_first_paint():
+    """The pre-paint block set `data-theme` and left the chrome to `wire()`.
+
+    A visitor whose stored choice opposes their OS setting then got the page in
+    one theme and the browser's own title bar in the other until DOMContentLoaded
+    — the flash this file exists to prevent, surviving in the one surface CSS
+    cannot reach. The meta tags are authored above the script, so both can be
+    applied in the same block.
+    """
+    script = (SITE / "public" / "theme.js").read_text()
+    block = re.search(r"const initial = stored\(\);(.*?)\n\n", script, re.S)
+    assert block, "could not find the pre-paint block"
+    body = block.group(1)
+    assert "setAttribute" in body, "pre-paint block must apply data-theme"
+    assert "paintBrowserChrome" in body, (
+        "pre-paint block must also correct the theme-color metas"
+    )

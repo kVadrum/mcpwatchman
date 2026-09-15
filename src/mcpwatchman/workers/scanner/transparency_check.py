@@ -32,7 +32,7 @@ lands. Recorded here rather than left as a surprise in the data.
 from __future__ import annotations
 
 import re
-from bisect import bisect_left
+from bisect import bisect_right
 from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
@@ -171,11 +171,21 @@ def documents_disclosure_route(text: str) -> bool:
 
     for match in chain([first], matches):
         start = match.start()
-        # The clause containing this match begins after the last break before it.
-        i = bisect_left(clause_ends, start)
+        # The clause containing this match begins after the last break at or
+        # before it. ⚠ `bisect_RIGHT`, and the difference is a real defect the
+        # linearity rewrite introduced: a break's stored `end()` EQUALS
+        # `match.start()` when the route begins at the first character after a
+        # newline, and `bisect_left` excludes that boundary — so the clause was
+        # taken to start on the PREVIOUS line and its negation carried forward.
+        # `Do not report publicly\nsecurity@example.com` scored 0 for having no
+        # disclosure contact. The per-match rescan this replaced got it right,
+        # so "semantics preserved" was wrong; the test that claimed it used
+        # `; ` — a separator followed by a SPACE, which never lands on the
+        # boundary case.
+        i = bisect_right(clause_ends, start)
         clause_start = clause_ends[i - 1] if i else 0
         # Negated iff some negation falls inside [clause_start, start).
-        j = bisect_left(negations, clause_start)
+        j = bisect_right(negations, clause_start - 1)
         if j >= len(negations) or negations[j] >= start:
             return True
     return False

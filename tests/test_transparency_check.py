@@ -382,3 +382,30 @@ def test_the_linear_negation_check_kept_the_original_semantics() -> None:
         assert documents_disclosure_route(text) is True, text
     # A negated clause followed by a real route in the same document.
     assert documents_disclosure_route(negated[0] + " " + routes[0]) is True
+
+
+@pytest.mark.parametrize("text,expected", [
+    # ⚠ THE REGRESSION: a route starting at the first character after a newline.
+    # The break's stored end() EQUALS match.start(), and `bisect_left` excluded
+    # that boundary — so the clause was taken to start on the PREVIOUS line and
+    # its negation carried forward. A README saying "don't report publicly" and
+    # then giving the address scored 0 for having no disclosure contact.
+    ("Do not report publicly\nsecurity@example.com", True),
+    ("Please do not open an issue\nEmail security@example.com", True),
+    # The same shape with a space after the separator, which is what the
+    # original semantics test used — and why it never reached the boundary.
+    ("Do not report publicly. security@example.com", True),
+    ("Do not open a public issue; email security@example.com instead.", True),
+    # Genuine negations must still score 0.
+    ("No security policy is currently provided.", False),
+    ("There is no security.txt for this server.", False),
+])
+def test_a_clause_boundary_landing_ON_the_match_is_not_a_negation(text, expected) -> None:
+    """The off-by-one the linearity rewrite introduced, in both directions.
+
+    The per-match rescan it replaced handled this correctly, so the claim that
+    the bisect version "preserved semantics" was false — and the test making
+    that claim used a separator followed by a SPACE, which by construction never
+    lands on the boundary case. Written from the reproduction this time.
+    """
+    assert documents_disclosure_route(text) is expected

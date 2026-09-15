@@ -152,6 +152,17 @@ def _normalise_spdx(value: str) -> str:
     return value.strip().strip("()").casefold()
 
 
+def _license_operands(expr: str) -> set[str]:
+    """The distinct licences an SPDX expression names, exceptions removed.
+
+    `OR` and `AND` are both operand separators here — this answers only WHICH
+    licences appear, never how they combine; the caller inspects the operator
+    itself when it needs to tell an offer from a requirement. Splitting on both
+    is what stops a compound operand being swallowed by the exception strip.
+    """
+    return {_strip_exception(part) for part in re.split(r"\s+(?:or|and)\s+", expr)}
+
+
 def _strip_exception(value: str) -> str:
     """Drop a `WITH <exception>` clause from one SPDX operand.
 
@@ -184,48 +195,36 @@ def _spdx_relation(tag: str, expression: str) -> str:
     if tag_norm == expr_norm:
         return "exact"
 
-    # ⚠ **Strip the exception from BOTH sides or the fix below is one-sided.**
-    # The operand split strips `WITH` per-arm of the MANIFEST expression while
-    # the LICENSE file's tag was compared whole, so a tag that itself carries an
-    # exception matched nothing:
+    # ⚠ **BOTH SIDES ARE DECOMPOSED INTO OPERAND SETS — stripping the exception
+    # from the WHOLE tag truncates a compound one at its first `WITH`.**
     #
-    #   tag `Apache-2.0 WITH LLVM-exception` vs `MIT OR Apache-2.0 WITH
-    #   LLVM-exception` -> operands ["mit", "apache-2.0"] -> CONFLICT, score 30.
+    #   tag `Apache-2.0 WITH LLVM-exception OR MIT`    -> "apache-2.0"  (OR MIT lost)
+    #   tag `GPL-2.0 WITH Classpath-exception AND MIT` -> "gpl-2.0"     (AND MIT lost)
     #
-    # That is the same false accusation the operand split was written to remove,
-    # reintroduced one layer down — and the failing case is the very Rust crate
-    # string the comment below cites as its type case. An exception grants
-    # additional permissions under its own licence and never names a different
-    # one, so it is irrelevant to which licences an expression offers, on either
-    # side of the comparison. Both full forms stay in the evidence.
-    tag_core = _strip_exception(tag_norm)
-
-    # ⚠ **SPDX binds `WITH` TIGHTER than `OR`, so the operators must be split in
-    # that order.** Splitting on `WITH` first and keeping only the head discards
-    # every later alternative, and the damage is asymmetric: it depends on which
-    # operand carries the exception.
+    # That is the ORIGINAL defect of this function — keeping only the head
+    # before the first `WITH` — reintroduced on the TAG side by the fix for it
+    # on the MANIFEST side. A LICENSE file may carry a compound identifier
+    # (`SPDX-License-Identifier: MIT OR Apache-2.0` is ordinary in Rust), and a
+    # tag truncated to its first operand then compared `exact` against a
+    # single-licence manifest, awarding 100 to two declarations that differ.
     #
-    #   MIT OR Apache-2.0 WITH LLVM-exception   -> alternative   (head kept "MIT OR …")
-    #   Apache-2.0 WITH LLVM-exception OR MIT   -> CONFLICT      (head kept "Apache-2.0")
-    #
-    # The second is a real and widely used Rust crate license string, and a
-    # `conflict` publishes the accusation *"LICENSE declares 'MIT' but the
-    # manifest declares '…', which does not include it"* — the same false
-    # accusation `mismatch` above records having already shipped once, surviving
-    # in the other operand order.
-    def _operands(expr: str, operator: str) -> list[str]:
-        return [
-            # An exception binds to its own licence and introduces no
-            # alternative, so it is stripped per-operand rather than globally.
-            _strip_exception(part)
-            for part in re.split(rf"\s+{operator}\s+", expr)
-        ]
-
-    if " or " in expr_norm:
-        return "alternative" if tag_core in _operands(expr_norm, "or") else "conflict"
-    if " and " in expr_norm:
-        return "partial" if tag_core in _operands(expr_norm, "and") else "conflict"
-    return "exact" if tag_core == _strip_exception(expr_norm) else "conflict"
+    # Comparing SETS rather than heads also makes the relation order-independent
+    # in both operands, which is what this whole `WITH`/`OR` precedence thread
+    # has been about: `MIT OR Apache-2.0` and `Apache-2.0 OR MIT` are one offer.
+    tag_ops = _license_operands(tag_norm)
+    expr_ops = _license_operands(expr_norm)
+    if tag_ops == expr_ops:
+        return "exact"
+    if not tag_ops & expr_ops:
+        # The file's licence appears nowhere in the expression — the only shape
+        # that is a real disagreement, and the only one that may accuse anyone.
+        return "conflict"
+    if " and " in expr_norm and " or " not in expr_norm and tag_ops < expr_ops:
+        # A conjunctive expression REQUIRES every operand; shipping a subset of
+        # the texts is incomplete rather than contradictory.
+        return "partial"
+    # Overlapping offers, in either direction — a dual licence, not a dispute.
+    return "alternative"
 
 
 def _license_record(inventory: Inventory):

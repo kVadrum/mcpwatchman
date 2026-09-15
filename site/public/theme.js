@@ -71,8 +71,17 @@
   }
 
   // ── before first paint ──────────────────────────────────────────────────────
+  // The meta tags are authored ABOVE this script, so they already exist here —
+  // which is why the browser-chrome colour can be corrected in the same block.
+  // Leaving it to `wire()` at DOMContentLoaded meant a visitor whose stored
+  // choice opposes their OS setting got the page in one theme and the browser's
+  // own chrome in the other until the DOM finished parsing: the exact flash
+  // this block exists to prevent, surviving in the one surface CSS cannot reach.
   const initial = stored();
-  if (initial) document.documentElement.setAttribute("data-theme", initial);
+  if (initial) {
+    document.documentElement.setAttribute("data-theme", initial);
+    paintBrowserChrome(initial);
+  }
 
   // ── after the DOM exists: reveal and wire the control ───────────────────────
   function wire() {

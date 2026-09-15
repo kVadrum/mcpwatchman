@@ -370,3 +370,55 @@ def test_a_large_but_valid_manifest_is_not_truncated_into_a_parse_failure(
     assert len(manifest) > 512 * 1024
     root = _tree(tmp_path, LICENSE=MIT_TEXT, **{"package.json": manifest})
     assert _facts(root).spdx_in_manifest == "MIT"
+
+
+# ── Codex leg 3: the exception strip truncated a COMPOUND tag ──────────────
+
+@pytest.mark.parametrize("tag,manifest,relation", [
+    # The regression: stripping WITH from the whole tag discarded `OR MIT`,
+    # leaving "apache-2.0" to compare EXACT against a manifest declaring only
+    # Apache-2.0 — two differing declarations scored 100.
+    ("Apache-2.0 WITH LLVM-exception OR MIT", "Apache-2.0", "alternative"),
+    ("MIT OR Apache-2.0 WITH LLVM-exception", "MIT", "alternative"),
+    # An AND operand was swallowed the same way.
+    ("GPL-2.0-only WITH Classpath-exception-2.0 AND MIT", "GPL-2.0-only", "alternative"),
+    # Order independence, in BOTH operands — the point of the whole thread.
+    ("MIT OR Apache-2.0", "Apache-2.0 OR MIT", "exact"),
+    # The cases that must keep working.
+    ("Apache-2.0 WITH LLVM-exception", "MIT OR Apache-2.0 WITH LLVM-exception", "alternative"),
+    ("Apache-2.0 WITH LLVM-exception", "Apache-2.0", "exact"),
+    ("MIT", "MIT AND Apache-2.0", "partial"),
+    # And a real disagreement must still be one.
+    ("GPL-3.0 WITH Classpath-exception-2.0", "MIT OR Apache-2.0", "conflict"),
+    ("MIT", "Apache-2.0", "conflict"),
+])
+def test_compound_tags_keep_every_operand(tag, manifest, relation) -> None:
+    """A LICENSE file may carry a compound identifier — `SPDX-License-Identifier:
+    MIT OR Apache-2.0` is ordinary in Rust — so the tag needs the same
+    decomposition the manifest expression always got.
+
+    This is the function's ORIGINAL defect (keep only the head before the first
+    `WITH`) reintroduced on the tag side by the fix for it on the manifest side.
+    """
+    from mcpwatchman.workers.scanner.license_check import _spdx_relation
+    assert _spdx_relation(tag, manifest) == relation
+
+
+def test_a_compound_tag_against_a_single_manifest_does_not_score_exact(
+    tmp_path: Path,
+) -> None:
+    """End to end, because the relation is only half the defect: `exact` was
+    reached and it published "SPDX 'X' in LICENSE, matching <manifest>" — a
+    claim of agreement between declarations that differ."""
+    root = _tree(
+        tmp_path,
+        LICENSE="SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception OR MIT\n"
+                + APACHE_TEXT,
+        **{"Cargo.toml": '[package]\nlicense = "Apache-2.0"\n'},
+    )
+    facts = _facts(root)
+    assert facts.relation == "alternative"
+    assert facts.mismatch is False
+    result = _assess(root)
+    assert result.score == 100
+    assert "dual license" in result.evidence[0]

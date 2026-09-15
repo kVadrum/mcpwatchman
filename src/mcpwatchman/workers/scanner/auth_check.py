@@ -162,12 +162,35 @@ _CREDENTIAL_READ_RE = re.compile(
 # token it received. A server that genuinely implements OAuth inbound also reads
 # the Authorization header, so the honest floor for anything pruned here is
 # `03` §4's 60 band, not its 30.
-_OAUTH_INDICATORS = (
-    "jwt.decode", "jwt.verify", "jwtVerify", "jsonwebtoken.verify",
-    "verify_jwt", "verifyJwt", "decode_token", "verify_token", "verifyToken",
-    "jwks", "JWKS", "JwksClient", "get_signing_key", "getSigningKey",
-    "introspect", "token_introspection", "WWW-Authenticate",
-    "oauth-protected-resource", "validate_token", "validateToken",
+#
+# ⚠ **A REGEX OF CALL FORMS, NOT A SUBSTRING LIST — the first cut of this
+# narrowing was still substring containment and still over-matched.** `introspect`
+# is inside `db.introspection()`, `validateToken` inside `validateTokenizer(`, and
+# `verify_token` inside `verify_tokenization()` — so an unauthenticated server
+# doing ordinary database or text work reached the 80 band, or 100 with a README
+# that mentions auth. Narrowing the LIST while keeping `t in source` fixed the
+# vocabulary and left the mechanism, which is how the same defect survives a fix
+# aimed at it. Each alternative now has to end in a CALL or a word boundary.
+_OAUTH_VERIFY_RE = re.compile(
+    r"""
+        \b(?:
+            jwt\s*\.\s*(?:decode|verify)\s*\(
+          | jwtVerify\s*\(
+          | jose\s*\.\s*jwtVerify\s*\(
+          | jsonwebtoken\s*\.\s*verify\s*\(
+          | (?:verify|validate|decode)_token\s*\(
+          | (?:verify|validate|decode)Token\s*\(
+          | get_signing_key\s*\( | getSigningKey\s*\(
+          | JwksClient\b
+          | jwks(?:_uri|Uri|_url|Url|_client|Client|_endpoint)?\b
+          | introspection_endpoint\b
+          | introspect_token\s*\( | introspectToken\s*\(
+        )
+      | WWW-Authenticate
+      | oauth-protected-resource
+      | /\.well-known/oauth
+    """,
+    re.IGNORECASE | re.VERBOSE,
 )
 
 # Import statements, which evidence a DEPENDENCY rather than a call site.
@@ -260,6 +283,20 @@ _CREDENTIAL_NAME_RE = re.compile(
 _SECRET_LOADERS = ("dotenv", "load_dotenv", "Dotenv", "godotenv")
 
 
+# ⚠ **DESTRUCTURING READS THE ENVIRONMENT WITHOUT NAMING A VARIABLE AFTER IT.**
+# `const { OPENAI_API_KEY } = process.env` puts the accessor LAST, so the
+# accessor-then-name regex above captures nothing — and the consequence was not
+# a missing signal but a false all-clear: with a clean secret scan,
+# `_secret_handling` awarded 100 and published *"no environment variable with a
+# credential-shaped name is read anywhere in the source"* about a server whose
+# first line reads an API key. It is the commonest form in modern JS/TS.
+# The alias form (`{ API_KEY: k }`) keys on the ENV NAME, which is the half
+# before the colon — the local alias is the server's business.
+_ENV_DESTRUCTURE_RE = re.compile(
+    r"\{([^{}]{1,400})\}\s*=\s*(?:process\.env|Deno\.env\.toObject\s*\(\s*\)|os\.environ)\b"
+)
+
+
 def _env_credential_names(source: str) -> tuple[str, ...]:
     """Environment variables the source reads whose NAMES look like secrets."""
     names = {
@@ -267,6 +304,11 @@ def _env_credential_names(source: str) -> tuple[str, ...]:
         for m in _ENV_ACCESS_RE.finditer(source)
         if _CREDENTIAL_NAME_RE.search(m.group("name"))
     }
+    for block in _ENV_DESTRUCTURE_RE.finditer(source):
+        for entry in block.group(1).split(","):
+            name = entry.split(":", 1)[0].strip().lstrip("*").strip()
+            if name and _CREDENTIAL_NAME_RE.search(name):
+                names.add(name)
     return tuple(sorted(names))
 
 # Tool registration, for the granularity heuristic's tool count.
@@ -315,13 +357,52 @@ _TOOL_OBJECT_RE = re.compile(
 _TOOL_LIST_HANDLER_RE = re.compile(r"ListToolsRequestSchema|\btools\s*:\s*\[")
 
 
+# ⚠ **A `name` + `description` OBJECT IS NOT NECESSARILY A TOOL.** MCP declares
+# RESOURCES and PROMPTS with the identical shape, so an unscoped scan counted
+# four resources beside three real tools and pushed the count over `03` §4's
+# threshold — turning a legitimate 100 into an abstention. That is the
+# conservative direction and still wrong: it reports "needs human review" about
+# a server we could in fact assess. So object counting is confined to the
+# inside of a `tools:` array rather than run over the whole file.
+_TOOLS_ARRAY_RE = re.compile(r"\btools\s*:\s*\[")
+# Bounds, because the region walk reads attacker-controlled source: at most this
+# many arrays, each scanned at most this far. A tool list longer than 64 KB is
+# not a tool list.
+MAX_TOOL_ARRAYS = 20
+MAX_TOOL_ARRAY_BYTES = 64 * 1024
+
+
+def _tools_array_regions(source: str) -> list[str]:
+    """The bracket-balanced bodies of each `tools: [ ... ]` array."""
+    regions: list[str] = []
+    for opener in _TOOLS_ARRAY_RE.finditer(source):
+        if len(regions) >= MAX_TOOL_ARRAYS:
+            break
+        start = opener.end()  # just past the '['
+        depth, end = 1, min(len(source), start + MAX_TOOL_ARRAY_BYTES)
+        i = start
+        while i < end:
+            ch = source[i]
+            if ch == "[":
+                depth += 1
+            elif ch == "]":
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        regions.append(source[start:i])
+    return regions
+
+
 def _count_tools(source: str) -> int:
     """How many distinct tools the source registers (`03` §4's threshold)."""
     named = {m.group("name") for m in _TOOL_CALL_RE.finditer(source)}
     sites = max(
         (len(pattern.findall(source)) for pattern in _TOOL_DECORATOR_RES), default=0
     )
-    objects = len(_TOOL_OBJECT_RE.findall(source))
+    objects = sum(
+        len(_TOOL_OBJECT_RE.findall(region)) for region in _tools_array_regions(source)
+    )
     return max(len(named), sites, objects)
 # Per-tool conditional access: a permission test inside the handler.
 _CONDITIONAL_ACCESS_TOKENS = (
@@ -545,7 +626,7 @@ def _authentication_model(
     has_middleware = any(t in call_sites for t in _AUTH_MIDDLEWARE)
     imports_middleware = not has_middleware and any(t in source for t in _AUTH_MIDDLEWARE)
     has_credential_read = bool(_CREDENTIAL_READ_RE.search(source))
-    has_oauth = any(t in call_sites for t in _OAUTH_INDICATORS)
+    has_oauth = bool(_OAUTH_VERIFY_RE.search(call_sites))
     # ⚠ WORD-BOUNDED. This was substring containment over a list that included
     # a bare "auth", so an `## Authors` heading — in practically every README —
     # satisfied "documented in the README" and lifted the band to 100.
