@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import subprocess
 import tarfile
+import types
 import zipfile
 
 import pytest
@@ -22,6 +23,7 @@ from mcpwatchman.workers.crawler.registry import (
     parse_entry,
     resolve_source,
 )
+from mcpwatchman.workers.scanner import source
 from mcpwatchman.workers.scanner.source import (
     EXCLUDED_DIRS,  # noqa: F401 - re-exported for the parametrised test below
     MAX_MEMBERS,
@@ -820,3 +822,79 @@ def test_download_enforces_a_wall_clock_deadline(tmp_path, monkeypatch):
     monkeypatch.setattr(httpx, "stream", lambda *a, **kw: _Stream())
     with pytest.raises(FetchError, match="wall clock"):
         S._download("https://example.invalid/p.tgz", tmp_path / "out.tgz", timeout=30)
+
+
+# --- declared source that is not publicly reachable ------------------------
+#
+# ⚠ Measured 2026-09-15 over 200 registry entries: of the 95 classed scannable
+# that declared a repository URL, 43 (45.3%) were not publicly reachable. That
+# is not our fetch breaking — it is the publisher's declaration being wrong, and
+# the two must not arrive as the same exception.
+
+
+def test_missing_repository_is_unreachable_not_a_generic_fetch_error(monkeypatch):
+    proc = types.SimpleNamespace(
+        returncode=128,
+        stderr="fatal: repository 'https://github.com/nope/nope.git/' not found\n",
+        stdout="",
+    )
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.SourceUnreachableError):
+        source._run(["git", "clone", "https://github.com/nope/nope"])
+
+
+@pytest.mark.parametrize(
+    "stderr",
+    [
+        # GitHub answers 404 for a PRIVATE repo too, deliberately, so as not to
+        # leak its existence — it arrives identically to a deleted one.
+        "fatal: repository 'https://github.com/x/y.git/' not found",
+        # A private repo over HTTPS with prompts disabled asks for credentials.
+        "fatal: could not read Username for 'https://github.com': terminal prompts disabled",
+        "remote: Permission denied\nfatal: Could not read from remote repository.",
+        "ERROR: Repository not found.",
+        "fatal: Authentication failed for 'https://github.com/x/y.git/'",
+    ],
+)
+def test_every_shape_of_not_public_classifies_as_unreachable(monkeypatch, stderr):
+    # Leaving the auth phrasings out would classify the PRIVATE half as an
+    # infrastructure fault and retry it forever.
+    proc = types.SimpleNamespace(returncode=128, stderr=stderr, stdout="")
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.SourceUnreachableError):
+        source._run(["git", "clone", "https://example.invalid/x"])
+
+
+@pytest.mark.parametrize(
+    "stderr",
+    [
+        "fatal: unable to access 'https://github.com/x/y': Could not resolve host",
+        "error: RPC failed; curl 56 GnuTLS recv error",
+        "fatal: early EOF",
+    ],
+)
+def test_our_own_failures_stay_generic_and_retryable(monkeypatch, stderr):
+    # A DNS failure or a torn transfer is OUR problem. Classifying it as the
+    # publisher's would publish a finding about a server we simply failed to
+    # reach — the exact over-claim this project exists to avoid.
+    proc = types.SimpleNamespace(returncode=128, stderr=stderr, stdout="")
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.FetchError) as exc:
+        source._run(["git", "clone", "https://example.invalid/x"])
+    assert not isinstance(exc.value, source.SourceUnreachableError)
+
+
+def test_unreachable_is_still_a_fetch_error_so_existing_handlers_hold():
+    # Subclass, not sibling: every caller that already catches FetchError keeps
+    # working, and only callers that WANT the distinction have to ask for it.
+    assert issubclass(source.SourceUnreachableError, source.FetchError)
+
+
+def test_timeout_is_not_mistaken_for_an_absent_repository(monkeypatch):
+    def boom(*a, **k):
+        raise source.subprocess.TimeoutExpired(cmd="git", timeout=1)
+
+    monkeypatch.setattr(source.subprocess, "run", boom)
+    with pytest.raises(source.FetchError) as exc:
+        source._run(["git", "clone", "https://example.invalid/x"])
+    assert not isinstance(exc.value, source.SourceUnreachableError)

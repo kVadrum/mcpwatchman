@@ -141,7 +141,9 @@ def test_plan_reports_coverage_over_everything_current():
     )
     plan = plan_from_diff(diff)
     assert plan.coverage is not None
-    assert plan.coverage.total == 2 and plan.coverage.scannable == 1
+    assert plan.coverage.total == 2 and plan.coverage.declared_scannable == 1
+    # Manifest-derived, so the verified half is unknown rather than zero.
+    assert plan.coverage.verified_scannable is None
 
 
 # --- enqueue isolation ----------------------------------------------------

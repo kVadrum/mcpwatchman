@@ -293,14 +293,43 @@ def test_coverage_report_counts_scannable_against_total():
         parse_entry(make_raw(name="c/z", remotes=[{"type": "sse", "url": "https://x"}])),
     ]
     rep = coverage_report(entries)
-    assert rep.total == 3 and rep.scannable == 2
+    assert rep.total == 3 and rep.declared_scannable == 2
     assert rep.by_kind == {"npm": 1, "github": 1}
     assert sum(rep.skipped.values()) == 1
 
 
 def test_empty_coverage_reads_as_zero_not_total():
     """Unknown must not render as perfect — `base.md` signal-design rule."""
-    assert coverage_report([]).coverage == 0.0
+    assert coverage_report([]).declared_coverage == 0.0
+
+
+def test_coverage_is_declared_not_verified():
+    """⚠ The crawler makes no network call, so it cannot know what is FETCHABLE.
+
+    Measured 2026-09-15: 45.3% of repo-declaring entries point at a repository
+    that is not publicly reachable. `declared_coverage` is therefore an upper
+    bound, and `verified_*` must read None — not 0 — because "we have not
+    checked" and "nothing was reachable" are opposite claims and this number is
+    bound for a public page.
+    """
+    entries = [
+        parse_entry(make_raw(name="b/y", repository={"url": "https://github.com/a/b"}))
+    ]
+    rep = coverage_report(entries)
+    assert rep.declared_scannable == 1
+    assert rep.declared_coverage == 1.0
+    assert rep.verified_scannable is None
+    assert rep.verified_coverage is None
+
+
+def test_verified_coverage_computes_once_outcomes_are_known():
+    rep = coverage_report(
+        [parse_entry(make_raw(name="b/y", repository={"url": "https://github.com/a/b"})),
+         parse_entry(make_raw(name="c/z", repository={"url": "https://github.com/c/d"}))]
+    )
+    from dataclasses import replace
+    # One of the two declarations turned out to be unreachable on fetch.
+    assert replace(rep, verified_scannable=1).verified_coverage == 0.5
 
 
 # --- fetch_all: partial results are never returned ------------------------

@@ -330,6 +330,20 @@ class SourceResolution:
 
     @property
     def scannable(self) -> bool:
+        """Whether the entry DECLARES a source we know how to fetch.
+
+        ⚠ **A claim by the publisher, not a fact about the world.** It says a
+        usable source spec could be built, never that anything is at the other
+        end of it — nothing here touches the network. Measured 2026-09-15 over
+        200 entries, **43 of the 95 repo-declaring entries (45.3%) pointed at a
+        repository that is not publicly reachable**, so this over-counts what a
+        scan can really read.
+
+        The verified counterpart is a fetch outcome:
+        `scanner.source.SourceUnreachableError` is the negative, and
+        `CoverageReport.verified_scannable` is where it lands. Do not publish a
+        figure derived from this property without the word *declared* on it.
+        """
         return self.primary is not None
 
 
@@ -688,26 +702,61 @@ def manifest_hash(entries: Iterable[RegistryEntry]) -> str:
 
 @dataclass(frozen=True, slots=True)
 class CoverageReport:
-    """How much of the registry static analysis can actually reach.
+    """How much of the registry DECLARES something static analysis could read.
 
     Surfaced rather than computed and dropped. A trust product that scans 45% of
     a registry and presents it as "the registry" is making the same unstated
     claim it exists to correct, so this number belongs on the site.
+
+    ⚠ **It counts DECLARATIONS, not artefacts, and the gap is large.** Every
+    figure here is derived from the registry manifest alone — no network call is
+    made, deliberately, because verifying 32,152 entries per poll would be both
+    slow and rude to a registry we intend to be a good citizen of. A publisher
+    saying "my source is at this URL" is a claim, and measured 2026-09-15 over
+    200 entries, **43 of the 95 repo-declaring entries (45.3%) pointed at a
+    repository that is not publicly reachable.**
+
+    So `declared_coverage` is an UPPER BOUND on what can really be scanned, and
+    the fields say `declared_` out loud for that reason: this number was already
+    bound for a public page under a name that read as verified fact.
+    `verified_*` is the honest counterpart and is `None` until scan outcomes
+    exist to fill it — **None, not 0**, because "we have not checked" and "we
+    checked and nothing was reachable" are opposite claims.
     """
 
     total: int = 0
-    scannable: int = 0
+    declared_scannable: int = 0
     by_kind: dict[str, int] = field(default_factory=dict)
     skipped: dict[str, int] = field(default_factory=dict)
+    # Filled from actual fetch outcomes (a `SourceUnreachableError` is the
+    # negative), which live in the scan results rather than the manifest. The
+    # crawler cannot know it, so the crawler leaves it None.
+    verified_scannable: int | None = None
 
     @property
-    def coverage(self) -> float:
-        """Scannable share, 0.0-1.0. Zero entries reads as 0.0, never 1.0."""
-        return self.scannable / self.total if self.total else 0.0
+    def declared_coverage(self) -> float:
+        """Share of entries DECLARING readable source. Upper bound, not fact.
+
+        Zero entries reads as 0.0, never 1.0 — an empty manifest has no coverage
+        rather than perfect coverage.
+        """
+        return self.declared_scannable / self.total if self.total else 0.0
+
+    @property
+    def verified_coverage(self) -> float | None:
+        """Share whose declared source was actually fetched. None until known."""
+        if self.verified_scannable is None or not self.total:
+            return None
+        return self.verified_scannable / self.total
 
 
 def coverage_report(entries: Iterable[RegistryEntry]) -> CoverageReport:
-    """Count how many entries resolve to something the v0.1 scanner can read."""
+    """Count how many entries DECLARE something the v0.1 scanner could read.
+
+    Manifest-only by design — see `CoverageReport`, which carries the measured
+    gap between a declaration and a fetchable artefact. `verified_scannable` is
+    left None here because nothing in the crawler has fetched anything.
+    """
     total = scannable = 0
     by_kind: dict[str, int] = {}
     skipped: dict[str, int] = {}
@@ -721,7 +770,10 @@ def coverage_report(entries: Iterable[RegistryEntry]) -> CoverageReport:
             reason = resolution.skip_reason or "unknown"
             skipped[reason] = skipped.get(reason, 0) + 1
     return CoverageReport(
-        total=total, scannable=scannable, by_kind=by_kind, skipped=skipped
+        total=total,
+        declared_scannable=scannable,
+        by_kind=by_kind,
+        skipped=skipped,
     )
 
 
