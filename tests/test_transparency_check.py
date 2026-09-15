@@ -9,6 +9,7 @@ import pytest
 
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.transparency_check import (
+    _SECURITY_CONTACT,
     README_MIN_BYTES,
     assess_transparency,
     documentation_facts,
@@ -245,3 +246,52 @@ def test_a_security_role_address_alone_is_a_disclosure_route(tmp_path: Path) -> 
     # can match — no "report", no "disclosure", no advisory URL.
     root = _tree(tmp_path, **{"README.md": "security@example.com\n" + "x" * 600})
     assert _sub(_axis(root), "security_contact").score == 100
+
+
+# --- regressions from the 2026-09-15 Deep review ---------------------------
+
+
+def test_disclosure_pattern_stays_linear_on_a_hostile_readme() -> None:
+    """⚠ A guard against reintroducing catastrophic backtracking.
+
+    An intermediate form of `_SECURITY_CONTACT` accepted any address via
+    `[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}`, whose two `+` runs both
+    contain `.` and are therefore mutually ambiguous. Measured by the reviewer at
+    **84 seconds on a 200 KB README** — and `read_text` hands these patterns up
+    to 512 KB of attacker-controlled text against `04` §9's 15-minute scan
+    budget, so one hostile registry entry stalls the nightly batch.
+
+    Narrowing to role addresses removed the ambiguity as a side effect of a
+    correctness fix. This test is what stops a future widening from quietly
+    bringing it back.
+    """
+    import time
+
+    payload = "security@" + "a." * 40_000  # never terminates in [A-Za-z]{2,}
+    started = time.monotonic()
+    _SECURITY_CONTACT.search(payload)
+    elapsed = time.monotonic() - started
+    assert elapsed < 1.0, f"pattern took {elapsed:.1f}s on {len(payload)} chars"
+
+
+@pytest.mark.parametrize(
+    "readme_body",
+    ["## Environment Variables\n\nSet things.", "## Config File", "Create a .env file"],
+)
+def test_configuration_headings_match_regardless_of_case(
+    tmp_path: Path, readme_body: str
+) -> None:
+    # `_CONFIG_SIGNALS` was the only doc regex without IGNORECASE, so the two
+    # commonest heading forms missed and cost a +25 band.
+    root = _tree(tmp_path, **{"README.md": readme_body + "\n" + "x" * 600})
+    assert "configuration documented" in score_readme(_facts(root)).evidence[0]
+
+
+@pytest.mark.parametrize("name", ["CHANGES.rst", "HISTORY.rst", "NEWS.txt", "CHANGELOG.md"])
+def test_changelog_is_found_whatever_its_extension(tmp_path: Path, name: str) -> None:
+    # ⚠ `_find` searched for changes/history/news but `inventory._DOC_PREFIXES`
+    # only routed those to Role.DOCS when the file was `.md`, so a Python project
+    # shipping CHANGES.rst scored 0 with the evidence "no CHANGELOG in the
+    # fetched source" — one rule, two enforcers, silently disagreeing.
+    root = _tree(tmp_path, **{name: "## 1.0\n", "README.md": "x" * 600})
+    assert _sub(_axis(root), "changelog").score == 100

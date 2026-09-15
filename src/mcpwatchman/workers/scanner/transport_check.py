@@ -26,6 +26,7 @@ process, not a network port. There is no transport to secure.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -92,15 +93,28 @@ _SDK_SSE = (
 
 # Generic HTTP server frameworks, by language. Weaker evidence than the SDK
 # symbols and used only when none of those appear.
-_HTTP_FRAMEWORKS = (
-    # Python
-    "fastapi", "flask", "aiohttp.web", "starlette", "uvicorn", "quart",
-    "tornado", "sanic", "bottle",
-    # JavaScript / TypeScript
-    "express(", "from 'express'", 'from "express"', "require('express')",
-    'require("express")', "fastify", "createServer(", "Koa", "hono",
-    # Go
-    '"net/http"',
+# ⚠ **IMPORT CONTEXT, not bare substrings.** These were plain `in` tests, and
+# ordinary source matched them:
+#
+#   "// avoid the bottleneck here"  -> 'bottle'
+#   "tls.createServer(opts)"        -> 'createServer('
+#   "// Koala-themed demo"          -> 'Koa'        ("hono" also hits "phono*")
+#
+# Any hit makes `infer_transport` return STREAMABLE_HTTP, so a server declaring
+# stdio with no recognised SDK symbol becomes `mismatch=True` — which `04` §6
+# turns into a PUBLISHED Transparency finding that its declaration contradicts
+# its code. An accusation built on the word "bottleneck".
+_HTTP_FRAMEWORK_RE = re.compile(
+    # Python: an actual import of the framework.
+    r"^\s*(?:from|import)\s+(?:fastapi|flask|starlette|quart|tornado|sanic|bottle|aiohttp)\b"
+    r"|^\s*from\s+aiohttp\s+import\s+web\b"
+    # JS/TS: import or require of a named framework.
+    r"|(?:from|require\s*\()\s*['\"](?:express|fastify|koa|hono|@hapi/hapi)['\"]"
+    # Node's own servers, qualified so `tls.createServer` does not count.
+    r"|\b(?:http|https)\.createServer\s*\("
+    # Go: the import path, which is already quoted and unambiguous.
+    r"|\"net/http\"",
+    re.MULTILINE,
 )
 
 
@@ -203,7 +217,7 @@ def infer_transport(root: Path, inventory: Inventory) -> Transport:
         return Transport.SSE
     if any(token in text for token in _SDK_STDIO):
         return Transport.STDIO
-    if any(token in text for token in _HTTP_FRAMEWORKS):
+    if _HTTP_FRAMEWORK_RE.search(text):
         return Transport.STREAMABLE_HTTP
     return Transport.UNKNOWN
 

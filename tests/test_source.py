@@ -840,7 +840,7 @@ def test_missing_repository_is_unreachable_not_a_generic_fetch_error(monkeypatch
     )
     monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
     with pytest.raises(source.SourceUnreachableError):
-        source._run(["git", "clone", "https://github.com/nope/nope"])
+        source._run(["git", "clone", "https://github.com/nope/nope"], remote=True)
 
 
 @pytest.mark.parametrize(
@@ -862,7 +862,7 @@ def test_every_shape_of_not_public_classifies_as_unreachable(monkeypatch, stderr
     proc = types.SimpleNamespace(returncode=128, stderr=stderr, stdout="")
     monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
     with pytest.raises(source.SourceUnreachableError):
-        source._run(["git", "clone", "https://example.invalid/x"])
+        source._run(["git", "clone", "https://example.invalid/x"], remote=True)
 
 
 @pytest.mark.parametrize(
@@ -880,7 +880,7 @@ def test_our_own_failures_stay_generic_and_retryable(monkeypatch, stderr):
     proc = types.SimpleNamespace(returncode=128, stderr=stderr, stdout="")
     monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
     with pytest.raises(source.FetchError) as exc:
-        source._run(["git", "clone", "https://example.invalid/x"])
+        source._run(["git", "clone", "https://example.invalid/x"], remote=True)
     assert not isinstance(exc.value, source.SourceUnreachableError)
 
 
@@ -897,4 +897,99 @@ def test_timeout_is_not_mistaken_for_an_absent_repository(monkeypatch):
     monkeypatch.setattr(source.subprocess, "run", boom)
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "clone", "https://example.invalid/x"])
+    assert not isinstance(exc.value, source.SourceUnreachableError)
+
+
+# --- who is at fault: OUR failure must never be published as THEIRS ---------
+#
+# ⚠ Found by a Deep review, 2026-09-15. `_is_unreachable` ran on the output of
+# EVERY git call in the module, including ones that execute AFTER the remote was
+# reached successfully. "Permission denied" is a local-filesystem error at least
+# as often as a remote one, so a read-only scratch mount or a full disk would
+# have flipped a whole night's batch into a published accusation about named
+# third parties — and none of it would have been retried.
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        ["git", "gc", "--prune=now"],
+        ["git", "sparse-checkout", "set", "--cone", "--", "pkg"],
+        ["git", "checkout", "--detach", "FETCH_HEAD"],
+        ["git", "symbolic-ref", "-q", "HEAD"],
+    ],
+)
+def test_post_clone_local_git_is_never_the_publishers_fault(monkeypatch, cmd):
+    proc = types.SimpleNamespace(
+        returncode=128,
+        stderr="fatal: could not create work tree dir '/scans/abc': Permission denied",
+        stdout="",
+    )
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.FetchError) as exc:
+        source._run(cmd)  # no remote=True — these never contact a remote
+    assert not isinstance(exc.value, source.SourceUnreachableError)
+
+
+def test_a_missing_TAG_is_not_a_missing_REPOSITORY(monkeypatch):
+    # `fetch_git` retries tag candidates by design; reading "not found" here as
+    # an absent repository both misreports and defeats that fallback.
+    proc = types.SimpleNamespace(
+        returncode=128,
+        stderr="fatal: Remote branch v1.2.3 not found in upstream origin",
+        stdout="",
+    )
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.FetchError) as exc:
+        source._run(["git", "fetch", "origin", "refs/tags/v1.2.3"], remote=True)
+    assert not isinstance(exc.value, source.SourceUnreachableError)
+
+
+def test_a_hostile_repository_url_cannot_steer_the_classifier(monkeypatch, tmp_path):
+    # git echoes the URL it was given, and that URL comes from a public registry
+    # entry. Without redaction a publisher could name their repo
+    # `.../access denied/` and turn OUR DNS failure into THEIR permanent verdict.
+    url = "https://gh.example/p/access denied/"
+    proc = types.SimpleNamespace(
+        returncode=128,
+        stderr=f"fatal: unable to access '{url}': Could not resolve host",
+        stdout="",
+    )
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.FetchError) as exc:
+        source._run(["git", "clone", "--", url, str(tmp_path)], remote=True, url=url)
+    assert not isinstance(exc.value, source.SourceUnreachableError)
+
+
+def test_permission_denied_still_counts_when_git_names_the_REMOTE(monkeypatch):
+    # The narrowing must not lose the real SSH case.
+    proc = types.SimpleNamespace(
+        returncode=128,
+        stderr="git@github.com: Permission denied (publickey).\n"
+               "fatal: Could not read from remote repository.",
+        stdout="",
+    )
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.SourceUnreachableError):
+        source._run(["git", "clone", "git@github.com:x/y"], remote=True)
+
+
+def test_the_remote_guard_holds_even_for_unambiguous_remote_wording(monkeypatch):
+    """Isolates the `remote=` scoping from the `_UNREACHABLE_PAIRS` narrowing.
+
+    The two are independent defences with overlapping coverage, so the
+    Permission-denied fixture above cannot distinguish them — it is excluded by
+    the pairs rule whether or not the guard exists. This one uses wording that
+    IS unambiguously remote, on a command that never contacts a remote: git can
+    echo such text out of a repo's own config or a submodule URL, and without
+    the guard that becomes a published accusation about the publisher.
+    """
+    proc = types.SimpleNamespace(
+        returncode=128,
+        stderr="fatal: Authentication failed for 'https://github.com/x/y.git/'",
+        stdout="",
+    )
+    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    with pytest.raises(source.FetchError) as exc:
+        source._run(["git", "gc", "--prune=now"])  # local-only, no remote=True
     assert not isinstance(exc.value, source.SourceUnreachableError)

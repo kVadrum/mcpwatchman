@@ -186,3 +186,29 @@ def test_scoring_is_reproducible_against_a_fixed_as_of() -> None:
     first = assess_maintenance(signals, as_of=AS_OF)
     assert first.score == assess_maintenance(signals, as_of=AS_OF).score
     assert first.score != assess_maintenance(signals, as_of=date(2027, 6, 1)).score
+
+
+def test_unknown_freshness_does_not_read_as_committed_today() -> None:
+    """⚠ `stale = (_days_since(...) or 0) > 90` turned None into 0.
+
+    A sole maintainer whose last commit was never retrieved scored **50**
+    (healthy sole maintainer) instead of 30 — the one place in this module that
+    treated a `None` signal as a favourable value, against `MaintenanceSignals`'
+    own rule that None means not-retrieved and never zero.
+    """
+    signals = MaintenanceSignals(authors_12mo=1, last_commit=None)
+    result = score_bus_factor(signals, AS_OF)
+    # The band forks 50/30 on freshness and nothing here distinguishes them, so
+    # the honest answer is neither — not the favourable one.
+    assert result.score is None
+    assert "distinguishes the two" in result.reason
+
+
+def test_a_future_dated_release_is_clamped_like_a_future_dated_commit() -> None:
+    # `score_recency` clamped and `score_release_cadence` did not — the
+    # one-fixed-one-missed shape CLAUDE.md records for this repo. A negative day
+    # count also renders as visible nonsense on a public page.
+    result = score_release_cadence(
+        MaintenanceSignals(last_release=date(2027, 12, 1)), AS_OF
+    )
+    assert "-" not in result.evidence[0].split("day")[0]

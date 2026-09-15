@@ -41,24 +41,45 @@ _SPDX_TAG = re.compile(
 # Distinctive phrases, one per license family. Each is a sentence that appears
 # in that license and in no other — matching on a name ("MIT") would fire on any
 # README mentioning it.
-_LICENSE_FINGERPRINTS: tuple[tuple[str, str], ...] = (
-    ("MIT", "Permission is hereby granted, free of charge, to any person obtaining a copy"),
-    ("Apache-2.0", "Licensed under the Apache License, Version 2.0"),
-    ("Apache-2.0", "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION"),
-    ("BSD-3-Clause", "Neither the name of the copyright holder nor the names of its"),
-    ("BSD-2-Clause", "Redistribution and use in source and binary forms, with or without"),
-    ("GPL-3.0", "GNU GENERAL PUBLIC LICENSE"),
-    ("GPL-3.0", "Version 3, 29 June 2007"),
-    ("AGPL-3.0", "GNU AFFERO GENERAL PUBLIC LICENSE"),
-    ("LGPL-3.0", "GNU LESSER GENERAL PUBLIC LICENSE"),
-    ("MPL-2.0", "Mozilla Public License Version 2.0"),
-    ("ISC", "Permission to use, copy, modify, and/or distribute this software for any"),
-    ("Unlicense", "This is free and unencumbered software released into the public domain"),
+# ⚠ **Each entry needs EVERY phrase, and the order is most-specific-first.
+# Both properties were missing and each produced a misnamed license.**
+#
+# The old table keyed GPL-3.0 on `"GNU GENERAL PUBLIC LICENSE"` alone — which is
+# equally GPL-2.0's header — and separately on `"Version 3, 29 June 2007"`,
+# which is *also* LGPL-3.0's header line. Sitting above the AGPL and LGPL rows,
+# the broader phrase always won, so GPL-2.0 and LGPL-3.0 texts both published
+# the evidence *"identified as 'GPL-3.0' from its text"*. That is copyleft-tier
+# confusion about a named third party's licence, not a cosmetic slip.
+#
+# BSD-3 keyed on `"…nor the names of its"`, but real BSD-3 texts substitute the
+# holder (`"Neither the name of <organization> nor…"`), so those fell through to
+# the BSD-2 row whose clause BSD-3 also contains. The invariant prefix is the
+# part that does not vary.
+_LICENSE_FINGERPRINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    # Most specific first: every GNU family text contains the GPL body, so a
+    # broader row placed above a narrower one shadows it permanently.
+    ("AGPL-3.0", ("GNU AFFERO GENERAL PUBLIC LICENSE",)),
+    ("LGPL-3.0", ("GNU LESSER GENERAL PUBLIC LICENSE",)),
+    ("GPL-3.0", ("GNU GENERAL PUBLIC LICENSE", "Version 3, 29 June 2007")),
+    ("GPL-2.0", ("GNU GENERAL PUBLIC LICENSE", "Version 2, June 1991")),
+    ("Apache-2.0", ("Licensed under the Apache License, Version 2.0",)),
+    ("Apache-2.0", ("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION",)),
+    ("MPL-2.0", ("Mozilla Public License Version 2.0",)),
+    ("Unlicense", ("This is free and unencumbered software released into the public domain",)),
+    ("ISC", ("Permission to use, copy, modify, and/or distribute this software for any",)),
+    ("MIT", ("Permission is hereby granted, free of charge, to any person obtaining a copy",)),
+    # BSD-3 before BSD-2: BSD-3 text contains BSD-2's clause verbatim.
+    ("BSD-3-Clause", ("Neither the name of",)),
+    ("BSD-2-Clause", ("Redistribution and use in source and binary forms, with or without",)),
 )
 
 # How many bytes of a LICENSE file to fingerprint. Every phrase above appears in
 # the opening preamble; reading further only lets a hostile file bury a decoy.
 LICENSE_SNIFF_BYTES = 8192
+
+# Root-most manifests are sorted first, so the license-bearing one is at the
+# front in every realistic tree; this bounds the hostile case.
+MAX_MANIFESTS_READ = 40
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,15 +157,32 @@ def _spdx_relation(tag: str, expression: str) -> str:
     if tag_norm == expr_norm:
         return "exact"
 
-    # `WITH` binds an exception to one licence (`GPL-3.0 WITH Classpath-exception`)
-    # and does not introduce an alternative, so it is split away first.
-    head = re.split(r"\s+with\s+", expr_norm)[0]
-    if " or " in head:
-        operands = [_normalise_spdx(p) for p in re.split(r"\s+or\s+", head)]
-        return "alternative" if tag_norm in operands else "conflict"
-    if " and " in head:
-        operands = [_normalise_spdx(p) for p in re.split(r"\s+and\s+", head)]
-        return "partial" if tag_norm in operands else "conflict"
+    # ⚠ **SPDX binds `WITH` TIGHTER than `OR`, so the operators must be split in
+    # that order.** Splitting on `WITH` first and keeping only the head discards
+    # every later alternative, and the damage is asymmetric: it depends on which
+    # operand carries the exception.
+    #
+    #   MIT OR Apache-2.0 WITH LLVM-exception   -> alternative   (head kept "MIT OR …")
+    #   Apache-2.0 WITH LLVM-exception OR MIT   -> CONFLICT      (head kept "Apache-2.0")
+    #
+    # The second is a real and widely used Rust crate license string, and a
+    # `conflict` publishes the accusation *"LICENSE declares 'MIT' but the
+    # manifest declares '…', which does not include it"* — the same false
+    # accusation `mismatch` above records having already shipped once, surviving
+    # in the other operand order.
+    def _operands(expr: str, operator: str) -> list[str]:
+        return [
+            # An exception binds to its own licence and introduces no
+            # alternative, so it is stripped per-operand rather than globally.
+            _normalise_spdx(re.split(r"\s+with\s+", part)[0])
+            for part in re.split(rf"\s+{operator}\s+", expr)
+        ]
+
+    if " or " in expr_norm:
+        return "alternative" if tag_norm in _operands(expr_norm, "or") else "conflict"
+    if " and " in expr_norm:
+        return "partial" if tag_norm in _operands(expr_norm, "and") else "conflict"
+    head = _normalise_spdx(re.split(r"\s+with\s+", expr_norm)[0])
     return "exact" if tag_norm == head else "conflict"
 
 
@@ -176,7 +214,14 @@ def _manifest_license(root: Path, inventory: Inventory) -> tuple[str | None, str
         inventory.by_role(Role.PACKAGE_MANIFEST),
         key=lambda f: (f.path.count("/"), len(f.path)),
     )
-    for record in manifests:
+    # ⚠ Bounded like every other content reader here — `transport_check` and
+    # `auth_check` both cap at 40, and `CLAUDE.md` records that every bounds
+    # defect in this repo has been a guard written in one place and omitted from
+    # its neighbour. This loop was the omission: it opened and parsed manifests
+    # until one yielded a license, up to `inventory.MAX_FILES` (100,000) of them
+    # at ≤512 KB each. `EXCLUDED_DIRS` covers `node_modules` and `vendor`, so a
+    # crafted tree simply puts them somewhere else.
+    for record in manifests[:MAX_MANIFESTS_READ]:
         name = record.path.rsplit("/", 1)[-1]
         text = read_text(root, record.path)
         if not text:
@@ -229,8 +274,8 @@ def identify_license(text: str) -> str | None:
     says nothing at all. Never used to lower a score — see the module docstring.
     """
     head = text[:LICENSE_SNIFF_BYTES]
-    for name, phrase in _LICENSE_FINGERPRINTS:
-        if phrase in head:
+    for name, phrases in _LICENSE_FINGERPRINTS:
+        if all(phrase in head for phrase in phrases):
             return name
     return None
 

@@ -336,3 +336,45 @@ def test_reading_an_inbound_credential_header_still_counts(
     root = _tree(tmp_path, **{"server.py": source_text + "\n"})
     axis = _assess(_remote_entry(), root, scan_for_secrets=False)
     assert _sub(axis, "authentication_model").score == 60
+
+
+def test_a_go_server_with_no_auth_at_all_does_not_score_a_hundred(tmp_path: Path) -> None:
+    """⚠ The exact case a Deep review demonstrated end to end, 2026-09-15.
+
+    `http.HandlerFunc` is Go's ordinary handler adapter — present in every Go
+    HTTP server ever written — and it sat in `_AUTH_MIDDLEWARE`. Combined with
+    `documented` testing `"auth" in readme` by substring, an `## Authors`
+    heading finished the job: an unauthenticated server scored **100**, with the
+    published evidence *"refused without credentials established by reading the
+    code rather than by connecting"*. That sentence was simply false.
+    """
+    root = _tree(tmp_path, **{
+        "main.go": 'package main\nimport "net/http"\n'
+                   'func main() { http.Handle("/", http.HandlerFunc(h)) }\n',
+        "README.md": "# srv\n\n## Authors\n\nSomeone\n" + "x" * 600,
+    })
+    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    assert _sub(axis, "authentication_model").score == 30
+
+
+def test_fastapi_dependency_injection_is_not_authentication(tmp_path: Path) -> None:
+    # `Depends(` matches a DB session or a pagination helper just as happily.
+    root = _tree(tmp_path, **{
+        "app.py": "from fastapi import Depends, FastAPI\n"
+                  "@app.get('/x')\ndef x(db=Depends(get_db), page=Depends(paginate)): ...\n",
+        "README.md": "# srv\n\n## Authors\n\nSomeone\n" + "x" * 600,
+    })
+    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    assert _sub(axis, "authentication_model").score == 30
+
+
+def test_an_authors_heading_alone_is_not_auth_documentation(tmp_path: Path) -> None:
+    # Real enforcement present, but the README documents nothing about auth —
+    # so 80 (enforced, undocumented), never 100.
+    root = _tree(tmp_path, **{
+        "app.py": "from fastapi.security import HTTPBearer\n"
+                  "@app.get('/x')\ndef x(c=Security(HTTPBearer())): ...\n",
+        "README.md": "# srv\n\n## Authors\n\nSomeone\n" + "x" * 600,
+    })
+    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    assert _sub(axis, "authentication_model").score == 80

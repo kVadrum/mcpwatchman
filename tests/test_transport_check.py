@@ -190,3 +190,47 @@ def test_unknown_inference_is_not_a_mismatch(tmp_path: Path) -> None:
     result = assess_transport(_entry(packages=[_pkg("stdio")]), root, enumerate_tree(root))
     assert result.inferred is Transport.UNKNOWN
     assert not result.mismatch
+
+
+# --- regressions from the 2026-09-15 Deep review ---------------------------
+
+
+@pytest.mark.parametrize(
+    "source_text",
+    [
+        "// avoid the bottleneck here\n",          # 'bottle'
+        "const s = tls.createServer(opts)\n",      # 'createServer('
+        "// Koala-themed demo\n",                  # 'Koa'
+        "import phonograph from 'phonograph'\n",   # 'hono'
+    ],
+)
+def test_ordinary_source_does_not_manufacture_a_transport_mismatch(
+    tmp_path: Path, source_text: str
+) -> None:
+    """⚠ These were bare substrings, and a hit makes `infer_transport` return
+    STREAMABLE_HTTP — so a stdio server with no recognised SDK symbol became
+    `mismatch=True`, which `04` §6 turns into a PUBLISHED Transparency finding
+    that its declaration contradicts its code. An accusation built on the word
+    "bottleneck"."""
+    root = _tree(tmp_path, **{"server.py": source_text})
+    result = assess_transport(_entry(packages=[_pkg("stdio")]), root, enumerate_tree(root))
+    assert result.inferred is Transport.UNKNOWN
+    assert not result.mismatch
+
+
+@pytest.mark.parametrize(
+    ("filename", "source_text"),
+    [
+        ("app.py", "from fastapi import FastAPI\n"),
+        ("app.py", "import flask\n"),
+        ("app.js", "import express from 'express'\n"),
+        ("app.js", "const app = require('fastify')\n"),
+        ("app.js", "const s = http.createServer(handler)\n"),
+        ("main.go", 'import (\n\t"net/http"\n)\n'),
+    ],
+)
+def test_a_real_framework_import_is_still_detected(
+    tmp_path: Path, filename: str, source_text: str
+) -> None:
+    root = _tree(tmp_path, **{filename: source_text})
+    assert infer_transport(root, enumerate_tree(root)) is Transport.STREAMABLE_HTTP

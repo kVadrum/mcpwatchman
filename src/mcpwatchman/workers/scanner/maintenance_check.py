@@ -135,6 +135,12 @@ def score_release_cadence(signals: MaintenanceSignals, as_of: date) -> SubCheck:
             reason="no release history was retrieved for this repository",
         )
 
+    # Clamped for the same reason `score_recency` clamps, and this ladder was
+    # the one that missed it — the one-fixed-one-missed shape `CLAUDE.md`
+    # records for this repo. A future-dated release otherwise scores 100 and
+    # renders "released -442 day(s) ago" on a public page.
+    if since_release is not None and since_release < 0:
+        since_release = 0
     if since_release is not None and since_release <= RECENT_RELEASE_DAYS:
         return SubCheck(
             name, 100,
@@ -224,7 +230,14 @@ def score_bus_factor(signals: MaintenanceSignals, as_of: date) -> SubCheck:
             reason="no contributor history was retrieved for this repository",
         )
 
-    stale = (_days_since(signals.last_commit, as_of) or 0) > BUS_FACTOR_STALE_DAYS
+    # ⚠ `or 0` here read UNKNOWN as "committed today": `_days_since` returns
+    # None for a missing date and `None or 0` is 0, so a sole maintainer whose
+    # last commit was never retrieved scored 50 (healthy) instead of 30. It was
+    # the one place in this module that turned a `None` signal into a
+    # favourable value, against `MaintenanceSignals`' own rule that None means
+    # not-retrieved and never zero.
+    days_since_commit = _days_since(signals.last_commit, as_of)
+    stale = days_since_commit is not None and days_since_commit > BUS_FACTOR_STALE_DAYS
 
     if authors >= 3:
         return SubCheck(
@@ -235,6 +248,21 @@ def score_bus_factor(signals: MaintenanceSignals, as_of: date) -> SubCheck:
     if authors == 2:
         return SubCheck(name, 80, evidence=("2 regular authors in the last 12 months",))
     if authors == 1:
+        # ⚠ The sole-maintainer band FORKS on freshness — 50 if active, 30 if
+        # quiet — so with no commit date we cannot choose between them, and the
+        # two differ by 20 points. The old `(_days_since(...) or 0)` silently
+        # picked the favourable one by turning None into 0, which is the single
+        # place in this module that let a missing signal read as good news.
+        # Abstaining costs the axis 15% of its weight and asserts nothing we did
+        # not measure, which is the trade every other sub-check here makes.
+        if days_since_commit is None:
+            return SubCheck(
+                name, None,
+                reason="sole maintainer, but no last-commit date was retrieved — "
+                       f"`03` §5 scores this 50 when active and 30 after "
+                       f"{BUS_FACTOR_STALE_DAYS} quiet days, and nothing here "
+                       "distinguishes the two",
+            )
         return SubCheck(
             name, 30 if stale else 50,
             evidence=("sole maintainer"

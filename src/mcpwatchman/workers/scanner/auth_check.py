@@ -46,6 +46,13 @@ from mcpwatchman.workers.scoring.axes import AxisResult, SubCheck, score_axis
 
 AXIS = "auth_posture"
 
+# `\bauth\b` deliberately, not `auth` — see `documented` below.
+_AUTH_DOCUMENTED_RE = re.compile(
+    r"\b(?:api[ _-]?keys?|authorization|authentication|oauth2?|bearer token"
+    r"|access token|credentials?|\bauth\b)\b",
+    re.IGNORECASE,
+)
+
 # `03` §4's authorization-granularity heuristic: "does the server expose more
 # than 3 tools, and is there any conditional access logic?"
 GRANULARITY_TOOL_THRESHOLD = 3
@@ -56,15 +63,33 @@ MAX_FILES_READ = 40
 SECRET_SCAN_TIMEOUT = 120
 
 # Auth middleware and credential validation, by ecosystem (`04` §6).
+# ⚠ **Every entry must be an AUTH construct, not a construct auth happens to
+# use.** Two were not, and together they scored a Go server with no
+# authentication at all as `03` §4's **100** — "OAuth 2.0 or robust API key
+# required; refused without credentials" — on the unauthenticated-HTTP cohort
+# this product exists to flag:
+#
+#   `http.HandlerFunc`  — Go's ordinary handler adapter. Present in every Go
+#                         HTTP server ever written, authenticated or not.
+#   `Depends(`          — FastAPI's general dependency injection. Matches a DB
+#                         session, a pagination helper, a settings object.
+#
+# The module docstring earns the 100 band only because "auth middleware wrapping
+# the routes is evidence of enforcement". A bare `Depends(` is evidence of
+# nothing, so the evidence string asserting *"refused without credentials
+# established by reading the code"* was simply false.
 _AUTH_MIDDLEWARE = (
-    # Python
-    "Depends(", "HTTPBearer", "HTTPBasic", "APIKeyHeader", "APIKeyQuery",
-    "OAuth2PasswordBearer", "SecurityScopes", "@requires_auth", "login_required",
+    # Python — FastAPI security dependencies name what they secure.
+    "HTTPBearer", "HTTPBasic", "APIKeyHeader", "APIKeyQuery", "APIKeyCookie",
+    "OAuth2PasswordBearer", "OAuth2AuthorizationCodeBearer", "SecurityScopes",
+    "Security(", "Depends(get_current_user", "Depends(verify_", "Depends(require_",
+    "Depends(authenticate", "Depends(auth", "@requires_auth", "login_required",
+    "@requires(",
     # JavaScript / TypeScript
     "passport.", "express-jwt", "expressJwt", "requireAuth", "authMiddleware",
-    "ensureAuthenticated", "verifyToken", "checkJwt",
-    # Go
-    "http.HandlerFunc", "middleware.Auth",
+    "ensureAuthenticated", "verifyToken", "checkJwt", "authenticateToken",
+    # Go — the adapter type is not a signal; a named auth middleware is.
+    "middleware.Auth", "AuthMiddleware", "RequireAuth", "requireAuth(",
 )
 # ⚠ **INBOUND header access only.** This list used to include the bare tokens
 # `api_key`, `apiKey`, `Bearer ` and `X-API-Key`, and that was a real defect in
@@ -116,26 +141,53 @@ _OAUTH_INDICATORS = (
 
 # Credentials read from the environment rather than committed (`03` §4's
 # "env vars are used" clause).
+# ⚠ Python and JS only, until now — and the consequence was not a missing
+# signal but a WRONG published claim. A Go or Rust server reading a credential
+# from the environment scored 100 with the evidence *"no credential is read from
+# the environment either — this server appears to handle no secrets"*.
 _ENV_READS = (
-    "os.environ", "os.getenv", "process.env", "getenv(", "Deno.env",
+    "os.environ", "os.getenv", "process.env", "Deno.env",
     "dotenv", "pydantic_settings", "BaseSettings",
+    # Go (`os.Getenv`/`LookupEnv`), Rust (`std::env::var`), C#, Ruby, shell,
+    # PowerShell. `getenv(` is matched case-insensitively below for the C family.
+    "LookupEnv(", "env::var", "GetEnvironmentVariable", "ENV[", "$env:",
 )
+_ENV_READ_RE = re.compile(r"\bgetenv\s*\(", re.IGNORECASE)
 
 # Tool registration, for the granularity heuristic's tool count.
 _TOOL_PATTERNS = (
     re.compile(r"@\w+\.tool\b"),                     # Python SDK decorator
     re.compile(r"@tool\b"),
-    re.compile(r"\bserver\.tool\("),                 # TS SDK
+    re.compile(r"\bserver\.tool\("),                 # TS SDK, high-level
     re.compile(r"\bregisterTool\("),
     re.compile(r"\baddTool\("),
+    # ⚠ The LOW-LEVEL TS SDK shape, and the commonest one in the wild:
+    # `server.setRequestHandler(ListToolsRequestSchema, …)` returning a
+    # `tools: [...]` array. It counted ZERO, and zero is below the threshold, so
+    # a 5-tool server published *"0 tool registration(s) detected — at or below
+    # `03` §4's threshold, so there is no multi-tool surface to segregate"*: a
+    # fact asserted about the server out of a detector miss.
+    re.compile(r"ListToolsRequestSchema"),
+    re.compile(r"\btools\s*:\s*\[")               ,  # the array it returns
     re.compile(r'"name"\s*:\s*"[^"]+"\s*,\s*"description"'),  # manifest-shaped
 )
 # Per-tool conditional access: a permission test inside the handler.
-_CONDITIONAL_ACCESS = (
+_CONDITIONAL_ACCESS_TOKENS = (
     "if not authorized", "if (!authorized", "has_permission", "hasPermission",
     "check_scope", "checkScope", "require_scope", "requireScope",
     "is_allowed", "isAllowed", "can_access", "canAccess",
-    "PermissionError", "Forbidden", "403",
+    "PermissionError",
+)
+
+# ⚠ `403` and `Forbidden` were plain substrings in the list above, and both
+# misfire on ordinary code: `const PORT = 4030`, `sha = "b403f1"`,
+# `timeout: 1403` all matched, each publishing *"N tool registrations with
+# conditional access logic present in the same source"*. Word-bounded, and
+# `403` additionally has to look like a status rather than a number.
+_CONDITIONAL_ACCESS_RE = re.compile(
+    r"\b(?:Forbidden|PermissionDenied|Unauthorized)\b"
+    r"|(?:status|code|statusCode|status_code|HTTPException)[^\n]{0,20}\b403\b"
+    r"|\b403\b[^\n]{0,20}(?:Forbidden|forbidden)",
 )
 
 
@@ -313,10 +365,10 @@ def _authentication_model(
     has_middleware = any(t in source for t in _AUTH_MIDDLEWARE)
     has_credential_read = bool(_CREDENTIAL_READ_RE.search(source))
     has_oauth = any(t in source for t in _OAUTH_INDICATORS)
-    documented = bool(readme) and any(
-        t.lower() in readme.lower()
-        for t in ("api key", "api_key", "authorization", "oauth", "token", "auth")
-    )
+    # ⚠ WORD-BOUNDED. This was substring containment over a list that included
+    # a bare "auth", so an `## Authors` heading — in practically every README —
+    # satisfied "documented in the README" and lifted the band to 100.
+    documented = bool(readme) and _AUTH_DOCUMENTED_RE.search(readme) is not None
 
     if (has_oauth or has_middleware) and documented:
         return SubCheck(
@@ -382,7 +434,7 @@ def _secret_handling(
             ),
         )
 
-    uses_env = any(t in source for t in _ENV_READS)
+    uses_env = any(t in source for t in _ENV_READS) or bool(_ENV_READ_RE.search(source))
     if not uses_env:
         return SubCheck(
             name, 100,
@@ -423,6 +475,19 @@ def _authorization_granularity(source: str | None, inventory: Inventory | None) 
         )
 
     tools = sum(len(pattern.findall(source)) for pattern in _TOOL_PATTERNS)
+    # ⚠ ZERO is a detector failure, not a measurement. An MCP server that
+    # registers no tools at all is not a thing; counting none means we did not
+    # recognise the shape, and scoring 100 on that would assert "≤3 tools" about
+    # a server we failed to read — the vacuous positive `declared_scopes`
+    # refuses on the transparency axis, reached by a different route.
+    if tools == 0:
+        return SubCheck(
+            name, None,
+            reason="no tool registration was recognised anywhere in the source. "
+                   "An MCP server registers tools by definition, so this is a "
+                   "gap in our detection rather than a server with none, and "
+                   "`03` §4's threshold cannot be applied to it.",
+        )
     if tools <= GRANULARITY_TOOL_THRESHOLD:
         return SubCheck(
             name, 100,
@@ -430,7 +495,10 @@ def _authorization_granularity(source: str | None, inventory: Inventory | None) 
                       f"`03` §4's threshold of {GRANULARITY_TOOL_THRESHOLD}, so "
                       "there is no multi-tool surface to segregate",),
         )
-    if any(t in source for t in _CONDITIONAL_ACCESS):
+    has_access_logic = any(t in source for t in _CONDITIONAL_ACCESS_TOKENS) or bool(
+        _CONDITIONAL_ACCESS_RE.search(source)
+    )
+    if has_access_logic:
         return SubCheck(
             name, 100,
             evidence=(f"{tools} tool registrations with conditional access "

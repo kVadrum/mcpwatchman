@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -232,3 +233,49 @@ def test_workspace_inheritance_marker_is_not_a_license(tmp_path: Path) -> None:
     # `license.workspace = true` says "inherit", not "the license is true".
     root = _tree(tmp_path, **{"crates__a__Cargo.toml": "[package]\nlicense.workspace = true\n"})
     assert _facts(root).spdx_in_manifest is None
+
+
+@pytest.mark.parametrize(
+    ("tag", "expression", "expected"),
+    [
+        # ⚠ SPDX binds WITH tighter than OR, so the operators must be split in
+        # that order. Splitting on WITH first kept only the head and discarded
+        # every later alternative — and the damage depended on which operand
+        # carried the exception, so the first row passed while the rest did not.
+        ("MIT", "MIT OR Apache-2.0 WITH LLVM-exception", 100),
+        ("MIT", "Apache-2.0 WITH LLVM-exception OR MIT", 100),
+        # A real, widely used Rust crate license string.
+        ("MIT", "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT", 100),
+        # A genuine conflict must still be reported.
+        ("GPL-3.0", "Apache-2.0 WITH LLVM-exception OR MIT", 30),
+    ],
+)
+def test_with_binds_tighter_than_or(tmp_path: Path, tag: str, expression: str,
+                                    expected: int) -> None:
+    root = _tree(tmp_path, LICENSE=f"SPDX-License-Identifier: {tag}\n" + MIT_TEXT,
+                 **{"package.json": json.dumps({"license": expression})})
+    assert _assess(root).score == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # ⚠ "GNU GENERAL PUBLIC LICENSE" is GPL-2.0's header too, and
+        # "Version 3, 29 June 2007" is LGPL-3.0's — so both published
+        # "identified as 'GPL-3.0'". Copyleft-tier confusion about a third
+        # party's licence, not a cosmetic slip.
+        ("GNU GENERAL PUBLIC LICENSE\nVersion 2, June 1991\n", "GPL-2.0"),
+        ("GNU GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007\n", "GPL-3.0"),
+        ("GNU LESSER GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007\n", "LGPL-3.0"),
+        ("GNU AFFERO GENERAL PUBLIC LICENSE\nVersion 3, 19 November 2007\n", "AGPL-3.0"),
+        # BSD-3 texts substitute the holder, so the old holder-specific phrase
+        # missed and they fell through to BSD-2, whose clause BSD-3 contains.
+        ("Redistribution and use in source and binary forms, with or without\n"
+         "Neither the name of <organization> nor the names of its contributors\n",
+         "BSD-3-Clause"),
+        ("Redistribution and use in source and binary forms, with or without\n"
+         "modification, are permitted provided that...\n", "BSD-2-Clause"),
+    ],
+)
+def test_license_families_are_not_confused_with_each_other(text: str, expected: str) -> None:
+    assert identify_license(text) == expected

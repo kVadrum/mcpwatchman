@@ -52,10 +52,22 @@ _INSTALL_HEADING = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 _CODE_FENCE = re.compile(r"^```", re.MULTILINE)
-_CONFIG_SIGNALS = re.compile(
-    r"\b(environment variable|env var|\.env\b|configuration|config file|"
-    r"[A-Z][A-Z0-9]*_(?:KEY|TOKEN|SECRET|URL|PATH|ID)\b|claude_desktop_config|mcpServers)\b"
+# ⚠ SPLIT BY CASE, and the split is the point — a blanket `IGNORECASE` would be
+# wrong. This was the only doc regex in the file without the flag, so
+# `## Environment Variables` and `## Config File` both missed and cost a +25
+# band. But the env-var alternative below depends on case: lowercased, it would
+# match any `word_key` identifier. So the prose arms get the flag and the
+# SCREAMING_CASE arm does not.
+#
+# `\.env\b` also could not match after a space: `\b` before a literal `.`
+# requires a preceding word character, so "Create a .env file" never matched.
+_CONFIG_SIGNALS_PROSE = re.compile(
+    r"\b(?:environment variables?|env vars?|configuration|config file|"
+    r"claude_desktop_config|mcpServers)\b"
+    r"|(?:^|[\s(`'\"])\.env\b",
+    re.IGNORECASE | re.MULTILINE,
 )
+_CONFIG_SIGNALS_ENVVAR = re.compile(r"\b[A-Z][A-Z0-9]*_(?:KEY|TOKEN|SECRET|URL|PATH|ID)\b")
 _TOOLS_HEADING = re.compile(
     r"^#{1,6}\s*.*\b(tools?|resources?|prompts?|capabilit(?:y|ies)|commands?)\b",
     re.IGNORECASE | re.MULTILINE,
@@ -162,7 +174,7 @@ def score_readme(facts: DocumentationFacts) -> SubCheck:
     if install and _CODE_FENCE.search(text, install.end()):
         score += 25
         earned.append("installation instructions (+25)")
-    if _CONFIG_SIGNALS.search(text):
+    if _CONFIG_SIGNALS_PROSE.search(text) or _CONFIG_SIGNALS_ENVVAR.search(text):
         score += 25
         earned.append("configuration documented (+25)")
     if _TOOLS_HEADING.search(text):

@@ -14,6 +14,7 @@ download-and-unpack only, and the unpack is the dangerous half: see `_safe_extra
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import tarfile
@@ -176,24 +177,66 @@ class FetchResult:
 # what a 404 means for our purposes: not publicly reachable. Leaving them out
 # would classify the private half as an infrastructure fault and retry it.
 _UNREACHABLE_SIGNS = (
-    "repository not found",
-    "not found",
+    # ⚠ NOT a bare "not found". `fatal: Remote branch v1.2.3 not found in
+    # upstream origin` is a missing TAG on a repository that answered us
+    # perfectly well — and `fetch_git` retries those candidates by design, so
+    # reading it as an absent repository both misreports and defeats the
+    # fallback.
     "could not read from remote repository",
     "could not read username",
     "authentication failed",
     "terminal prompts disabled",
     "access denied",
-    "permission denied",
     "does not appear to be a git repository",
 )
 
+# ⚠ Deliberately NOT in the list above, despite meaning "not public" over SSH:
+# "permission denied" is a local-filesystem error at least as often as a remote
+# one ("could not create work tree dir: Permission denied"). It only counts when
+# git also names the remote side.
+# ⚠ A REGEX, because git interposes the URL: the HTTPS form is
+# `fatal: repository 'https://…' not found` while the SSH form is
+# `ERROR: Repository not found.` — a literal "repository not found" matches only
+# the second. The optional quoted group is what spans the gap, and requiring the
+# word "repository" is what keeps `Remote branch v1.2.3 not found in upstream
+# origin` — a missing TAG on a healthy repo — out of this class.
+_REPO_NOT_FOUND_RE = re.compile(r"repository\s+(?:'[^']*'\s+|\S+\s+)?not found")
 
-def _is_unreachable(output: str) -> bool:
+_UNREACHABLE_PAIRS = (
+    ("permission denied", "remote"),
+    ("permission denied", "publickey"),
+)
+
+
+def _is_unreachable(output: str, url: str | None = None) -> bool:
+    """Whether git's output says the SOURCE is not public.
+
+    ⚠ **The URL is redacted before matching, and that is a security property
+    rather than tidiness.** git echoes the repository URL it was given, and that
+    URL comes from a public registry entry — so a publisher who names their repo
+    `.../access denied/` could turn any unrelated transient failure into a
+    permanent published verdict about themselves or, worse, make our own DNS
+    failure read as their fault. Matching on text the subject controls is how a
+    classifier gets steered.
+    """
     lowered = output.lower()
-    return any(sign in lowered for sign in _UNREACHABLE_SIGNS)
+    if url:
+        lowered = lowered.replace(url.lower(), "<url>")
+    if _REPO_NOT_FOUND_RE.search(lowered):
+        return True
+    if any(sign in lowered for sign in _UNREACHABLE_SIGNS):
+        return True
+    return any(a in lowered and b in lowered for a, b in _UNREACHABLE_PAIRS)
 
 
-def _run(cmd: list[str], cwd: Path | None = None, timeout: int = FETCH_TIMEOUT_S) -> None:
+def _run(
+    cmd: list[str],
+    cwd: Path | None = None,
+    timeout: int = FETCH_TIMEOUT_S,
+    *,
+    remote: bool = False,
+    url: str | None = None,
+) -> None:
     """Run a fetch command with no shell and a hard timeout.
 
     `shell=False` (the default, stated because it matters): every argument here
@@ -216,7 +259,15 @@ def _run(cmd: list[str], cwd: Path | None = None, timeout: int = FETCH_TIMEOUT_S
         combined = (proc.stderr or "") + (proc.stdout or "")
         tail = combined.strip().splitlines()[-1:] or [""]
         detail = f"{cmd[0]} failed (rc={proc.returncode}): {tail[0][:200]}"
-        if _is_unreachable(combined):
+        # ⚠ Only a command that actually TALKS TO THE REMOTE may be blamed on
+        # the publisher. `git gc`, `sparse-checkout`, `checkout` and
+        # `symbolic-ref` all run AFTER the remote was reached successfully, and
+        # their commonest failures are local: a read-only scratch mount or a
+        # full disk both say "Permission denied", which this classifier read as
+        # "your repository is not public". One bad mount would have flipped an
+        # entire night's batch into a published accusation about named third
+        # parties, and none of it would have been retried.
+        if remote and _is_unreachable(combined, url=url):
             raise SourceUnreachableError(detail)
         raise FetchError(detail)
 
@@ -579,7 +630,7 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     resolved_ref: str | None = None
     for candidate in (spec.version, f"v{spec.version}"):
         try:
-            _run([*base, "--branch", candidate, "--", url, str(dest)])
+            _run([*base, "--branch", candidate, "--", url, str(dest)], remote=True, url=url)
         except FetchError:
             shutil.rmtree(dest, ignore_errors=True)
             continue
@@ -593,7 +644,7 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
             break
         shutil.rmtree(dest, ignore_errors=True)
     if resolved_ref is None:
-        _run([*base, "--", url, str(dest)])
+        _run([*base, "--", url, str(dest)], remote=True, url=url)
         # ⚠ `--branch` resolves `refs/heads/` FIRST, so a repository carrying both
         # a branch and a tag named `1.2.3` hands back the branch above, the
         # detached-HEAD test correctly rejects it, and we land on the default
@@ -607,6 +658,8 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
                 _run(
                     ["git", "fetch", "--depth", "1", "origin", f"refs/tags/{candidate}"],
                     cwd=dest,
+                    remote=True,
+                    url=url,
                 )
                 _run(["git", "checkout", "--detach", "FETCH_HEAD"], cwd=dest)
             except FetchError:
