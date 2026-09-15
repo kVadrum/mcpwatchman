@@ -386,3 +386,48 @@ def test_the_footer_carries_the_copyright_in_house_style():
     if not built.is_file():
         pytest.skip("site not built")
     assert re.search(r"KeMeK Network &copy; 20\d\d", built.read_text())
+
+
+def test_the_browser_chrome_colour_matches_the_page_ground():
+    """One value, four places, no symbol any of them can share.
+
+    `--ground` is a CSS custom property; the `theme-color` meta is HTML; the
+    `GROUND` map is JavaScript in a different directory. They must move in
+    lockstep — the meta is the colour the browser paints its own chrome, so a
+    stale one shows a dark title bar above a light page and nothing reports it.
+
+    Exactly the case `~/dev/CLAUDE.md` → *Canonical homes* calls "code as a
+    contract": duplication is fine when instances can drift freely, and these
+    cannot. There is nothing to import across the three languages, so the
+    contract is enforced here — the same reason `test_published_example_matches_
+    the_shipped_engine` exists in this file.
+    """
+    source = PAGE.read_text()
+    grounds = {
+        "dark": re.search(r":root \{[^}]*?--ground:\s*(#[0-9a-fA-F]{6})", source, re.S),
+        "light": re.search(
+            r':root\[data-theme="light"\]\s*\{[^}]*?--ground:\s*(#[0-9a-fA-F]{6})',
+            source, re.S,
+        ),
+    }
+    assert all(grounds.values()), "could not read --ground from both themes"
+
+    metas = dict(
+        re.findall(
+            r'<meta name="theme-color" data-scheme="(\w+)"[^>]*content="(#[0-9a-fA-F]{6})"',
+            source,
+        )
+    )
+    script = (SITE / "public" / "theme.js").read_text()
+    js = dict(
+        re.findall(r'(\w+):\s*"(#[0-9a-fA-F]{6})"', re.search(r"GROUND = \{([^}]*)\}", script).group(1))
+    )
+
+    for scheme, match in grounds.items():
+        token = match.group(1).lower()
+        assert metas[scheme].lower() == token, (
+            f"{scheme}: theme-color meta {metas[scheme]} != --ground {token}"
+        )
+        assert js[scheme].lower() == token, (
+            f"{scheme}: theme.js GROUND {js[scheme]} != --ground {token}"
+        )

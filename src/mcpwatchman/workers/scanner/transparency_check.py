@@ -32,7 +32,9 @@ lands. Recorded here rather than left as a surprise in the data.
 from __future__ import annotations
 
 import re
+from bisect import bisect_left
 from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
@@ -136,19 +138,47 @@ _NEGATION_RE = re.compile(
 _CLAUSE_BREAK = re.compile(r"[.;:!?\n]")
 
 
-def _negated(text: str, start: int) -> bool:
-    """True when the clause leading up to `start` negates what follows."""
-    clause_start = 0
-    for boundary in _CLAUSE_BREAK.finditer(text, 0, start):
-        clause_start = boundary.end()
-    return _NEGATION_RE.search(text, clause_start, start) is not None
-
-
 def documents_disclosure_route(text: str) -> bool:
-    """Whether the text gives a finder a way to report privately (`03` §7)."""
-    return any(
-        not _negated(text, match.start()) for match in _SECURITY_CONTACT.finditer(text)
-    )
+    """Whether the text gives a finder a way to report privately (`03` §7).
+
+    ⚠ **Indexed once and bisected, NOT rescanned per match — the obvious form is
+    QUADRATIC on a README an attacker writes.** Scanning back from each match to
+    find its clause start, and again for a negation inside it, is O(matches ×
+    text): measured before the fix at 0.08s / 0.86s / 13.8s for 2k / 8k / 32k
+    negated matches, i.e. 16× the time for 4× the input. It needs every match
+    negated to bite, because a single clean match short-circuits — so the
+    pathological input is a README that mentions security policies and denies
+    all of them, which costs nothing to write.
+
+    `read_text` caps a README at 512 KB, so this could not hang the worker
+    outright; it could spend a large slice of `04` §9's 15-minute budget on one
+    server. Same shape as the catastrophic-backtracking finding this module
+    already carries a timing guard for, reached by a different route — a
+    per-match rescan rather than a regex.
+
+    Both positions lists are built in one pass and searched by bisection, which
+    is exact: no lookback window, no change in which matches count as negated.
+    """
+    matches = _SECURITY_CONTACT.finditer(text)
+    first = next(matches, None)
+    if first is None:
+        return False
+
+    # Built only once a match exists — a README with no disclosure vocabulary at
+    # all is the common case and pays for neither scan.
+    clause_ends = [m.end() for m in _CLAUSE_BREAK.finditer(text)]
+    negations = [m.start() for m in _NEGATION_RE.finditer(text)]
+
+    for match in chain([first], matches):
+        start = match.start()
+        # The clause containing this match begins after the last break before it.
+        i = bisect_left(clause_ends, start)
+        clause_start = clause_ends[i - 1] if i else 0
+        # Negated iff some negation falls inside [clause_start, start).
+        j = bisect_left(negations, clause_start)
+        if j >= len(negations) or negations[j] >= start:
+            return True
+    return False
 
 
 @dataclass(frozen=True, slots=True)

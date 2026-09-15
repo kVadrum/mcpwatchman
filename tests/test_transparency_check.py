@@ -13,6 +13,7 @@ from mcpwatchman.workers.scanner.transparency_check import (
     README_MIN_BYTES,
     assess_transparency,
     documentation_facts,
+    documents_disclosure_route,
     score_declared_scopes,
     score_readme,
 )
@@ -334,3 +335,50 @@ def test_a_negated_clause_does_not_suppress_a_real_route(tmp_path: Path) -> None
     facts = documentation_facts(root, enumerate_tree(root))
     from mcpwatchman.workers.scanner.transparency_check import score_security_contact
     assert score_security_contact(facts).score == 100
+
+
+def test_the_negation_check_stays_linear_on_a_hostile_readme() -> None:
+    """The SECOND way this sub-check could be stalled by a README, found by
+    timing it rather than by reading it.
+
+    The clause-scoped negation test was written as a rescan from offset 0 per
+    match — O(matches × text). Measured before the fix: 0.08s / 0.86s / 13.8s
+    for 2k / 8k / 32k negated matches, 16× the time for 4× the input.
+
+    It needs EVERY match negated to bite, because one clean match
+    short-circuits the `any`. That makes the pathological input a README which
+    mentions security policies and denies all of them — free to write, and
+    indistinguishable from an honest "we have no security policy" page.
+
+    Same consequence as the backtracking guard above (`04` §9's 15-minute
+    budget, spent on one server) reached by a different mechanism, which is why
+    it needs its own test: the regex here is fine.
+    """
+    import time
+
+    text = "There is no security policy here " * 32_000  # ~1 MB, all negated
+    started = time.monotonic()
+    result = documents_disclosure_route(text)
+    elapsed = time.monotonic() - started
+    assert result is False, "every mention is negated; none is a route"
+    assert elapsed < 1.0, f"negation check took {elapsed:.1f}s on {len(text)} chars"
+
+
+def test_the_linear_negation_check_kept_the_original_semantics() -> None:
+    """Indexing and bisecting must not change WHICH matches count as negated —
+    the failure a pure-performance fix makes invisibly."""
+    negated = [
+        "No security policy is currently provided.",
+        "We have no responsible disclosure process.",
+    ]
+    routes = [
+        "Report a security issue to security@example.com.",
+        "Do not open a public issue; email security@example.com instead.",
+        "See our responsible disclosure policy.",
+    ]
+    for text in negated:
+        assert documents_disclosure_route(text) is False, text
+    for text in routes:
+        assert documents_disclosure_route(text) is True, text
+    # A negated clause followed by a real route in the same document.
+    assert documents_disclosure_route(negated[0] + " " + routes[0]) is True
