@@ -28,14 +28,29 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
+from mcpwatchman.workers.scanner.inventory import (
+    Inventory,
+    Role,
+    read_manifest,
+    read_text,
+)
 from mcpwatchman.workers.scoring.axes import SubCheck
 
-# `SPDX-License-Identifier: MIT`, and the `license = "MIT"` / `"license": "MIT"`
-# manifest forms. Deliberately anchored: an SPDX id mentioned in prose ("we
-# considered SPDX-License-Identifier: GPL-3.0") is not a declaration.
+# `SPDX-License-Identifier: MIT` as a DECLARATION — the tag standing on its own
+# line, optionally behind a comment marker.
+#
+# ⚠ **The comment said "deliberately anchored" and the pattern was not**, which
+# is the worse half: a false citation reads as provenance and stops the next
+# reader from checking. Unanchored, any prose containing the string declared the
+# file's licence — "we considered SPDX-License-Identifier: GPL-3.0 and chose
+# MIT" would have the LICENSE file declaring GPL-3.0, and the manifest saying
+# MIT then publishes a licence CONFLICT against a correctly-licensed project.
+# Now anchored for real, with the leading run restricted to comment punctuation
+# and whitespace so `#`, `//`, ` * ` and `<!--` still qualify and prose does not.
 _SPDX_TAG = re.compile(
-    r"SPDX-License-Identifier:\s*([A-Za-z0-9.\-+]+(?:\s+(?:OR|AND|WITH)\s+[A-Za-z0-9.\-+]+)*)"
+    r"^[\s#/*<!;%-]{0,20}"
+    r"SPDX-License-Identifier:\s*([A-Za-z0-9.\-+]+(?:\s+(?:OR|AND|WITH)\s+[A-Za-z0-9.\-+]+)*)",
+    re.MULTILINE,
 )
 
 # Distinctive phrases, one per license family. Each is a sentence that appears
@@ -137,6 +152,18 @@ def _normalise_spdx(value: str) -> str:
     return value.strip().strip("()").casefold()
 
 
+def _strip_exception(value: str) -> str:
+    """Drop a `WITH <exception>` clause from one SPDX operand.
+
+    An exception (`LLVM-exception`, `Classpath-exception-2.0`) grants additional
+    permissions under the licence it attaches to; it never introduces a second
+    licence. So it is noise for the only question `_spdx_relation` asks — which
+    licences does this expression offer — and has to be removed from whichever
+    side carries it.
+    """
+    return _normalise_spdx(re.split(r"\s+with\s+", value)[0])
+
+
 def _spdx_relation(tag: str, expression: str) -> str:
     """Relate one SPDX identifier to a (possibly compound) SPDX expression.
 
@@ -157,6 +184,22 @@ def _spdx_relation(tag: str, expression: str) -> str:
     if tag_norm == expr_norm:
         return "exact"
 
+    # ⚠ **Strip the exception from BOTH sides or the fix below is one-sided.**
+    # The operand split strips `WITH` per-arm of the MANIFEST expression while
+    # the LICENSE file's tag was compared whole, so a tag that itself carries an
+    # exception matched nothing:
+    #
+    #   tag `Apache-2.0 WITH LLVM-exception` vs `MIT OR Apache-2.0 WITH
+    #   LLVM-exception` -> operands ["mit", "apache-2.0"] -> CONFLICT, score 30.
+    #
+    # That is the same false accusation the operand split was written to remove,
+    # reintroduced one layer down — and the failing case is the very Rust crate
+    # string the comment below cites as its type case. An exception grants
+    # additional permissions under its own licence and never names a different
+    # one, so it is irrelevant to which licences an expression offers, on either
+    # side of the comparison. Both full forms stay in the evidence.
+    tag_core = _strip_exception(tag_norm)
+
     # ⚠ **SPDX binds `WITH` TIGHTER than `OR`, so the operators must be split in
     # that order.** Splitting on `WITH` first and keeping only the head discards
     # every later alternative, and the damage is asymmetric: it depends on which
@@ -174,16 +217,15 @@ def _spdx_relation(tag: str, expression: str) -> str:
         return [
             # An exception binds to its own licence and introduces no
             # alternative, so it is stripped per-operand rather than globally.
-            _normalise_spdx(re.split(r"\s+with\s+", part)[0])
+            _strip_exception(part)
             for part in re.split(rf"\s+{operator}\s+", expr)
         ]
 
     if " or " in expr_norm:
-        return "alternative" if tag_norm in _operands(expr_norm, "or") else "conflict"
+        return "alternative" if tag_core in _operands(expr_norm, "or") else "conflict"
     if " and " in expr_norm:
-        return "partial" if tag_norm in _operands(expr_norm, "and") else "conflict"
-    head = _normalise_spdx(re.split(r"\s+with\s+", expr_norm)[0])
-    return "exact" if tag_norm == head else "conflict"
+        return "partial" if tag_core in _operands(expr_norm, "and") else "conflict"
+    return "exact" if tag_core == _strip_exception(expr_norm) else "conflict"
 
 
 def _license_record(inventory: Inventory):
@@ -223,7 +265,9 @@ def _manifest_license(root: Path, inventory: Inventory) -> tuple[str | None, str
     # crafted tree simply puts them somewhere else.
     for record in manifests[:MAX_MANIFESTS_READ]:
         name = record.path.rsplit("/", 1)[-1]
-        text = read_text(root, record.path)
+        # Parsed, not grepped — so read it whole or not at all. See
+        # `inventory.read_manifest`.
+        text = read_manifest(root, record.path)
         if not text:
             continue
         value: str | None = None

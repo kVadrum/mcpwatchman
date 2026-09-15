@@ -605,3 +605,58 @@ def test_crawler_still_emits_an_ordinary_subfolder():
 
     assert _safe_subpath("apps/server") == "apps/server"
     assert SourceSpec.parse("github:a/b@1.0.0#apps/server").subfolder == "apps/server"
+
+
+# --- Codex leg 2: a JSON boolean, not Python truthiness -------------------
+
+
+def test_a_string_false_does_not_declare_a_credential():
+    """`bool("false")` is `True`, and every field here is attacker-supplied.
+
+    A remote declaring `"isSecret": "false"` was read as declaring a
+    credential, so `03` §4's authentication ladder scored a value that says the
+    opposite of what we read it as. The string form is not schema-legal, which
+    is exactly why nothing else rejects it.
+    """
+    raw = make_raw()
+    raw["server"]["remotes"] = [{
+        "type": "streamable-http",
+        "url": "https://a.example/mcp",
+        "headers": [{"name": "X-Api-Key", "isSecret": "false", "isRequired": "false"}],
+    }]
+    entry = parse_entry(raw)
+    assert entry.remotes[0].credential_headers == ()
+    assert entry.remotes[0].headers[0].is_required is False
+
+
+def test_a_real_boolean_still_declares_a_credential():
+    """Control: the coercion must not swallow the legitimate form."""
+    raw = make_raw()
+    raw["server"]["remotes"] = [{
+        "type": "streamable-http",
+        "url": "https://a.example/mcp",
+        "headers": [{"name": "Authorization", "isSecret": True, "isRequired": True}],
+    }]
+    entry = parse_entry(raw)
+    assert len(entry.remotes[0].credential_headers) == 1
+    assert entry.remotes[0].credential_headers[0].is_required is True
+
+
+def test_a_quoted_true_is_honoured_as_the_same_publisher_error():
+    """The other direction of the same mistake; reading it False drops a real
+    declared credential on a technicality."""
+    raw = make_raw()
+    raw["server"]["remotes"] = [{
+        "type": "streamable-http",
+        "url": "https://a.example/mcp",
+        "headers": [{"name": "Authorization", "isSecret": "true", "isRequired": "TRUE"}],
+    }]
+    header = parse_entry(raw).remotes[0].credential_headers[0]
+    assert header.is_secret is True and header.is_required is True
+
+
+def test_a_string_false_does_not_mark_an_entry_latest():
+    """The neighbour of the finding, fixed with it: one registry-supplied
+    boolean corrected and its sibling left truthy is the shape `CLAUDE.md`
+    records every bounds defect in this repo having taken."""
+    assert parse_entry(make_raw(is_latest="false")).is_latest is False

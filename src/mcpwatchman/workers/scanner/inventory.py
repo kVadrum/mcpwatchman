@@ -150,6 +150,30 @@ _DOC_PREFIXES = (
     "readme", "changelog", "changes", "history", "news",
     "contributing", "security", "codeowners",
 )
+
+# ⚠ **A DOC PREFIX ONLY COUNTS ON A DOC-SHAPED FILE**, and this guard is the
+# other half of the fix above rather than a refinement of it. Widening the
+# prefixes past markdown to catch `CHANGES.rst` also caught `history.py`,
+# `news.ts`, `changes.go` and `security.rb` — ordinary source files whose names
+# happen to start with a documentation word — and the damage was double: a false
+# changelog 100 from a Python module, AND the file dropping out of
+# `auth_check`'s and `transport_check`'s source sweeps, so a server whose main
+# module is `history.py` lost its authentication detection entirely.
+#
+# Two conditions, because either alone still misclassifies. The EXTENSION test
+# keeps `security.json` (a config file) and `news.ts` out; the LANGUAGE test
+# covers the extensionless case, where `_language_of` reads a shebang and a
+# script named `changes` is a script, not a changelog.
+_DOC_EXTENSIONS = frozenset(
+    {"", ".md", ".markdown", ".rst", ".txt", ".adoc", ".asciidoc", ".org", ".textile"}
+)
+_CODE_LANGUAGES = frozenset(
+    {
+        Language.PYTHON, Language.JAVASCRIPT, Language.TYPESCRIPT, Language.GO,
+        Language.RUST, Language.RUBY, Language.JAVA, Language.CSHARP,
+        Language.SHELL, Language.DOCKERFILE,
+    }
+)
 _LICENSE_PREFIXES = ("license", "licence", "copying", "notice")
 
 
@@ -283,7 +307,11 @@ def _role_of(rel: Path, language: Language) -> Role:
         return Role.PACKAGE_MANIFEST
     if any(lower.startswith(p) for p in _LICENSE_PREFIXES):
         return Role.LICENSE
-    if any(lower.startswith(p) for p in _DOC_PREFIXES) or language is Language.MARKDOWN:
+    if language is Language.MARKDOWN or (
+        any(lower.startswith(p) for p in _DOC_PREFIXES)
+        and rel.suffix.lower() in _DOC_EXTENSIONS
+        and language not in _CODE_LANGUAGES
+    ):
         return Role.DOCS
     # Tests are separated so a finding in a fixture does not score like a finding
     # in the served code — `03` §3 grades what runs, and a deliberately-unsafe
@@ -503,7 +531,12 @@ def enumerate_tree(root: Path) -> Inventory:
 SOURCE_READ_MAX_BYTES = 512 * 1024
 
 
-def read_text(root: Path, rel_path: str, limit: int = SOURCE_READ_MAX_BYTES) -> str:
+def read_text(
+    root: Path,
+    rel_path: str,
+    limit: int = SOURCE_READ_MAX_BYTES,
+    truncate: bool = True,
+) -> str:
     """Read a file from a fetched tree as text, bounded and confined.
 
     ⚠ **This is the FIFTH path in this repo that reads attacker-controlled
@@ -544,6 +577,29 @@ def read_text(root: Path, rel_path: str, limit: int = SOURCE_READ_MAX_BYTES) -> 
         # Truncate rather than refuse: unlike a manifest, source is grepped for
         # patterns and a 512 KB prefix answers "does this import an HTTP
         # framework?" as well as the whole file would. A manifest is parsed
-        # whole-or-not-at-all, which is why `_read_manifest` refuses instead.
+        # whole-or-not-at-all, which is why `read_manifest` passes
+        # `truncate=False` and `_read_manifest` refuses instead.
+        if not truncate:
+            return ""
         raw = raw[:limit]
     return raw.decode("utf-8", "replace")
+
+
+def read_manifest(root: Path, rel_path: str) -> str:
+    """Read a manifest from a fetched tree, whole or not at all.
+
+    ⚠ **A parsed file must never be truncated, and the distinction is not
+    cosmetic.** `license_check` read `package.json` and `Cargo.toml` through
+    `read_text`'s 512 KB SOURCE bound, which truncates — so a large but
+    perfectly valid manifest arrived at `json.loads` as a guaranteed-invalid
+    document and degraded to "nothing declared", by a route that looks like the
+    publisher shipped a malformed file. Source is grepped and tolerates a
+    prefix; a manifest is parsed and does not.
+
+    Same bound and same refusal as `_read_manifest`, which `enumerate_tree` uses
+    for the two manifests it reads itself — one rule, and now one behaviour,
+    rather than two readers disagreeing about the same file (`CLAUDE.md`
+    records that every bounds defect in this repo has been a guard written in
+    one place and omitted from its neighbour).
+    """
+    return read_text(root, rel_path, limit=MANIFEST_MAX_BYTES, truncate=False)

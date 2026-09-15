@@ -21,7 +21,7 @@ from mcpwatchman.workers.scanner.auth_check import (
     assess_auth,
     scan_secrets,
 )
-from mcpwatchman.workers.scanner.inventory import enumerate_tree
+from mcpwatchman.workers.scanner.inventory import LARGE_FILE_BYTES, enumerate_tree
 from mcpwatchman.workers.scanner.transport_check import assess_transport
 
 
@@ -378,3 +378,159 @@ def test_an_authors_heading_alone_is_not_auth_documentation(tmp_path: Path) -> N
     })
     axis = _assess(_remote_entry(), root, scan_for_secrets=False)
     assert _sub(axis, "authentication_model").score == 80
+
+
+# ── Codex leg 2: presence of a symbol read as enforcement ───────────────────
+
+def test_an_imported_but_unwired_auth_library_does_not_reach_a_hundred(
+    tmp_path: Path,
+) -> None:
+    """A bare import reached "refused without credentials … by reading the code".
+
+    Same family as the `http.HandlerFunc` defect: presence of a symbol read as
+    the thing the symbol is used for. The reproduction is a real shape — an
+    import left behind by a refactor, or added in anticipation — with no route
+    depending on it anywhere.
+    """
+    root = _tree(tmp_path, **{
+        "server.py": "from fastapi import FastAPI\n"
+                     "from fastapi.security import HTTPBearer\n"
+                     "app = FastAPI()\n"
+                     "@app.get('/data')\ndef data():\n    return {'ok': True}\n",
+        "README.md": "# srv\nSend an API key in the Authorization header.\n" + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 80
+    assert "no call site" in model.evidence[0]
+
+
+def test_an_outbound_oauth_token_call_is_not_inbound_authentication(
+    tmp_path: Path,
+) -> None:
+    """A server CALLING somebody else's `/oauth/token` scored 100.
+
+    The direction error the bare `X-API-Key` tokens were retired for, arriving
+    through OAuth vocabulary: this server authenticates nobody and fetches a
+    token to call an upstream API. `03` §4's 30 band is the correct answer, and
+    the README documents auth — which is what lifted it to 100.
+    """
+    root = _tree(tmp_path, **{
+        "server.py": "import httpx\n"
+                     "def upstream_token():\n"
+                     "    return httpx.post('https://api.example.com/oauth/token',\n"
+                     "        data={'grant_type': 'client_credentials'})\n",
+        "README.md": "# srv\nUses OAuth2 to authenticate to the upstream API.\n"
+                     + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 30
+
+
+def test_inbound_token_verification_still_reaches_a_hundred(tmp_path: Path) -> None:
+    """Control for the pruning above — it must not blind us to a real verifier."""
+    root = _tree(tmp_path, **{
+        "server.py": "import jwt\n"
+                     "def guard(request):\n"
+                     "    token = request.headers.get('Authorization')\n"
+                     "    return jwt.decode(token, key, algorithms=['RS256'])\n",
+        "README.md": "# srv\nEvery request must carry a bearer token.\n" + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 100
+
+
+def test_the_low_level_tool_list_shape_counts_every_tool(tmp_path: Path) -> None:
+    """`ListToolsRequestSchema` + `tools: [` counted 2 for five real tools.
+
+    Under `03` §4's threshold of 3, so the server published "there is no
+    multi-tool surface to segregate" while exposing five. The markers were
+    added to fix a zero and turned it into a constant — a plausible number,
+    which is the harder failure to see.
+    """
+    tools = ",\n".join(
+        f'    {{ name: "t{i}", description: "does {i}", inputSchema: {{ type: "object" }} }}'
+        for i in range(5)
+    )
+    root = _tree(tmp_path, **{
+        "index.ts": "server.setRequestHandler(ListToolsRequestSchema, async () => ({\n"
+                    f"  tools: [\n{tools}\n  ],\n}}));\n",
+    })
+    gran = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                "authorization_granularity")
+    # Five tools, no conditional access logic: `03` §4 calls this "needs human
+    # review" and assigns no band, so the honest outcome is unassessed — NOT
+    # the 100 the miscount produced.
+    assert gran.score is None
+    assert "5 tool registrations" in gran.reason
+
+
+def test_a_mixed_remote_set_scores_the_WEAKEST_endpoint(tmp_path: Path) -> None:
+    """`any(is_required)` over flattened headers scored the strongest endpoint.
+
+    One remote requiring `Authorization` and one requiring nothing reached the
+    80 band while the second answered anyone who asked. An attacker uses the
+    weakest path, so the quantifier has to be `all` over REMOTES.
+    """
+    entry = RegistryEntry(
+        name="io.github.x/y", version="1.0.0",
+        remotes=(
+            Remote(type="streamable-http", url="https://a.example/mcp",
+                   headers=(Header(name="Authorization",
+                                   is_required=True, is_secret=True),)),
+            Remote(type="sse", url="https://b.example/sse", headers=()),
+        ),
+    )
+    model = _sub(_assess(entry), "authentication_model")
+    assert model.score == 60
+    assert "https://b.example/sse" in " ".join(model.evidence)
+
+
+def test_a_tree_whose_source_cannot_be_read_abstains_rather_than_scoring_thirty(
+    tmp_path: Path,
+) -> None:
+    """`_source_text` returning "" was passed on as ASSESSED source.
+
+    "" is not None, so the ladder ran on it and published `03` §4's 30 band —
+    "no authentication … appears anywhere in the source we fetched" — about a
+    tree in which nothing was read. The file here is over `04` §3's 1 MB
+    large-file threshold, so `Inventory.scannable` excludes it and
+    `_source_text` has nothing left to join: a real state for a server shipping
+    a bundled `dist/index.js`, not a contrived one.
+    """
+    root = _tree(tmp_path, **{"server.py": "# " + "x" * (LARGE_FILE_BYTES + 1) + "\n"})
+    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    model = _sub(axis, "authentication_model")
+    assert model.score is None
+    assert "every file in it was oversized" in model.reason
+
+
+def test_reading_a_PORT_from_the_environment_is_not_handling_a_credential(
+    tmp_path: Path,
+) -> None:
+    """`uses_env` matched the ACCESSOR, so `os.getenv("PORT")` published
+    "credentials are read from the environment, but the README does not
+    document which" — a 30-point deduction for reading a port number."""
+    root = _tree(tmp_path, **{
+        "server.py": "import os\nPORT = int(os.getenv('PORT', '8080'))\n"
+                     "HOST = os.environ.get('HOST', '0.0.0.0')\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    secret = _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling")
+    assert secret.score == 100
+    assert "credential-shaped name" in secret.evidence[0]
+
+
+def test_reading_an_API_KEY_from_the_environment_still_registers(
+    tmp_path: Path,
+) -> None:
+    """Control for the name test: the signal it narrows must survive it."""
+    root = _tree(tmp_path, **{
+        "server.py": "import os\nkey = os.environ['OPENAI_API_KEY']\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    secret = _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling")
+    assert secret.score == 70
+    assert "OPENAI_API_KEY" in secret.evidence[0]

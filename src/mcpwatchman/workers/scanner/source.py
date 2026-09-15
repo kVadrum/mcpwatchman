@@ -627,10 +627,22 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
     # `--` before the positional arguments: without it a URL or path beginning
     # with `-` is parsed as a flag. `SourceSpec.parse` already rejects those, so
     # this is the second layer — and it costs nothing.
+    #
+    # ⚠ **`SourceUnreachableError` STOPS THE LADDER, and catching its parent is
+    # what let it through.** Every handler below narrows a fetch failure to "try
+    # the next ref", which is right for a missing tag and wrong for a repository
+    # that does not publicly exist: the ladder then made three network attempts
+    # at a URL the first one already established was unreachable, and the retry
+    # it performed is precisely the retry the split of this exception from
+    # `FetchError` exists to prevent. The subclass is re-raised before the
+    # continue, so a publisher-side fact is decided once and ours is retried.
     resolved_ref: str | None = None
     for candidate in (spec.version, f"v{spec.version}"):
         try:
             _run([*base, "--branch", candidate, "--", url, str(dest)], remote=True, url=url)
+        except SourceUnreachableError:
+            shutil.rmtree(dest, ignore_errors=True)
+            raise
         except FetchError:
             shutil.rmtree(dest, ignore_errors=True)
             continue
@@ -662,6 +674,13 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
                     url=url,
                 )
                 _run(["git", "checkout", "--detach", "FETCH_HEAD"], cwd=dest)
+            except SourceUnreachableError:
+                # The clone above already succeeded, so the repository IS
+                # reachable and this cannot normally fire. Re-raised anyway
+                # rather than swallowed: if it ever does, the ref fetch reached
+                # a URL we could not read, which is a fact about the source and
+                # not a reason to try the next candidate.
+                raise
             except FetchError:
                 continue
             resolved_ref = candidate

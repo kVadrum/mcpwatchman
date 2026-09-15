@@ -570,3 +570,60 @@ def test_test_suffixes_cover_every_supported_js_variant(tmp_path: Path, name: st
     repo.mkdir()
     (repo / name).write_text("x")
     assert enumerate_tree(repo).files[0].role is Role.TEST
+
+
+# ── Codex leg 2: a documentation PREFIX on a SOURCE file ────────────────────
+
+@pytest.mark.parametrize(
+    "filename", ["history.py", "news.ts", "changes.go", "security.rb", "contributing.js"]
+)
+def test_a_source_file_with_a_doc_name_stays_source(tmp_path, filename) -> None:
+    """Widening the doc prefixes past markdown swept up ordinary source files.
+
+    The reproduction is the filename alone — these are names real servers use
+    for real modules. Classifying them DOCS did double damage: a false
+    changelog 100 from a Python module, and the file dropping out of the auth
+    and transport source sweeps, which read `Role.SOURCE` and nothing else.
+    """
+    (tmp_path / filename).write_text("def handler(request):\n    return 1\n")
+    record = next(f for f in enumerate_tree(tmp_path).files if f.path == filename)
+    assert record.role is Role.SOURCE
+
+
+def test_a_doc_named_source_file_is_still_swept_for_auth(tmp_path) -> None:
+    """The knock-on, pinned separately because it is the expensive half.
+
+    A server whose entry point is `history.py` lost authentication detection
+    entirely — not a wrong score on one sub-check, a whole detector blinded by
+    a filename.
+    """
+    (tmp_path / "history.py").write_text(
+        "from fastapi import FastAPI\n"
+        "auth = HTTPBearer()\n"
+        "app = FastAPI()\n"
+    )
+    inv = enumerate_tree(tmp_path)
+    assert "history.py" in {f.path for f in inv.by_role(Role.SOURCE)}
+
+
+@pytest.mark.parametrize(
+    "filename", ["CHANGES.rst", "HISTORY.txt", "NEWS", "CHANGELOG.md", "SECURITY.md"]
+)
+def test_real_documentation_is_still_documentation(tmp_path, filename) -> None:
+    """Control for the guard above: the fix it narrows must still hold.
+
+    `CHANGES.rst` is why the prefixes were widened in the first place — a
+    Python project shipping one scored changelog 0 with the evidence "no
+    CHANGELOG in the fetched source".
+    """
+    (tmp_path / filename).write_text("# 1.0.0\n\n- first release\n")
+    record = next(f for f in enumerate_tree(tmp_path).files if f.path == filename)
+    assert record.role is Role.DOCS
+
+
+def test_an_extensionless_script_named_like_a_doc_is_not_a_doc(tmp_path) -> None:
+    """The extension test alone would miss this: `changes` has no suffix."""
+    script = tmp_path / "changes"
+    script.write_text("#!/usr/bin/env python3\nprint('hi')\n")
+    record = next(f for f in enumerate_tree(tmp_path).files if f.path == "changes")
+    assert record.role is Role.SOURCE

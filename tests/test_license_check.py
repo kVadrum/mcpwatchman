@@ -279,3 +279,94 @@ def test_with_binds_tighter_than_or(tmp_path: Path, tag: str, expression: str,
 )
 def test_license_families_are_not_confused_with_each_other(text: str, expected: str) -> None:
     assert identify_license(text) == expected
+
+
+# ── Codex leg 2: the regressions the first pass could not have seen ─────────
+
+def test_exception_on_the_file_side_is_not_a_conflict(tmp_path: Path) -> None:
+    """The `WITH` strip was applied to the manifest's operands only.
+
+    Reproduction, not paraphrase: the operand split removed the exception from
+    each arm of `MIT OR Apache-2.0 WITH LLVM-exception` and then looked up the
+    file's tag WHOLE, so `apache-2.0 with llvm-exception` was absent from
+    `["mit", "apache-2.0"]` and the pair published a licence CONFLICT at 30 —
+    the same false accusation the operand split was written to remove, one layer
+    down, on a real Rust crate string.
+    """
+    root = _tree(
+        tmp_path,
+        LICENSE="SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception\n" + APACHE_TEXT,
+        **{"Cargo.toml": '[package]\nlicense = "MIT OR Apache-2.0 WITH LLVM-exception"\n'},
+    )
+    facts = _facts(root)
+    assert facts.relation == "alternative"
+    assert facts.mismatch is False
+    assert _assess(root).score == 100
+
+
+def test_exception_on_either_side_alone_still_matches(tmp_path: Path) -> None:
+    """An exception never names a second licence, so it cannot create a gap."""
+    root = _tree(
+        tmp_path,
+        LICENSE="SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception\n" + APACHE_TEXT,
+        **{"Cargo.toml": '[package]\nlicense = "Apache-2.0"\n'},
+    )
+    assert _facts(root).relation == "exact"
+    assert _assess(root).score == 100
+
+
+def test_a_real_conflict_still_reports_one(tmp_path: Path) -> None:
+    """The control for the two above: stripping exceptions must not strip teeth."""
+    root = _tree(
+        tmp_path,
+        LICENSE="SPDX-License-Identifier: GPL-3.0 WITH Classpath-exception-2.0\n",
+        **{"package.json": '{"license": "MIT OR Apache-2.0"}'},
+    )
+    facts = _facts(root)
+    assert facts.relation == "conflict"
+    assert _assess(root).score == 30
+
+
+def test_an_spdx_identifier_in_prose_is_not_a_declaration(tmp_path: Path) -> None:
+    """The regex's comment claimed it was anchored; it was not.
+
+    A LICENSE file whose text discusses an identifier it rejected would declare
+    that identifier — and the manifest naming the real licence then publishes a
+    CONFLICT against a correctly-licensed project.
+    """
+    root = _tree(
+        tmp_path,
+        LICENSE=("We considered SPDX-License-Identifier: GPL-3.0 and chose "
+                 "otherwise.\n\n" + MIT_TEXT),
+        **{"package.json": '{"license": "MIT"}'},
+    )
+    facts = _facts(root)
+    assert facts.spdx_in_file is None
+    assert facts.mismatch is False
+
+
+def test_a_commented_spdx_tag_still_declares(tmp_path: Path) -> None:
+    """Control for the anchor: `#`, `//` and ` * ` prefixes are real tags."""
+    for prefix in ("# ", "// ", " * ", "<!-- "):
+        root = _tree(
+            tmp_path / prefix.strip(" <!-/*") or tmp_path,
+            LICENSE=f"{prefix}SPDX-License-Identifier: MIT\n" + MIT_TEXT,
+        )
+        assert _facts(root).spdx_in_file == "MIT", prefix
+
+
+def test_a_large_but_valid_manifest_is_not_truncated_into_a_parse_failure(
+    tmp_path: Path,
+) -> None:
+    """Manifests were read through the 512 KB SOURCE reader, which TRUNCATES.
+
+    A valid `package.json` over that bound reached `json.loads` as a guaranteed
+    -invalid document, so its declared licence vanished by a route that reads
+    as the publisher shipping a malformed file. Padded with a real field rather
+    than junk so the only thing under test is the size.
+    """
+    padding = "x" * (600 * 1024)
+    manifest = json.dumps({"name": "big", "description": padding, "license": "MIT"})
+    assert len(manifest) > 512 * 1024
+    root = _tree(tmp_path, LICENSE=MIT_TEXT, **{"package.json": manifest})
+    assert _facts(root).spdx_in_manifest == "MIT"

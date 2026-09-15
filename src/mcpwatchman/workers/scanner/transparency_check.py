@@ -113,6 +113,43 @@ _SECURITY_CONTACT = re.compile(
     re.IGNORECASE,
 )
 
+# ⚠ **A NEGATED mention is not a route**, and the fix that narrowed the pattern
+# to real disclosure vocabulary made this reachable rather than introducing it.
+# "No security policy is currently provided" contains `security polic` and
+# scored the full 100 — the sub-check reporting a private reporting channel for
+# a project stating in the same sentence that it has none. Worth 15% of
+# Transparency, and the falsest direction available on this axis: a finder is
+# told a route exists.
+#
+# Checked per MATCH rather than over the document, because both readings occur
+# in one README. "Do not report vulnerabilities in public issues; email
+# security@example.com" negates its first clause and still documents a route —
+# so a single un-negated match is enough, and only a document where EVERY match
+# is negated scores 0.
+_NEGATION_RE = re.compile(
+    r"\b(?:no|not|none|never|lacks?|lacking|missing|without|absent|neither|"
+    r"don'?t|doesn'?t|isn'?t|aren'?t|hasn'?t|haven'?t|yet to)\b",
+    re.IGNORECASE,
+)
+# Clause boundaries. A negation binds within its own clause: the `;` in the
+# example above is what makes the second half an independent instruction.
+_CLAUSE_BREAK = re.compile(r"[.;:!?\n]")
+
+
+def _negated(text: str, start: int) -> bool:
+    """True when the clause leading up to `start` negates what follows."""
+    clause_start = 0
+    for boundary in _CLAUSE_BREAK.finditer(text, 0, start):
+        clause_start = boundary.end()
+    return _NEGATION_RE.search(text, clause_start, start) is not None
+
+
+def documents_disclosure_route(text: str) -> bool:
+    """Whether the text gives a finder a way to report privately (`03` §7)."""
+    return any(
+        not _negated(text, match.start()) for match in _SECURITY_CONTACT.finditer(text)
+    )
+
 
 @dataclass(frozen=True, slots=True)
 class DocumentationFacts:
@@ -249,7 +286,7 @@ def score_security_contact(facts: DocumentationFacts) -> SubCheck:
     name = "security_contact"
     if facts.security_path:
         return SubCheck(name, 100, evidence=(f"{facts.security_path} present",))
-    if _SECURITY_CONTACT.search(facts.readme):
+    if documents_disclosure_route(facts.readme):
         return SubCheck(
             name, 100,
             evidence=(f"no SECURITY.md, but {facts.readme_path} documents a "

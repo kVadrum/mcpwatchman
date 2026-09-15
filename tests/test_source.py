@@ -993,3 +993,55 @@ def test_the_remote_guard_holds_even_for_unambiguous_remote_wording(monkeypatch)
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "gc", "--prune=now"])  # local-only, no remote=True
     assert not isinstance(exc.value, source.SourceUnreachableError)
+
+
+# ── Codex leg 2: a permanent failure must not be retried ────────────────────
+
+def test_an_unreachable_repository_is_attempted_ONCE(monkeypatch, tmp_path):
+    """`SourceUnreachableError` was swallowed by the `except FetchError` ladder.
+
+    The split of this exception from its parent exists precisely to say that a
+    repository the world cannot read will not become readable on retry — and
+    then every handler in `fetch_git` caught the parent, so the ladder made
+    three network attempts at a URL the first one had already settled. Counting
+    the attempts is the reproduction; asserting the exception type alone would
+    pass against the defect, since the last attempt raises the same class.
+    """
+    from mcpwatchman.workers.scanner import source as S
+
+    clones: list[list[str]] = []
+
+    def fake_run(cmd, **kw):
+        if cmd[:2] == ["git", "clone"]:
+            clones.append(cmd)
+            raise S.SourceUnreachableError("git failed (rc=128): repository not found")
+
+    monkeypatch.setattr(S, "_run", fake_run)
+    with pytest.raises(S.SourceUnreachableError):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/gone", "1.2.3"), tmp_path)
+    assert len(clones) == 1
+
+
+def test_a_missing_TAG_is_still_retried_across_candidates(monkeypatch, tmp_path):
+    """Control for the above, and the distinction the whole split turns on.
+
+    `fatal: Remote branch v1.2.3 not found` is a repository that answered us
+    perfectly well, so the ladder must keep walking. A fix that stopped on any
+    fetch failure would break the `1.2.3` / `v1.2.3` fallback and never be
+    noticed by a test that only checks the unreachable case.
+    """
+    from mcpwatchman.workers.scanner import source as S
+
+    tried: list[str] = []
+
+    def fake_run(cmd, **kw):
+        if "--branch" in cmd:
+            tried.append(cmd[cmd.index("--branch") + 1])
+            raise FetchError("git failed (rc=128): Remote branch not found")
+        if any(str(a).startswith("refs/tags/") for a in cmd):
+            raise FetchError("no such ref")
+
+    monkeypatch.setattr(S, "_run", fake_run)
+    monkeypatch.setattr(S, "_measure_all", lambda p: 0)
+    S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
+    assert tried == ["1.2.3", "v1.2.3"]

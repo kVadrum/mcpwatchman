@@ -295,3 +295,42 @@ def test_changelog_is_found_whatever_its_extension(tmp_path: Path, name: str) ->
     # fetched source" — one rule, two enforcers, silently disagreeing.
     root = _tree(tmp_path, **{name: "## 1.0\n", "README.md": "x" * 600})
     assert _sub(_axis(root), "changelog").score == 100
+
+
+# ── Codex leg 2: a negated mention is not a disclosure route ────────────────
+
+@pytest.mark.parametrize("sentence", [
+    "No security policy is currently provided.",
+    "This project does not have a security policy.",
+    "We have no responsible disclosure process yet.",
+    "There is no security.txt for this server.",
+])
+def test_a_negated_security_mention_scores_zero(tmp_path: Path, sentence) -> None:
+    """`security polic` matched the NEGATION of having one.
+
+    Reproduction verbatim from the finding: the sub-check reported a private
+    reporting channel — 15% of Transparency — for a README stating in the same
+    sentence that none exists, which is the falsest direction available on this
+    axis because a finder is told a route is there.
+    """
+    root = _tree(tmp_path, **{"README.md": FULL_README + "\n## Security\n\n" + sentence})
+    facts = documentation_facts(root, enumerate_tree(root))
+    from mcpwatchman.workers.scanner.transparency_check import score_security_contact
+    assert score_security_contact(facts).score == 0
+
+
+def test_a_negated_clause_does_not_suppress_a_real_route(tmp_path: Path) -> None:
+    """The control, and the reason the check is per-MATCH rather than per-document.
+
+    Both readings occur in one README, and this phrasing is the conventional
+    one: a prohibition on public reporting followed by the private address. A
+    document-wide negation test would score this 0 — a false accusation
+    manufactured by the fix for the false reassurance.
+    """
+    readme = (FULL_README + "\n## Security\n\n"
+              "Please do not report vulnerabilities in public issues; "
+              "email security@example.com instead.\n")
+    root = _tree(tmp_path, **{"README.md": readme})
+    facts = documentation_facts(root, enumerate_tree(root))
+    from mcpwatchman.workers.scanner.transparency_check import score_security_contact
+    assert score_security_contact(facts).score == 100

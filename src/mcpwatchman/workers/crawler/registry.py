@@ -442,11 +442,37 @@ def parse_entry(raw: Mapping[str, Any]) -> RegistryEntry:
         packages=packages,
         remotes=remotes,
         status=_clean(official.get("status")) or "active",
-        is_latest=bool(official.get("isLatest", False)),
+        # Same strict coercion as the header flags: `"isLatest": "false"` would
+        # otherwise mark a superseded entry current. One registry-supplied
+        # boolean fixed and its neighbour left truthy is the shape `CLAUDE.md`
+        # records every bounds defect in this repo having taken.
+        is_latest=_as_bool(official.get("isLatest")),
         published_at=_clean(official.get("publishedAt")),
         updated_at=_clean(official.get("updatedAt")),
         content_hash=_sha256(canonical_json(server)),
     )
+
+
+def _as_bool(value: Any) -> bool:
+    """A JSON boolean, strictly — never Python truthiness.
+
+    ⚠ **`bool("false")` is `True`**, and every field here is attacker-supplied.
+    A remote declaring `"isSecret": "false"` — a string, which the registry
+    schema does not permit but nothing stops a publisher writing — was read as
+    declaring a credential, so a source-less server with no real authentication
+    reached `03` §4's 60 band on a value that says the opposite of what we
+    scored it as. The same coercion on `isRequired` reaches the 80 band.
+
+    A quoted `"true"` is honoured too: it is the same publisher error in the
+    other direction, and reading it as `False` would drop a declared credential
+    on a technicality. Anything else — a number, a list, `null` — is `False`,
+    which is this parser's standing posture of degrading to "nothing declared".
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().casefold() == "true"
+    return False
 
 
 def _parse_headers(raw: Any) -> tuple[Header, ...]:
@@ -470,8 +496,8 @@ def _parse_headers(raw: Any) -> tuple[Header, ...]:
             Header(
                 name=name,
                 description=_clean(item.get("description")) or "",
-                is_required=bool(item.get("isRequired", False)),
-                is_secret=bool(item.get("isSecret", False)),
+                is_required=_as_bool(item.get("isRequired")),
+                is_secret=_as_bool(item.get("isSecret")),
             )
         )
     return tuple(headers)

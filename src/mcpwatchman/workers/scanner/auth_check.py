@@ -62,6 +62,20 @@ MAX_FILES_READ = 40
 
 SECRET_SCAN_TIMEOUT = 120
 
+# ⚠ **"No source" and "source we could not read" are different facts**, and
+# collapsing them is how an unassessable became a finding. `_source_text`
+# returns "" when every file in a fetched tree is oversized, unreadable or
+# excluded — a real state, since `read_text` refuses files over 512 KB — and ""
+# is not None, so the ladder ran on it and reached `03` §4's 30 band: *"no
+# authentication … appears anywhere in the source we fetched"*, asserted about a
+# tree in which nothing was read. The unknown-as-finding error, in a new place.
+# Both states now abstain, and the reason says which one happened.
+NO_SOURCE_FETCHED = "no source was fetched"
+SOURCE_UNREADABLE = (
+    "source was fetched but every file in it was oversized, unreadable or "
+    "excluded, so no source text could be read"
+)
+
 # Auth middleware and credential validation, by ecosystem (`04` §6).
 # ⚠ **Every entry must be an AUTH construct, not a construct auth happens to
 # use.** Two were not, and together they scored a Go server with no
@@ -134,10 +148,72 @@ _CREDENTIAL_READ_RE = re.compile(
     )""",
     re.IGNORECASE | re.VERBOSE,
 )
+# ⚠ **VERIFICATION, not PARTICIPATION** — the same direction error the bare
+# credential tokens above were retired for, arriving through OAuth vocabulary.
+# `/oauth/`, bare `oauth2`, `/callback`, `PKCE`, `code_challenge` and `id_token`
+# were alternatives here, and every one of them is what an OAuth *client* looks
+# like: a server POSTing to somebody else's `/oauth/token` to call their API
+# matched, and — being an alternative to `has_middleware` in the 100 band —
+# published *"refused without credentials established by reading the code"*
+# about a server that authenticates nobody. Reading an upstream's token endpoint
+# says exactly as much about inbound auth as sending an `X-API-Key` header did.
+#
+# What survives is the set that only makes sense when the server is CHECKING a
+# token it received. A server that genuinely implements OAuth inbound also reads
+# the Authorization header, so the honest floor for anything pruned here is
+# `03` §4's 60 band, not its 30.
 _OAUTH_INDICATORS = (
-    "/oauth/", "oauth2", "OAuth2", "PKCE", "code_challenge", "/callback",
-    "jwt.decode", "jwt.verify", "jwks", "id_token",
+    "jwt.decode", "jwt.verify", "jwtVerify", "jsonwebtoken.verify",
+    "verify_jwt", "verifyJwt", "decode_token", "verify_token", "verifyToken",
+    "jwks", "JWKS", "JwksClient", "get_signing_key", "getSigningKey",
+    "introspect", "token_introspection", "WWW-Authenticate",
+    "oauth-protected-resource", "validate_token", "validateToken",
 )
+
+# Import statements, which evidence a DEPENDENCY rather than a call site.
+#
+# ⚠ **A bare import is not enforcement, and the 100 band claims enforcement.**
+# `from fastapi.security import HTTPBearer` with no route ever depending on it
+# reached *"refused without credentials established by reading the code"* —
+# established by reading an import line. The same shape as `http.HandlerFunc`:
+# presence of a symbol read as the thing the symbol is used for.
+#
+# It is not scored as nothing either, which is the over-correction available
+# here: importing an auth library IS evidence of intent, and dropping it
+# entirely would push real servers toward `03` §4's 30 band ("no
+# authentication") — a false accusation in the other direction. So an
+# import-only match caps at 80 and says which of the two it established.
+#
+# Python's parenthesised form and JS's braced form span lines, and their
+# continuation lines are bare names that read as uses; both are removed whole.
+_PY_PAREN_IMPORT_RE = re.compile(
+    r"^[ \t]*from\s+[\w.]+\s+import\s*\([^)]*\)", re.MULTILINE
+)
+_JS_BRACE_IMPORT_RE = re.compile(
+    r"^[ \t]*import\s*(?:type\s*)?\{[^}]*\}\s*from\s*[\"\'`][^\"\'`]*[\"\'`]",
+    re.MULTILINE,
+)
+_IMPORT_LINE_RE = re.compile(
+    r"^[ \t]*(?:"
+    r"from\s+[\w.]+\s+import\b.*"          # Python
+    r"|import\b.*"                           # Python / JS / TS / Go member
+    r"|(?:const|let|var)\s+[^\n=]*=\s*require\s*\(.*"   # CommonJS
+    r"|use\s+[\w:]+.*"                       # Rust
+    r")$",
+    re.MULTILINE,
+)
+
+
+def _call_sites(source: str) -> str:
+    """`source` with its import statements removed.
+
+    What is left is where symbols are USED. Matching an auth construct here
+    rather than over the whole file is the difference between a library being
+    installed and a route being protected.
+    """
+    for pattern in (_PY_PAREN_IMPORT_RE, _JS_BRACE_IMPORT_RE, _IMPORT_LINE_RE):
+        source = pattern.sub("", source)
+    return source
 
 # Credentials read from the environment rather than committed (`03` §4's
 # "env vars are used" clause).
@@ -145,32 +221,108 @@ _OAUTH_INDICATORS = (
 # signal but a WRONG published claim. A Go or Rust server reading a credential
 # from the environment scored 100 with the evidence *"no credential is read from
 # the environment either — this server appears to handle no secrets"*.
-_ENV_READS = (
-    "os.environ", "os.getenv", "process.env", "Deno.env",
-    "dotenv", "pydantic_settings", "BaseSettings",
-    # Go (`os.Getenv`/`LookupEnv`), Rust (`std::env::var`), C#, Ruby, shell,
-    # PowerShell. `getenv(` is matched case-insensitively below for the C family.
-    "LookupEnv(", "env::var", "GetEnvironmentVariable", "ENV[", "$env:",
+# ⚠ **THE VARIABLE'S NAME IS THE SIGNAL, not the accessor.** This matched the
+# accessor alone, so `os.getenv("PORT")` published *"credentials are read from
+# the environment, but the README does not document which"* — a 30-point
+# deduction on secret handling for reading a port number. Every server reads
+# something from the environment; almost none of it is a credential.
+#
+# Both directions are fixed by naming, not just the over-report: the 100 band's
+# old evidence read *"this server appears to handle no secrets"*, a claim about
+# the server drawn from the absence of a substring. It now says only what a name
+# test can support — that no credential-NAMED variable is read.
+_ENV_ACCESS_RE = re.compile(
+    r"""(?:os\.environ(?:\.get)?\s*[(\[]
+        |os\.getenv\s*\(
+        |process\.env\s*[.\[]
+        |Deno\.env\.get\s*\(
+        |(?:os\.)?(?:Getenv|LookupEnv)\s*\(
+        |env::var(?:_os)?\s*\(
+        |GetEnvironmentVariable\s*\(
+        |\bENV\s*\[
+        |\$env:
+        |\bgetenv\s*\(
+    )\s*["'`]?(?P<name>[A-Za-z_][A-Za-z0-9_]{0,80})""",
+    re.VERBOSE,
 )
-_ENV_READ_RE = re.compile(r"\bgetenv\s*\(", re.IGNORECASE)
+# A credential-shaped variable name, in any of the conventions the ecosystems
+# use. Word-segment anchored so `KEYBOARD` and `TOKENIZER` do not match.
+_CREDENTIAL_NAME_RE = re.compile(
+    r"(?:^|_)(?:KEY|KEYS|TOKEN|TOKENS|SECRET|SECRETS|PASSWORD|PASSWD|PASS|PWD"
+    r"|CREDENTIAL|CREDENTIALS|CREDS|AUTH|APIKEY|PAT|PRIVATE|CERT|SIGNING|DSN"
+    r"|SESSION|COOKIE|SALT)(?:$|_)",
+    re.IGNORECASE,
+)
+# A secrets-loading library. `dotenv` reads a `.env` file, which is where a
+# project puts credentials by convention; unlike a bare accessor it carries its
+# own intent. `pydantic_settings`/`BaseSettings` are deliberately NOT here —
+# they are general configuration and were part of the over-report.
+_SECRET_LOADERS = ("dotenv", "load_dotenv", "Dotenv", "godotenv")
+
+
+def _env_credential_names(source: str) -> tuple[str, ...]:
+    """Environment variables the source reads whose NAMES look like secrets."""
+    names = {
+        m.group("name")
+        for m in _ENV_ACCESS_RE.finditer(source)
+        if _CREDENTIAL_NAME_RE.search(m.group("name"))
+    }
+    return tuple(sorted(names))
 
 # Tool registration, for the granularity heuristic's tool count.
-_TOOL_PATTERNS = (
-    re.compile(r"@\w+\.tool\b"),                     # Python SDK decorator
+#
+# ⚠ **COUNT TOOLS, NOT LIST OPERATIONS.** `ListToolsRequestSchema` and the
+# `tools: [` array it returns were counted as registrations, and they are ONE
+# handler however many tools it serves — so the commonest low-level TS shape
+# scored **2** for a five-tool server, landed under `03` §4's threshold of 3,
+# and published *"there is no multi-tool surface to segregate"* about a server
+# with exactly that. The markers were added to fix a zero and turned it into a
+# constant, which is the harder failure to see: a plausible number.
+#
+# Three independent ways of counting the same set, and the count is the LARGEST
+# rather than the sum — each family is one ecosystem's whole convention, so
+# summing double-counts while `max` takes the best lower bound. Over-counting
+# lands on "needs human review" (unassessed); under-counting publishes "≤3
+# tools" about a server we mis-read, so the bias is deliberate.
+
+# Per-tool registration CALLS that name the tool. The name is captured so
+# repeated registrations of the same tool count once.
+_TOOL_CALL_RE = re.compile(
+    r"""\b(?:server\.tool|mcp\.tool|registerTool|addTool|setTool|tool)\s*\(\s*"""
+    r"""["'`](?P<name>[^"'`]{1,120})["'`]""",
+)
+# Per-tool DECORATORS. One per decorated function, so these are already a count.
+_TOOL_DECORATOR_RES = (
+    re.compile(r"@\w+\.tool\b"),      # `@mcp.tool()` — Python SDK
     re.compile(r"@tool\b"),
-    re.compile(r"\bserver\.tool\("),                 # TS SDK, high-level
+    re.compile(r"\bserver\.tool\("),   # unnamed / variable-named TS registration
     re.compile(r"\bregisterTool\("),
     re.compile(r"\baddTool\("),
-    # ⚠ The LOW-LEVEL TS SDK shape, and the commonest one in the wild:
-    # `server.setRequestHandler(ListToolsRequestSchema, …)` returning a
-    # `tools: [...]` array. It counted ZERO, and zero is below the threshold, so
-    # a 5-tool server published *"0 tool registration(s) detected — at or below
-    # `03` §4's threshold, so there is no multi-tool surface to segregate"*: a
-    # fact asserted about the server out of a detector miss.
-    re.compile(r"ListToolsRequestSchema"),
-    re.compile(r"\btools\s*:\s*\[")               ,  # the array it returns
-    re.compile(r'"name"\s*:\s*"[^"]+"\s*,\s*"description"'),  # manifest-shaped
 )
+# Per-tool DEFINITION OBJECTS inside a `tools: [...]` array or an MCP manifest:
+# a `name` key whose neighbourhood carries the other fields an MCP tool
+# declaration has. Quoted and bare keys both occur (JSON vs TS object literal),
+# and `description` appears either side of `name`, so the companion key is
+# matched in a bounded window rather than in a fixed order.
+_TOOL_OBJECT_RE = re.compile(
+    r"""["'`]?\bname["'`]?\s*:\s*["'`][^"'`\n]{1,120}["'`]"""
+    r"""(?=.{0,300}?["'`]?\b(?:description|inputSchema|input_schema)["'`]?\s*:)""",
+    re.DOTALL,
+)
+# The low-level list handler. NOT a count — a marker that tools exist even when
+# none of the counters above recognised one, which is the difference between
+# "we failed to read this" and "this server has no tools".
+_TOOL_LIST_HANDLER_RE = re.compile(r"ListToolsRequestSchema|\btools\s*:\s*\[")
+
+
+def _count_tools(source: str) -> int:
+    """How many distinct tools the source registers (`03` §4's threshold)."""
+    named = {m.group("name") for m in _TOOL_CALL_RE.finditer(source)}
+    sites = max(
+        (len(pattern.findall(source)) for pattern in _TOOL_DECORATOR_RES), default=0
+    )
+    objects = len(_TOOL_OBJECT_RE.findall(source))
+    return max(len(named), sites, objects)
 # Per-tool conditional access: a permission test inside the handler.
 _CONDITIONAL_ACCESS_TOKENS = (
     "if not authorized", "if (!authorized", "has_permission", "hasPermission",
@@ -301,10 +453,26 @@ def _readme_text(root: Path, inventory: Inventory) -> str:
     return ""
 
 
-def _declared_credentials(entry: RegistryEntry) -> tuple[bool, bool]:
-    """(any credential header declared, any of them required)."""
+def _declared_credentials(entry: RegistryEntry) -> tuple[bool, bool, tuple[str, ...]]:
+    """(any credential header declared, EVERY remote requires one, the rest).
+
+    ⚠ **Flattening every remote's headers into one list and asking `any()`
+    scores the STRONGEST endpoint**, and an attacker uses the weakest. A server
+    declaring two remotes — one requiring an `Authorization` header, one
+    requiring nothing — reached `03` §4's 80 band ("credentials required") while
+    the second endpoint answered anyone who asked. The requirement has to hold
+    for every declared endpoint or it is not a requirement, so the quantifier is
+    `all` over REMOTES, not `any` over headers, and the endpoints that fail it
+    are returned to be named in the evidence rather than averaged away.
+    """
     headers = [h for remote in entry.remotes for h in remote.credential_headers]
-    return bool(headers), any(h.is_required for h in headers)
+    unprotected = tuple(
+        remote.url
+        for remote in entry.remotes
+        if not any(h.is_required for h in remote.credential_headers)
+    )
+    required = bool(entry.remotes) and not unprotected
+    return bool(headers), required, unprotected
 
 
 def _authentication_model(
@@ -312,6 +480,7 @@ def _authentication_model(
     transport: TransportAssessment,
     source: str | None,
     readme: str,
+    absent_reason: str = NO_SOURCE_FETCHED,
 ) -> SubCheck:
     """`03` §4's authentication-model ladder."""
     name = "authentication_model"
@@ -330,9 +499,16 @@ def _authentication_model(
                    "stdio carve-out cannot be applied either way",
         )
 
-    declared, required = _declared_credentials(entry)
+    declared, required, unprotected = _declared_credentials(entry)
     header_names = sorted(
         {h.name for r in entry.remotes for h in r.credential_headers}
+    )
+    # Named rather than counted: the score is about a specific endpoint anyone
+    # can reach, and `03` §10 commits every point to an artifact.
+    bypassable = (
+        (f"{len(unprotected)} of {len(entry.remotes)} declared remote endpoint(s) "
+         f"require no credential header: {', '.join(unprotected[:3])}",)
+        if unprotected and declared else ()
     )
 
     if source is None:
@@ -350,44 +526,67 @@ def _authentication_model(
         if declared:
             return SubCheck(
                 name, 60,
-                evidence=(f"registry declares OPTIONAL credential header(s): "
-                          f"{', '.join(header_names)} — `03` §4's "
-                          "\"authentication present but optional\" band",),
+                evidence=(f"registry declares credential header(s) "
+                          f"{', '.join(header_names)} that are not required on "
+                          "every declared endpoint — `03` §4's "
+                          "\"authentication present but optional\" band",)
+                         + bypassable,
             )
         return SubCheck(
             name, None,
-            reason="no source to read and no credential header declared. An "
+            reason=f"{absent_reason}, and no credential header is declared. An "
                    "undeclared header is not an absent one — measured "
                    "2026-09-15, only 10 of 100 remotes declare one at all — so "
                    "`03` §4's \"no authentication\" band is not established.",
         )
 
-    has_middleware = any(t in source for t in _AUTH_MIDDLEWARE)
+    # ⚠ USE vs IMPORT, and the two reach different bands. See `_call_sites`.
+    call_sites = _call_sites(source)
+    has_middleware = any(t in call_sites for t in _AUTH_MIDDLEWARE)
+    imports_middleware = not has_middleware and any(t in source for t in _AUTH_MIDDLEWARE)
     has_credential_read = bool(_CREDENTIAL_READ_RE.search(source))
-    has_oauth = any(t in source for t in _OAUTH_INDICATORS)
+    has_oauth = any(t in call_sites for t in _OAUTH_INDICATORS)
     # ⚠ WORD-BOUNDED. This was substring containment over a list that included
     # a bare "auth", so an `## Authors` heading — in practically every README —
     # satisfied "documented in the README" and lifted the band to 100.
     documented = bool(readme) and _AUTH_DOCUMENTED_RE.search(readme) is not None
 
+    # ⚠ NOT gated on `unprotected`. A remote that declares no required header
+    # is not a remote that requires nothing — only 10 of 100 declare one at all
+    # — so withholding the source-established 100 band on that basis would be
+    # the ecological inference the module docstring rejects, applied to the one
+    # cohort that did hand us readable code.
     if (has_oauth or has_middleware) and documented:
         return SubCheck(
             name, 100,
             evidence=(
-                "auth enforcement present in source"
-                + (" (OAuth/JWT indicators)" if has_oauth else " (auth middleware)")
+                "auth enforcement present at a call site in the source"
+                + (" (inbound token verification)" if has_oauth
+                   else " (auth middleware)")
                 + " and documented in the README",
                 "\"refused without credentials\" (`03` §4) established by "
                 "reading the code rather than by connecting",
             ),
         )
-    if has_oauth or has_middleware or (declared and required):
+    if has_oauth or has_middleware or imports_middleware or (declared and required):
+        if imports_middleware and not (has_oauth or has_middleware):
+            # The library is a dependency; nothing shows it wrapping a route.
+            # `03` §4's 100 band asserts refusal, and an import does not
+            # establish refusal — so this stops at 80 and says which it is.
+            return SubCheck(
+                name, 80,
+                evidence=("an authentication library is imported but no call "
+                          "site wiring it to a request path was found, so the "
+                          "requirement is evidenced and its enforcement is "
+                          "not — `03` §4's 100 band asserts that an "
+                          "uncredentialed request is refused",),
+            )
         return SubCheck(
             name, 80,
-            evidence=("credential enforcement present in source but not "
-                      "documented in the README" if not documented else
-                      "credential requirement present; enforcement partially "
-                      "evidenced",),
+            evidence=(("credential enforcement present in source but not "
+                       "documented in the README" if not documented else
+                       "credential requirement present; enforcement partially "
+                       "evidenced"),) + bypassable,
         )
     if has_credential_read:
         return SubCheck(
@@ -399,31 +598,26 @@ def _authentication_model(
     return SubCheck(
         name, 30,
         evidence=("network transport, and no authentication middleware, "
-                  "credential-header read, or OAuth indicator appears anywhere "
-                  "in the source we fetched — `03` §4's \"no authentication; "
-                  "HTTP transport\" band",),
+                  "credential-header read, or inbound token verification "
+                  "appears anywhere in the source we fetched — `03` §4's "
+                  "\"no authentication; HTTP transport\" band",),
     )
 
 
 def _secret_handling(
-    secrets: list[SecretFinding] | None, source: str | None, readme: str
+    secrets: list[SecretFinding] | None,
+    source: str | None,
+    readme: str,
+    absent_reason: str = NO_SOURCE_FETCHED,
 ) -> SubCheck:
     """`03` §4's secret-handling sub-check."""
     name = "secret_handling"
 
-    if source is None:
-        return SubCheck(
-            name, None,
-            reason="no source was fetched, so there is nothing to scan for "
-                   "committed credentials",
-        )
-    if secrets is None:
-        return SubCheck(
-            name, None,
-            reason="`detect-secrets` was not available to this worker, so the "
-                   "committed-credential scan did not run. A clean result here "
-                   "would be a scan that never happened.",
-        )
+    # ⚠ A committed credential is scored FIRST, before any source-text gate.
+    # `detect-secrets` reads the tree from disk itself, so its findings stand
+    # whether or not `_source_text` could read anything — and a found credential
+    # is the one result on this sub-check that must never be lost to an
+    # abstention.
     if secrets:
         # Path, line and type only — never the credential, which `detect-secrets`
         # does not return in the first place and this must not reintroduce.
@@ -433,27 +627,50 @@ def _secret_handling(
                 (f"…and {len(secrets) - 10} more",) if len(secrets) > 10 else ()
             ),
         )
+    if source is None:
+        return SubCheck(
+            name, None,
+            reason=f"{absent_reason}, so there is nothing to scan for "
+                   "committed credentials",
+        )
+    if secrets is None:
+        return SubCheck(
+            name, None,
+            reason="`detect-secrets` was not available to this worker, so the "
+                   "committed-credential scan did not run. A clean result here "
+                   "would be a scan that never happened.",
+        )
 
-    uses_env = any(t in source for t in _ENV_READS) or bool(_ENV_READ_RE.search(source))
-    if not uses_env:
+    credential_vars = _env_credential_names(source)
+    loads_secrets = any(t in source for t in _SECRET_LOADERS)
+    if not credential_vars and not loads_secrets:
         return SubCheck(
             name, 100,
-            evidence=("no committed credential found, and no credential is read "
-                      "from the environment either — this server appears to "
-                      "handle no secrets",),
+            evidence=("no committed credential found, and no environment "
+                      "variable with a credential-shaped name is read anywhere "
+                      "in the source",),
         )
     documented = bool(readme) and any(
         t in readme.upper() for t in ("ENV", "ENVIRONMENT", "_KEY", "_TOKEN", "_SECRET")
     )
+    read_from = (
+        f"credentials are read from the environment ({', '.join(credential_vars[:5])})"
+        if credential_vars
+        else "a dotenv-style secrets file is loaded"
+    )
     return SubCheck(
         name, 100 if documented else 70,
-        evidence=("credentials are read from the environment"
+        evidence=(read_from
                   + (" and documented in the README" if documented
                      else ", but the README does not document which"),),
     )
 
 
-def _authorization_granularity(source: str | None, inventory: Inventory | None) -> SubCheck:
+def _authorization_granularity(
+    source: str | None,
+    inventory: Inventory | None,
+    absent_reason: str = NO_SOURCE_FETCHED,
+) -> SubCheck:
     """`03` §4's authorization-granularity heuristic.
 
     ⚠ **`03` §4 states this sub-check's heuristic but assigns it no score
@@ -470,23 +687,27 @@ def _authorization_granularity(source: str | None, inventory: Inventory | None) 
     if source is None:
         return SubCheck(
             name, None,
-            reason="no source was fetched, so neither the tool count nor any "
+            reason=f"{absent_reason}, so neither the tool count nor any "
                    "access-control logic can be read",
         )
 
-    tools = sum(len(pattern.findall(source)) for pattern in _TOOL_PATTERNS)
+    tools = _count_tools(source)
     # ⚠ ZERO is a detector failure, not a measurement. An MCP server that
     # registers no tools at all is not a thing; counting none means we did not
     # recognise the shape, and scoring 100 on that would assert "≤3 tools" about
     # a server we failed to read — the vacuous positive `declared_scopes`
     # refuses on the transparency axis, reached by a different route.
     if tools == 0:
+        seen_handler = _TOOL_LIST_HANDLER_RE.search(source) is not None
         return SubCheck(
             name, None,
             reason="no tool registration was recognised anywhere in the source. "
                    "An MCP server registers tools by definition, so this is a "
                    "gap in our detection rather than a server with none, and "
-                   "`03` §4's threshold cannot be applied to it.",
+                   "`03` §4's threshold cannot be applied to it."
+                   + (" A tool-list handler IS present, so the tools are built "
+                      "in a shape this counter could not enumerate."
+                      if seen_handler else ""),
         )
     if tools <= GRANULARITY_TOOL_THRESHOLD:
         return SubCheck(
@@ -530,15 +751,21 @@ def assess_auth(
     source = _source_text(root, inventory) if has_source else None
     readme = _readme_text(root, inventory) if has_source else ""
 
+    # See NO_SOURCE_FETCHED / SOURCE_UNREADABLE: an empty read is not an
+    # assessed absence, and passing "" on as source text scored it as one.
+    absent_reason = NO_SOURCE_FETCHED
+    if source is not None and not source.strip():
+        source, absent_reason = None, SOURCE_UNREADABLE
+
     if has_source and secrets is None and scan_for_secrets:
         secrets = scan_secrets(root)
 
     return score_axis(
         AXIS,
         [
-            _authentication_model(entry, transport, source, readme),
+            _authentication_model(entry, transport, source, readme, absent_reason),
             transport.subcheck,
-            _secret_handling(secrets, source, readme),
-            _authorization_granularity(source, inventory),
+            _secret_handling(secrets, source, readme, absent_reason),
+            _authorization_granularity(source, inventory, absent_reason),
         ],
     )
