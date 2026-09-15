@@ -4,6 +4,8 @@
 
 `mcpwatchman` continuously scans the official MCP registry and publishes a transparent, evidence-linked assessment of every server that ships source we can read — so you can answer "is this MCP server safe to install?" before you wire it into your agent.
 
+**[mcpwatchman.com](https://mcpwatchman.com)** — the methodology, and a worked example of how a score is built.
+
 > **Status: early — building in public.**
 > The methodology and architecture are settled and the repository is scaffolded; the scanner, scoring engine, site, and CLI are under active construction.
 > **Nothing here is production-ready, and no scores have been published yet.**
