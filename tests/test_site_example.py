@@ -224,3 +224,165 @@ def test_security_txt_policy_points_at_a_real_anchor():
         for h in re.findall(r"^#+\s+(.*)$", readme, re.M)
     }
     assert fragment in headings, f"security.txt Policy anchor #{fragment} has no heading"
+
+
+# ── theme: the failures here are all SILENT ─────────────────────────────────
+#
+# Every invariant below has the same shape as the CSP one this file already
+# guards: the page keeps rendering and only the correctness goes missing. A
+# deferred theme script still works — one paint late. A token defined on one
+# theme and not the other inherits a value from the wrong palette. A control
+# that is not `hidden` in the markup appears for visitors whose browser never
+# ran the script that makes it do anything.
+
+THEME_TOKENS = (
+    "--ground", "--ground-lift", "--panel", "--rule",
+    "--ink", "--ink-dim", "--ink-faint",
+    "--signal", "--signal-ink", "--signal-hover", "--signal-on", "--deduct",
+    "--paper", "--paper-ink", "--paper-dim", "--paper-rule",
+)
+
+
+def _theme_block(selector: str) -> str:
+    """The declarations inside the first rule whose selector matches.
+
+    Returns the body, and REFUSES to return an empty one: a helper that answers
+    "" for a selector it could not find turns every comparison below into a
+    vacuous pass. It did exactly that when first written — two empty strings
+    compared equal and the test reported green having read nothing.
+    """
+    source = PAGE.read_text()
+    at = source.index(selector)
+    start = source.index("{", at) + 1
+    depth, out = 1, []
+    for ch in source[start:]:
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                break
+        out.append(ch)
+    body = "".join(out)
+    assert "--" in body, f"no custom properties found for {selector!r}"
+    return body
+
+
+def test_the_theme_script_runs_before_the_first_paint():
+    """`defer`, `async` or `type="module"` all move this AFTER first paint.
+
+    Each one leaves a working theme switcher that flashes the wrong theme on
+    every load — the exact defect the file exists to prevent, reintroduced by a
+    change that looks like a performance improvement and breaks no test.
+    """
+    built = SITE / "dist" / "index.html"
+    if not built.is_file():
+        pytest.skip("site not built")
+    head = built.read_text().split("</head>")[0]
+    tag = re.search(r'<script[^>]*src="/theme\.js"[^>]*>', head)
+    assert tag, "theme.js must be loaded from <head> — after it, the theme flashes"
+    assert "defer" not in tag.group(0)
+    assert "async" not in tag.group(0)
+    assert 'type="module"' not in tag.group(0), "a module is deferred by spec"
+
+
+def test_no_inline_executable_script_survives_the_build():
+    """The whole CSP claim rests on this, and Astro inlines small scripts by
+    default. `application/ld+json` is a DATA block and is exempt; anything else
+    with a body is blocked by `script-src 'self'` — silently."""
+    built = SITE / "dist" / "index.html"
+    if not built.is_file():
+        pytest.skip("site not built")
+    for attrs, body in re.findall(r"<script([^>]*)>(.*?)</script>", built.read_text(), re.S):
+        if "ld+json" in attrs:
+            continue
+        assert not body.strip(), f"inline script would be CSP-blocked: {attrs}"
+
+
+def test_both_themes_define_the_same_tokens():
+    """A token defined on one theme and missing on the other does not fail —
+    it inherits the other palette's value, so a light page renders one dark
+    element and nothing reports it."""
+    dark = _theme_block("\n      :root {")
+    light = _theme_block(':root[data-theme="light"]')
+    missing_light = [t for t in THEME_TOKENS if f"{t}:" not in light]
+    missing_dark = [t for t in THEME_TOKENS if f"{t}:" not in dark]
+    assert not missing_dark, f"absent from the default theme: {missing_dark}"
+    assert not missing_light, f"absent from the light theme: {missing_light}"
+
+
+def test_the_explicit_light_theme_matches_the_system_light_theme():
+    """Two blocks carry the light palette — the media query for a system
+    preference, and the attribute for an explicit choice. They must agree, or
+    picking "Light" gives a different page from having light set system-wide."""
+    explicit = _theme_block(':root[data-theme="light"]')
+    system = _theme_block(':root:not([data-theme="dark"])')
+
+    def declarations(block: str) -> dict[str, str]:
+        found = {}
+        for line in block.split(";"):
+            name, sep, value = line.partition(":")
+            if sep and name.strip().startswith("--"):
+                found[name.strip()] = value.strip()
+        return found
+
+    assert declarations(explicit) == declarations(system)
+
+
+def test_the_theme_control_is_hidden_until_script_reveals_it():
+    """With JavaScript off the CSS still follows `prefers-color-scheme`, so the
+    page is correct — but the control cannot do anything. Shipping it visible
+    offers an override that silently does nothing."""
+    built = SITE / "dist" / "index.html"
+    if not built.is_file():
+        pytest.skip("site not built")
+    control = re.search(r"<fieldset[^>]*class=\"theme\"[^>]*>", built.read_text())
+    assert control, "no theme control in the built page"
+    assert "hidden" in control.group(0)
+
+
+def test_every_theme_text_token_clears_AA_on_its_own_ground():
+    """Measured, not eyeballed — the light palette exists only because
+    `#e9a63f` is 1.39:1 on lit slate. A future tweak that drops a token below
+    4.5:1 is invisible to every other test here."""
+
+    def channel(c: float) -> float:
+        c /= 255
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+    def luminance(hex_colour: str) -> float:
+        h = hex_colour.lstrip("#")
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+
+    def contrast(a: str, b: str) -> float:
+        la, lb = luminance(a), luminance(b)
+        hi, lo = max(la, lb), min(la, lb)
+        return (hi + 0.05) / (lo + 0.05)
+
+    for selector in ("\n      :root {", ':root[data-theme="light"]'):
+        block = _theme_block(selector)
+        token = dict(
+            re.findall(r"(--[a-z-]+):\s*(#[0-9a-fA-F]{6})", block)
+        )
+        ground = token["--ground"]
+        for name in ("--ink", "--ink-dim", "--ink-faint", "--signal-ink", "--deduct"):
+            ratio = contrast(token[name], ground)
+            assert ratio >= 4.5, f"{selector} {name} is {ratio:.2f}:1 on {ground}"
+        # The evidence document carries its own ink on its own paper.
+        for name in ("--paper-ink", "--paper-dim"):
+            ratio = contrast(token[name], token["--paper"])
+            assert ratio >= 4.5, f"{selector} {name} is {ratio:.2f}:1 on paper"
+        # Text on the amber CTA chip.
+        assert contrast(token["--signal-on"], token["--signal"]) >= 4.5
+
+
+def test_the_footer_carries_the_copyright_in_house_style():
+    """`<owner> © <year>` — the workspace's footer form, not the LICENSE-file
+    form (`Copyright (c) …`), which is reserved for the licence text itself."""
+    source = PAGE.read_text()
+    assert "KeMeK Network &copy; {year}" in source, "footer copyright missing"
+    built = SITE / "dist" / "index.html"
+    if not built.is_file():
+        pytest.skip("site not built")
+    assert re.search(r"KeMeK Network &copy; 20\d\d", built.read_text())
