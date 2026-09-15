@@ -422,3 +422,41 @@ def test_a_compound_tag_against_a_single_manifest_does_not_score_exact(
     result = _assess(root)
     assert result.score == 100
     assert "dual license" in result.evidence[0]
+
+
+@pytest.mark.parametrize("tag,manifest", [
+    ("MIT OR Apache-2.0", "MIT AND Apache-2.0"),
+    ("MIT AND Apache-2.0", "MIT OR Apache-2.0"),
+])
+def test_equal_operand_sets_with_a_different_operator_abstain(
+    tmp_path: Path, tag, manifest
+) -> None:
+    """`OR` lets a consumer pick one; `AND` obliges them to satisfy both.
+
+    Comparing operand SETS — the fix for the compound-tag truncation — made
+    those `exact` and published a 100-point *matching* claim over two
+    declarations that differ on the only question a licence answers. `03` §7
+    assigns no band to it, so it abstains rather than inventing one, and rather
+    than being smuggled into `conflict` (which would accuse the publisher of
+    shipping a licence the manifest excludes — false here).
+    """
+    root = _tree(
+        tmp_path,
+        LICENSE=f"SPDX-License-Identifier: {tag}\n" + MIT_TEXT,
+        **{"package.json": '{"license": "' + manifest + '"}'},
+    )
+    assert _facts(root).relation == "operator-mismatch"
+    result = _assess(root)
+    assert result.score is None
+    assert "different operator" in result.reason
+
+
+def test_the_same_operator_still_matches_regardless_of_order(tmp_path: Path) -> None:
+    """Control: order independence must survive the operator check."""
+    root = _tree(
+        tmp_path,
+        LICENSE="SPDX-License-Identifier: MIT OR Apache-2.0\n" + MIT_TEXT,
+        **{"package.json": '{"license": "Apache-2.0 OR MIT"}'},
+    )
+    assert _facts(root).relation == "exact"
+    assert _assess(root).score == 100

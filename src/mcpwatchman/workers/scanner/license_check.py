@@ -119,7 +119,8 @@ class LicenseFacts:
     def relation(self) -> str:
         """How the LICENSE file's SPDX tag relates to the manifest's expression.
 
-        One of `exact`, `alternative`, `partial`, `conflict`, or `unknown`.
+        One of `exact`, `alternative`, `partial`, `conflict`, `operator-mismatch`,
+        or `unknown`.
 
         ⚠ **Only an explicit SPDX TAG can establish a conflict — never a license
         identified from text.** Text identification is a fingerprint match, so
@@ -150,6 +151,15 @@ class LicenseFacts:
 
 def _normalise_spdx(value: str) -> str:
     return value.strip().strip("()").casefold()
+
+
+def _expression_kind(expr: str) -> str:
+    """Whether an SPDX expression OFFERS a choice, REQUIRES all, or names one."""
+    if " or " in expr:
+        return "or"
+    if " and " in expr:
+        return "and"
+    return "single"
 
 
 def _license_operands(expr: str) -> set[str]:
@@ -214,6 +224,23 @@ def _spdx_relation(tag: str, expression: str) -> str:
     tag_ops = _license_operands(tag_norm)
     expr_ops = _license_operands(expr_norm)
     if tag_ops == expr_ops:
+        # ⚠ **EQUAL OPERAND SETS ARE NOT AN EQUAL GRANT — the operator decides.**
+        # `MIT OR Apache-2.0` lets a consumer pick one; `MIT AND Apache-2.0`
+        # obliges them to satisfy both. Comparing sets alone made those `exact`
+        # and published a 100-point *matching* claim over two declarations that
+        # differ on the only question a licence answers. That is the set
+        # comparison — introduced to fix the compound-tag truncation — creating
+        # its own false claim one layer up.
+        #
+        # `03` §7 specifies no band for "same licences, different operator", and
+        # `CLAUDE.md` is explicit that where the methodology specifies no band we
+        # ABSTAIN rather than invent one. It is a real discrepancy and a reader
+        # is owed it, so it is surfaced as unassessed with the reason, not
+        # smuggled into `conflict` (which would accuse the publisher of shipping
+        # a licence the manifest excludes — false here) nor into `partial`.
+        tag_kind, expr_kind = _expression_kind(tag_norm), _expression_kind(expr_norm)
+        if tag_kind != expr_kind and "single" not in (tag_kind, expr_kind):
+            return "operator-mismatch"
         return "exact"
     if not tag_ops & expr_ops:
         # The file's licence appears nowhere in the expression — the only shape
@@ -381,6 +408,16 @@ def score_license(facts: LicenseFacts) -> SubCheck:
 
     if facts.spdx_in_file:
         relation = facts.relation
+        if relation == "operator-mismatch":
+            return SubCheck(
+                name, None,
+                reason=(f"{facts.file_path} declares SPDX {facts.spdx_in_file!r} "
+                        f"and {facts.manifest_path} declares "
+                        f"{facts.spdx_in_manifest!r} — the same licences combined "
+                        "by a different operator, so one offers a choice where "
+                        "the other requires both. `03` §7 assigns no band to "
+                        "that discrepancy and this build will not invent one."),
+            )
         if relation == "exact":
             return SubCheck(
                 name, 100,

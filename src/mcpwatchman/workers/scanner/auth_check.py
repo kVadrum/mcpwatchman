@@ -163,6 +163,24 @@ _CREDENTIAL_READ_RE = re.compile(
 # the Authorization header, so the honest floor for anything pruned here is
 # `03` §4's 60 band, not its 30.
 #
+# ⚠ **A URL LITERAL CANNOT ESTABLISH DIRECTION, SO NO URL SURVIVES HERE.**
+# `/.well-known/oauth` matched `/.well-known/oauth-authorization-server` — the
+# DISCOVERY document an OAuth *client* fetches from an upstream — so an
+# unauthenticated server that merely talks to somebody else's IdP reached the 100
+# band again. That is the THIRD spelling of one mistake: `X-API-Key` the server
+# sends, `/oauth/token` it posts to, and now a well-known URL it GETs. A path in
+# a string says nothing about who serves it. `oauth-protected-resource` went with
+# it for the same reason — a client discovering a resource's metadata writes the
+# identical literal. `WWW-Authenticate` stays: a server only EMITS it when
+# refusing an uncredentialed request, so it is the challenge itself, not a URL.
+#
+# ⚠ **THE REWRITE ALSO SILENTLY DROPPED THREE LIVE CALL FORMS.** Turning the
+# list into a regex lost `verify_jwt(`, `verifyJwt(` and `token_introspection(`,
+# so servers doing real inbound verification fell from source-established auth to
+# the 60 or 30 band — a false ACCUSATION produced by the fix for a false
+# exoneration. When converting a list to a pattern, enumerate the old list and
+# check every entry is still reachable; nothing else reports the loss.
+#
 # ⚠ **A REGEX OF CALL FORMS, NOT A SUBSTRING LIST — the first cut of this
 # narrowing was still substring containment and still over-matched.** `introspect`
 # is inside `db.introspection()`, `validateToken` inside `validateTokenizer(`, and
@@ -175,20 +193,17 @@ _OAUTH_VERIFY_RE = re.compile(
     r"""
         \b(?:
             jwt\s*\.\s*(?:decode|verify)\s*\(
-          | jwtVerify\s*\(
-          | jose\s*\.\s*jwtVerify\s*\(
+          | (?:jose\s*\.\s*)?jwtVerify\s*\(
           | jsonwebtoken\s*\.\s*verify\s*\(
-          | (?:verify|validate|decode)_token\s*\(
-          | (?:verify|validate|decode)Token\s*\(
+          | (?:verify|validate|decode)_(?:token|jwt)\s*\(
+          | (?:verify|validate|decode)(?:Token|Jwt|JWT)\s*\(
           | get_signing_key\s*\( | getSigningKey\s*\(
           | JwksClient\b
           | jwks(?:_uri|Uri|_url|Url|_client|Client|_endpoint)?\b
           | introspection_endpoint\b
-          | introspect_token\s*\( | introspectToken\s*\(
+          | (?:token_introspection|introspect_token|introspectToken)\s*\(
         )
       | WWW-Authenticate
-      | oauth-protected-resource
-      | /\.well-known/oauth
     """,
     re.IGNORECASE | re.VERBOSE,
 )
@@ -292,9 +307,19 @@ _SECRET_LOADERS = ("dotenv", "load_dotenv", "Dotenv", "godotenv")
 # first line reads an API key. It is the commonest form in modern JS/TS.
 # The alias form (`{ API_KEY: k }`) keys on the ENV NAME, which is the half
 # before the colon — the local alias is the server's business.
+# ⚠ The `\b` must sit on the alternatives that END IN A WORD CHARACTER, not on
+# the group. `Deno.env.toObject()` ends in `)`, and the following `;` is also a
+# non-word character, so a trailing `\b` can NEVER match there — the Deno branch
+# was dead from the moment it was written and still published a clean bill of
+# health for `const { OPENAI_API_KEY } = Deno.env.toObject()`.
 _ENV_DESTRUCTURE_RE = re.compile(
-    r"\{([^{}]{1,400})\}\s*=\s*(?:process\.env|Deno\.env\.toObject\s*\(\s*\)|os\.environ)\b"
+    r"\{([^{}]{1,400})\}\s*=\s*(?:process\.env\b|Deno\.env\.toObject\s*\(\s*\)|os\.environ\b)"
 )
+
+# A destructured binding is `NAME`, `NAME: alias`, `NAME = default`, or
+# `NAME: alias = default`. The ENV variable is always the leading identifier —
+# the alias and the default are the server's own business.
+_DESTRUCTURED_NAME_RE = re.compile(r"^\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*(?:[:=]|$)")
 
 
 def _env_credential_names(source: str) -> tuple[str, ...]:
@@ -306,9 +331,15 @@ def _env_credential_names(source: str) -> tuple[str, ...]:
     }
     for block in _ENV_DESTRUCTURE_RE.finditer(source):
         for entry in block.group(1).split(","):
-            name = entry.split(":", 1)[0].strip().lstrip("*").strip()
-            if name and _CREDENTIAL_NAME_RE.search(name):
-                names.add(name)
+            # ⚠ ISOLATE THE IDENTIFIER FIRST. Splitting on ":" alone left the
+            # DEFAULT attached, and it broke in both directions at once:
+            #   `{ PORT = defaults.API_KEY }`     -> name "PORT = defaults.API_KEY",
+            #      whose fallback matched, reporting a credential read for a port;
+            #   `{ OPENAI_API_KEY = fallback }`   -> the boundary-anchored name test
+            #      no longer saw `KEY` at the end, so a real credential was missed.
+            identifier = _DESTRUCTURED_NAME_RE.match(entry)
+            if identifier and _CREDENTIAL_NAME_RE.search(identifier.group(1)):
+                names.add(identifier.group(1))
     return tuple(sorted(names))
 
 # Tool registration, for the granularity heuristic's tool count.
@@ -364,7 +395,12 @@ _TOOL_LIST_HANDLER_RE = re.compile(r"ListToolsRequestSchema|\btools\s*:\s*\[")
 # conservative direction and still wrong: it reports "needs human review" about
 # a server we could in fact assess. So object counting is confined to the
 # inside of a `tools:` array rather than run over the whole file.
-_TOOLS_ARRAY_RE = re.compile(r"\btools\s*:\s*\[")
+# ⚠ Quoted keys too. A JSON MCP manifest writes `"tools": [ ... ]`, and the
+# bare-key pattern required the colon to follow `tools` directly — so the
+# commonest manifest shape found NO region at all and every JSON-declared tool
+# list counted zero. The narrowing meant to stop resources being counted as
+# tools stopped MANIFEST tools being counted at all.
+_TOOLS_ARRAY_RE = re.compile(r"""["']?\btools\b["']?\s*:\s*\[""")
 # Bounds, because the region walk reads attacker-controlled source: at most this
 # many arrays, each scanned at most this far. A tool list longer than 64 KB is
 # not a tool list.
@@ -381,9 +417,23 @@ def _tools_array_regions(source: str) -> list[str]:
         start = opener.end()  # just past the '['
         depth, end = 1, min(len(source), start + MAX_TOOL_ARRAY_BYTES)
         i = start
+        quote = ""
         while i < end:
             ch = source[i]
-            if ch == "[":
+            # ⚠ BRACKETS INSIDE STRINGS ARE NOT DELIMITERS. A tool's own
+            # inputSchema regularly carries one — `"pattern": "^[^]]+$"` is an
+            # ordinary JSON-Schema constraint — and the raw character walk closed
+            # the array on it, ending the region inside the FIRST tool. Four tools
+            # then counted as one and scored 100 for having no multi-tool surface.
+            if quote:
+                if ch == "\\":
+                    i += 2
+                    continue
+                if ch == quote:
+                    quote = ""
+            elif ch in "\"'`":
+                quote = ch
+            elif ch == "[":
                 depth += 1
             elif ch == "]":
                 depth -= 1

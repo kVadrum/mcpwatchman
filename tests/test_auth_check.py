@@ -629,3 +629,112 @@ def test_resources_and_prompts_are_not_counted_as_tools(tmp_path: Path) -> None:
                 "authorization_granularity")
     assert gran.score == 100
     assert "3 tool registration" in gran.evidence[0]
+
+
+# ── Codex leg 4: SEVEN findings, and every one a regression from leg 3 ─────
+
+@pytest.mark.parametrize("line", [
+    "fetch('https://up.example/.well-known/oauth-authorization-server')",
+    "const META = '/.well-known/oauth-protected-resource';",
+])
+def test_a_well_known_url_is_not_inbound_enforcement(tmp_path: Path, line) -> None:
+    """The THIRD spelling of one mistake: `X-API-Key` the server sends,
+    `/oauth/token` it posts to, and now a well-known URL it GETs.
+
+    `/.well-known/oauth-authorization-server` is the DISCOVERY document an OAuth
+    *client* fetches from an upstream, so an unauthenticated server that merely
+    talks to somebody else's IdP reached the 100 band again. A path in a string
+    says nothing about who serves it — no URL literal survives in the pattern.
+    """
+    root = _tree(tmp_path, **{
+        "server.py": f"import httpx\ndef upstream():\n    return {line}\n",
+        "README.md": "# srv\nUses OAuth2 against the upstream API.\n" + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 30, model.evidence
+
+
+@pytest.mark.parametrize("line", [
+    "claims = verify_jwt(token)",
+    "const payload = verifyJwt(token)",
+    "result = token_introspection(token)",
+])
+def test_the_call_forms_the_regex_rewrite_dropped_still_match(tmp_path: Path, line) -> None:
+    """Converting the list to a regex silently lost three live spellings.
+
+    A false ACCUSATION produced by the fix for a false exoneration: servers doing
+    real inbound verification fell from source-established auth to the 60 or 30
+    band. Nothing reports an alternative that stopped being reachable, so the
+    check is to enumerate the old list.
+    """
+    root = _tree(tmp_path, **{
+        "server.py": f"def guard(req):\n    tok = req.headers.get('Authorization')\n"
+                     f"    {line}\n",
+        "README.md": "# srv\nEvery request must carry a bearer token.\n" + "x" * 600,
+    })
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score == 100, model.evidence
+
+
+def test_a_bracket_inside_a_string_does_not_close_the_tools_array(tmp_path: Path) -> None:
+    """`"pattern": "^[^]]+$"` is an ordinary JSON-Schema constraint, and the raw
+    character walk closed the array on its `]` — ending the region inside the
+    FIRST tool, so four tools counted as one and scored 100 for having no
+    multi-tool surface."""
+    tools = ('{ name: "a", description: "d", inputSchema: { pattern: "^[^]]+$" } },'
+             + "".join(f'{{ name: "t{i}", description: "d", inputSchema: {{}} }},'
+                       for i in range(3)))
+    root = _tree(tmp_path, **{"index.ts": f"const defs = {{ tools: [{tools}] }};\n"})
+    gran = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                "authorization_granularity")
+    assert gran.score is None
+    assert "4 tool registrations" in gran.reason
+
+
+def test_a_quoted_json_manifest_key_still_finds_the_tools(tmp_path: Path) -> None:
+    """A JSON MCP manifest writes `"tools": [...]`, and the bare-key pattern
+    required the colon to follow `tools` directly — so the commonest manifest
+    shape found no region and every JSON-declared tool list counted zero. The
+    narrowing meant to stop RESOURCES counting as tools stopped MANIFEST tools
+    counting at all."""
+    tools = ",".join(f'{{"name": "t{i}", "description": "d"}}' for i in range(2))
+    root = _tree(tmp_path, **{"server.json": '{"tools": [' + tools + ']}'})
+    gran = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                "authorization_granularity")
+    assert gran.score == 100
+    assert "2 tool registration" in gran.evidence[0]
+
+
+def test_a_destructuring_default_is_not_the_variable_name(tmp_path: Path) -> None:
+    """Splitting on ":" alone left the DEFAULT attached, breaking both ways:
+    `{ PORT = defaults.API_KEY }` reported a credential read for a port, and
+    `{ OPENAI_API_KEY = fallback }` missed a real one because the
+    boundary-anchored name test no longer saw `KEY` at the end."""
+    root = _tree(tmp_path, **{
+        "index.js": "const { PORT = defaults.API_KEY } = process.env;\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    assert _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling").score == 100
+
+    root2 = _tree(tmp_path / "b", **{
+        "index.js": "const { OPENAI_API_KEY = fallback } = process.env;\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    found = _sub(_assess(_remote_entry(), root2, secrets=[]), "secret_handling")
+    assert found.score == 70 and "OPENAI_API_KEY" in found.evidence[0]
+
+
+def test_the_deno_destructuring_branch_is_not_dead(tmp_path: Path) -> None:
+    """`Deno.env.toObject()` ends in `)`, and the following `;` is also a
+    non-word character — so the trailing `\\b` could NEVER match and the branch
+    was dead from the moment it was written, still publishing a clean bill of
+    health."""
+    root = _tree(tmp_path, **{
+        "mod.ts": "const { OPENAI_API_KEY } = Deno.env.toObject();\n",
+        "README.md": "# srv\n" + "x" * 600,
+    })
+    secret = _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling")
+    assert secret.score == 70
+    assert "OPENAI_API_KEY" in secret.evidence[0]
