@@ -419,9 +419,9 @@ def test_the_browser_chrome_colour_matches_the_page_ground():
         )
     )
     script = (SITE / "public" / "theme.js").read_text()
-    js = dict(
-        re.findall(r'(\w+):\s*"(#[0-9a-fA-F]{6})"', re.search(r"GROUND = \{([^}]*)\}", script).group(1))
-    )
+    ground_map = re.search(r"GROUND = \{([^}]*)\}", script)
+    assert ground_map, "theme.js has no GROUND map to check"
+    js = dict(re.findall(r'(\w+):\s*"(#[0-9a-fA-F]{6})"', ground_map.group(1)))
 
     for scheme, match in grounds.items():
         token = match.group(1).lower()
