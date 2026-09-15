@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.10.0"
+version = "0.11.0"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
