@@ -484,3 +484,56 @@ def enumerate_tree(root: Path) -> Inventory:
         skipped=skipped,
         truncated=truncated,
     )
+
+
+# Per-file cap for the check modules' content reads. `enumerate_tree` hashes
+# without holding a file resident; a check that greps source does hold it, so it
+# gets its own bound. Generous enough that no realistic entry point is truncated
+# and small enough that a hostile 2 GB "source file" cannot be read into memory.
+SOURCE_READ_MAX_BYTES = 512 * 1024
+
+
+def read_text(root: Path, rel_path: str, limit: int = SOURCE_READ_MAX_BYTES) -> str:
+    """Read a file from a fetched tree as text, bounded and confined.
+
+    ⚠ **This is the FIFTH path in this repo that reads attacker-controlled
+    input**, after the tar and zip extractors, `_measure_all`, and the walk
+    above — and `CLAUDE.md` records that every bounds defect here has been a
+    guard written in one and omitted from its neighbour. So the check modules do
+    not open files themselves; they come through here, and the bound lives in
+    one place rather than in each of them.
+
+    Three refusals, each for a failure the tree can actually cause:
+
+    - **Escape.** `rel_path` comes from an `Inventory` record and is relative by
+      construction, but a caller may also pass a name it composed itself
+      (`entry_points` holds strings from an attacker's `package.json`). The
+      resolved path must stay under the resolved root.
+    - **Symlink.** Resolving first and comparing would follow a link to
+      `/etc/shadow` and then confirm the link's own location is fine.
+    - **Non-regular.** Opening a FIFO blocks forever.
+
+    Returns "" for all three, and for an unreadable or oversized file. Every
+    caller treats absent content as "nothing declared", so a failure degrades to
+    a missing signal rather than to an exception that fails the whole scan.
+    """
+    root = root.resolve()
+    try:
+        candidate = (root / rel_path).resolve()
+        candidate.relative_to(root)
+    except (OSError, ValueError):
+        return ""
+    try:
+        if candidate.is_symlink() or not candidate.is_file():
+            return ""
+        with candidate.open("rb") as fh:
+            raw = fh.read(limit + 1)
+    except OSError:
+        return ""
+    if len(raw) > limit:
+        # Truncate rather than refuse: unlike a manifest, source is grepped for
+        # patterns and a 512 KB prefix answers "does this import an HTTP
+        # framework?" as well as the whole file would. A manifest is parsed
+        # whole-or-not-at-all, which is why `_read_manifest` refuses instead.
+        raw = raw[:limit]
+    return raw.decode("utf-8", "replace")

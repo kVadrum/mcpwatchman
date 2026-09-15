@@ -172,11 +172,33 @@ class Package:
 
 
 @dataclass(frozen=True, slots=True)
+class Header:
+    """A header the server declares its clients must send.
+
+    The registry's only DECLARED authentication signal, and the only one
+    available for a server that ships no source. `isSecret` marks a credential;
+    `isRequired` marks it mandatory. Both matter: an optional secret header is
+    `03` §4's "authentication present but optional" band, not its "required" one.
+    """
+
+    name: str
+    description: str = ""
+    is_required: bool = False
+    is_secret: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class Remote:
     """A hosted endpoint the server is reachable at."""
 
     type: str
     url: str
+    headers: tuple[Header, ...] = ()
+
+    @property
+    def credential_headers(self) -> tuple[Header, ...]:
+        """Declared headers that carry a credential."""
+        return tuple(h for h in self.headers if h.is_secret)
 
 
 @dataclass(frozen=True, slots=True)
@@ -382,7 +404,11 @@ def parse_entry(raw: Mapping[str, Any]) -> RegistryEntry:
     )
 
     remotes = tuple(
-        Remote(type=_clean(r.get("type")) or "unknown", url=_clean(r.get("url")) or "")
+        Remote(
+            type=_clean(r.get("type")) or "unknown",
+            url=_clean(r.get("url")) or "",
+            headers=_parse_headers(r.get("headers")),
+        )
         for r in (raw_remotes if isinstance(raw_remotes, list) else [])
         if isinstance(r, Mapping)
     )
@@ -407,6 +433,34 @@ def parse_entry(raw: Mapping[str, Any]) -> RegistryEntry:
         updated_at=_clean(official.get("updatedAt")),
         content_hash=_sha256(canonical_json(server)),
     )
+
+
+def _parse_headers(raw: Any) -> tuple[Header, ...]:
+    """Parse a remote's declared headers, tolerantly.
+
+    Every field is attacker-supplied, so a non-list, a non-mapping member, or a
+    missing name degrades to "no header declared" rather than raising — the same
+    posture as every other parser here. A header with no name cannot be matched
+    against anything and is dropped rather than kept as a nameless record.
+    """
+    if not isinstance(raw, list):
+        return ()
+    headers: list[Header] = []
+    for item in raw:
+        if not isinstance(item, Mapping):
+            continue
+        name = _clean(item.get("name"))
+        if not name:
+            continue
+        headers.append(
+            Header(
+                name=name,
+                description=_clean(item.get("description")) or "",
+                is_required=bool(item.get("isRequired", False)),
+                is_secret=bool(item.get("isSecret", False)),
+            )
+        )
+    return tuple(headers)
 
 
 def parse_page(payload: Mapping[str, Any]) -> tuple[list[RegistryEntry], str | None]:

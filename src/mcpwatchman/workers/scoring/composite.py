@@ -97,7 +97,18 @@ def _stacking_multiplier(position: int) -> Decimal:
 
 
 def axis_score(findings: Iterable[Finding]) -> int:
-    """Score one axis from its findings: starts at 100, floors at 0 (`03` §3)."""
+    """Score one axis from its findings: starts at 100, floors at 0 (`03` §3).
+
+    ⚠ **The deduction table here is Code Safety's (`03` §3) and is NOT the only
+    one.** Dependency Health (`03` §6) is also deduction-scored but has its own
+    table — different values, and a direct-vs-transitive dimension this
+    signature cannot express. Both axes are "findings with stacking", so calling
+    this for dependency health compiles, runs, and returns a confidently wrong
+    number rather than an error. `osv_check` owns that table when it lands.
+
+    The three sub-check-scored axes (`03` §4, §5, §7) do not come through here at
+    all — `axes.score_axis` is their scorer.
+    """
     by_severity: dict[Severity, list[int]] = {}
     for f in findings:
         by_severity.setdefault(f.severity, []).append(
@@ -117,7 +128,7 @@ def axis_score(findings: Iterable[Finding]) -> int:
     # half-up into half-down for the thing we actually publish: two critical/high
     # findings deduct 52.5, so the axis is 47.5 and must round to 48 — subtracting
     # a deduction rounded to 53 gives 47.
-    return max(0, _round_half_up(AXIS_MAX - total))
+    return max(0, round_half_up(AXIS_MAX - total))
 
 
 def composite_score(
@@ -141,13 +152,13 @@ def composite_score(
     # 51,005 sampled composites came out a point low that way, and one point
     # crosses a grade and a colour band (80→79 is B→C, green→yellow).
     total = sum(
-        (_dec(weight) * _dec(axis_scores[axis]) for axis, weight in weights.items()),
+        (dec(weight) * dec(axis_scores[axis]) for axis, weight in weights.items()),
         Decimal(0),
     )
-    return min(AXIS_MAX, max(0, _round_half_up(total)))
+    return min(AXIS_MAX, max(0, round_half_up(total)))
 
 
-def _dec(value: float | int | Decimal) -> Decimal:
+def dec(value: float | int | Decimal) -> Decimal:
     """Exact Decimal for a value written as a decimal literal.
 
     Via `str()` deliberately: `Decimal(0.3)` is the binary float 0.299999…,
@@ -158,7 +169,7 @@ def _dec(value: float | int | Decimal) -> Decimal:
     return value if isinstance(value, Decimal) else Decimal(str(value))
 
 
-def _round_half_up(value: Decimal) -> int:
+def round_half_up(value: Decimal) -> int:
     """Round half away from zero, not Python's default half-to-even.
 
     `round()` would make 78.5 → 78 and 79.5 → 80, so two servers half a point
@@ -168,7 +179,7 @@ def _round_half_up(value: Decimal) -> int:
     Takes a Decimal: handed a float this would faithfully round the float's
     error, which is exactly the bug it looks like it prevents.
     """
-    return int(_dec(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    return int(dec(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
 # `03` §8 — presentation only, derived from the composite, never stored as the
