@@ -1,7 +1,7 @@
 # ── Internal design docs — NEVER committed (workspace policy) ──
 # Strategy, methodology internals, and project memory stay local-only.
 CLAUDE.md
-STATE.md
+STATE*.md
 .claude/
 /[0-9][0-9]-*.md
 /adrs/
