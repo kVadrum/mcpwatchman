@@ -3,11 +3,12 @@
 The poller's decision half: given what changed, work out what to scan, in which
 lane, and what could not be scanned at all.
 
-**The queue is injected, not imported.** RQ-vs-Procrastinate is still an open
-evaluation (`11` §4, ADR-001) and `tasks.py` is where that choice lands. Nothing
-here needs to know which won — planning is queue-agnostic, and keeping it that
-way means the decision can be made on its merits instead of on how much code
-already assumes an answer.
+**The queue is injected, not imported.** The choice is now settled — PgQueuer,
+ratified 2026-09-16 (ADR-001) — and `tasks.py` is where it lands. The seam stays
+anyway: planning is queue-agnostic, and PgQueuer is a bus-factor-1 project whose
+documented fallback is Procrastinate, so the property that made this worth
+injecting while the question was open is exactly the property that matters if
+the answer ever has to change.
 
 Equally, nothing here touches the database. `PollPlan` reports the removals it
 found rather than applying them: marking a server `status = 'removed'`

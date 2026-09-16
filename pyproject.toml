@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.12.3"
+version = "0.12.4"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -40,12 +40,13 @@ workers = [
   # Static analysis: ADR-002 (semgrep core; osv-scanner is an external Go binary)
   "semgrep>=1.75",
   "detect-secrets>=1.5",
-  # Queue: OPEN. A 2026-09-15 /rr recommends **PgQueuer** and strikes RQ on a
-  # spec-level defect (`02` §2.1's three priority lanes force RQ's multi-queue
-  # path, where a dequeued job id exists in no Redis list). The earlier
-  # "leaning Procrastinate" note is superseded; STATE.md carries the evidence.
-  # Nothing is added here until the operator rules — `enqueue.py` injects the
-  # queue precisely so this stays undecided without blocking anything.
+  # Queue: PgQueuer, RATIFIED 2026-09-16 (operator accepted the /rr; ADR-001).
+  # Postgres-native, so Redis leaves the topology entirely and rate-limit
+  # counters move to a Postgres table. RQ was struck on a spec-level defect
+  # (`02` §2.1's three priority lanes force RQ's multi-queue path, where a
+  # dequeued job id exists in no Redis list); Procrastinate is the fallback.
+  # Bus factor is 1 — the accepted risk and what flips it are in ADR-001.
+  "pgqueuer>=1.4",
 ]
 dev = [
   # Pinned to a minor: ruff gates CI, and new lint rules ship in 0.x releases.

@@ -28,7 +28,7 @@ CLI_DIR = Path(__file__).resolve().parent.parent / "src" / "mcpwatchman" / "cli"
 # that would arrive with them.
 FORBIDDEN_AT_MODULE_LEVEL = frozenset({
     "httpx", "pydantic", "pydantic_settings", "rich", "sqlalchemy", "fastapi",
-    "uvicorn", "alembic", "procrastinate", "psycopg", "semgrep", "detect_secrets",
+    "uvicorn", "alembic", "pgqueuer", "psycopg", "semgrep", "detect_secrets",
 })
 
 # The scanner and worker packages pull the heavy stack by design; importing one
