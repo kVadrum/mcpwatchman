@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.12.4"
+version = "0.12.5"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -46,7 +46,14 @@ workers = [
   # (`02` §2.1's three priority lanes force RQ's multi-queue path, where a
   # dequeued job id exists in no Redis list); Procrastinate is the fallback.
   # Bus factor is 1 — the accepted risk and what flips it are in ADR-001.
-  "pgqueuer>=1.4",
+  "pgqueuer[psycopg]>=1.4",
+  # The DRIVER IS NOT TRANSITIVE — pgqueuer declares asyncpg and psycopg only
+  # as extras, so a bare `pgqueuer` installs a queue that cannot connect.
+  # psycopg3 (not asyncpg) because SQLAlchemy reaches it via
+  # `postgresql+psycopg://`, so one driver serves both the queue and the ORM.
+  # `[binary]` ships libpq: docker/Dockerfile is python:3.12-slim + git only,
+  # where a source psycopg installs fine and then fails at runtime.
+  "psycopg[binary]>=3.2",
 ]
 dev = [
   # Pinned to a minor: ruff gates CI, and new lint rules ship in 0.x releases.

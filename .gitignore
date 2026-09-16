@@ -1,6 +1,10 @@
 # ── Internal design docs — NEVER committed (workspace policy) ──
 # Strategy, methodology internals, and project memory stay local-only.
 CLAUDE.md
+# Glob, not `STATE.md` + `STATE-archive.md`: an enumerated ignore leaks through
+# the entry someone forgets to add, which is how `.claude/hooks/` let the rig
+# guardrails into 4 repos (base.md). The inverse risk — a legitimate
+# STATE-prefixed doc silently untracked — is the cheaper failure. Do not narrow.
 STATE*.md
 .claude/
 /[0-9][0-9]-*.md
