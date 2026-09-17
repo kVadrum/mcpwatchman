@@ -328,16 +328,49 @@ def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
     read these, and here is why" is a fact a reader is owed.
     """
     pruned: list[str] = []
+
+    def removed(path: Path) -> bool:
+        """Whether the path is really gone. `exists()` alone follows symlinks."""
+        return not path.exists() and not path.is_symlink()
+
     for directory in sorted(EXCLUDED_DIRS):
         for found in root.rglob(directory):
-            if found.is_dir():
-                pruned.append(f"{found.relative_to(root)}/")
+            # ⚠ SYMLINK FIRST, and this ordering is the whole fix.
+            # `shutil.rmtree` REFUSES to act on a symlink, and with
+            # `ignore_errors=True` it refuses silently. A repository shipping
+            # `node_modules` as a symlink therefore got counted as excluded
+            # while remaining fully present and fully scannable — the exclusion
+            # did not happen and the page told the reader it had. Same family
+            # as the `.semgrepignore` evasion: repo-controlled input defeating
+            # the scanner while the scanner reports success.
+            #
+            # Unlinked, never followed: removing the LINK is correct and
+            # removing its target would be us deleting outside the scratch copy
+            # on a stranger's instruction.
+            if found.is_symlink():
+                found.unlink(missing_ok=True)
+            elif found.is_dir():
                 shutil.rmtree(found, ignore_errors=True)
+            else:
+                continue
+            # Counted only if it actually went. A prune count that includes
+            # failures is a number the per-server page publishes as fact.
+            if removed(found):
+                pruned.append(f"{found.relative_to(root)}/")
+
     for path in sorted(root.rglob("*")):
-        if path.is_file() and _is_minified(path):
-            pruned.append(str(path.relative_to(root)))
+        # `is_file()` follows symlinks, so this also gated a FIFO or device
+        # node reached through one — and `_is_minified` OPENS what it is given,
+        # where a FIFO blocks the worker forever. Regular files only; a symlink
+        # carries no content of its own to scan.
+        if path.is_symlink() or not path.is_file():
+            continue
+        if _is_minified(path):
             path.unlink(missing_ok=True)
-    return len(pruned), tuple(pruned[:20])
+            if removed(path):
+                pruned.append(str(path.relative_to(root)))
+
+    return len(pruned), tuple(sorted(pruned)[:20])
 
 
 def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:

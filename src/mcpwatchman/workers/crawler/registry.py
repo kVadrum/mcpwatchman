@@ -266,10 +266,16 @@ class Repository:
         path = urlparse(self.url).path
         if self.kind is SourceKind.GITLAB and "/-/" in path:
             # GitLab: <project path>/-/tree/<ref>/<subdir>
-            tail = [p for p in path.split("/-/", 1)[1].split("/") if p]
-            if len(tail) > 2 and tail[0] in ("tree", "blob"):
-                sub = "/".join(tail[2:])
-                if tail[0] == "blob":
+            # Named `segments` rather than reusing `tail`: this branch binds a
+            # LIST and the GitHub branch below binds a joined STRING, and the
+            # shared name made the whole function read as one type while being
+            # two. No runtime bug — the branches are mutually exclusive — but it
+            # is the last thing you want ambiguous in the code that decides
+            # which directory gets scanned.
+            segments = [p for p in path.split("/-/", 1)[1].split("/") if p]
+            if len(segments) > 2 and segments[0] in ("tree", "blob"):
+                sub = "/".join(segments[2:])
+                if segments[0] == "blob":
                     sub = sub.rsplit("/", 1)[0] if "/" in sub else ""
                 return _safe_subpath(sub)
             return None

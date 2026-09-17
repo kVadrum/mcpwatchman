@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from mcpwatchman.workers.scanner import semgrep_check as sc
+from mcpwatchman.workers.scanner.semgrep_check import _prune_unscannable
 from mcpwatchman.workers.scanner.inventory import (
     FileRecord,
     Inventory,
@@ -311,3 +312,89 @@ def test_pruning_does_not_trip_the_zero_scanned_control(tmp_path, monkeypatch) -
     result = sc.run_semgrep(tmp_path, rules=RULES, inventory=_inventory(Language.PYTHON))
     assert result.status is sc.SemgrepStatus.OK
     assert result.pruned == 1
+
+
+def test_a_symlinked_vendor_tree_cannot_evade_the_prune(tmp_path: Path) -> None:
+    """A scanned repo could switch the exclusion off by linking instead of nesting.
+
+    `shutil.rmtree` REFUSES to act on a symlink, and with `ignore_errors=True`
+    it refuses silently — so a repository shipping `node_modules` as a symlink
+    was counted as excluded while staying fully present and fully scannable.
+    Same family as the `.semgrepignore` evasion: repo-controlled input defeating
+    the scanner while the scanner reports success.
+    """
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "vendored.js").write_text("eval(danger)\n")
+    root = tmp_path / "scan"
+    root.mkdir()
+    (root / "node_modules").symlink_to(outside)
+    (root / "server.py").write_text("print('hi')\n")
+
+    pruned, sample = _prune_unscannable(root)
+
+    assert not (root / "node_modules").is_symlink(), "the link survived the prune"
+    assert not (root / "node_modules").exists()
+    assert pruned == 1 and sample == ("node_modules/",)
+    # We remove the LINK, never its target: deleting outside the scratch copy on
+    # a stranger's instruction is the worse bug of the two.
+    assert (outside / "vendored.js").exists(), "the prune escaped the scan root"
+    assert (root / "server.py").exists()
+
+
+def test_the_prune_count_never_includes_something_it_failed_to_remove(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The count is published verbatim on the server's page.
+
+    Before the fix it was incremented before the removal was attempted, so a
+    silent `rmtree` refusal produced a page saying N paths were excluded when
+    none were.
+    """
+    root = tmp_path / "scan"
+    (root / "node_modules").mkdir(parents=True)
+    (root / "node_modules" / "dep.js").write_text("eval(x)\n")
+
+    monkeypatch.setattr(sc.shutil, "rmtree", lambda *a, **kw: None)  # a silent refusal
+    pruned, sample = _prune_unscannable(root)
+
+    assert pruned == 0, "counted a removal that did not happen"
+    assert sample == ()
+    assert (root / "node_modules").is_dir()
+
+
+def test_a_symlinked_file_is_never_read_while_hunting_for_minified_files(
+    tmp_path: Path
+) -> None:
+    """`_is_minified` OPENS what it is handed, and `is_file()` follows symlinks.
+
+    The motivating hazard is a FIFO reached through a symlink: `open()` on it
+    blocks the worker forever, and the scanned tree is a stranger's repository.
+    A FIFO makes a poor regression test — it asserts by hanging — so the
+    control here is the same property made deterministic: a symlink pointing at
+    a genuinely minified file OUTSIDE the scan root. Before the fix it was
+    followed, read, and counted; now nothing reads through a link at all.
+
+    ⚠ The first version of this test named the link `link.min.js`, which
+    `_is_minified` answers from the NAME without opening anything — so it
+    passed identically with and without the fix. It was green for the wrong
+    reason, which is the failure `/qa` §3b exists to catch.
+    """
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "real.js").write_text("!function(e){" + "var x=1;" * 200 + "}\n")
+
+    root = tmp_path / "scan"
+    root.mkdir()
+    # A name none of the NAME heuristics match, so reaching a verdict requires
+    # opening the file — which is the behaviour under test.
+    (root / "payload.js").symlink_to(outside / "real.js")
+    (root / "server.py").write_text("print('hi')\n")
+
+    pruned, sample = _prune_unscannable(root)
+
+    assert pruned == 0, "followed a symlink to decide whether to prune"
+    assert sample == ()
+    assert (root / "payload.js").is_symlink(), "acted on a symlink"
+    assert (outside / "real.js").exists()
+    assert (root / "server.py").exists()

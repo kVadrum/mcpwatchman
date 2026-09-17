@@ -182,7 +182,11 @@ def dependency_axis_score(findings: list[DependencyFinding] | tuple[DependencyFi
     """
     by_severity: dict[Severity, list[int]] = {}
     for f in findings:
-        if not f.scored:
+        # Narrowed on the FIELD rather than on `f.scored`, which says the same
+        # thing but through a property a type checker cannot see through. The
+        # guard is load-bearing — `deduction()` raises on an unscored finding —
+        # so it should be checkable rather than merely correct today.
+        if f.severity is None:
             continue
         by_severity.setdefault(f.severity, []).append(f.deduction())
     total = stacked_deduction(by_severity.values())

@@ -201,8 +201,12 @@ def scan_entry(
     resolution = resolve_source(entry)
     repo_url = entry.repository.url if entry.repository else ""
 
+    # Bound to a concrete Path before use: the ternary form left it
+    # `Path | None`, which is true of the expression and false of the value —
+    # and the one place that difference bites is `shutil.rmtree`, which would
+    # be handed None only if the invariant were ever broken.
+    ws = workspace if workspace is not None else Path(tempfile.mkdtemp(prefix="mcpw-scan-"))
     owned = workspace is None
-    ws = Path(tempfile.mkdtemp(prefix="mcpw-scan-")) if owned else workspace
 
     availability = SourceAvailability(SourceState.NOT_ATTEMPTED, repo_url)
     root: Path | None = None
