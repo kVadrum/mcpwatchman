@@ -70,6 +70,46 @@ COMPOSITE_PUBLISHED: dict[str, bool] = {
 }
 
 
+# Per-version gate on how much a semgrep rule may CLAIM about itself.
+#
+# `03` §3 defines the confidence tiers by measurement, not by authorial nerve:
+# high is "verified to have <5% false-positive rate on the gold set", medium is
+# "<20% on the gold set". The gold set does not exist (`03` §9, `09` §5), so no
+# rule can honestly claim `high` — that would assert a measurement nobody has
+# performed, which is the mystery number this project exists to oppose, told
+# about ourselves.
+#
+# Until a version calibrates, `semgrep_check` lowers any finding above the
+# ceiling and RECORDS that it did. The cost is real and runs in the safe
+# direction: a critical/high finding deducts 30 where a critical/medium deducts
+# 20, so every server currently scores better than it eventually will.
+# Under-accusing while uncalibrated is the correct way to be wrong.
+RULESET_CALIBRATED: dict[str, bool] = {
+    "0.2.0": False,
+}
+
+
+def ruleset_calibrated(version: str = CURRENT_METHODOLOGY_VERSION) -> bool:
+    """Whether this version's ruleset has been measured against the gold set.
+
+    Fails CLOSED on an unknown version, exactly as `composite_published` does:
+    a version added and forgotten here cannot start publishing confidence
+    claims it has not earned. test_weights.py catches the omission where a
+    human is looking.
+    """
+    return RULESET_CALIBRATED.get(version, False)
+
+
+def confidence_ceiling(version: str = CURRENT_METHODOLOGY_VERSION) -> str:
+    """Highest confidence a finding may carry at this methodology version.
+
+    Returns the string form of `composite.Confidence` rather than the enum to
+    keep this module free of the import — `composite` already imports from
+    here, and the reverse edge would close a cycle.
+    """
+    return "high" if ruleset_calibrated(version) else "medium"
+
+
 def weights_for(version: str = CURRENT_METHODOLOGY_VERSION) -> dict[str, float]:
     """Return the axis-weight map for a methodology version."""
     try:

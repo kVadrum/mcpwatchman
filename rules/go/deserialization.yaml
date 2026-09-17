@@ -1,0 +1,34 @@
+rules:
+  - id: mcp-go-gob-decode-untrusted
+    languages: [go]
+    severity: WARNING
+    message: >-
+      encoding/gob decodes into a value from a caller-supplied stream. gob is
+      not hardened against hostile input and will happily allocate on a
+      declared length it never checks.
+    metadata:
+      mcp_pattern: unsafe-deserialization
+      cwe: "CWE-502"
+    patterns:
+      - pattern-either:
+          - pattern: gob.NewDecoder($R).Decode($V)
+          - pattern: $D.Decode($V)
+      - pattern-inside: |
+          import "encoding/gob"
+          ...
+  - id: mcp-go-unmarshal-into-interface
+    languages: [go]
+    severity: WARNING
+    message: >-
+      YAML or JSON is unmarshalled into an unconstrained interface value, so the
+      document's own structure decides what is allocated.
+    metadata:
+      mcp_pattern: unsafe-deserialization
+      cwe: "CWE-502"
+    patterns:
+      - pattern-either:
+          - pattern: yaml.Unmarshal($B, &$V)
+          - pattern: yaml.UnmarshalStrict($B, &$V)
+      - pattern-inside: |
+          var $V interface{}
+          ...

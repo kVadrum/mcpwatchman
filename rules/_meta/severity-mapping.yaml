@@ -1,0 +1,74 @@
+# CANONICAL map from rule id to (severity, confidence) — `04` §4.1.
+#
+# The scoring engine reads THIS FILE and never a rule's own metadata. The
+# `severity:` inside each rule file is semgrep's schema-required field in
+# semgrep's own vocabulary (ERROR/WARNING/INFO); it is DERIVED from the
+# severity here by the projection below and asserted in tests/test_ruleset.py,
+# so the two cannot drift into disagreeing about how bad a finding is.
+#
+#   critical, high  -> ERROR
+#   medium          -> WARNING
+#   low, info       -> INFO
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠ WHY NO RULE CLAIMS `high` CONFIDENCE, AND WHY THAT IS NOT MODESTY.
+#
+# `03` §3 does not define the confidence tiers by how sure the author felt. It
+# defines them by MEASUREMENT: high is "verified to have <5% false-positive
+# rate on the gold set", medium is "<20% on the gold set". The gold set does
+# not exist yet (`03` §9, `09` §5). So `high` is not a claim we are being
+# cautious about — it is a claim about a measurement nobody has performed, and
+# shipping it would be the mystery number this project exists to oppose, told
+# about ourselves.
+#
+# Until calibration lands, the ceiling is `medium`, enforced by
+# `weights.ruleset_calibrated()` and asserted in tests. This costs real points
+# in the conservative direction: a critical/high finding deducts 30 and a
+# critical/medium deducts 20, so every server scores BETTER than it eventually
+# will. Under-accusing while uncalibrated is the correct direction to be wrong.
+#
+# `low` here means something different and is used on purpose: a rule whose
+# pattern is broad enough that it flags a shape rather than a defect (any
+# non-literal URL, any assembled path). `03` §3 already says low-confidence
+# findings deduct at the floor of their severity row, which is exactly right
+# for these — they are worth surfacing as evidence and not worth much score.
+# ─────────────────────────────────────────────────────────────────────────────
+
+rules:
+  # ── python ────────────────────────────────────────────────────────────────
+  mcp-python-shell-true-nonliteral:      {severity: critical, confidence: medium}
+  mcp-python-os-system-interpolated:     {severity: critical, confidence: medium}
+  mcp-python-ssrf-nonliteral-url:        {severity: medium,   confidence: low}
+  mcp-python-ssrf-metadata-endpoint:     {severity: critical, confidence: medium}
+  mcp-python-pickle-loads:               {severity: critical, confidence: medium}
+  mcp-python-yaml-unsafe-load:           {severity: medium,   confidence: medium}
+  mcp-python-eval-exec-nonliteral:       {severity: critical, confidence: medium}
+  mcp-python-path-join-unvalidated:      {severity: medium,   confidence: low}
+  mcp-python-archive-extract-unconfined: {severity: critical, confidence: medium}
+  mcp-python-sql-string-built:           {severity: medium,   confidence: medium}
+  mcp-python-tool-arg-to-shell:          {severity: critical, confidence: medium}
+  mcp-python-tool-returns-environment:   {severity: critical, confidence: medium}
+
+  # ── javascript / typescript ───────────────────────────────────────────────
+  mcp-js-shell-exec-nonliteral:          {severity: critical, confidence: medium}
+  mcp-js-shell-exec-template-literal:    {severity: critical, confidence: medium}
+  mcp-js-ssrf-nonliteral-url:            {severity: medium,   confidence: low}
+  mcp-js-ssrf-metadata-endpoint:         {severity: critical, confidence: medium}
+  mcp-js-dynamic-code-execution:         {severity: critical, confidence: medium}
+  mcp-js-unsafe-yaml-load:               {severity: medium,   confidence: medium}
+  mcp-js-path-join-unvalidated:          {severity: medium,   confidence: low}
+  mcp-js-prototype-pollution-merge-loop: {severity: medium,   confidence: medium}
+  mcp-js-prototype-pollution-json-merge: {severity: medium,   confidence: low}
+  mcp-js-tool-arg-to-shell:              {severity: critical, confidence: medium}
+  mcp-js-tool-returns-environment:       {severity: critical, confidence: medium}
+
+  # ── go ────────────────────────────────────────────────────────────────────
+  mcp-go-shell-exec-interpreter:         {severity: critical, confidence: medium}
+  mcp-go-shell-exec-formatted-binary:    {severity: medium,   confidence: low}
+  mcp-go-ssrf-nonliteral-url:            {severity: medium,   confidence: low}
+  mcp-go-ssrf-metadata-endpoint:         {severity: critical, confidence: medium}
+  mcp-go-gob-decode-untrusted:           {severity: medium,   confidence: low}
+  mcp-go-unmarshal-into-interface:       {severity: medium,   confidence: low}
+  mcp-go-path-join-unvalidated:          {severity: medium,   confidence: low}
+  mcp-go-tool-arg-to-shell:              {severity: critical, confidence: medium}
+  mcp-go-tool-returns-environment:       {severity: critical, confidence: medium}

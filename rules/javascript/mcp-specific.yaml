@@ -1,0 +1,49 @@
+# See rules/python/mcp-specific.yaml for what makes this category distinct: an
+# MCP tool argument is a value a language model was persuaded to produce, so
+# "the caller is trusted" is not a mitigation.
+rules:
+  - id: mcp-js-tool-arg-to-shell
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      An MCP tool handler spawns a shell on its own argument. The argument is
+      model-supplied and reachable by anything that can influence the model's
+      context.
+    metadata:
+      mcp_pattern: tool-arg-to-shell
+      cwe: "CWE-78"
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              $SRV.tool($NAME, ..., async ($ARG, ...) => { ... })
+          - pattern-inside: |
+              $SRV.tool($NAME, ..., ($ARG, ...) => { ... })
+          - pattern-inside: |
+              $SRV.setRequestHandler(CallToolRequestSchema, async ($ARG, ...) => { ... })
+      - pattern-either:
+          - pattern: $CP.exec(...)
+          - pattern: $CP.execSync(...)
+          - pattern: exec(...)
+          - pattern: execSync(...)
+      - pattern-not: $ANY("...", ...)
+
+  - id: mcp-js-tool-returns-environment
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      An MCP tool returns the process environment, handing every credential the
+      server holds to the model.
+    metadata:
+      mcp_pattern: tool-exfiltrates-secrets
+      cwe: "CWE-200"
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              $SRV.tool($NAME, ..., async ($ARG, ...) => { ... })
+          - pattern-inside: |
+              $SRV.tool($NAME, ..., ($ARG, ...) => { ... })
+      - pattern-either:
+          - pattern: return process.env
+          - pattern: "return {...process.env}"
+          - pattern: "return Object.assign({}, process.env)"
+          - pattern: JSON.stringify(process.env)

@@ -1,0 +1,34 @@
+rules:
+  - id: mcp-go-ssrf-nonliteral-url
+    languages: [go]
+    severity: WARNING
+    message: >-
+      An outbound HTTP request is made to a URL that is not a literal. If any
+      component is caller-supplied the server can be aimed at hosts it can
+      reach and the caller cannot.
+    metadata:
+      mcp_pattern: value-to-fetch
+      cwe: "CWE-918"
+    patterns:
+      - pattern-either:
+          - pattern: http.Get($URL)
+          - pattern: http.Post($URL, ...)
+          - pattern: http.Head($URL)
+          - pattern: http.NewRequest($M, $URL, ...)
+          - pattern: http.NewRequestWithContext($CTX, $M, $URL, ...)
+      - pattern-not: http.$F("...")
+      - pattern-not: http.$F("...", ...)
+      - pattern-not: http.NewRequest($M, "...", ...)
+      - pattern-not: http.NewRequestWithContext($CTX, $M, "...", ...)
+
+  - id: mcp-go-ssrf-metadata-endpoint
+    languages: [go]
+    severity: ERROR
+    message: >-
+      The cloud instance-metadata endpoint is contacted directly.
+    metadata:
+      mcp_pattern: metadata-endpoint
+      cwe: "CWE-918"
+    pattern-either:
+      - pattern-regex: \b169\.254\.169\.254\b
+      - pattern-regex: \bmetadata\.google\.internal\b

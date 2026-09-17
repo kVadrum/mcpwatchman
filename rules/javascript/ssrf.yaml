@@ -1,0 +1,34 @@
+rules:
+  - id: mcp-js-ssrf-nonliteral-url
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      An outbound request is made to a URL that is not a literal. If any part is
+      caller-supplied the server can be aimed at internal hosts it can reach and
+      the caller cannot.
+    metadata:
+      mcp_pattern: value-to-fetch
+      cwe: "CWE-918"
+    patterns:
+      - pattern-either:
+          - pattern: fetch($URL, ...)
+          - pattern: axios.$M($URL, ...)
+          - pattern: axios($URL, ...)
+          - pattern: got($URL, ...)
+          - pattern: request($URL, ...)
+      - pattern-not: fetch("...", ...)
+      - pattern-not: fetch(`...`, ...)
+      - pattern-not: axios.$M("...", ...)
+
+  - id: mcp-js-ssrf-metadata-endpoint
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      The cloud instance-metadata endpoint is contacted directly — the standard
+      path from SSRF to credential theft on a hosted server.
+    metadata:
+      mcp_pattern: metadata-endpoint
+      cwe: "CWE-918"
+    pattern-either:
+      - pattern-regex: \b169\.254\.169\.254\b
+      - pattern-regex: \bmetadata\.google\.internal\b

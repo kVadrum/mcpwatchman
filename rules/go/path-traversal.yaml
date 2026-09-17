@@ -1,0 +1,21 @@
+rules:
+  - id: mcp-go-path-join-unvalidated
+    languages: [go]
+    severity: WARNING
+    message: >-
+      A filesystem path is assembled from a non-literal and opened without
+      confinement. filepath.Join cleans `..` but does not confine: a component
+      of "../../etc/passwd" still resolves outside the base.
+    metadata:
+      mcp_pattern: path-traversal
+      cwe: "CWE-22"
+    patterns:
+      - pattern-either:
+          - pattern: os.ReadFile(filepath.Join(..., $ARG))
+          - pattern: os.Open(filepath.Join(..., $ARG))
+          - pattern: os.WriteFile(filepath.Join(..., $ARG), ...)
+          - pattern: ioutil.ReadFile(filepath.Join(..., $ARG))
+          - pattern: os.ReadFile(fmt.Sprintf(...))
+          - pattern: os.Open(fmt.Sprintf(...))
+      - pattern-not: $F(filepath.Join(..., "..."))
+      - pattern-not: $F(filepath.Join(..., "..."), ...)

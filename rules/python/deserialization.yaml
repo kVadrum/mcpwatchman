@@ -1,0 +1,52 @@
+rules:
+  - id: mcp-python-pickle-loads
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Attacker-reachable input is unpickled. pickle executes constructors during
+      load, so a crafted payload is arbitrary code execution — this is not a
+      hardening issue, it is the documented behaviour of the format.
+    metadata:
+      mcp_pattern: unsafe-deserialization
+      cwe: "CWE-502"
+      references:
+        - https://docs.python.org/3/library/pickle.html
+    pattern-either:
+      - pattern: pickle.loads(...)
+      - pattern: pickle.load(...)
+      - pattern: cPickle.loads(...)
+      - pattern: dill.loads(...)
+      - pattern: shelve.open(...)
+
+  - id: mcp-python-yaml-unsafe-load
+    languages: [python]
+    severity: WARNING
+    message: >-
+      YAML is parsed with a loader that can construct arbitrary Python objects.
+      Use yaml.safe_load, or pass Loader=yaml.SafeLoader explicitly.
+    metadata:
+      mcp_pattern: unsafe-deserialization
+      cwe: "CWE-502"
+    pattern-either:
+      - pattern: yaml.unsafe_load(...)
+      - patterns:
+          - pattern: yaml.load($X)
+          - pattern-not: yaml.load($X, Loader=yaml.SafeLoader)
+          - pattern-not: yaml.load($X, Loader=yaml.CSafeLoader)
+
+  - id: mcp-python-eval-exec-nonliteral
+    languages: [python]
+    severity: ERROR
+    message: >-
+      eval/exec is called on a value that is not a literal. If any component is
+      caller-supplied this is direct code execution in the server's process.
+    metadata:
+      mcp_pattern: dynamic-code-execution
+      cwe: "CWE-95"
+    patterns:
+      - pattern-either:
+          - pattern: eval($X, ...)
+          - pattern: exec($X, ...)
+          - pattern: marshal.loads(...)
+      - pattern-not: eval("...", ...)
+      - pattern-not: exec("...", ...)

@@ -1,0 +1,20 @@
+rules:
+  - id: mcp-js-path-join-unvalidated
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      A filesystem path is assembled from a non-literal and read or written
+      without confinement. path.join does not resolve away `..`, and
+      path.resolve discards the base entirely on an absolute second component.
+    metadata:
+      mcp_pattern: path-traversal
+      cwe: "CWE-22"
+    patterns:
+      - pattern-either:
+          - pattern: fs.readFileSync(path.join(..., $ARG), ...)
+          - pattern: fs.readFile(path.join(..., $ARG), ...)
+          - pattern: fs.writeFileSync(path.join(..., $ARG), ...)
+          - pattern: fs.promises.readFile(path.join(..., $ARG), ...)
+          - pattern: "fs.readFileSync(`...${$ARG}...`, ...)"
+          - pattern: fs.readFileSync(path.resolve(..., $ARG), ...)
+      - pattern-not: fs.$F(path.join(..., "..."), ...)

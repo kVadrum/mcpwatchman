@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.12.5"
+version = "0.13.0"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -76,6 +76,13 @@ packages = ["src/mcpwatchman"]
 target-version = "py312"
 line-length = 100
 src = ["src"]
+# The semgrep fixtures are deliberately-vulnerable SAMPLE code, not project
+# source: `tests/fixtures/semgrep/vulnerable/` exists to be flagged, and its
+# safe twin is written in the idiom of the servers we scan rather than ours.
+# Linting them means annotating ~25 findings as intentional, which is noise
+# over a file whose whole job is to carry them. (ruff's own bandit rules agree
+# with the ruleset on every one, which is quiet corroboration worth noting.)
+extend-exclude = ["tests/fixtures/"]
 
 [tool.ruff.lint]
 # S = flake8-bandit. A static-analysis project that does not run security lint

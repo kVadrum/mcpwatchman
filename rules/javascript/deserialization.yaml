@@ -1,0 +1,35 @@
+rules:
+  - id: mcp-js-dynamic-code-execution
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      Caller-influenced input reaches an evaluator. eval, the Function
+      constructor and vm.runInNewContext all execute their argument; none of
+      them sandbox anything by default, vm least of all despite the name.
+    metadata:
+      mcp_pattern: dynamic-code-execution
+      cwe: "CWE-95"
+    patterns:
+      - pattern-either:
+          - pattern: eval($X)
+          - pattern: new Function($X, ...)
+          - pattern: Function($X, ...)
+          - pattern: vm.runInNewContext($X, ...)
+          - pattern: vm.runInThisContext($X, ...)
+          - pattern: vm.Script($X, ...)
+      - pattern-not: eval("...")
+      - pattern-not: new Function("...", ...)
+
+  - id: mcp-js-unsafe-yaml-load
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      YAML is parsed with a schema that can construct arbitrary types. js-yaml's
+      load() is safe by default since v4; an explicit unsafe schema is not.
+    metadata:
+      mcp_pattern: unsafe-deserialization
+      cwe: "CWE-502"
+    pattern-either:
+      - pattern: "yaml.load($X, {schema: $Y})"
+      - pattern: "yaml.loadAll($X, $CB, {schema: $Y})"
+      - pattern: $Y.unserialize($X)

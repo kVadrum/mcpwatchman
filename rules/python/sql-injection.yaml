@@ -1,0 +1,18 @@
+rules:
+  - id: mcp-python-sql-string-built
+    languages: [python]
+    severity: WARNING
+    message: >-
+      A SQL statement is assembled by string building rather than passed as a
+      parameterised query. Every driver here accepts parameters as a second
+      argument; building the string is never necessary.
+    metadata:
+      mcp_pattern: sql-injection
+      cwe: "CWE-89"
+    pattern-either:
+      - pattern: $CUR.execute(f"...", ...)
+      - pattern: $CUR.execute("..." % ..., ...)
+      - pattern: $CUR.execute("...".format(...), ...)
+      - pattern: $CUR.execute("..." + $X, ...)
+      - pattern: $CUR.executemany(f"...", ...)
+      - pattern: sqlalchemy.text(f"...")

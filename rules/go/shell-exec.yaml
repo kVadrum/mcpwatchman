@@ -1,0 +1,34 @@
+rules:
+  - id: mcp-go-shell-exec-interpreter
+    languages: [go]
+    severity: ERROR
+    message: >-
+      A shell interpreter is invoked with a constructed command string. Go's
+      exec.Command is safe by default precisely because it takes an argument
+      vector; routing through `sh -c` gives that safety away.
+    metadata:
+      mcp_pattern: value-to-shell
+      cwe: "CWE-78"
+    patterns:
+      - pattern-either:
+          - pattern: exec.Command("sh", "-c", $CMD)
+          - pattern: exec.Command("bash", "-c", $CMD)
+          - pattern: exec.Command("/bin/sh", "-c", $CMD)
+          - pattern: exec.Command("/bin/bash", "-c", $CMD)
+          - pattern: exec.CommandContext($CTX, "sh", "-c", $CMD)
+          - pattern: exec.CommandContext($CTX, "bash", "-c", $CMD)
+      - pattern-not: exec.Command($SH, "-c", "...")
+      - pattern-not: exec.CommandContext($CTX, $SH, "-c", "...")
+
+  - id: mcp-go-shell-exec-formatted-binary
+    languages: [go]
+    severity: WARNING
+    message: >-
+      The program name passed to exec.Command is built by string formatting. A
+      caller-controlled binary name is arbitrary execution of anything on PATH.
+    metadata:
+      mcp_pattern: value-to-shell
+      cwe: "CWE-78"
+    pattern-either:
+      - pattern: exec.Command(fmt.Sprintf(...), ...)
+      - pattern: exec.CommandContext($CTX, fmt.Sprintf(...), ...)

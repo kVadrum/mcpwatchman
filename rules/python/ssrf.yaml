@@ -1,0 +1,34 @@
+rules:
+  - id: mcp-python-ssrf-nonliteral-url
+    languages: [python]
+    severity: WARNING
+    message: >-
+      An outbound HTTP request is made to a URL that is not a literal. If any
+      part of it is caller-supplied, the server can be steered at internal
+      hosts — cloud metadata endpoints, admin ports, other tenants.
+    metadata:
+      mcp_pattern: value-to-fetch
+      cwe: "CWE-918"
+    patterns:
+      - pattern-either:
+          - pattern: requests.$M($URL, ...)
+          - pattern: httpx.$M($URL, ...)
+          - pattern: urllib.request.urlopen($URL, ...)
+          - pattern: aiohttp.ClientSession(...).$M($URL, ...)
+      - pattern-not: $LIB.$M("...", ...)
+      - pattern-not: urllib.request.urlopen("...", ...)
+
+  - id: mcp-python-ssrf-metadata-endpoint
+    languages: [python]
+    severity: ERROR
+    message: >-
+      The cloud instance-metadata endpoint is contacted directly. On a hosted
+      MCP server this is the canonical path from SSRF to credential theft:
+      169.254.169.254 serves IAM role credentials to anything that asks.
+    metadata:
+      mcp_pattern: metadata-endpoint
+      cwe: "CWE-918"
+    pattern-either:
+      - pattern-regex: \b169\.254\.169\.254\b
+      - pattern-regex: \bmetadata\.google\.internal\b
+      - pattern-regex: \bmetadata\.azure\.com\b

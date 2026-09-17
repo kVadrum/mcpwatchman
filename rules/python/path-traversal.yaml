@@ -1,0 +1,37 @@
+rules:
+  - id: mcp-python-path-join-unvalidated
+    languages: [python]
+    severity: WARNING
+    message: >-
+      A filesystem path is assembled from a value that is not a literal and
+      opened without confinement. os.path.join discards the base entirely when
+      the second component is absolute, and neither join nor `/` resolves `..`.
+    metadata:
+      mcp_pattern: path-traversal
+      cwe: "CWE-22"
+    patterns:
+      - pattern-either:
+          - pattern: open(os.path.join(..., $ARG), ...)
+          - pattern: open(f"...", ...)
+          - pattern: open($BASE + $ARG, ...)
+          - pattern: (Path($BASE) / $ARG).read_text(...)
+          - pattern: (Path($BASE) / $ARG).write_text(...)
+          - pattern: (Path($BASE) / $ARG).open(...)
+      - pattern-not: open(f"...")
+      - pattern-not: open($BASE + "...", ...)
+
+  - id: mcp-python-archive-extract-unconfined
+    languages: [python]
+    severity: ERROR
+    message: >-
+      An archive is extracted without validating member paths. A tar or zip
+      entry may name `../` or an absolute path and write outside the
+      destination; Python's extractall has historically done exactly that.
+    metadata:
+      mcp_pattern: path-traversal
+      cwe: "CWE-22"
+    pattern-either:
+      - patterns:
+          - pattern: $T.extractall(...)
+          - pattern-not: $T.extractall(..., filter=...)
+      - pattern: $Z.extract($M, ...)

@@ -1,0 +1,66 @@
+# ⚠ NARROWED DELIBERATELY, and the history is worth keeping. The obvious rule
+# here is `$OBJ[$KEY] = $VAL`, and it is unshippable: a computed-key assignment
+# is among the most common constructs in JavaScript, so without taint analysis
+# (`03` §3: v0.1 is pattern-only) it accuses every server that has an object in
+# it. The first draft tried to rescue that with `pattern-not: $OBJ[$IDX] = $VAL`
+# to spare numeric indices — but a metavariable matches ANY expression, so the
+# exclusion swallowed the rule's own positive pattern and the rule could never
+# fire. It shipped dead, and a dead rule reports nothing while looking present.
+#
+# What survives is the shape that is a pollution SINK rather than merely a
+# computed write: a copy loop over a caller-supplied object's keys, and a merge
+# straight out of JSON.parse. Split into two rules so each carries its own
+# control — one of them dying silently must not be masked by the other firing.
+rules:
+  - id: mcp-js-prototype-pollution-merge-loop
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      Keys from a caller-supplied object are copied onto a target without
+      excluding __proto__ / constructor / prototype. A tool argument carrying
+      __proto__ then mutates Object.prototype for the whole process, which can
+      turn an unrelated later property read into attacker-controlled data.
+    metadata:
+      mcp_pattern: prototype-pollution
+      cwe: "CWE-1321"
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              for (const $KEY in $SRC) { ... }
+          - pattern-inside: |
+              for (let $KEY in $SRC) { ... }
+          - pattern-inside: |
+              for (var $KEY in $SRC) { ... }
+      - pattern: $TARGET[$KEY] = $VAL
+      - pattern-not-inside: |
+          for (const $K in $S) {
+            ...
+            if (<... "__proto__" ...>) { ... }
+            ...
+          }
+      - pattern-not-inside: |
+          for (let $K in $S) {
+            ...
+            if (<... "__proto__" ...>) { ... }
+            ...
+          }
+      - pattern-not-inside: |
+          for (var $K in $S) {
+            ...
+            if (<... "__proto__" ...>) { ... }
+            ...
+          }
+
+  - id: mcp-js-prototype-pollution-json-merge
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      A parsed JSON document is merged into an existing object. JSON.parse
+      preserves a literal "__proto__" key, so a caller-supplied document can
+      reach Object.prototype through Object.assign.
+    metadata:
+      mcp_pattern: prototype-pollution
+      cwe: "CWE-1321"
+    pattern-either:
+      - pattern: Object.assign($TARGET, JSON.parse($X))
+      - pattern: Object.assign($TARGET, ...args)

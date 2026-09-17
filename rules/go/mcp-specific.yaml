@@ -1,0 +1,39 @@
+# See rules/python/mcp-specific.yaml for what makes this category distinct.
+rules:
+  - id: mcp-go-tool-arg-to-shell
+    languages: [go]
+    severity: ERROR
+    message: >-
+      An MCP tool handler routes one of its own arguments through a shell. The
+      argument is model-supplied, so this is remote command execution with one
+      indirection.
+    metadata:
+      mcp_pattern: tool-arg-to-shell
+      cwe: "CWE-78"
+    patterns:
+      - pattern-inside: |
+          func $HANDLER($CTX context.Context, $REQ $T) (...) {
+            ...
+          }
+      - pattern-either:
+          - pattern: exec.Command("sh", "-c", $CMD)
+          - pattern: exec.Command("bash", "-c", $CMD)
+          - pattern: exec.CommandContext($C, "sh", "-c", $CMD)
+      - pattern-not: exec.Command($SH, "-c", "...")
+
+  - id: mcp-go-tool-returns-environment
+    languages: [go]
+    severity: ERROR
+    message: >-
+      An MCP tool returns the process environment, handing every credential the
+      server holds to the model.
+    metadata:
+      mcp_pattern: tool-exfiltrates-secrets
+      cwe: "CWE-200"
+    patterns:
+      - pattern-either:
+          - pattern: os.Environ()
+      - pattern-inside: |
+          func $HANDLER($CTX context.Context, $REQ $T) (...) {
+            ...
+          }

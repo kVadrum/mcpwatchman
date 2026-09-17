@@ -1,0 +1,70 @@
+# The differentiating ruleset (`04` §4.2). These are not generic security rules
+# with an MCP label: each one keys on the shape of an MCP tool handler, where
+# the argument is supplied by a language model acting on text it read somewhere.
+#
+# The threat that makes them distinct from their generic siblings: an MCP tool
+# argument is not "user input" in the usual sense of a person typing into a
+# form. It is a value an LLM was persuaded to produce, and the persuasion can
+# come from a web page, an email, or a file the model was asked to summarise.
+# So "the caller is trusted" is not a mitigation here — the caller is a model
+# that read something attacker-controlled two steps ago.
+rules:
+  - id: mcp-python-tool-arg-to-shell
+    languages: [python]
+    severity: ERROR
+    message: >-
+      An MCP tool handler spawns a shell on one of its own arguments. The
+      argument is model-supplied and therefore reachable by anything that can
+      influence the model's context; this is remote command execution with one
+      indirection.
+    metadata:
+      mcp_pattern: tool-arg-to-shell
+      cwe: "CWE-78"
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              @$MCP.tool(...)
+              def $TOOL(...):
+                  ...
+          - pattern-inside: |
+              @$MCP.tool(...)
+              async def $TOOL(...):
+                  ...
+          - pattern-inside: |
+              @$MCP.tool
+              def $TOOL(...):
+                  ...
+          - pattern-inside: |
+              @$MCP.call_tool(...)
+              async def $TOOL(...):
+                  ...
+      - pattern-either:
+          - pattern: subprocess.$F(..., shell=True, ...)
+          - pattern: os.system(...)
+          - pattern: os.popen(...)
+
+  - id: mcp-python-tool-returns-environment
+    languages: [python]
+    severity: ERROR
+    message: >-
+      An MCP tool returns the process environment. Every API key, token and
+      database URL the server holds is handed to the model, which will put it
+      in its context and may repeat it downstream.
+    metadata:
+      mcp_pattern: tool-exfiltrates-secrets
+      cwe: "CWE-200"
+    patterns:
+      - pattern-either:
+          - pattern-inside: |
+              @$MCP.tool(...)
+              def $TOOL(...):
+                  ...
+          - pattern-inside: |
+              @$MCP.tool(...)
+              async def $TOOL(...):
+                  ...
+      - pattern-either:
+          - pattern: return os.environ
+          - pattern: return dict(os.environ)
+          - pattern: return os.environ.copy()
+          - pattern: "return {**os.environ}"

@@ -1,0 +1,36 @@
+rules:
+  - id: mcp-js-shell-exec-nonliteral
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      A shell is spawned on a value that is not a string literal. child_process
+      .exec and execSync run their argument through /bin/sh, so any
+      caller-supplied component is shell syntax, not data.
+    metadata:
+      mcp_pattern: value-to-shell
+      cwe: "CWE-78"
+    patterns:
+      - pattern-either:
+          - pattern: $CP.exec($CMD, ...)
+          - pattern: $CP.execSync($CMD, ...)
+          - pattern: exec($CMD, ...)
+          - pattern: execSync($CMD, ...)
+          - pattern: "$CP.spawn($CMD, ..., {shell: true})"
+          - pattern: "$CP.spawnSync($CMD, ..., {shell: true})"
+      - pattern-not: $CP.$F("...", ...)
+      - pattern-not: $F("...", ...)
+
+  - id: mcp-js-shell-exec-template-literal
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: >-
+      A shell command is built from a template literal with interpolation.
+      Quoting inside a template does not escape shell metacharacters.
+    metadata:
+      mcp_pattern: value-to-shell
+      cwe: "CWE-78"
+    pattern-either:
+      - pattern: "$CP.exec(`...${$X}...`, ...)"
+      - pattern: "$CP.execSync(`...${$X}...`, ...)"
+      - pattern: "exec(`...${$X}...`, ...)"
+      - pattern: "execSync(`...${$X}...`, ...)"
