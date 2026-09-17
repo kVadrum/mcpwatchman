@@ -169,14 +169,19 @@ def _from_axis_result(result: AxisResult, reason_when_unassessed: str = "") -> A
     evidence = tuple(
         Evidence(
             label=sub.name,
+            # ⚠ THE EVIDENCE PROSE GOES IN `detail`, and putting it anywhere
+            # else has now failed in both directions. It was first assigned to
+            # `path`, so the page rendered "declared endpoint(s) are HTTPS: …"
+            # as a file location; the fix filtered non-paths out of that field
+            # and carried the prose NOWHERE, leaving a scored sub-check with
+            # `detail: "scored 80"` and no trail at all. `03` §10 owes a reason
+            # for every point, and for these three axes the prose IS the
+            # evidence — there is no file to cite.
             detail=(
-                sub.reason if sub.score is None
-                else f"scored {sub.score}"
+                "; ".join(sub.evidence) if sub.evidence
+                else (sub.reason if sub.score is None else f"scored {sub.score}")
             ),
-            # Only when it actually LOOKS like an artefact. Sub-checks put
-            # explanatory sentences in `evidence`, so this published
-            # "declared endpoint(s) are HTTPS: ..." into a field the page
-            # renders as a file location and the API calls `path`.
+            # `path` only when the string genuinely names an artefact.
             path=_as_path(sub.evidence[0]) if sub.evidence else "",
         )
         for sub in result.subchecks
@@ -194,6 +199,12 @@ def _from_axis_result(result: AxisResult, reason_when_unassessed: str = "") -> A
     )
 
 
+_BARE_ARTEFACTS = frozenset(
+    {"LICENSE", "LICENCE", "COPYING", "NOTICE", "README", "DOCKERFILE",
+     "MAKEFILE", "CHANGELOG", "SECURITY", "CODEOWNERS"}
+)
+
+
 def _as_path(value: str) -> str:
     """The evidence string if it plausibly names a file, else empty.
 
@@ -204,7 +215,14 @@ def _as_path(value: str) -> str:
     candidate = value.strip()
     if not candidate or " " in candidate or len(candidate) > 200:
         return ""
-    return candidate if ("/" in candidate or "." in candidate) else ""
+    if "/" in candidate or "." in candidate:
+        return candidate
+    # Extensionless artefacts are real files and the dot-or-slash test drops
+    # them: `Dockerfile` and `LICENSE` are exactly the kind of thing a
+    # sub-check would cite. Named rather than inferred, because a bare word
+    # with no separator is otherwise indistinguishable from a one-word
+    # sentence fragment.
+    return candidate if candidate.upper() in _BARE_ARTEFACTS else ""
 
 
 def _fmt(value: Decimal) -> str:

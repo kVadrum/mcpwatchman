@@ -244,3 +244,33 @@ def test_evidence_paths_are_paths_and_not_prose(reports) -> None:
                 assert " " not in path, (
                     f"{report['name']}/{axis}: prose in a path field: {path[:60]!r}"
                 )
+
+
+def test_a_scored_subcheck_still_carries_its_evidence(reports) -> None:
+    """⚠ Fixed in both directions now, having broken in both.
+
+    The evidence prose was first published in `path`, so the page rendered
+    "declared endpoint(s) are HTTPS: …" as a file location. Filtering non-paths
+    out of that field then carried the prose NOWHERE, leaving a scored
+    sub-check reading `detail: "scored 80"` with no trail at all. `03` §10 owes
+    a reason for every point, and on these three axes the prose IS the
+    evidence — there is no file to cite.
+    """
+    import re
+
+    degenerate = re.compile(r"^scored \d+$")
+    subcheck_axes = ("auth_posture", "maintenance", "transparency")
+    checked = 0
+    for report in reports:
+        for axis in subcheck_axes:
+            for item in report["axes"][axis]["evidence"]:
+                detail = item["detail"].strip()
+                assert detail, f"{report['name']}/{axis}/{item['label']}: no evidence"
+                # "scored 80" restates the number it sits beside and says
+                # nothing about why — it is what the regression produced.
+                assert not degenerate.match(detail), (
+                    f"{report['name']}/{axis}/{item['label']}: the evidence is "
+                    f"just the score restated ({detail!r})"
+                )
+                checked += 1
+    assert checked, "no sub-check evidence was examined — the check is vacuous"
