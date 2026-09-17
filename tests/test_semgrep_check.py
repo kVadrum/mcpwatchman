@@ -16,13 +16,13 @@ from pathlib import Path
 import pytest
 
 from mcpwatchman.workers.scanner import semgrep_check as sc
-from mcpwatchman.workers.scanner.semgrep_check import _prune_unscannable
 from mcpwatchman.workers.scanner.inventory import (
     FileRecord,
     Inventory,
     Language,
     Role,
 )
+from mcpwatchman.workers.scanner.semgrep_check import _prune_unscannable
 from mcpwatchman.workers.scoring.composite import Confidence, Severity
 
 RULES = sc.rules_root()
