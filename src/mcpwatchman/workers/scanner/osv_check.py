@@ -56,7 +56,7 @@ from enum import StrEnum
 from pathlib import Path
 
 from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
-from mcpwatchman.workers.scanner.inventory import Inventory, Role
+from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_manifest
 from mcpwatchman.workers.scanner.reachability import redact_paths
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
@@ -211,6 +211,35 @@ def _requirements_names(text: str) -> set[str]:
     return names
 
 
+# Manifests whose dependency tables this module can actually parse. A format
+# absent here is one where we cannot tell direct from transitive at all.
+_PARSEABLE_MANIFESTS = frozenset(
+    {"package.json", "pyproject.toml", "requirements.txt", "go.mod"}
+)
+# Manifests `inventory` recognises and OSV reports on, which this module does
+# NOT parse. Their presence means the directness split is unsupported, not that
+# every dependency is transitive.
+_UNPARSEABLE_MANIFESTS = frozenset(
+    {"Cargo.toml", "Cargo.lock", "Gemfile", "Gemfile.lock", "poetry.lock"}
+)
+
+
+def directness_supported(root: Path, inventory: Inventory) -> bool:
+    """Whether the manifests present are ones we can read a direct set from.
+
+    ⚠ An unparseable manifest must not silently mean "no direct dependencies".
+    `03` §6 deducts LESS for a transitive finding, so a Rust or Ruby project
+    whose manifest this module cannot read had every one of its vulnerabilities
+    labelled transitive and scored at the lower rate — a systematically kinder
+    score for the ecosystems we support least, published with no coverage
+    caveat at all.
+    """
+    names = {Path(f.path).name for f in inventory.files}
+    if names & _PARSEABLE_MANIFESTS:
+        return True
+    return not (names & _UNPARSEABLE_MANIFESTS)
+
+
 def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
     """Dependency names the project DECLARES, lowercased.
 
@@ -229,9 +258,15 @@ def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
         if record.role not in (Role.PACKAGE_MANIFEST, Role.LOCKFILE):
             continue
         name = Path(record.path).name
+        # Through the inventory's bounded, confined reader. These are
+        # attacker-controlled manifests, and a fetched tree may legally approach
+        # the source cap — reading one whole and then parsing an expanded copy
+        # of it is two allocations of a size the publisher chooses. Same rule
+        # `_excerpt` was moved onto: a bound added to one hostile-input reader
+        # is owed to the others.
         try:
-            text = (root / record.path).read_text(encoding="utf-8", errors="replace")
-        except OSError:
+            text = read_manifest(root, record.path)
+        except (OSError, ValueError):
             continue
         if name == "package.json":
             try:
@@ -310,6 +345,24 @@ def run_osv(
     # same shape as semgrep's `.semgrepignore`, which is why the list is shared
     # rather than restated. `root` is a scratch copy we own.
     neutralised = _neutralise_hostile_config(root)
+
+    if inventory is not None and not directness_supported(root, inventory):
+        # `03` §6 scores on (severity, direct-vs-transitive). With no manifest
+        # we can parse, that second dimension is unavailable — and defaulting it
+        # to "transitive" is not a neutral choice, it is the LOWER deduction.
+        # Abstaining costs coverage; guessing publishes a kinder number for the
+        # ecosystems we support least. `CLAUDE.md`: where `03` gives no band,
+        # abstain.
+        return OsvResult(
+            status=OsvStatus.UNAVAILABLE,
+            reason="the dependency manifests present (Cargo, Gemfile or Poetry) "
+                   "are not ones this scanner can read a direct-dependency set "
+                   "from, and `03` §6 scores direct and transitive differently",
+            lockfiles=lockfiles,
+            transitive_coverage=bool(lockfiles),
+            methodology_version=version,
+            neutralised=neutralised,
+        )
 
     cmd = [binary, "scan", "source", "--format", "json", "-r", str(root)]
     try:

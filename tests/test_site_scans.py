@@ -211,3 +211,36 @@ def test_finding_paths_are_relative_to_the_scanned_tree(reports) -> None:
                 assert not item["path"].startswith("/"), (
                     f"{report['name']}/{axis}: absolute evidence path {item['path']}"
                 )
+
+
+def test_a_ref_mismatch_is_published_not_dropped(reports) -> None:
+    """`fetch_git` falls back to the default branch when no version tag resolves.
+
+    That signal was fetched and discarded, so the page showed the released
+    version's number over a score computed from branch-tip code — the exact
+    wrong-revision failure `CLAUDE.md`'s refs/tags rule exists to prevent,
+    reintroduced one layer up by throwing away the detector.
+    """
+    for report in reports:
+        assert "ref_matched_version" in report, (
+            f"{report['name']}: the ref-match signal is missing from the report"
+        )
+        assert isinstance(report["ref_matched_version"], bool)
+
+
+def test_evidence_paths_are_paths_and_not_prose(reports) -> None:
+    """Sub-checks put explanatory sentences in `evidence`.
+
+    Assigning the first one to `Evidence.path` published values like
+    "declared endpoint(s) are HTTPS: ..." into a field the page renders as a
+    file location and the API calls `path`.
+    """
+    for report in reports:
+        for axis, entry in report["axes"].items():
+            for item in entry["evidence"]:
+                path = item["path"]
+                if not path:
+                    continue
+                assert " " not in path, (
+                    f"{report['name']}/{axis}: prose in a path field: {path[:60]!r}"
+                )

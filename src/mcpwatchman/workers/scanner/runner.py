@@ -30,7 +30,11 @@ from pathlib import Path
 from typing import Any
 
 from mcpwatchman import __version__
-from mcpwatchman.workers.crawler.registry import RegistryEntry, resolve_source
+from mcpwatchman.workers.crawler.registry import (
+    RegistryEntry,
+    SourceKind,
+    resolve_source,
+)
 from mcpwatchman.workers.scanner.auth_check import assess_auth, scan_secrets
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.maintenance_check import assess_maintenance
@@ -113,6 +117,10 @@ class ServerReport:
     source_reason: str = ""
     transport: str = ""
     transport_mismatch: bool = False
+    # False when neither version tag resolved and `fetch_git` fell back to
+    # the default branch. Published, because otherwise the page shows the
+    # released version's number over a score computed from branch-tip code.
+    ref_matched_version: bool = True
     files_scanned: int = 0
     files_pruned: int = 0
     axes: dict[str, AxisScore] = field(default_factory=dict)
@@ -165,7 +173,11 @@ def _from_axis_result(result: AxisResult, reason_when_unassessed: str = "") -> A
                 sub.reason if sub.score is None
                 else f"scored {sub.score}"
             ),
-            path=sub.evidence[0] if sub.evidence else "",
+            # Only when it actually LOOKS like an artefact. Sub-checks put
+            # explanatory sentences in `evidence`, so this published
+            # "declared endpoint(s) are HTTPS: ..." into a field the page
+            # renders as a file location and the API calls `path`.
+            path=_as_path(sub.evidence[0]) if sub.evidence else "",
         )
         for sub in result.subchecks
     )
@@ -180,6 +192,19 @@ def _from_axis_result(result: AxisResult, reason_when_unassessed: str = "") -> A
         assessed_weight=_fmt(result.assessed_weight),
         evidence=evidence,
     )
+
+
+def _as_path(value: str) -> str:
+    """The evidence string if it plausibly names a file, else empty.
+
+    Deliberately conservative: prose in a path field is worse than an empty
+    path field, because the page renders one as a location a reader could go
+    and check.
+    """
+    candidate = value.strip()
+    if not candidate or " " in candidate or len(candidate) > 200:
+        return ""
+    return candidate if ("/" in candidate or "." in candidate) else ""
 
 
 def _fmt(value: Decimal) -> str:
@@ -207,6 +232,7 @@ def scan_entry(
     # and the one place that difference bites is `shutil.rmtree`, which would
     # be handed None only if the invariant were ever broken.
     ws = workspace if workspace is not None else Path(tempfile.mkdtemp(prefix="mcpw-scan-"))
+    ref_matched = True
     owned = workspace is None
 
     availability = SourceAvailability(SourceState.NOT_ATTEMPTED, repo_url)
@@ -219,20 +245,38 @@ def scan_entry(
             )
         else:
             try:
-                fetched = fetch(SourceSpec.parse(resolution.primary), ws)
+                spec = SourceSpec.parse(resolution.primary)
+                fetched = fetch(spec, ws)
                 root = fetched.scan_root
+                # `fetch_git` falls back to the default branch when neither
+                # version tag resolves, and says so in `ref_matched_version`.
+                # Dropping that published a score for BRANCH-TIP code under the
+                # released version's number, with nothing on the page to say
+                # which revision was actually read — the precise failure
+                # `CLAUDE.md`'s refs/tags rule exists to prevent, reintroduced
+                # one layer up by discarding the signal that detects it.
+                ref_matched = fetched.ref_matched_version
                 availability = SourceAvailability(SourceState.FETCHED, repo_url)
             except Exception as exc:  # noqa: BLE001 - classified, never swallowed
-                availability = from_exception(exc, repo_url)
+                # Attribute the failure to what was actually FETCHED. The
+                # primary may be an npm or PyPI package, and a 404 there says
+                # nothing about the declared repository — which may be healthy,
+                # or may not exist. Blaming it would be a published accusation
+                # about a party we never contacted.
+                from_a_repo = resolution.kind in (SourceKind.GITHUB, SourceKind.GITLAB)
+                attributed = repo_url if from_a_repo else resolution.primary
+                availability = from_exception(exc, attributed)
 
-        return _assemble(entry, resolution, availability, root, scanned_at, version)
+        return _assemble(
+            entry, resolution, availability, root, scanned_at, version, ref_matched
+        )
     finally:
         if owned:
             shutil.rmtree(ws, ignore_errors=True)
 
 
 def _assemble(
-    entry, resolution, availability, root, scanned_at, version
+    entry, resolution, availability, root, scanned_at, version, ref_matched=True
 ) -> ServerReport:
     inventory = enumerate_tree(root) if root is not None else None
 
@@ -267,6 +311,7 @@ def _assemble(
         source_reason=availability.reason,
         transport=transport.declared.value if transport.declared else "",
         transport_mismatch=bool(transport.mismatch),
+        ref_matched_version=ref_matched,
         files_scanned=(code.files_scanned if code else 0),
         files_pruned=(code.pruned if code else 0),
         axes={k: axes[k] for k in AXES},
@@ -329,6 +374,20 @@ def _deps_axis(result, availability) -> AxisScore:
     reason = ""
     scored = len(result.findings) - result.unscored_findings
     weight = "1"
+    if result.findings and scored == 0:
+        # EVERY finding lacked a CVSS. `dependency_axis_score` deducts nothing
+        # from an empty set and returns 100 — a perfect score measured on none
+        # of the vulnerabilities actually found, which is the worst possible
+        # combination: a clean number over known-unassessed risk. It also
+        # violated this report's own invariant that a score carries positive
+        # coverage.
+        return AxisScore(
+            "dependency_health", None,
+            f"{len(result.findings)} vulnerabilit"
+            f"{'y' if len(result.findings) == 1 else 'ies'} were found and none "
+            "carried a CVSS score, so no band in `03` §6 applies to any of them",
+            "0", evidence,
+        )
     if result.unscored_findings:
         plural = "y" if result.unscored_findings == 1 else "ies"
         verb = "is" if result.unscored_findings == 1 else "are"

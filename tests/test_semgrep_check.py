@@ -509,3 +509,50 @@ def test_a_finding_outside_the_scan_root_is_dropped_not_published(
     result = sc.run_semgrep(tree, rules=RULES)
     assert result.status is sc.SemgrepStatus.OK
     assert result.findings == (), "published a finding from outside the scan root"
+
+
+def test_the_ruleset_is_packaged_for_an_installed_worker() -> None:
+    """`rules/` lives at the repo root and the wheel packages only `src/`.
+
+    Without an explicit force-include the ruleset shipped nowhere, so every
+    installed wheel and the worker image — whose Dockerfile copies `src` alone —
+    raised RulesetError before semgrep ran. It worked from a checkout, which was
+    the only place it had ever been run. Verified for real by building a wheel
+    and resolving `rules_root()` inside a venv with no checkout above it; this
+    test guards the config line that makes that possible.
+    """
+    import tomllib
+
+    root = Path(__file__).resolve().parents[1]
+    config = tomllib.loads((root / "pyproject.toml").read_text())
+    include = config["tool"]["hatch"]["build"]["targets"]["wheel"].get("force-include", {})
+    assert include.get("rules") == "mcpwatchman/rules", (
+        "the ruleset is not packaged into the wheel"
+    )
+
+
+def test_a_structured_semgrep_error_does_not_leak_paths_into_the_reason(
+    tree, monkeypatch
+) -> None:
+    """`errors[].type` is not always a string.
+
+    For `PartialParsing` semgrep emits `["PartialParsing", [{"path": "/tmp/…"}]]`,
+    so stringifying it published a Python repr of absolute scratch paths into a
+    field rendered verbatim on the page. Caught by this repo's own leak gate on
+    the regeneration immediately after the fix that introduced it.
+    """
+    payload = json.dumps({
+        "results": [],
+        "errors": [{"type": ["PartialParsing", [
+            {"path": "/tmp/mcpw-scan-abc123/src/x.tsx",  # noqa: S108 - fixture data
+             "start": {"line": 280}}
+        ]]}],
+        "paths": {"scanned": ["server.py"]},
+    })
+    _fake_run(monkeypatch, payload)
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.status is sc.SemgrepStatus.FAILED
+    assert "PartialParsing" in result.reason, "the error kind was lost"
+    assert "/tmp/" not in result.reason  # noqa: S108 - the literal is the needle
+    assert "mcpw-scan" not in result.reason
+    assert "{" not in result.reason, "a raw structure reached a published field"

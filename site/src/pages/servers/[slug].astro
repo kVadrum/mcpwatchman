@@ -58,6 +58,14 @@ const sourceNote =
     </ul>
   </div>
 
+  {report.ref_matched_version === false && (
+    <p class="source-note">
+      No tag matching version {report.version} was found in this repository, so
+      the scan read the default branch instead. The findings below describe that
+      code, not necessarily the released version.
+    </p>
+  )}
+
   {sourceNote && scored.length > 0 && (
     <p class="source-note">{sourceNote}</p>
   )}

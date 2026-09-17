@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.17.1"
+version = "0.18.0"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -76,6 +76,13 @@ mcpwatchman = "mcpwatchman.cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcpwatchman"]
+# The ruleset is DATA the scanner cannot run without, and it lives at the repo
+# root rather than under src/. Packaging only the package meant every installed
+# wheel — and the worker image, whose Dockerfile copies `src` alone — had no
+# `rules/` for `rules_root()` to find, so every Code Safety scan would raise
+# RulesetError before semgrep started. It works from a checkout, which is the
+# only place it had ever been run.
+force-include = { "rules" = "mcpwatchman/rules" }
 
 [tool.ruff]
 target-version = "py312"

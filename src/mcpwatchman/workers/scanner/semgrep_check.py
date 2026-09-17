@@ -187,6 +187,12 @@ def rules_root(start: Path | None = None) -> Path:
         candidate = parent / "rules"
         if candidate.is_dir() and any(_language_configs(candidate)):
             return candidate
+    # The INSTALLED layout: `force-include` puts the ruleset inside the package
+    # as `mcpwatchman/rules`, which is not above this file and so is never
+    # reached by the walk. A checkout finds it above; a wheel finds it here.
+    packaged = Path(__file__).resolve().parents[2] / "rules"
+    if packaged.is_dir() and any(_language_configs(packaged)):
+        return packaged
     raise RulesetError(
         f"no rules/ directory with language rule files found above {here}; "
         "the scanner cannot run without its ruleset"
@@ -404,6 +410,14 @@ def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:
     return tuple(sorted(removed))
 
 
+def _error_kind(error: dict) -> str:
+    """The NAME of a semgrep error, from a `type` that may not be a string."""
+    raw = error.get("type") or error.get("level") or "error"
+    while isinstance(raw, list) and raw:
+        raw = raw[0]
+    return str(raw) if isinstance(raw, str | int | float) else "error"
+
+
 def _excerpt(root: Path, rel_path: str, line: int) -> str:
     """Read ~5 lines of context around a match from OUR copy of the file."""
     # Through `inventory.read_text`, which is the repo's canonical bounded and
@@ -542,14 +556,25 @@ def run_semgrep(
     # parser never got through — the fixtures in this repo's own tests carried
     # `"errors": []` in every payload, so the field was seen and then dropped.
     scan_errors = payload.get("errors") or []
-    if scan_errors and not payload.get("results"):
-        kinds = sorted({str(e.get("type") or e.get("level") or "error") for e in scan_errors})
+    # ⚠ ANY error fails the scan, not only an error with no findings beside it.
+    # The first cut read `and not payload.get("results")`, so one parseable file
+    # producing a finding MASKED another that failed to parse: the axis scored
+    # the findings it happened to get and claimed full coverage over a tree it
+    # could not read. A partial scan is not a scan with a number attached.
+    if scan_errors:
+        # ⚠ `errors[].type` IS NOT ALWAYS A STRING. For `PartialParsing` semgrep
+        # emits `["PartialParsing", [{"path": "/tmp/mcpw-scan-…", …}]]`, so
+        # `str(...)` on it dumped a Python repr of absolute scratch paths into a
+        # field that is published verbatim. Caught by this session's own leak
+        # gate on the very next regeneration. Take the NAME, and redact as a
+        # backstop rather than trusting the extraction to stay correct.
+        kinds = sorted({_error_kind(e) for e in scan_errors})
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
-            reason=(
-                f"semgrep reported {len(scan_errors)} error(s) and no findings "
-                f"({', '.join(kinds)}); a parse or resource failure is not a "
-                "clean result"
+            reason=redact_paths(
+                f"semgrep reported {len(scan_errors)} error(s) "
+                f"({', '.join(kinds)}); a parse or resource failure means the "
+                "tree was not fully read, so any findings are incomplete"
             ),
             files_scanned=scanned,
             neutralised=neutralised,

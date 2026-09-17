@@ -127,6 +127,7 @@ needs_built = pytest.mark.skipif(
 )
 
 
+@needs_built
 def test_llms_txt_follows_the_llmstxt_spec():
     """llmstxt.org: H1 (the only required section), then a blockquote summary,
     then prose WITHOUT headings, then H2 sections containing link lists. An

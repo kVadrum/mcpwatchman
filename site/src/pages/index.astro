@@ -10,10 +10,19 @@ import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
 // Canonical token home — see the file header for why it is not per-page.
 import "../styles/tokens.css";
+import scans from "../data/scans.json";
 
 // Build-time, not hardcoded: a footer year that has to be remembered is a footer
 // year that goes wrong. The site rebuilds on every deploy.
 const year = new Date().getFullYear();
+
+// Derived, never typed. These were computed once and pasted in as literals —
+// 40/29/10 — and the very next data regeneration made them 40/32/8, so the
+// homepage contradicted the server index and llms.txt, both of which derive
+// from this same file. A number a human transcribes is a number that goes
+// stale silently; the other surfaces already knew that.
+const fetchedCount = scans.filter((r) => r.source_state === "fetched").length;
+const unreachableCount = scans.filter((r) => r.source_state === "unreachable").length;
 
 const axes = [
   { name: "Code Safety", weight: 30, reads: "Shell exec in tool handlers, unvalidated URL fetches, unsafe deserialization, path traversal — matched against an MCP-specific semgrep ruleset." },
@@ -157,9 +166,10 @@ const ledger = [
             </p>
             <p class="status-line">
               <span class="pill">First scores</span>
-              <a href="/servers/">40 servers are scanned and published</a>, per axis,
-              with the file and line behind every deduction. 29 shipped source we
-              could read; 10 declare a repository nobody can reach.
+              <a href="/servers/">{scans.length} servers are scanned and published</a>, per
+              axis, with the file and line behind every deduction.
+              {fetchedCount} shipped source we could read; {unreachableCount}
+              declare a repository nobody can reach.
             </p>
           </div>
 

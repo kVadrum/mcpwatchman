@@ -379,3 +379,29 @@ def test_a_repo_supplied_osv_scanner_toml_cannot_suppress_its_own_cves(
         "a repo-supplied config suppressed its own vulnerability"
     )
     assert not (tmp_path / "osv-scanner.toml").exists()
+
+
+def test_an_unparseable_manifest_abstains_rather_than_calling_everything_transitive(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Defaulting the directness dimension is not neutral — it is the LOWER rate.
+
+    `03` §6 deducts less for a transitive finding, so a Rust or Ruby project
+    whose manifest this module cannot parse had every vulnerability labelled
+    transitive and scored kindly, with the axis still claiming full coverage.
+    """
+    (tmp_path / "Cargo.lock").write_text("# lock\n")
+    inv = _inventory(("Cargo.toml", Role.PACKAGE_MANIFEST), ("Cargo.lock", Role.LOCKFILE))
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.UNAVAILABLE
+    assert result.score is None
+    assert "direct-dependency set" in result.reason
+
+
+def test_a_parseable_manifest_still_scores(tmp_path: Path, monkeypatch) -> None:
+    """The negative control for the abstention — it must not swallow npm/PyPI."""
+    (tmp_path / "requirements.txt").write_text("jinja2==2.10\n")
+    inv = _inventory(("requirements.txt", Role.LOCKFILE))
+    assert oc.directness_supported(tmp_path, inv) is True
