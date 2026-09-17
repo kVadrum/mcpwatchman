@@ -342,3 +342,40 @@ def test_the_real_scanner_reports_a_clean_project_as_clean(tmp_path: Path) -> No
     assert result.status is oc.OsvStatus.OK, result.reason
     assert result.findings == ()
     assert result.score == 100
+
+
+@needs_osv
+def test_a_repo_supplied_osv_scanner_toml_cannot_suppress_its_own_cves(
+    tmp_path: Path,
+) -> None:
+    """The `.semgrepignore` hole, one module over — and it was open.
+
+    osv-scanner discovers an `osv-scanner.toml` in the tree it is scanning and
+    honours its `[[IgnoredVulns]]`. The scanned tree is a stranger's
+    repository, so that is a server editing our audit of itself. Measured:
+    6 vulnerability groups became 5 with a single entry.
+
+    `HOSTILE_CONFIG_FILES` lives in `workers.excluded` precisely so this
+    defence is not one scanner's private business; it was semgrep's alone, and
+    the identical hole stayed open here for exactly as long.
+    """
+    (tmp_path / "requirements.txt").write_text("jinja2==2.10\n")
+    inv = _inventory(("requirements.txt", Role.LOCKFILE))
+
+    clean = oc.run_osv(tmp_path, inv)
+    assert clean.status is oc.OsvStatus.OK, clean.reason
+    baseline = {f.osv_id for f in clean.findings}
+    assert baseline, "no findings to suppress — control failed"
+
+    victim = next(iter(baseline))
+    (tmp_path / "osv-scanner.toml").write_text(
+        f'[[IgnoredVulns]]\nid = "{victim}"\nreason = "not applicable"\n'
+    )
+    guarded = oc.run_osv(tmp_path, inv)
+
+    assert guarded.status is oc.OsvStatus.OK, guarded.reason
+    assert guarded.neutralised == ("osv-scanner.toml",)
+    assert {f.osv_id for f in guarded.findings} == baseline, (
+        "a repo-supplied config suppressed its own vulnerability"
+    )
+    assert not (tmp_path / "osv-scanner.toml").exists()

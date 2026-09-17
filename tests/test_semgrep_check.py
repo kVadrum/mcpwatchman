@@ -292,7 +292,10 @@ def test_vendored_trees_are_not_scored(tmp_path: Path) -> None:
     ("server.js", "x" * 900 + "\n", True),       # no human wrote this line
     ("server.js", "const x = 1;\n", False),
     ("README.md", "x" * 900 + "\n", False),      # prose wraps long; not code
-    ("data-abc7f01d.json", "{}\n", True),        # hashed artifact, any suffix
+    # ⚠ WAS `True`, with the comment "hashed artifact, any suffix". That
+    # any-suffix behaviour is exactly the defect: it let a hex tail prune
+    # `tools-deadbeef.py`. Minification is a property of web assets.
+    ("data-abc7f01d.json", "{}\n", False),
 ])
 def test_minification_detection(tmp_path: Path, name, body, minified) -> None:
     path = tmp_path / name
@@ -300,18 +303,42 @@ def test_minification_detection(tmp_path: Path, name, body, minified) -> None:
     assert sc._is_minified(path) is minified
 
 
-def test_pruning_does_not_trip_the_zero_scanned_control(tmp_path, monkeypatch) -> None:
-    """A tree that is ALL vendored legitimately scans nothing.
+def test_scanning_nothing_is_a_failure_even_when_paths_were_pruned(
+    tmp_path, monkeypatch
+) -> None:
+    """⚠ REPLACES a test that asserted the control's own weakening as intended.
 
-    The control exists to catch a scanner that looked at nothing it should have
-    looked at; it must not fire when there was correctly nothing left to read.
+    The old version subtracted the prune count from the inventory's source
+    count, and built an inventory claiming a Python file while the only file
+    lived in `node_modules/` — a state `enumerate_tree` cannot produce, since it
+    skips EXCLUDED_DIRS outright. So it locked in a comparison between two
+    disjoint sets, and because every git clone prunes `.git`, the control
+    silently stopped firing for any small server. Seven of forty published
+    servers were in that state.
+
+    The genuinely-all-vendored case needs no subtraction: `assess_code_safety`
+    returns UNAVAILABLE before semgrep runs at all.
     """
     (tmp_path / "node_modules").mkdir()
     (tmp_path / "node_modules" / "a.py").write_text("eval(x)\n")
+    (tmp_path / "server.py").write_text("print('hi')\n")
     _fake_run(monkeypatch, _payload([], scanned=()))
     result = sc.run_semgrep(tmp_path, rules=RULES, inventory=_inventory(Language.PYTHON))
-    assert result.status is sc.SemgrepStatus.OK
+    assert result.status is sc.SemgrepStatus.FAILED, (
+        "semgrep opened nothing while the inventory held covered source"
+    )
+    assert result.score is None
     assert result.pruned == 1
+
+
+def test_a_server_with_only_vendored_code_never_reaches_semgrep() -> None:
+    """The other half: the all-vendored case is caught upstream, not by the control."""
+    result = sc.assess_code_safety(Path("/nonexistent"), _inventory())
+    assert result.status is sc.SemgrepStatus.UNAVAILABLE
+    assert result.score is None
+
+
+# --- what a scanned repository can do to the prune step -------------------
 
 
 def test_a_symlinked_vendor_tree_cannot_evade_the_prune(tmp_path: Path) -> None:
@@ -320,8 +347,6 @@ def test_a_symlinked_vendor_tree_cannot_evade_the_prune(tmp_path: Path) -> None:
     `shutil.rmtree` REFUSES to act on a symlink, and with `ignore_errors=True`
     it refuses silently — so a repository shipping `node_modules` as a symlink
     was counted as excluded while staying fully present and fully scannable.
-    Same family as the `.semgrepignore` evasion: repo-controlled input defeating
-    the scanner while the scanner reports success.
     """
     outside = tmp_path / "outside"
     outside.mkdir()
@@ -334,10 +359,9 @@ def test_a_symlinked_vendor_tree_cannot_evade_the_prune(tmp_path: Path) -> None:
     pruned, sample = _prune_unscannable(root)
 
     assert not (root / "node_modules").is_symlink(), "the link survived the prune"
-    assert not (root / "node_modules").exists()
     assert pruned == 1 and sample == ("node_modules/",)
-    # We remove the LINK, never its target: deleting outside the scratch copy on
-    # a stranger's instruction is the worse bug of the two.
+    # We remove the LINK, never its target: deleting outside the scratch copy
+    # on a stranger's instruction is the worse of the two bugs.
     assert (outside / "vendored.js").exists(), "the prune escaped the scan root"
     assert (root / "server.py").exists()
 
@@ -345,12 +369,7 @@ def test_a_symlinked_vendor_tree_cannot_evade_the_prune(tmp_path: Path) -> None:
 def test_the_prune_count_never_includes_something_it_failed_to_remove(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """The count is published verbatim on the server's page.
-
-    Before the fix it was incremented before the removal was attempted, so a
-    silent `rmtree` refusal produced a page saying N paths were excluded when
-    none were.
-    """
+    """The count is published verbatim on the server's page."""
     root = tmp_path / "scan"
     (root / "node_modules").mkdir(parents=True)
     (root / "node_modules" / "dep.js").write_text("eval(x)\n")
@@ -364,30 +383,24 @@ def test_the_prune_count_never_includes_something_it_failed_to_remove(
 
 
 def test_a_symlinked_file_is_never_read_while_hunting_for_minified_files(
-    tmp_path: Path
+    tmp_path: Path,
 ) -> None:
     """`_is_minified` OPENS what it is handed, and `is_file()` follows symlinks.
 
-    The motivating hazard is a FIFO reached through a symlink: `open()` on it
-    blocks the worker forever, and the scanned tree is a stranger's repository.
-    A FIFO makes a poor regression test — it asserts by hanging — so the
-    control here is the same property made deterministic: a symlink pointing at
-    a genuinely minified file OUTSIDE the scan root. Before the fix it was
-    followed, read, and counted; now nothing reads through a link at all.
+    The motivating hazard is a FIFO reached through a symlink — `open()` blocks
+    the worker forever. A FIFO asserts by hanging, so the control here is the
+    same property made deterministic: a link to a genuinely minified file
+    outside the root, named so no NAME heuristic can answer without reading.
 
-    ⚠ The first version of this test named the link `link.min.js`, which
-    `_is_minified` answers from the NAME without opening anything — so it
-    passed identically with and without the fix. It was green for the wrong
-    reason, which is the failure `/qa` §3b exists to catch.
+    ⚠ The first version named it `link.min.js`, which `_is_minified` answers
+    from the name without opening anything, so it passed with and without the
+    fix — green for the wrong reason, which `/qa` §3b exists to catch.
     """
     outside = tmp_path / "outside"
     outside.mkdir()
     (outside / "real.js").write_text("!function(e){" + "var x=1;" * 200 + "}\n")
-
     root = tmp_path / "scan"
     root.mkdir()
-    # A name none of the NAME heuristics match, so reaching a verdict requires
-    # opening the file — which is the behaviour under test.
     (root / "payload.js").symlink_to(outside / "real.js")
     (root / "server.py").write_text("print('hi')\n")
 
@@ -397,4 +410,102 @@ def test_a_symlinked_file_is_never_read_while_hunting_for_minified_files(
     assert sample == ()
     assert (root / "payload.js").is_symlink(), "acted on a symlink"
     assert (outside / "real.js").exists()
-    assert (root / "server.py").exists()
+
+
+# --- evasions a scanned repository can attempt ----------------------------
+
+
+@pytest.mark.skipif(
+    __import__("shutil").which("semgrep") is None,
+    reason="semgrep lives in the `workers` extra",
+)
+def test_an_inline_nosemgrep_comment_cannot_suppress_a_finding(tmp_path: Path) -> None:
+    """The third door in the same room as `.semgrepignore`, and it was open.
+
+    semgrep honours inline `nosem` / `# nosemgrep` comments BY DEFAULT, so a
+    hostile server suppressed its own shell-injection finding with a comment,
+    kept a non-empty `paths.scanned` so the positive control passed, and
+    published Code Safety 100. A deleted config FILE cannot reach a comment
+    inside a source line.
+
+    Carries its own negative control: the identical code without the comment
+    must be flagged, or this proves only that the rule is broken.
+    """
+    (tmp_path / "suppressed.py").write_text(
+        "import subprocess\n"
+        "def run(user_arg):\n"
+        '    subprocess.run(f"cat {user_arg}", shell=True)  # nosemgrep\n'
+    )
+    (tmp_path / "honest.py").write_text(
+        "import subprocess\n"
+        "def run(user_arg):\n"
+        '    subprocess.run(f"cat {user_arg}", shell=True)\n'
+    )
+    result = sc.run_semgrep(tmp_path, rules=RULES)
+    assert result.status is sc.SemgrepStatus.OK, result.reason
+    flagged = {f.path for f in result.findings}
+    assert "honest.py" in flagged, "the rule itself does not fire — control failed"
+    assert "suppressed.py" in flagged, "a comment suppressed a finding"
+
+
+@pytest.mark.parametrize("name", [
+    "tools-deadbeef.py",      # a hex tail is a bundler hash only on a web asset
+    "handler-abcdef12.go",
+    "settings.minimal.py",    # `.min` as a SUBSTRING caught an ordinary word
+    "config.minimal.json",
+    "history.mine.ts",
+])
+def test_source_is_not_pruned_by_a_name_rule_meant_for_web_assets(
+    tmp_path: Path, name
+) -> None:
+    """A stranger could choose which of their own files we read.
+
+    Both name heuristics ran BEFORE the extension gate, so they applied to
+    every file in the tree: a server naming its shell-injection module
+    `tools-deadbeef.py` had it deleted before semgrep ran, and an honest repo's
+    `settings.minimal.py` was dropped and reported as a generated bundle.
+    """
+    path = tmp_path / name
+    path.write_text("x = 1\n")
+    assert sc._is_minified(path) is False
+
+
+@pytest.mark.parametrize("name", ["app.min.js", "vendor.bundle.js", "book-a0b12cfe.js"])
+def test_real_web_bundles_are_still_pruned(tmp_path: Path, name) -> None:
+    """The negative control for the test above — the narrowing must not gut it."""
+    path = tmp_path / name
+    path.write_text("x=1\n")
+    assert sc._is_minified(path) is True
+
+
+def test_semgrep_errors_without_findings_are_a_failure_not_a_clean_scan(
+    tree, monkeypatch
+) -> None:
+    """semgrep exits 0 with valid JSON while reporting parse/OOM failures."""
+    payload = json.dumps({
+        "results": [],
+        "errors": [{"type": "SourceParseError", "level": "warn"}],
+        "paths": {"scanned": ["server.py"]},
+    })
+    _fake_run(monkeypatch, payload)
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.status is sc.SemgrepStatus.FAILED
+    assert result.score is None
+    assert "SourceParseError" in result.reason
+
+
+def test_a_finding_outside_the_scan_root_is_dropped_not_published(
+    tree, monkeypatch
+) -> None:
+    """The `else path` fallback passed an ABSOLUTE path through.
+
+    `root / "/etc/passwd"` is `/etc/passwd`, so the excerpt reader would have
+    published five lines of it while the evidence path carried a local
+    filesystem path onto the page.
+    """
+    _fake_run(monkeypatch, _payload([
+        _result("mcp-python-pickle-loads", path="/etc/passwd", line=1)
+    ]))
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.status is sc.SemgrepStatus.OK
+    assert result.findings == (), "published a finding from outside the scan root"

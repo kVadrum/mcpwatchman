@@ -52,8 +52,14 @@ from pathlib import Path
 
 import yaml
 
-from mcpwatchman.workers.excluded import EXCLUDED_DIRS
-from mcpwatchman.workers.scanner.inventory import Inventory, Language, Role
+from mcpwatchman.workers.excluded import EXCLUDED_DIRS, HOSTILE_CONFIG_FILES
+from mcpwatchman.workers.scanner.inventory import (
+    Inventory,
+    Language,
+    Role,
+    read_text,
+)
+from mcpwatchman.workers.scanner.reachability import redact_paths
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
     Confidence,
@@ -74,10 +80,6 @@ SEMGREP_MAX_MEMORY_MB = 2048
 
 # Lines of context quoted with each finding (`03` §3: "~5 lines").
 EVIDENCE_CONTEXT_LINES = 2
-
-# Scanner configuration a scanned repository may not supply. See the module
-# docstring: these are the files that let a repo decide what we look at.
-HOSTILE_CONFIG_FILES = (".semgrepignore",)
 
 # A line this long in a web asset means the file is machine-generated: minified,
 # bundled, or both. 500 is comfortably above hand-written code (this repository
@@ -290,15 +292,28 @@ def _is_minified(path: Path) -> bool:
     content hash before the extension, which is what every bundler emits), or a
     line long enough that no human wrote it.
     """
+    # ⚠ THE EXTENSION GATE COMES FIRST, and it used to come last.
+    # Both name rules ran before it, so they applied to EVERY file in the tree
+    # — and that handed a stranger control over which of their own files we
+    # read. Measured: `tools-deadbeef.py`, `handler-abcdef12.go` and
+    # `settings.minimal.py` were all deleted from the scratch copy before
+    # semgrep ran. A server could name its shell-injection module
+    # `tools-deadbeef.py` and be scored on source nobody opened; an honest repo
+    # with `settings.minimal.py` had it dropped and reported as a
+    # machine-generated bundle. Minification is a property of web assets, so
+    # the question is only ever asked about one.
+    if path.suffix.lower() not in _MINIFIABLE_SUFFIXES:
+        return False
     stem = path.stem.lower()
-    if ".min" in stem or ".bundle" in stem or ".chunk" in stem:
+    # Dotted COMPONENTS, not substrings: `".min" in stem` also matched
+    # `.minimal`, `.mine` and `.minify`, which are ordinary words.
+    parts = set(stem.split("."))
+    if parts & {"min", "bundle", "chunk"}:
         return True
     # `highlight-abc7f01d.js`, `book-a0b12cfe.js` — bundler content hashes.
     tail = stem.rsplit("-", 1)[-1] if "-" in stem else ""
     if len(tail) >= 8 and all(c in "0123456789abcdef" for c in tail):
         return True
-    if path.suffix.lower() not in _MINIFIABLE_SUFFIXES:
-        return False
     try:
         head = path.open("rb").read(_MINIFIED_PROBE_BYTES)
     except OSError:
@@ -391,9 +406,15 @@ def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:
 
 def _excerpt(root: Path, rel_path: str, line: int) -> str:
     """Read ~5 lines of context around a match from OUR copy of the file."""
+    # Through `inventory.read_text`, which is the repo's canonical bounded and
+    # CONFINED reader — it refuses an escape, a symlink and an oversized file,
+    # and its own docstring says the check modules do not open files
+    # themselves. Reading directly here made this the sixth path walking
+    # attacker-controlled input with none of those refusals, and `CLAUDE.md`
+    # says a bound added to one is owed to the others.
     try:
-        text = (root / rel_path).read_text(encoding="utf-8", errors="replace")
-    except OSError:
+        text = read_text(root, rel_path)
+    except (OSError, ValueError):
         return ""
     lines = text.splitlines()
     lo = max(0, line - 1 - EVIDENCE_CONTEXT_LINES)
@@ -438,7 +459,17 @@ def run_semgrep(
     neutralised = _neutralise_hostile_config(root)
     pruned_count, pruned_sample = _prune_unscannable(root)
 
+    # `--disable-nosem` is the third door in the same room as `.semgrepignore`
+    # and `--no-git-ignore`, and it was open. semgrep honours inline `nosem` /
+    # `# nosemgrep` comments BY DEFAULT, and the scanned tree is a stranger's
+    # repository: one comment on the offending line suppresses the finding, the
+    # scan still reports files scanned, and Code Safety publishes 100.
+    # Measured with a negative control — `subprocess.run(f"cat {arg}",
+    # shell=True)  # nosemgrep` is invisible by default and flagged with this
+    # flag. A deleted config FILE cannot reach a comment inside a source line,
+    # so neutralising `.semgrepignore` never touched this.
     cmd = ["semgrep", "scan", "--json", "--quiet", "--no-git-ignore",
+           "--disable-nosem",
            "--max-memory", str(SEMGREP_MAX_MEMORY_MB), "--timeout", "0"]
     for config in configs:
         cmd += ["--config", str(config)]
@@ -466,16 +497,29 @@ def run_semgrep(
         # repository is how a broken scanner publishes a perfect score.
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
-            reason=f"semgrep produced no JSON (exit {proc.returncode}): "
-                   f"{proc.stderr.strip()[:200]}",
+            # Redacted at CONSTRUCTION: this string reaches the public page,
+            # and subprocess stderr routinely names our scratch directory.
+            reason=redact_paths(
+                f"semgrep produced no JSON (exit {proc.returncode}): "
+                f"{proc.stderr.strip()[:200]}"
+            ),
             neutralised=neutralised,
             pruned=pruned_count,
             pruned_sample=pruned_sample,
         )
 
     scanned = len(payload.get("paths", {}).get("scanned", []))
-    if (inventory is not None and scanned == 0
-            and _scannable_source_files(inventory) > pruned_count):
+    # ⚠ NO SUBTRACTION. This read `> pruned_count`, which compared two DISJOINT
+    # sets: `_scannable_source_files` counts from the inventory, and
+    # `enumerate_tree` already skips EXCLUDED_DIRS, so it can never count a
+    # file that pruning removes. Every git clone prunes `.git`, so
+    # `pruned_count >= 1` always — and for a small server (one covered source
+    # file, one pruned path) `1 > 1` is False and the control silently did not
+    # fire. Seven of the forty published servers were in exactly that state.
+    # The genuinely-all-vendored case does not need the subtraction: it is
+    # caught upstream in `assess_code_safety`, which returns UNAVAILABLE before
+    # semgrep is invoked at all.
+    if inventory is not None and scanned == 0 and _scannable_source_files(inventory):
         # The positive control, wired in rather than left to a test: the
         # inventory says there was source in a language we cover, and semgrep
         # looked at nothing. That is a scanner defect, and reporting it as a
@@ -487,6 +531,27 @@ def run_semgrep(
                 f"{_scannable_source_files(inventory)} source file(s) in a "
                 "covered language"
             ),
+            neutralised=neutralised,
+            pruned=pruned_count,
+            pruned_sample=pruned_sample,
+        )
+
+    # semgrep reports per-target parse failures, per-rule timeouts and OOM kills
+    # in `errors[]` while still exiting 0 with valid JSON and `results: []`. Read
+    # as "no findings" that publishes 100 for a repo whose covered source the
+    # parser never got through — the fixtures in this repo's own tests carried
+    # `"errors": []` in every payload, so the field was seen and then dropped.
+    scan_errors = payload.get("errors") or []
+    if scan_errors and not payload.get("results"):
+        kinds = sorted({str(e.get("type") or e.get("level") or "error") for e in scan_errors})
+        return SemgrepResult(
+            status=SemgrepStatus.FAILED,
+            reason=(
+                f"semgrep reported {len(scan_errors)} error(s) and no findings "
+                f"({', '.join(kinds)}); a parse or resource failure is not a "
+                "clean result"
+            ),
+            files_scanned=scanned,
             neutralised=neutralised,
             pruned=pruned_count,
             pruned_sample=pruned_sample,
@@ -507,8 +572,25 @@ def run_semgrep(
         effective = declared if order.index(declared) <= order.index(ceiling) else ceiling
         extra = result.get("extra", {})
         meta = extra.get("metadata", {}) or {}
-        path = result.get("path", "")
-        rel = str(Path(path).relative_to(root)) if Path(path).is_relative_to(root) else path
+        # FAIL CLOSED, but resolve first — semgrep reports a path relative to
+        # the target when the target is relative, and absolute when it is not.
+        # The old `else path` branch passed an absolute path straight through,
+        # and `root / "/etc/passwd"` is `/etc/passwd`, so the excerpt reader
+        # would have published five lines of it while `Evidence.path` carried a
+        # local filesystem path onto the page.
+        #
+        # ⚠ The first cut of this guard tested `is_relative_to` on the RAW
+        # value, which is False for every relative path — it would have dropped
+        # every finding from any run where semgrep reported relative paths, and
+        # an empty finding set is a clean 100. Caught by four existing tests
+        # whose fixtures use relative paths, which is the shape a real run can
+        # produce.
+        raw = Path(result.get("path", ""))
+        candidate = raw if raw.is_absolute() else root / raw
+        try:
+            rel = str(candidate.resolve().relative_to(root.resolve()))
+        except ValueError:
+            continue
         line = int(result.get("start", {}).get("line", 0))
         findings.append(
             CodeFinding(

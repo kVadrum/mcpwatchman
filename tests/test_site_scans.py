@@ -182,14 +182,26 @@ def test_no_published_field_carries_a_local_filesystem_path(reports) -> None:
     Tier C — strip them on a public surface — and every byte of this file is
     served to the internet.
 
-    ⚠ The first version of this check grepped for `/home/kv` and `/tmp/claude`
-    and reported clean, because the leaking prefix was `/tmp/mcpw-scan-`. A
-    pattern that cannot express its target returns a zero it did not earn.
+    ⚠ The first version grepped for `/home/kv` and `/tmp/claude` and reported
+    clean, because the leaking prefix was `/tmp/mcpw-scan-`. A pattern that
+    cannot express its target returns a zero it did not earn.
+
+    ⚠ The second version grepped the WHOLE FILE, which includes `excerpt` —
+    five lines of a stranger's source. An honest repo with `/home/` in a code
+    comment would have failed our publish gate for something it is entitled to
+    contain. The gate belongs on the fields WE write, not on quoted evidence.
     """
-    blob = DATA.read_text()
-    # noqa S108: these literals are needles searched FOR, not paths opened.
-    for marker in ("/tmp/", "/home/", "/Users/", "/var/folders/", "mcpw-scan"):  # noqa: S108
-        assert marker not in blob, f"published data carries a local path: {marker}"
+    ours = ("source_reason", "reason")
+    markers = ("/tmp/", "/home/", "/Users/", "/var/folders/", "mcpw-scan")  # noqa: S108
+    for report in reports:
+        fields = [(k, report[k]) for k in ours if isinstance(report.get(k), str)]
+        for axis, entry in report["axes"].items():
+            fields.append((f"{axis}.reason", entry["reason"]))
+        for name, value in fields:
+            for marker in markers:
+                assert marker not in value, (
+                    f"{report['name']}/{name} carries a local path: {marker}"
+                )
 
 
 def test_finding_paths_are_relative_to_the_scanned_tree(reports) -> None:

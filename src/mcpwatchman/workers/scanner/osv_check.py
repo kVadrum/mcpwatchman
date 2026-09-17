@@ -55,7 +55,9 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from pathlib import Path
 
+from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import Inventory, Role
+from mcpwatchman.workers.scanner.reachability import redact_paths
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
     Severity,
@@ -139,6 +141,7 @@ class OsvResult:
     transitive_coverage: bool = False
     lockfiles: tuple[str, ...] = ()
     unscored_findings: int = 0
+    neutralised: tuple[str, ...] = ()
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
 
@@ -301,6 +304,13 @@ def run_osv(
             methodology_version=version,
         )
 
+    # A scanned repository can suppress its own vulnerabilities: osv-scanner
+    # discovers an `osv-scanner.toml` in the tree it is scanning and honours
+    # its `[[IgnoredVulns]]`. Measured — 6 groups became 5 with one entry. The
+    # same shape as semgrep's `.semgrepignore`, which is why the list is shared
+    # rather than restated. `root` is a scratch copy we own.
+    neutralised = _neutralise_hostile_config(root)
+
     cmd = [binary, "scan", "source", "--format", "json", "-r", str(root)]
     try:
         proc = subprocess.run(  # noqa: S603 - argv form, no shell, fixed binary
@@ -317,8 +327,13 @@ def run_osv(
     if proc.returncode not in _OK_RETURNCODES:
         return OsvResult(
             status=OsvStatus.FAILED,
-            reason=f"osv-scanner exited {proc.returncode}: "
-                   f"{(proc.stderr or proc.stdout).strip()[:200]}",
+            # Redacted at CONSTRUCTION: osv-scanner's own 127 message is
+            # literally `open /tmp/mcpw-scan-…: no such file or directory`,
+            # which is the exact string that produced v0.16.1.
+            reason=redact_paths(
+                f"osv-scanner exited {proc.returncode}: "
+                f"{(proc.stderr or proc.stdout).strip()[:200]}"
+            ),
             lockfiles=lockfiles,
             methodology_version=version,
         )
@@ -379,8 +394,28 @@ def run_osv(
         transitive_coverage=bool(lockfiles),
         lockfiles=lockfiles,
         unscored_findings=unscored,
+        neutralised=neutralised,
         methodology_version=version,
     )
+
+
+def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:
+    """Remove scanner configuration the scanned repository supplied.
+
+    Mirrors `semgrep_check._neutralise_hostile_config` deliberately: both read
+    the one shared `HOSTILE_CONFIG_FILES` list, so a new scanner-config file
+    added there defends both scanners at once.
+    """
+    removed: list[str] = []
+    for name in HOSTILE_CONFIG_FILES:
+        for path in root.rglob(name):
+            # A symlink counts: following it is not required to remove it,
+            # and leaving it would leave the config discoverable.
+            if not (path.is_symlink() or path.is_file()):
+                continue
+            path.unlink(missing_ok=True)
+            removed.append(str(path.relative_to(root)))
+    return tuple(sorted(removed))
 
 
 def _as_decimal(value: object) -> Decimal | None:

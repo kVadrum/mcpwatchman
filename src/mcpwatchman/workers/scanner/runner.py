@@ -45,6 +45,7 @@ from mcpwatchman.workers.scanner.source import SourceSpec, fetch
 from mcpwatchman.workers.scanner.transparency_check import assess_transparency
 from mcpwatchman.workers.scanner.transport_check import assess_transport
 from mcpwatchman.workers.scoring.axes import AxisResult
+from mcpwatchman.workers.scoring.composite import dec
 from mcpwatchman.workers.scoring.weights import (
     CURRENT_METHODOLOGY_VERSION,
     composite_published,
@@ -291,10 +292,12 @@ def _code_axis(result, availability) -> AxisScore:
     if result.pruned:
         # Rendered, never silent. A reader comparing two servers deserves to
         # know that one shipped 245 files and was scored on a dozen of them.
+        plural = "" if result.pruned == 1 else "s"
+        verb = "was" if result.pruned == 1 else "were"
         reason = (
-            f"{result.pruned} vendored or minified path"
-            f"{'' if result.pruned == 1 else 's'} were excluded before scanning; "
-            "machine-generated bundles are not the server's own code"
+            f"{result.pruned} vendored or minified path{plural} {verb} excluded "
+            "before scanning; machine-generated bundles are not the server's "
+            "own code"
         )
     return AxisScore("code_safety", result.score, reason, "1", evidence)
 
@@ -317,14 +320,24 @@ def _deps_axis(result, availability) -> AxisScore:
         )
         for f in result.findings
     )
+    # ⚠ `assessed_weight` was hardcoded "1" here, which is the one field the
+    # whole product promises not to overstate. A vulnerability excluded from
+    # the arithmetic for want of a CVSS is precisely the "of what we could
+    # measure" case — narrating it in prose while the meter drew a fully
+    # measured axis is the misreading `AxisMeter` exists to prevent, and the
+    # site's own "partly-measured" tally counted these servers as complete.
     reason = ""
+    scored = len(result.findings) - result.unscored_findings
+    weight = "1"
     if result.unscored_findings:
+        plural = "y" if result.unscored_findings == 1 else "ies"
+        verb = "is" if result.unscored_findings == 1 else "are"
         reason = (
-            f"{result.unscored_findings} vulnerabilit"
-            f"{'y' if result.unscored_findings == 1 else 'ies'} carried no CVSS "
-            "score and are listed but not scored"
+            f"{result.unscored_findings} vulnerabilit{plural} carried no CVSS "
+            f"score and {verb} listed but not scored"
         )
-    return AxisScore("dependency_health", result.score, reason, "1", evidence)
+        weight = _fmt(dec(scored) / dec(len(result.findings)))
+    return AxisScore("dependency_health", result.score, reason, weight, evidence)
 
 
 __all__ = ["AXES", "AxisScore", "Evidence", "ServerReport", "scan_entry", "slugify"]
