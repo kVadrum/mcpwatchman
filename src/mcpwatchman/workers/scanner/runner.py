@@ -117,10 +117,14 @@ class ServerReport:
     source_reason: str = ""
     transport: str = ""
     transport_mismatch: bool = False
-    # False when neither version tag resolved and `fetch_git` fell back to
-    # the default branch. Published, because otherwise the page shows the
-    # released version's number over a score computed from branch-tip code.
-    ref_matched_version: bool = True
+    # False when neither version tag resolved and `fetch_git` fell back to the
+    # default branch; **None when nothing was fetched at all.**
+    #
+    # ⚠ It defaulted to `True`, so 7 of 40 published servers asserted "this IS
+    # the released version" about a revision nobody read — an affirmative claim
+    # on a path that never established it. The page hides the field when true;
+    # the JSON API, a primary surface, serves it verbatim.
+    ref_matched_version: bool | None = None
     files_scanned: int = 0
     files_pruned: int = 0
     axes: dict[str, AxisScore] = field(default_factory=dict)
@@ -250,7 +254,7 @@ def scan_entry(
     # and the one place that difference bites is `shutil.rmtree`, which would
     # be handed None only if the invariant were ever broken.
     ws = workspace if workspace is not None else Path(tempfile.mkdtemp(prefix="mcpw-scan-"))
-    ref_matched = True
+    ref_matched: bool | None = None
     owned = workspace is None
 
     availability = SourceAvailability(SourceState.NOT_ATTEMPTED, repo_url)
@@ -294,7 +298,7 @@ def scan_entry(
 
 
 def _assemble(
-    entry, resolution, availability, root, scanned_at, version, ref_matched=True
+    entry, resolution, availability, root, scanned_at, version, ref_matched=None
 ) -> ServerReport:
     inventory = enumerate_tree(root) if root is not None else None
 
@@ -362,7 +366,16 @@ def _code_axis(result, availability) -> AxisScore:
             "before scanning; machine-generated bundles are not the server's "
             "own code"
         )
-    return AxisScore("code_safety", result.score, reason, "1", evidence)
+    if result.files_unparsed:
+        note = (
+            f"{result.files_unparsed} file"
+            f"{'' if result.files_unparsed == 1 else 's'} could not be parsed "
+            f"and {'was' if result.files_unparsed == 1 else 'were'} not scanned"
+        )
+        reason = f"{reason}; {note}" if reason else note
+    return AxisScore(
+        "code_safety", result.score, reason, result.assessed_weight, evidence
+    )
 
 
 def _deps_axis(result, availability) -> AxisScore:
@@ -402,16 +415,17 @@ def _deps_axis(result, availability) -> AxisScore:
         return AxisScore(
             "dependency_health", None,
             f"{len(result.findings)} vulnerabilit"
-            f"{'y' if len(result.findings) == 1 else 'ies'} were found and none "
-            "carried a CVSS score, so no band in `03` §6 applies to any of them",
+            f"{'y was' if len(result.findings) == 1 else 'ies were'} found and "
+            "none could be placed in `03` §6's table — no CVSS score, or an "
+            "ecosystem whose manifest we cannot parse for direct-vs-transitive",
             "0", evidence,
         )
     if result.unscored_findings:
         plural = "y" if result.unscored_findings == 1 else "ies"
         verb = "is" if result.unscored_findings == 1 else "are"
         reason = (
-            f"{result.unscored_findings} vulnerabilit{plural} carried no CVSS "
-            f"score and {verb} listed but not scored"
+            f"{result.unscored_findings} vulnerabilit{plural} could not be "
+            f"placed in `03` §6's table and {verb} listed but not scored"
         )
         weight = _fmt(dec(scored) / dec(len(result.findings)))
     return AxisScore("dependency_health", result.score, reason, weight, evidence)

@@ -111,7 +111,9 @@ class DependencyFinding:
     osv_id: str
     severity: Severity | None
     cvss: Decimal | None
-    direct: bool
+    # None = the ecosystem's manifest is one we cannot parse, so directness
+    # is UNKNOWN. Not a synonym for transitive — see `parsed_ecosystems`.
+    direct: bool | None
     lockfile: str
     fixed_version: str = ""
     cve_id: str = ""
@@ -119,14 +121,27 @@ class DependencyFinding:
 
     @property
     def scored(self) -> bool:
-        """False when no CVSS was published, so no band applies."""
-        return self.severity is not None
+        """False when the finding cannot be placed in `03` §6's table.
+
+        Two independent ways that happens: no CVSS was published, so no
+        severity band applies; or the ecosystem's manifest is one we cannot
+        parse, so we do not know whether the dependency is direct. Either
+        leaves a cell of the table undetermined, and `03` §6 gives no value
+        for an undetermined cell.
+        """
+        return self.severity is not None and self.direct is not None
 
     def deduction(self) -> int:
         if self.severity is None:
             raise ValueError(
                 f"{self.osv_id} has no CVSS score and therefore no band in "
                 "`03` §6; it must be excluded from scoring, not deducted"
+            )
+        if self.direct is None:
+            raise ValueError(
+                f"{self.osv_id} is in an ecosystem whose manifest we cannot "
+                "parse, so direct-vs-transitive is unknown and `03` §6 has no "
+                "row for it; exclude it rather than assuming transitive"
             )
         return DEDUCTIONS[self.severity]["direct" if self.direct else "transitive"]
 
@@ -185,11 +200,15 @@ def dependency_axis_score(findings: list[DependencyFinding] | tuple[DependencyFi
     """
     by_severity: dict[Severity, list[int]] = {}
     for f in findings:
-        # Narrowed on the FIELD rather than on `f.scored`, which says the same
+        # Narrowed on the FIELDS rather than on `f.scored`, which says the same
         # thing but through a property a type checker cannot see through. The
-        # guard is load-bearing — `deduction()` raises on an unscored finding —
-        # so it should be checkable rather than merely correct today.
-        if f.severity is None:
+        # guard is load-bearing — `deduction()` raises on either undetermined
+        # cell — so it should be checkable rather than merely correct today.
+        #
+        # `direct is None` means the ecosystem's manifest is one we cannot
+        # parse. Excluded, never defaulted: `transitive` is the LOWER deduction,
+        # so defaulting would score the ecosystems we support least the kindest.
+        if f.severity is None or f.direct is None:
             continue
         by_severity.setdefault(f.severity, []).append(f.deduction())
     total = stacked_deduction(by_severity.values())
@@ -211,33 +230,30 @@ def _requirements_names(text: str) -> set[str]:
     return names
 
 
-# Manifests whose dependency tables this module can actually parse. A format
-# absent here is one where we cannot tell direct from transitive at all.
-_PARSEABLE_MANIFESTS = frozenset(
-    {"package.json", "pyproject.toml", "requirements.txt", "go.mod"}
-)
-# Manifests `inventory` recognises and OSV reports on, which this module does
-# NOT parse. Their presence means the directness split is unsupported, not that
-# every dependency is transitive.
-_UNPARSEABLE_MANIFESTS = frozenset(
-    {"Cargo.toml", "Cargo.lock", "Gemfile", "Gemfile.lock", "poetry.lock"}
-)
+# Which OSV ecosystem each manifest lets us recover a DIRECT set for. The
+# mapping is the point: directness is a fact about an ecosystem, not about a
+# repository, and the first version of this guard tested repository filenames.
+#
+# ⚠ That version could not fire for Poetry — the ecosystem its own published
+# reason named to the reader. `poetry.lock` only matters when `pyproject.toml`
+# is absent, and Poetry cannot produce a lock without one, so the condition was
+# unreachable by construction; meanwhile the parser read only PEP 621
+# `[project].dependencies` and never `[tool.poetry.dependencies]`, so every
+# Poetry project's findings were labelled transitive at the LOWER `03` §6 rate.
+# It was also defeated by any `package.json` anywhere in the tree — a `www/`
+# demo was enough to make a Rust repo "supported".
+_MANIFEST_ECOSYSTEM: dict[str, str] = {
+    "package.json": "npm",
+    "pyproject.toml": "PyPI",
+    "requirements.txt": "PyPI",
+    "go.mod": "Go",
+}
 
 
-def directness_supported(root: Path, inventory: Inventory) -> bool:
-    """Whether the manifests present are ones we can read a direct set from.
-
-    ⚠ An unparseable manifest must not silently mean "no direct dependencies".
-    `03` §6 deducts LESS for a transitive finding, so a Rust or Ruby project
-    whose manifest this module cannot read had every one of its vulnerabilities
-    labelled transitive and scored at the lower rate — a systematically kinder
-    score for the ecosystems we support least, published with no coverage
-    caveat at all.
-    """
+def parsed_ecosystems(inventory: Inventory) -> set[str]:
+    """OSV ecosystems whose direct-dependency set this module can recover."""
     names = {Path(f.path).name for f in inventory.files}
-    if names & _PARSEABLE_MANIFESTS:
-        return True
-    return not (names & _UNPARSEABLE_MANIFESTS)
+    return {eco for name, eco in _MANIFEST_ECOSYSTEM.items() if name in names}
 
 
 def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
@@ -264,9 +280,11 @@ def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
         # of it is two allocations of a size the publisher chooses. Same rule
         # `_excerpt` was moved onto: a bound added to one hostile-input reader
         # is owed to the others.
-        try:
-            text = read_manifest(root, record.path)
-        except (OSError, ValueError):
+        # `read_manifest` returns "" on refusal rather than raising, so an
+        # over-cap or unreadable manifest arrives as "no dependencies" — the
+        # kinder-score direction, silently. Skip it explicitly instead.
+        text = read_manifest(root, record.path)
+        if not text:
             continue
         if name == "package.json":
             try:
@@ -287,6 +305,20 @@ def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
             for group in (project.get("optional-dependencies") or {}).values():
                 for spec in group:
                     names.update(_requirements_names(spec))
+            # Poetry keeps its dependencies somewhere else entirely, and a
+            # Poetry project has no `[project].dependencies` at all — so
+            # reading only PEP 621 returned an empty direct set for every one
+            # of them and scored their vulnerabilities at the transitive rate.
+            poetry = ((doc.get("tool") or {}).get("poetry") or {})
+            for table in ("dependencies", "dev-dependencies"):
+                names.update(
+                    k.lower() for k in (poetry.get(table) or {}) if k.lower() != "python"
+                )
+            for group in (poetry.get("group") or {}).values():
+                names.update(
+                    k.lower() for k in (group.get("dependencies") or {})
+                    if k.lower() != "python"
+                )
         elif name == "requirements.txt":
             names.update(_requirements_names(text))
         elif name == "go.mod":
@@ -346,24 +378,6 @@ def run_osv(
     # rather than restated. `root` is a scratch copy we own.
     neutralised = _neutralise_hostile_config(root)
 
-    if inventory is not None and not directness_supported(root, inventory):
-        # `03` §6 scores on (severity, direct-vs-transitive). With no manifest
-        # we can parse, that second dimension is unavailable — and defaulting it
-        # to "transitive" is not a neutral choice, it is the LOWER deduction.
-        # Abstaining costs coverage; guessing publishes a kinder number for the
-        # ecosystems we support least. `CLAUDE.md`: where `03` gives no band,
-        # abstain.
-        return OsvResult(
-            status=OsvStatus.UNAVAILABLE,
-            reason="the dependency manifests present (Cargo, Gemfile or Poetry) "
-                   "are not ones this scanner can read a direct-dependency set "
-                   "from, and `03` §6 scores direct and transitive differently",
-            lockfiles=lockfiles,
-            transitive_coverage=bool(lockfiles),
-            methodology_version=version,
-            neutralised=neutralised,
-        )
-
     cmd = [binary, "scan", "source", "--format", "json", "-r", str(root)]
     try:
         proc = subprocess.run(  # noqa: S603 - argv form, no shell, fixed binary
@@ -405,6 +419,7 @@ def run_osv(
         )
 
     direct = direct_dependencies(root, inventory) if inventory is not None else set()
+    known = parsed_ecosystems(inventory) if inventory is not None else set()
     findings: list[DependencyFinding] = []
     for result in payload.get("results", []):
         source = result.get("source", {}) or {}
@@ -430,7 +445,12 @@ def run_osv(
                         osv_id=osv_id,
                         severity=cvss,
                         cvss=_as_decimal(group.get("max_severity")),
-                        direct=name.lower() in direct,
+                        # None = UNKNOWN. Defaulting an unparsed ecosystem
+                        # to `transitive` is not neutral — it is the lower
+                        # deduction, so the ecosystems we support least
+                        # scored kindest.
+                        direct=(name.lower() in direct)
+                        if info.get("ecosystem") in known else None,
                         lockfile=rel,
                         fixed_version=_fixed_version(vuln),
                         cve_id=next((a for a in aliases if a.startswith("CVE-")), ""),
@@ -439,6 +459,7 @@ def run_osv(
                 )
 
     findings.sort(key=lambda f: (f.package, f.osv_id))
+    # Counts BOTH undetermined cells: no CVSS, and unknown directness.
     unscored = sum(1 for f in findings if not f.scored)
     return OsvResult(
         status=OsvStatus.OK,

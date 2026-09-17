@@ -220,12 +220,28 @@ def test_a_ref_mismatch_is_published_not_dropped(reports) -> None:
     version's number over a score computed from branch-tip code — the exact
     wrong-revision failure `CLAUDE.md`'s refs/tags rule exists to prevent,
     reintroduced one layer up by throwing away the detector.
+
+    ⚠ This test asserted `isinstance(..., bool)`, which CODIFIED the defect it
+    was written to guard: the field defaulted to `True`, so every server whose
+    source was never fetched published "this IS the released version" about a
+    revision nobody read. A bool is the wrong type — the honest third state is
+    "no fetch happened, so there is nothing to match against".
     """
     for report in reports:
         assert "ref_matched_version" in report, (
             f"{report['name']}: the ref-match signal is missing from the report"
         )
-        assert isinstance(report["ref_matched_version"], bool)
+        matched = report["ref_matched_version"]
+        if report["source_state"] == "fetched":
+            assert isinstance(matched, bool), (
+                f"{report['name']}: fetched but the ref match is undetermined"
+            )
+        else:
+            assert matched is None, (
+                f"{report['name']}: nothing was fetched, yet the report claims "
+                f"ref_matched_version={matched!r} — an affirmative claim about "
+                "a revision nobody read"
+            )
 
 
 def test_evidence_paths_are_paths_and_not_prose(reports) -> None:

@@ -381,27 +381,71 @@ def test_a_repo_supplied_osv_scanner_toml_cannot_suppress_its_own_cves(
     assert not (tmp_path / "osv-scanner.toml").exists()
 
 
-def test_an_unparseable_manifest_abstains_rather_than_calling_everything_transitive(
-    tmp_path: Path, monkeypatch
-) -> None:
-    """Defaulting the directness dimension is not neutral — it is the LOWER rate.
+def test_directness_is_decided_per_ecosystem_not_per_repository() -> None:
+    """⚠ REPLACES a guard that could not fire for the ecosystem it named.
 
-    `03` §6 deducts less for a transitive finding, so a Rust or Ruby project
-    whose manifest this module cannot parse had every vulnerability labelled
-    transitive and scored kindly, with the axis still claiming full coverage.
+    The first version tested repository FILENAMES — it abstained on seeing
+    `Cargo.toml` and no `package.json`. Three ways that failed:
+
+    - **Poetry was unreachable by construction.** `poetry.lock` only mattered
+      when `pyproject.toml` was absent, and Poetry cannot produce a lock
+      without one. So every Poetry project passed the guard while the parser
+      read only PEP 621 and returned an empty direct set — all findings
+      transitive, at the LOWER `03` §6 rate, for an ecosystem the abstain
+      reason named to the reader.
+    - **Any `package.json` anywhere defeated it.** A `www/` demo made a Rust
+      repository "supported".
+    - It never fired once across the whole published corpus.
+
+    Directness is a property of an ECOSYSTEM's manifest, so that is what is
+    asked now.
     """
-    (tmp_path / "Cargo.lock").write_text("# lock\n")
-    inv = _inventory(("Cargo.toml", Role.PACKAGE_MANIFEST), ("Cargo.lock", Role.LOCKFILE))
-    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    assert oc.parsed_ecosystems(
+        _inventory(("package.json", Role.PACKAGE_MANIFEST))
+    ) == {"npm"}
+    assert oc.parsed_ecosystems(
+        _inventory(("go.mod", Role.PACKAGE_MANIFEST))
+    ) == {"Go"}
+    assert oc.parsed_ecosystems(
+        _inventory(("Cargo.toml", Role.PACKAGE_MANIFEST))
+    ) == set()
 
-    result = oc.run_osv(tmp_path, inv)
-    assert result.status is oc.OsvStatus.UNAVAILABLE
-    assert result.score is None
-    assert "direct-dependency set" in result.reason
+    # The mixed case: an npm manifest says nothing about Rust dependencies.
+    mixed = oc.parsed_ecosystems(_inventory(
+        ("package.json", Role.PACKAGE_MANIFEST),
+        ("Cargo.toml", Role.PACKAGE_MANIFEST),
+    ))
+    assert mixed == {"npm"}, "a www/ demo must not make a Rust repo 'supported'"
 
 
-def test_a_parseable_manifest_still_scores(tmp_path: Path, monkeypatch) -> None:
-    """The negative control for the abstention — it must not swallow npm/PyPI."""
-    (tmp_path / "requirements.txt").write_text("jinja2==2.10\n")
-    inv = _inventory(("requirements.txt", Role.LOCKFILE))
-    assert oc.directness_supported(tmp_path, inv) is True
+def test_poetry_dependencies_are_read(tmp_path: Path) -> None:
+    """A Poetry project has no `[project].dependencies` at all."""
+    manifest = "\n".join([
+        "[tool.poetry]",
+        'name = "x"',
+        "[tool.poetry.dependencies]",
+        'python = "^3.12"',
+        'requests = "^2.0"',
+        "[tool.poetry.group.dev.dependencies]",
+        'pytest = "^8.0"',
+        "",
+    ])
+    (tmp_path / "pyproject.toml").write_text(manifest)
+    inv = _inventory(("pyproject.toml", Role.PACKAGE_MANIFEST))
+    names = oc.direct_dependencies(tmp_path, inv)
+    assert "requests" in names and "pytest" in names
+    assert "python" not in names, "the interpreter is not a dependency to scan"
+
+
+def test_a_finding_in_an_unparsed_ecosystem_is_not_assumed_transitive() -> None:
+    """Defaulting unknown directness to `transitive` is the LOWER deduction."""
+    unknown = oc.DependencyFinding(
+        package="serde", ecosystem="crates.io", version="1.0", osv_id="RUSTSEC-1",
+        severity=Severity.CRITICAL, cvss=None, direct=None, lockfile="Cargo.lock",
+    )
+    assert unknown.scored is False
+    with pytest.raises(ValueError, match="unknown"):
+        unknown.deduction()
+    # Excluded from the arithmetic rather than scored at the kinder rate.
+    assert oc.dependency_axis_score([unknown]) == 100
+    assert oc.dependency_axis_score([unknown, _finding(Severity.CRITICAL)]) == 75

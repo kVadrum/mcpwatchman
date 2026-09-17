@@ -47,6 +47,7 @@ import json
 import shutil
 import subprocess
 from dataclasses import dataclass
+from decimal import ROUND_DOWN, Decimal
 from enum import StrEnum
 from pathlib import Path
 
@@ -66,6 +67,7 @@ from mcpwatchman.workers.scoring.composite import (
     Finding,
     Severity,
     axis_score,
+    dec,
 )
 from mcpwatchman.workers.scoring.weights import (
     CURRENT_METHODOLOGY_VERSION,
@@ -164,6 +166,10 @@ class SemgrepResult:
     # know one of them shipped 245 files and was scored on 12 of them.
     pruned: int = 0
     pruned_sample: tuple[str, ...] = ()
+    # Files semgrep could not parse. The axis is scored on what it DID
+    # read, and the share is published rather than rounded to 1.
+    files_unparsed: int = 0
+    assessed_weight: str = "1"
     ruleset_version: str = ""
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
@@ -410,6 +416,25 @@ def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:
     return tuple(sorted(removed))
 
 
+def _error_paths(errors: list) -> list:
+    """Every dict carrying a `path` anywhere inside semgrep's error payloads.
+
+    `errors[].type` may be `["PartialParsing", [{"path": …}, …]]`, so the file
+    a parse failure refers to is nested rather than top-level.
+    """
+    found: list = []
+    stack: list = list(errors)
+    while stack:
+        item = stack.pop()
+        if isinstance(item, dict):
+            if "path" in item:
+                found.append(item)
+            stack.extend(item.values())
+        elif isinstance(item, list):
+            stack.extend(item)
+    return found
+
+
 def _error_kind(error: dict) -> str:
     """The NAME of a semgrep error, from a `type` that may not be a string."""
     raw = error.get("type") or error.get("level") or "error"
@@ -556,25 +581,26 @@ def run_semgrep(
     # parser never got through — the fixtures in this repo's own tests carried
     # `"errors": []` in every payload, so the field was seen and then dropped.
     scan_errors = payload.get("errors") or []
-    # ⚠ ANY error fails the scan, not only an error with no findings beside it.
-    # The first cut read `and not payload.get("results")`, so one parseable file
-    # producing a finding MASKED another that failed to parse: the axis scored
-    # the findings it happened to get and claimed full coverage over a tree it
-    # could not read. A partial scan is not a scan with a number attached.
-    if scan_errors:
-        # ⚠ `errors[].type` IS NOT ALWAYS A STRING. For `PartialParsing` semgrep
-        # emits `["PartialParsing", [{"path": "/tmp/mcpw-scan-…", …}]]`, so
-        # `str(...)` on it dumped a Python repr of absolute scratch paths into a
-        # field that is published verbatim. Caught by this session's own leak
-        # gate on the very next regeneration. Take the NAME, and redact as a
-        # backstop rather than trusting the extraction to stay correct.
+    # ⚠ PARTIAL COVERAGE, NOT A VOID — and the first cut got this wrong in the
+    # other direction. It failed the whole scan on ANY error, so 47 of 48 files
+    # parsing meant no Code Safety score at all; three of thirty-two published
+    # servers lost a weight-30 axis to a single unparseable file.
+    #
+    # The repo already owns the vocabulary for "found it, cannot place it":
+    # `_deps_axis` renders `assessed_weight` for exactly this shape. semgrep's
+    # errors carry a per-error `path`, so parsed-vs-unparsed is countable
+    # rather than binary. A void is still right when NOTHING parsed.
+    unparsed = {
+        e["path"] for e in _error_paths(scan_errors)
+        if isinstance(e, dict) and e.get("path")
+    }
+    if scan_errors and scanned == 0:
         kinds = sorted({_error_kind(e) for e in scan_errors})
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
             reason=redact_paths(
                 f"semgrep reported {len(scan_errors)} error(s) "
-                f"({', '.join(kinds)}); a parse or resource failure means the "
-                "tree was not fully read, so any findings are incomplete"
+                f"({', '.join(kinds)}) and parsed nothing"
             ),
             files_scanned=scanned,
             neutralised=neutralised,
@@ -633,6 +659,22 @@ def run_semgrep(
         )
 
     findings.sort(key=lambda f: (f.path, f.line, f.rule_id))
+    total = scanned + len(unparsed)
+    if not unparsed:
+        weight = "1"
+    else:
+        # ⚠ ROUND DOWN, AND NEVER REACH 1. 1276 of 1277 files parsed quantizes
+        # to "1.00" under half-up, which publishes an incomplete scan as fully
+        # measured — and the site tests `Number(w) < 1`, so "1.00" is read as
+        # complete and the server drops out of the partly-measured tally. Every
+        # other rounding decision in this codebase rounds the PUBLISHED value
+        # half-up; this one is a coverage CLAIM, where the honest direction is
+        # down. Capped just under 1 so "some files were not read" can never
+        # render as "all files were read".
+        ratio = (dec(scanned) / dec(total)).quantize(
+            Decimal("0.01"), rounding=ROUND_DOWN
+        )
+        weight = format(min(ratio, Decimal("0.99")), "f")
     return SemgrepResult(
         status=SemgrepStatus.OK,
         findings=tuple(findings),
@@ -643,6 +685,8 @@ def run_semgrep(
         neutralised=neutralised,
         pruned=pruned_count,
         pruned_sample=pruned_sample,
+        files_unparsed=len(unparsed),
+        assessed_weight=weight,
     )
 
 

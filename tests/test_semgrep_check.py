@@ -478,20 +478,42 @@ def test_real_web_bundles_are_still_pruned(tmp_path: Path, name) -> None:
     assert sc._is_minified(path) is True
 
 
-def test_semgrep_errors_without_findings_are_a_failure_not_a_clean_scan(
+def test_unparsed_files_reduce_coverage_rather_than_voiding_the_axis(
     tree, monkeypatch
 ) -> None:
-    """semgrep exits 0 with valid JSON while reporting parse/OOM failures."""
+    """⚠ REPLACES a check that failed the whole scan on ANY error.
+
+    That over-fired: 47 of 48 files parsing meant no Code Safety score at all,
+    and three of thirty-two published servers lost a weight-30 axis to a single
+    unparseable file. semgrep's errors carry a per-error `path`, so
+    parsed-vs-unparsed is countable — and this repo already renders exactly
+    this shape on the dependency axis.
+    """
     payload = json.dumps({
         "results": [],
-        "errors": [{"type": "SourceParseError", "level": "warn"}],
-        "paths": {"scanned": ["server.py"]},
+        "errors": [{"type": ["PartialParsing", [{"path": "bad.ts"}]]}],
+        "paths": {"scanned": ["a.py", "b.py", "c.py"]},
+    })
+    _fake_run(monkeypatch, payload)
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.status is sc.SemgrepStatus.OK
+    assert result.files_unparsed == 1
+    assert result.assessed_weight == "0.75", "3 of 4 files parsed"
+    assert result.score == 100
+
+
+def test_errors_with_nothing_parsed_are_still_a_failure(tree, monkeypatch) -> None:
+    """The negative control: a void is right when NOTHING was read."""
+    payload = json.dumps({
+        "results": [],
+        "errors": [{"type": "Timeout"}],
+        "paths": {"scanned": []},
     })
     _fake_run(monkeypatch, payload)
     result = sc.run_semgrep(tree, rules=RULES)
     assert result.status is sc.SemgrepStatus.FAILED
     assert result.score is None
-    assert "SourceParseError" in result.reason
+    assert "parsed nothing" in result.reason
 
 
 def test_a_finding_outside_the_scan_root_is_dropped_not_published(
@@ -547,7 +569,10 @@ def test_a_structured_semgrep_error_does_not_leak_paths_into_the_reason(
             {"path": "/tmp/mcpw-scan-abc123/src/x.tsx",  # noqa: S108 - fixture data
              "start": {"line": 280}}
         ]]}],
-        "paths": {"scanned": ["server.py"]},
+        # `scanned: []` on purpose: the reason string is only BUILT on the
+        # nothing-parsed branch. With files parsed the run is partial coverage
+        # and carries no kinds string, so this fixture would exercise nothing.
+        "paths": {"scanned": []},
     })
     _fake_run(monkeypatch, payload)
     result = sc.run_semgrep(tree, rules=RULES)
@@ -556,3 +581,24 @@ def test_a_structured_semgrep_error_does_not_leak_paths_into_the_reason(
     assert "/tmp/" not in result.reason  # noqa: S108 - the literal is the needle
     assert "mcpw-scan" not in result.reason
     assert "{" not in result.reason, "a raw structure reached a published field"
+
+
+def test_partial_coverage_never_rounds_up_to_fully_measured(tree, monkeypatch) -> None:
+    """1276 of 1277 files parsed is not "all of them".
+
+    Half-up quantization published `assessed_weight: "1.00"` for a scan that
+    missed a file, and the site tests `Number(w) < 1` — so the server dropped
+    out of the partly-measured tally and rendered as complete. Every other
+    rounding decision here rounds the PUBLISHED value half-up; a coverage claim
+    is the one that has to round down.
+    """
+    payload = json.dumps({
+        "results": [],
+        "errors": [{"type": ["PartialParsing", [{"path": "bad.ts"}]]}],
+        "paths": {"scanned": [f"f{i}.py" for i in range(1276)]},
+    })
+    _fake_run(monkeypatch, payload)
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.files_unparsed == 1
+    assert result.assessed_weight == "0.99", result.assessed_weight
+    assert float(result.assessed_weight) < 1, "an incomplete scan read as complete"

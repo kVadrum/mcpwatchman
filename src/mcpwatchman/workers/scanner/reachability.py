@@ -105,6 +105,21 @@ class SourceAvailability:
             return ""
         if self.state is SourceState.UNREACHABLE:
             where = f" ({self.declared_url})" if self.declared_url else ""
+            # ⚠ A PACKAGE IS NOT A REPOSITORY. Attribution was fixed to stop
+            # blaming a repository we never contacted, but the replacement was
+            # substituted into repository-shaped prose — so an npm 404
+            # published "the repository this server declares
+            # (npm:@acme/srv@1.2.3) is not publicly reachable", carrying a
+            # GitHub private-vs-404 caveat that has no npm meaning and handing
+            # the reader a spec string they cannot open. On a page whose
+            # premise is that every claim is checkable.
+            if self.declared_url and not self.declared_url.startswith(
+                ("http://", "https://")
+            ):
+                return (
+                    f"the package this server declares{where} could not be "
+                    "fetched from its registry, so its source could not be read"
+                )
             return (
                 f"the repository this server declares{where} is not publicly "
                 "reachable, so its documentation could not be read — note that "

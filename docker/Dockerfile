@@ -18,6 +18,13 @@ RUN apt-get update \
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
+# REQUIRED, and its absence is a BUILD failure rather than a runtime one.
+# `pyproject.toml` force-includes `rules/` into the wheel so an installed
+# scanner can find its ruleset; hatchling RAISES `Forced include not found`
+# when the source is missing from the build context, so omitting this line
+# does not degrade the image — it stops the image existing. Measured by
+# reproducing this exact context.
+COPY rules ./rules
 RUN pip install --no-cache-dir ".[workers]"
 
 USER scanner
