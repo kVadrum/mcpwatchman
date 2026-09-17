@@ -468,12 +468,24 @@ def score_license(facts: LicenseFacts) -> SubCheck:
     )
 
 
-def assess_license(root: Path | None, inventory: Inventory | None) -> SubCheck:
-    """The license sub-check, or an honest abstention when there is no source."""
+def assess_license(
+    root: Path | None,
+    inventory: Inventory | None,
+    unavailable_reason: str = "",
+) -> SubCheck:
+    """The license sub-check, or an honest abstention when there is no source.
+
+    `unavailable_reason` lets the caller say WHY there was no source. This
+    sub-check otherwise reported "no source was fetched" for a repository that
+    404s for the entire public, which is true and hides the interesting half —
+    see `reachability`, which owns that distinction.
+    """
     if root is None or inventory is None:
         return SubCheck(
             "license", None,
-            reason="no source was fetched, so neither a LICENSE file nor a "
-                   "package manifest could be read",
+            reason=unavailable_reason or (
+                "no source was fetched, so neither a LICENSE file nor a "
+                "package manifest could be read"
+            ),
         )
     return score_license(license_facts(root, inventory))

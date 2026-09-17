@@ -39,6 +39,7 @@ from pathlib import Path
 
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
 from mcpwatchman.workers.scanner.license_check import assess_license
+from mcpwatchman.workers.scanner.reachability import SourceAvailability
 from mcpwatchman.workers.scoring.axes import AxisResult, SubCheck, score_axis
 
 AXIS = "transparency"
@@ -340,7 +341,9 @@ def score_security_contact(facts: DocumentationFacts) -> SubCheck:
 
 
 def assess_transparency(
-    root: Path | None = None, inventory: Inventory | None = None
+    root: Path | None = None,
+    inventory: Inventory | None = None,
+    availability: SourceAvailability | None = None,
 ) -> AxisResult:
     """Score the Transparency axis (`03` §7) for one server.
 
@@ -348,11 +351,20 @@ def assess_transparency(
     fetchable source has no assessable Transparency at all — the axis comes back
     with a `None` score and 0 assessed weight rather than a zero, which would
     report "documents nothing" about a repository nobody opened.
+
+    `availability` says WHY there was nothing to read, and passing it is worth
+    the argument: a repository that 404s for the public and a server our queue
+    has not reached yet are different facts about different parties, and without
+    it both render as the same sentence. `reachability` owns that vocabulary and
+    explains why the unreachable case is reported but never scored.
     """
     if root is None or inventory is None:
-        no_source = "no source was fetched, so no documentation could be read"
+        no_source = (
+            availability.reason if availability is not None
+            else "no source was fetched, so no documentation could be read"
+        )
         return score_axis(AXIS, [
-            assess_license(None, None),
+            assess_license(None, None, no_source),
             SubCheck("readme_quality", None, reason=no_source),
             SubCheck("declared_scopes", None, reason=no_source),
             SubCheck("changelog", None, reason=no_source),

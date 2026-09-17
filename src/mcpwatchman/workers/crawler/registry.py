@@ -22,13 +22,21 @@ import hashlib
 import json
 import time
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any
 from urllib.parse import urlparse
 
 from mcpwatchman import __version__
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS
+
+# No cycle: `reachability` imports only stdlib at module level and defers
+# its one edge to `scanner.source` (which imports THIS module) into a
+# function body. Keep it that way.
+from mcpwatchman.workers.scanner.reachability import (
+    SourceAvailability,
+    SourceState,
+)
 
 REGISTRY_BASE_URL = "https://registry.modelcontextprotocol.io"
 SERVERS_PATH = "/v0/servers"
@@ -758,6 +766,13 @@ class CoverageReport:
     # negative), which live in the scan results rather than the manifest. The
     # crawler cannot know it, so the crawler leaves it None.
     verified_scannable: int | None = None
+    # Entries whose DECLARED source was attempted and could not be read by the
+    # public. None for the same reason as `verified_scannable`: not checked and
+    # checked-and-none-reachable are opposite claims. Measured at 45.3% of
+    # repo-declaring entries over a 200-entry sample, so this is expected to be
+    # large — which is exactly why the gap must be rendered rather than implied
+    # by the absence of a number.
+    verified_unreachable: int | None = None
 
     @property
     def declared_coverage(self) -> float:
@@ -774,6 +789,35 @@ class CoverageReport:
         if self.verified_scannable is None or not self.total:
             return None
         return self.verified_scannable / self.total
+
+    @property
+    def declared_but_unreachable(self) -> int | None:
+        """How far the declaration over-counted. None until outcomes exist."""
+        if self.verified_unreachable is None:
+            return None
+        return self.verified_unreachable
+
+    def with_outcomes(self, outcomes: Iterable[SourceAvailability]) -> CoverageReport:
+        """Return a copy carrying the verified half, from real fetch outcomes.
+
+        Separate from `coverage_report` on purpose. The crawler reads a manifest
+        and touches no network, so it CANNOT know these; folding them in here
+        keeps that honest rather than giving the crawler a parameter it can only
+        ever be passed None for.
+
+        Only publisher-side outcomes count as unreachable. A fetch that failed
+        on our side is our problem and must not be reported as a fact about
+        anyone's repository — `reachability.SourceState.publisher_fault` draws
+        that line and this defers to it rather than re-deriving it.
+        """
+        seen = tuple(outcomes)
+        fetched = sum(1 for o in seen if o.readable)
+        unreachable = sum(
+            1 for o in seen if o.state is SourceState.UNREACHABLE
+        )
+        return replace(
+            self, verified_scannable=fetched, verified_unreachable=unreachable
+        )
 
 
 def coverage_report(entries: Iterable[RegistryEntry]) -> CoverageReport:
