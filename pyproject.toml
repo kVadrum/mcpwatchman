@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.19.0"
+version = "0.19.1"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -39,6 +39,12 @@ workers = [
   "alembic>=1.13",
   # Static analysis: ADR-002 (semgrep core; osv-scanner is an external Go binary)
   "semgrep>=1.75",
+  # DECLARED, not inherited. `semgrep_check` imports yaml at module level to
+  # read the severity mapping, and it only ever worked because semgrep happens
+  # to depend on PyYAML. That is the same shape as the pgqueuer driver this
+  # repo already learned from: a package we import must be a package we ask
+  # for, or an upstream dropping it breaks us for reasons that look unrelated.
+  "pyyaml>=6.0",
   "detect-secrets>=1.5",
   # Queue: PgQueuer, RATIFIED 2026-09-16 (operator accepted the /rr; ADR-001).
   # Postgres-native, so Redis leaves the topology entirely and rate-limit
@@ -64,6 +70,11 @@ dev = [
   # error and then infers `Any` for everything downstream of it — so the
   # severity mapping, the thing that decides every deduction, was unchecked.
   "types-PyYAML>=6.0",
+  # RUNTIME yaml, not just the stubs. The `test` CI job installs `[dev]` alone
+  # and the suite imports `semgrep_check`, which imports yaml — so every CI run
+  # from v0.16.0 onward died at COLLECTION with ModuleNotFoundError while the
+  # local suite was green, because the local venv had the `workers` extra.
+  "pyyaml>=6.0",
   "pytest>=8.2",
 ]
 
