@@ -489,16 +489,21 @@ def test_unparsed_files_reduce_coverage_rather_than_voiding_the_axis(
     parsed-vs-unparsed is countable — and this repo already renders exactly
     this shape on the dependency axis.
     """
+    # ⚠ THE FIXTURE PREVIOUSLY PUT `bad.ts` OUTSIDE `paths.scanned` and asserted
+    # 0.75, which codified an assumption rather than testing one. Measured
+    # against real semgrep: a file that fails to parse is listed in
+    # `paths.scanned` AND named in `errors[]`. So the denominator is `scanned`
+    # and the bad file belongs in it — 2 of 3, not 3 of 4.
     payload = json.dumps({
         "results": [],
         "errors": [{"type": ["PartialParsing", [{"path": "bad.ts"}]]}],
-        "paths": {"scanned": ["a.py", "b.py", "c.py"]},
+        "paths": {"scanned": ["a.py", "b.py", "bad.ts"]},
     })
     _fake_run(monkeypatch, payload)
     result = sc.run_semgrep(tree, rules=RULES)
     assert result.status is sc.SemgrepStatus.OK
     assert result.files_unparsed == 1
-    assert result.assessed_weight == "0.75", "3 of 4 files parsed"
+    assert result.assessed_weight == "0.66", "2 of 3 files parsed, not 3 of 4"
     assert result.score == 100
 
 

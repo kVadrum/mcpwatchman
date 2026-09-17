@@ -29,22 +29,39 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "mcpwatchman"
 
 # Distribution name -> the module name it actually installs, where they differ.
+#
+# ⚠ `types-PyYAML` is deliberately ABSENT. It is a PEP 561 stub-only
+# distribution: it installs `yaml-stubs/`, never an importable `yaml`. Mapping
+# it here let a stubs declaration satisfy a runtime import, so removing the
+# real `pyyaml` lines — a plausible "we already have types-PyYAML" tidy-up —
+# would have kept this gate green while CI died with the identical
+# ModuleNotFoundError, inside the file written to prevent it.
 _DISTRIBUTION_MODULES = {
     "pyyaml": "yaml",
     "psycopg": "psycopg",
     "uvicorn": "uvicorn",
     "python-multipart": "multipart",
-    "types-pyyaml": "yaml",
     "pydantic-settings": "pydantic_settings",
 }
 
 
-def _declared_modules() -> set[str]:
+def _declared_modules(extras: tuple[str, ...] | None = None) -> set[str]:
+    """Modules importable in an environment installing `extras`.
+
+    ⚠ **Group-aware, because the union is blind to the bug this guards.** The
+    defect was never "imported and declared nowhere" — it was "declared in
+    `[workers]`, imported by code the `[dev]`-only CI job collects". Flattening
+    every extra into one set passes that exact shape, so `sqlalchemy`
+    (`[workers]`) and `fastapi` (`[api]`) satisfied the check while the `test`
+    job could not import either. The `pyyaml` fix — declared in BOTH `workers`
+    and `dev` — encodes the real invariant; the union did not check it.
+    """
     config = tomllib.loads((ROOT / "pyproject.toml").read_text())
     project = config["project"]
     specs = list(project.get("dependencies", []))
-    for group in project.get("optional-dependencies", {}).values():
-        specs.extend(group)
+    groups = project.get("optional-dependencies", {})
+    for name in (groups if extras is None else extras):
+        specs.extend(groups.get(name, []))
 
     modules: set[str] = set()
     for spec in specs:
@@ -65,8 +82,22 @@ def _module_level_imports(path: Path) -> set[str]:
     collection.
     """
     tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    # ⚠ Walk, do not iterate `tree.body`. `try: import x` and
+    # `if TYPE_CHECKING: import y` are module level and were invisible to the
+    # direct-children form — and a bare `try: import X / except ImportError`
+    # turns a missing declaration into a silently degraded scanner rather than
+    # a loud one, which is this repo's worst outcome. What genuinely defers is
+    # being inside a FUNCTION, which is the CLI's lazy-import contract.
+    in_function: set[ast.AST] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+            in_function.update(ast.walk(node))
+
     found: set[str] = set()
-    for node in tree.body:
+    for node in ast.walk(tree):
+        if node in in_function:
+            continue
         if isinstance(node, ast.Import):
             found.update(alias.name.split(".")[0] for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
@@ -89,9 +120,23 @@ def test_there_are_sources_to_check() -> None:
     assert len(SOURCES) >= 10
 
 
+# Modules the `test` CI job cannot import, in files the suite provably never
+# collects. A VISIBLE list, so an omission is an entry someone can argue with
+# rather than an absence nobody can see. Adding a test that imports one of
+# these means adding its dependency to `[dev]`, not extending this list.
+_NOT_COLLECTED_BY_THE_TEST_JOB = {
+    "workers/crawler/enqueue.py",   # pgqueuer — the queue, `[workers]`
+    "db/models.py",                 # sqlalchemy — `[workers]`
+    "api/main.py",                  # fastapi — `[api]`
+}
+
+
 @pytest.mark.parametrize("path", SOURCES, ids=lambda p: str(p.relative_to(SRC)))
 def test_every_module_level_import_is_declared(path: Path) -> None:
-    declared = _declared_modules()
+    """Against the environment the `test` CI job actually builds: `[dev]`."""
+    if str(path.relative_to(SRC)) in _NOT_COLLECTED_BY_THE_TEST_JOB:
+        pytest.skip("not importable under [dev]; excluded explicitly, see the list")
+    declared = _declared_modules(("dev",))
     undeclared = sorted(_third_party(_module_level_imports(path)) - declared)
     assert not undeclared, (
         f"{path.relative_to(ROOT)} imports {', '.join(undeclared)} at module "
@@ -105,5 +150,11 @@ def test_every_module_level_import_is_declared(path: Path) -> None:
 def test_the_check_can_actually_fail() -> None:
     """A gate that cannot fire is worse than no gate — so fire it on purpose."""
     assert _third_party({"yaml", "os", "mcpwatchman"}) == {"yaml"}
-    assert "yaml" in _declared_modules(), "PyYAML is imported and must be declared"
-    assert _third_party({"definitely_not_a_real_package"}) - _declared_modules()
+    assert "yaml" in _declared_modules(("dev",)), (
+        "PyYAML is imported by code the test job collects and must be in [dev]"
+    )
+    assert _third_party({"definitely_not_a_real_package"}) - _declared_modules(("dev",))
+    # And the group-awareness itself: a workers-only module must NOT satisfy
+    # the dev environment, or the union blindness is back.
+    assert "sqlalchemy" in _declared_modules()
+    assert "sqlalchemy" not in _declared_modules(("dev",))

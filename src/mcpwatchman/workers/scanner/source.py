@@ -53,6 +53,9 @@ FETCH_TIMEOUT_S = 120
 # Which ref a clone actually landed on, keyed by checkout dir. `None` means the
 # requested version matched no tag and the default branch was used — the
 # Transparency signal `fetch()` surfaces as `ref_matched_version=False`.
+# Sentinel distinct from both `None` (a git fetch that fell back to the
+# default branch) and a ref string. A dict MISS is not an answer.
+_REF_UNRECORDED = object()
 _GIT_REF_USED: dict[Path, str | None] = {}
 
 
@@ -164,7 +167,13 @@ class FetchResult:
     # branch was scanned instead. NOT an error — but the score then describes
     # the branch tip rather than the release, and the per-server page owes the
     # reader that distinction (`04` §2, Transparency).
-    ref_matched_version: bool = True
+    # None = nothing established it. ⚠ It defaulted to `True`, and the
+    # lookup below used `""` as its miss sentinel — and `"" is not None`
+    # is True, so a MISSING bookkeeping entry produced the affirmative
+    # claim. Any future early return in `fetch_git`, and every package
+    # fetcher, therefore asserted "this is the released version" by
+    # accident rather than by measurement.
+    ref_matched_version: bool | None = None
 
 
 # What a forge says when the thing is not there, or not ours to see. Matched on
@@ -482,8 +491,8 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
             infos = zf.infolist()
             _guard_members((i.filename for i in infos), spec)
             _guard_declared_size((i.file_size for i in infos), spec)
-            for member in infos:
-                name = member.filename
+            for info in infos:
+                name = info.filename
                 # zipfile has no `filter=`, so the traversal check is ours.
                 if name.startswith("/") or ".." in Path(name).parts:
                     raise FetchError(f"archive member escapes destination: {name!r}")
@@ -496,10 +505,16 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
             # almost nothing — exhausts memory before the member cap can fire.
             # The guard has to run DURING the walk, not after it.
             declared = 0
-            for count, member in enumerate(tf, 1):
+            # Named distinctly from the zip branch's `info`: one name bound to
+            # a ZipInfo above and a TarInfo here made the function read as one
+            # type while being two, in the code that walks attacker-controlled
+            # archives. Same reuse this session already fixed in `registry.py`;
+            # neither was a runtime bug, and both are the last thing you want
+            # ambiguous in a bounds check.
+            for count, tar_member in enumerate(tf, 1):
                 if count > MAX_MEMBERS:
                     raise FetchError(f"archive exceeds {MAX_MEMBERS} members: {spec}")
-                declared += member.size
+                declared += tar_member.size
                 if declared > MAX_UNPACKED_BYTES:
                     raise FetchError(
                         f"archive declares {declared}+ bytes, over the "
@@ -810,6 +825,21 @@ def fetch_pypi(spec: SourceSpec, dest: Path, workdir: Path) -> Path:
     return _single_wrapper_dir(dest)
 
 
+def _ref_matched(checkout: Path) -> bool | None:
+    """Whether the fetched tree is the ref the entry asked for.
+
+    Three answers, and the middle one is why this is not a bool: the ref was
+    resolved (True), `fetch_git` fell back to the default branch (False), or
+    nothing recorded an answer at all (None) — a package fetch, or a path that
+    returned before the bookkeeping ran. None is not "no"; it is "nobody
+    checked", and publishing it as True is an unearned claim.
+    """
+    used = _GIT_REF_USED.pop(checkout, _REF_UNRECORDED)
+    if used is _REF_UNRECORDED:
+        return None
+    return used is not None
+
+
 def fetch(spec: SourceSpec, workspace: Path) -> FetchResult:
     """Obtain `spec` into `workspace` and report what to scan.
 
@@ -843,7 +873,7 @@ def fetch(spec: SourceSpec, workspace: Path) -> FetchResult:
         scan_root=scan_root,
         bytes_on_disk=size,
         file_count=count,
-        ref_matched_version=_GIT_REF_USED.pop(checkout, "") is not None,
+        ref_matched_version=_ref_matched(checkout),
     )
 
 

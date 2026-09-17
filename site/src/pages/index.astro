@@ -22,7 +22,9 @@ const year = new Date().getFullYear();
 // from this same file. A number a human transcribes is a number that goes
 // stale silently; the other surfaces already knew that.
 const fetchedCount = scans.filter((r) => r.source_state === "fetched").length;
-const unreachableCount = scans.filter((r) => r.source_state === "unreachable").length;
+// SUBJECT, not state — see servers/index.astro. Counting package failures
+// here asserted something false about third-party repositories.
+const unreachableCount = scans.filter((r) => r.source_subject === "repository").length;
 
 const axes = [
   { name: "Code Safety", weight: 30, reads: "Shell exec in tool handlers, unvalidated URL fetches, unsafe deserialization, path traversal — matched against an MCP-specific semgrep ruleset." },

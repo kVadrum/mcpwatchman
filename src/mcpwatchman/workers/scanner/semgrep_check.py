@@ -594,11 +594,25 @@ def run_semgrep(
         e["path"] for e in _error_paths(scan_errors)
         if isinstance(e, dict) and e.get("path")
     }
-    if scan_errors and scanned == 0:
+    # ⚠ AN ERROR THAT NAMES NO FILE MUST STILL COUNT. `unparsed` is built only
+    # from path-bearing error dicts, so a Timeout or a rule-config error — which
+    # carry no `path` — vanished from the denominator AND from `files_unparsed`,
+    # publishing an errored scan as fully measured, perfect score, nothing to
+    # say. The repo's own negative-control fixture uses `{"type": "Timeout"}`
+    # and only still failed because it sets `scanned: []`.
+    unattributed = [
+        e for e in scan_errors
+        if isinstance(e, dict) and not _error_paths([e])
+    ]
+    if scan_errors and (scanned == 0 or unattributed):
         kinds = sorted({_error_kind(e) for e in scan_errors})
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
             reason=redact_paths(
+                f"semgrep reported {len(scan_errors)} error(s) "
+                f"({', '.join(kinds)}) that cannot be attributed to specific "
+                "files, so the share of the tree actually read is unknown"
+                if unattributed and scanned else
                 f"semgrep reported {len(scan_errors)} error(s) "
                 f"({', '.join(kinds)}) and parsed nothing"
             ),
@@ -659,7 +673,32 @@ def run_semgrep(
         )
 
     findings.sort(key=lambda f: (f.path, f.line, f.rule_id))
-    total = scanned + len(unparsed)
+    # ⚠ THE DENOMINATOR IS `scanned`, NOT `scanned + unparsed`. Measured
+    # against real semgrep 1.177.0: a file that fails to parse is listed in
+    # `paths.scanned` AND named in `errors[]`, so adding them counted it twice
+    # and OVER-claimed coverage — 3/(3+1)=0.75 published where the truth was
+    # 2/3=0.67. The previous test asserted 0.75 on a hand-built payload whose
+    # bad file was deliberately absent from `paths.scanned`, codifying the
+    # assumption instead of testing it. Positive-controlled: one `.ts` file
+    # with a syntax error appears in both lists.
+    total = scanned
+    parsed = max(0, scanned - len(unparsed))
+    if unparsed and total and (dec(parsed) / dec(total)) < Decimal("0.005"):
+        # Rounds to "0.00": a score measured on none of the axis. `_deps_axis`
+        # already refuses this shape — "a score carries positive coverage" — and
+        # Code Safety had no equivalent, so 1 file read of 201 published 100.
+        return SemgrepResult(
+            status=SemgrepStatus.FAILED,
+            reason=(
+                f"semgrep parsed {parsed} of {total} file(s); the share read is "
+                "too small to support a score"
+            ),
+            files_scanned=scanned,
+            files_unparsed=len(unparsed),
+            neutralised=neutralised,
+            pruned=pruned_count,
+            pruned_sample=pruned_sample,
+        )
     if not unparsed:
         weight = "1"
     else:
@@ -671,10 +710,17 @@ def run_semgrep(
         # half-up; this one is a coverage CLAIM, where the honest direction is
         # down. Capped just under 1 so "some files were not read" can never
         # render as "all files were read".
-        ratio = (dec(scanned) / dec(total)).quantize(
-            Decimal("0.01"), rounding=ROUND_DOWN
+        # ROUND_DOWN is the protection. `total > scanned` whenever this
+        # branch runs, so the ratio is strictly < 1 and a cap could never bind
+        # — the earlier `min(ratio, 0.99)` was a guard whose condition cannot
+        # be true, which is this repo's own named failure shape. Removed rather
+        # than kept as decoration that misattributes what is load-bearing.
+        weight = format(
+            (dec(parsed) / dec(total)).quantize(
+                Decimal("0.01"), rounding=ROUND_DOWN
+            ),
+            "f",
         )
-        weight = format(min(ratio, Decimal("0.99")), "f")
     return SemgrepResult(
         status=SemgrepStatus.OK,
         findings=tuple(findings),

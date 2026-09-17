@@ -114,6 +114,17 @@ class ServerReport:
     ruleset_version: str = ""
     repository_url: str = ""
     source_state: str = SourceState.NOT_ATTEMPTED.value
+    # WHAT was unreachable — "repository", "package", or "".
+    #
+    # ⚠ `source_state` alone was not enough, and the gap reached the live
+    # site as a false statement about a named third party. An npm 404 sets
+    # state=unreachable, and four surfaces re-expressed that as "declares a
+    # repository nobody can read" — including for a server whose GitHub
+    # repository resolves fine. Its own page said "package" correctly while
+    # the roster, the homepage tally and llms.txt said "repository": the
+    # site contradicted itself, and `08-disclosure-policy.md` requires
+    # factual. One judgement expressed at five sites, fixed at one.
+    source_subject: str = ""
     source_reason: str = ""
     transport: str = ""
     transport_mismatch: bool = False
@@ -300,6 +311,16 @@ def scan_entry(
 def _assemble(
     entry, resolution, availability, root, scanned_at, version, ref_matched=None
 ) -> ServerReport:
+    # Derived from what was actually FETCHED, which is the only thing that
+    # licenses a claim about it.
+    subject = ""
+    if availability.state is SourceState.UNREACHABLE:
+        subject = (
+            "repository"
+            if resolution.kind in (SourceKind.GITHUB, SourceKind.GITLAB)
+            else "package"
+        )
+
     inventory = enumerate_tree(root) if root is not None else None
 
     transport = assess_transport(entry, root, inventory)
@@ -330,6 +351,7 @@ def _assemble(
         ruleset_version=(code.ruleset_version if code else ""),
         repository_url=entry.repository.url if entry.repository else "",
         source_state=availability.state.value,
+        source_subject=subject,
         source_reason=availability.reason,
         transport=transport.declared.value if transport.declared else "",
         transport_mismatch=bool(transport.mismatch),
@@ -387,7 +409,18 @@ def _deps_axis(result, availability) -> AxisScore:
         Evidence(
             label=f"{f.package} {f.version} — {f.osv_id}",
             detail=(
-                f"{'direct' if f.direct else 'transitive'}"
+                # ⚠ `None` IS FALSY, so this rendered "transitive" — the exact
+                # cell the scorer was changed to stop defaulting to. The axis
+                # reason correctly said the finding could not be placed in
+                # `03` §6's table while the evidence beside it asserted the one
+                # fact we had just said we did not know. A tri-state read as a
+                # boolean, one layer below the tri-state that was fixed.
+                (
+                    "direct" if f.direct
+                    else "transitive" if f.direct is False
+                    else "direct or transitive unknown — no parseable manifest "
+                         "for this ecosystem"
+                )
                 + (f", CVSS {f.cvss}" if f.cvss is not None else ", no CVSS published")
                 + (f", fixed in {f.fixed_version}" if f.fixed_version else "")
             ),

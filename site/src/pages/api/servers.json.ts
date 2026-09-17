@@ -21,6 +21,8 @@ export const GET: APIRoute = () =>
         composite_published: false,
         composite_note:
           "No composite score is published. The five axes are weighted 30/20/20/15/15 and the weighted score is computed, but it stays withheld until a hand-audited gold set validates those weights.",
+        ref_note:
+          "`ref_matched_version` has three values, not two. true: the tree scanned is the ref the registry entry names. false: no such tag resolved and the default branch was read instead, so the findings describe branch-tip code rather than the named release. null: nothing established it — the source was never fetched, or it came from a package registry where the version is pinned in the URL. null is not false.",
         coverage_note:
           "`assessed_weight` is the share of an axis that could actually be measured. A score of 80 at an assessed_weight of 0.25 is 80 of a quarter of the axis, and must not be rendered as 80.",
         count: scans.length,

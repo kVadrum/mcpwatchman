@@ -18,10 +18,25 @@ const reports = [...scans].sort((a, b) => a.name.localeCompare(b.name));
 // would count nine servers nobody could open, which is the kind of true-but-
 // misleading tally this project exists to avoid publishing.
 const read = reports.filter((r) => r.source_state === "fetched");
-const unreachable = reports.filter((r) => r.source_state === "unreachable");
-const partial = reports.filter((r) =>
-  Object.values(r.axes).some((a) => a.score !== null && Number(a.assessed_weight) < 1)
-);
+// Keyed on the SUBJECT, not the state. An npm 404 also sets
+// state="unreachable", and counting it here published "declares a
+// repository nobody can read" about repositories that resolve fine.
+const unreachableRepo = reports.filter((r) => r.source_subject === "repository");
+const unreachablePkg = reports.filter((r) => r.source_subject === "package");
+// ⚠ REPLACES a "N carry at least one partly-measured axis" tally that read
+// 39 of 40 — a signal that fires for a condition shared by almost every row
+// says nothing, and `base.md` § *Signal design* is explicit that it trains the
+// reader to discount it. It was driven almost entirely by Auth Posture, which
+// is partial for 38 servers because its transport sub-check needs no source.
+//
+// Per-axis coverage is the fact a reader actually needs, and it surfaces the
+// one this page was silent about: Maintenance is scored for NOBODY, because
+// the forge fetch does not exist. A whole weight-15 axis dark on every server
+// is not something to leave inferable from five dashes in a row.
+const coverage = AXES.map((axis) => ({
+  ...axis,
+  scored: reports.filter((r) => r.axes[axis.key].score !== null).length,
+}));
 const scannedDate = reports.length ? reports[0].scanned_at.slice(0, 10) : "";
 const W = 96;
 ---
@@ -45,13 +60,29 @@ const W = 96;
       There is no single number for a server here. The weighted composite is
       computed and withheld until a hand-audited gold set validates the weights.
     </p>
+    <p>
+      Maintenance is scored for no server yet: it reads commit and release
+      history from the hosting forge, and that retrieval is not built. It shows
+      as not assessed rather than as a guess, and the axis counts for nothing
+      until it can be measured.
+    </p>
   </div>
 
   <p class="tally">
     <span><b>{reports.length}</b> servers sampled</span>
     <span><b>{read.length}</b> had source we could read</span>
-    <span><b>{unreachable.length}</b> declare a repository nobody can read</span>
-    <span><b>{partial.length}</b> carry at least one partly-measured axis</span>
+    <span><b>{unreachableRepo.length}</b> declare a repository nobody can read</span>
+    {unreachablePkg.length > 0 && (
+      <span><b>{unreachablePkg.length}</b> publish a package we could not fetch</span>
+    )}
+  </p>
+
+  <p class="tally">
+    {coverage.map((axis) => (
+      <span>
+        <b>{axis.scored}</b>/{reports.length} scored on {axis.label}
+      </span>
+    ))}
   </p>
 
   <ul class="roster">
@@ -63,9 +94,11 @@ const W = 96;
             <span class="roster-state">
               {report.source_state === "fetched"
                 ? `source read${report.files_scanned ? ` · ${report.files_scanned} files` : ""}`
-                : report.source_state === "unreachable"
+                : report.source_subject === "repository"
                   ? "declared repository not publicly reachable"
-                  : report.source_state.replace(/_/g, " ")}
+                  : report.source_subject === "package"
+                    ? "declared package could not be fetched from its registry"
+                    : report.source_state.replace(/_/g, " ")}
             </span>
           </span>
           <span class="roster-axes">

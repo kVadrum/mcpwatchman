@@ -13,7 +13,11 @@ import scans from "../data/scans.json";
  * render means a rebuild cannot leave this behind.
  */
 const read = scans.filter((r) => r.source_state === "fetched").length;
-const unreachable = scans.filter((r) => r.source_state === "unreachable").length;
+// SUBJECT, not state. This paragraph carries the GitHub private-vs-404
+// caveat, which has no npm meaning — attaching it to package failures made
+// the aggregate a claim about repositories that were never contacted.
+const unreachable = scans.filter((r) => r.source_subject === "repository").length;
+const unfetchable = scans.filter((r) => r.source_subject === "package").length;
 const scanned = scans.length ? scans[0].scanned_at.slice(0, 10) : "";
 
 const partial = scans.filter((r) =>
@@ -51,7 +55,7 @@ set that has not been built, so every finding is capped at "medium" and every
 server presently scores better than it eventually will.
 
 Of the ${scans.length} servers sampled, ${read} shipped source we could read and
-${unreachable} declare a repository that is not publicly reachable. GitHub
+${unreachable} declare a repository that is not publicly reachable, and ${unfetchable} publish a package we could not fetch from its registry — a distinct fact, and not a claim about their repository. GitHub
 answers 404 for a private repository as well as an absent one, so that figure
 means "we could not read it" and never "it does not exist". We do not claim the
 unreadable servers are the dangerous ones; that inference is unsupported.

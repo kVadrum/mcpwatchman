@@ -232,16 +232,20 @@ def test_a_ref_mismatch_is_published_not_dropped(reports) -> None:
             f"{report['name']}: the ref-match signal is missing from the report"
         )
         matched = report["ref_matched_version"]
-        if report["source_state"] == "fetched":
-            assert isinstance(matched, bool), (
-                f"{report['name']}: fetched but the ref match is undetermined"
-            )
-        else:
+        assert matched in (True, False, None)
+        if report["source_state"] != "fetched":
             assert matched is None, (
                 f"{report['name']}: nothing was fetched, yet the report claims "
                 f"ref_matched_version={matched!r} — an affirmative claim about "
                 "a revision nobody read"
             )
+        # ⚠ A SUCCESSFUL FETCH DOES NOT IMPLY A BOOL, and asserting that was
+        # this test's second wrong contract. Only a GIT fetch resolves a ref;
+        # an npm or PyPI fetch succeeds having established nothing about one,
+        # so `None` is the honest answer there too. The earlier version
+        # required a bool whenever `source_state == "fetched"`, which is the
+        # same fail-open the field itself had — 18 of 40 servers reported
+        # `true` purely because a dict lookup missed.
 
 
 def test_evidence_paths_are_paths_and_not_prose(reports) -> None:
@@ -290,3 +294,50 @@ def test_a_scored_subcheck_still_carries_its_evidence(reports) -> None:
                 )
                 checked += 1
     assert checked, "no sub-check evidence was examined — the check is vacuous"
+
+
+def test_a_package_failure_is_never_published_as_a_repository_failure(reports) -> None:
+    """A false public statement about a named third party, measured live.
+
+    An npm 404 sets `source_state = "unreachable"`, and four surfaces re-expressed
+    that as "declares a repository nobody can read" — including for a server
+    whose GitHub repository resolves perfectly well. Its own page said "package"
+    correctly while the roster, the homepage tally and `llms.txt` said
+    "repository": mcpwatchman.com contradicted itself about someone else's
+    project. `08-disclosure-policy.md` requires factual, never defamatory.
+
+    One judgement, five sites, four unpropagated — `base.md` → *Canonical homes*
+    → *Judgment-call clause*. The report now carries WHAT was unreachable and
+    every surface keys on that.
+    """
+    for report in reports:
+        subject = report["source_subject"]
+        assert subject in ("", "repository", "package")
+        if report["source_state"] != "unreachable":
+            assert subject == "", (
+                f"{report['name']}: not unreachable, yet names a subject"
+            )
+            continue
+        assert subject, f"{report['name']}: unreachable about WHAT?"
+        reason = report["source_reason"]
+        if subject == "package":
+            assert "repository" not in reason, (
+                f"{report['name']}: a package failure phrased as a repository "
+                f"claim — {reason[:80]!r}"
+            )
+        else:
+            assert "repository" in reason
+
+
+@needs_dist
+def test_no_built_surface_calls_a_package_failure_a_repository_failure(reports) -> None:
+    """The four surfaces, checked where they are actually rendered."""
+    packages = [r for r in reports if r["source_subject"] == "package"]
+    if not packages:
+        pytest.skip("no package-registry failures in this corpus")
+    for report in packages:
+        page = (DIST / "servers" / report["slug"] / "index.html").read_text()
+        assert "could not be fetched from its registry" in page
+        assert "the repository this server declares" not in page
+    roster = (DIST / "servers" / "index.html").read_text()
+    assert "publish a package we could not fetch" in roster
