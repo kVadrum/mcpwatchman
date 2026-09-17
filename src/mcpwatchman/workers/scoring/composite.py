@@ -96,6 +96,34 @@ def _stacking_multiplier(position: int) -> Decimal:
     return _STACKING[position] if position < len(_STACKING) else _STACKING_TAIL
 
 
+def stacked_deduction(groups: Iterable[Iterable[int]]) -> Decimal:
+    """Total deduction for pre-grouped findings, with `03`'s stacking applied.
+
+    **Shared on purpose, and this is the canonical home.** `03` §6 states its
+    own stacking as "as with Code Safety, multiple findings of the same severity
+    stack with diminishing returns (75%, 50%, 25%, 10%)" — the same rule, in
+    prose, in a second section. That is the lockstep test from `base.md` →
+    *Canonical homes* → *Edge case: when code IS a contract* answering YES: if
+    the ladder changes, both axes change together or they publish scores on
+    different scales while every test stays green.
+
+    What is NOT shared is the deduction TABLE. Code Safety keys on
+    (severity, confidence); Dependency Health keys on (severity, direct vs
+    transitive). Each axis owns its own table and hands the grouped numbers
+    here; `osv_check` does not call `axis_score` and must not.
+
+    `groups` is an iterable of per-group deduction lists — grouping is the
+    caller's, because only the caller knows what "same severity" means for its
+    table. Within a group, largest first (`03` §3): the worst finding takes the
+    undiminished hit.
+    """
+    total = Decimal(0)
+    for deductions in groups:
+        for position, deduction in enumerate(sorted(deductions, reverse=True)):
+            total += deduction * _stacking_multiplier(position)
+    return total
+
+
 def axis_score(findings: Iterable[Finding]) -> int:
     """Score one axis from its findings: starts at 100, floors at 0 (`03` §3).
 
@@ -115,14 +143,11 @@ def axis_score(findings: Iterable[Finding]) -> int:
             deduction_for(f.severity, f.confidence)
         )
 
-    total = Decimal(0)
-    for deductions in by_severity.values():
-        # Grouping is per SEVERITY and ordering within a group is largest-first:
-        # both are specified in `03` §3, which also carries the worked example
-        # and the reason. Cited rather than restated — the doc is canonical, and
-        # a second copy here would be free to drift from it.
-        for position, deduction in enumerate(sorted(deductions, reverse=True)):
-            total += deduction * _stacking_multiplier(position)
+    # Grouping is per SEVERITY and ordering within a group is largest-first:
+    # both are specified in `03` §3, which also carries the worked example and
+    # the reason. Cited rather than restated — the doc is canonical, and a
+    # second copy here would be free to drift from it.
+    total = stacked_deduction(by_severity.values())
 
     # Round the SCORE, not the deduction. Rounding the deduction first inverts
     # half-up into half-down for the thing we actually publish: two critical/high
