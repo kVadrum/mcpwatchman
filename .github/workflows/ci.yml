@@ -33,3 +33,37 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest
+
+  # The `[workers]` extra is resolved NOWHERE ELSE, and that is a demonstrated
+  # defect path rather than a theoretical one: `pgqueuer[psycopg]` reached `dev`
+  # as a bare `pgqueuer`, installing a queue that imports cleanly and cannot
+  # connect, because pgqueuer declares its Postgres driver only behind extras.
+  # The two places that would have caught it both cannot — CI installs `[dev]`,
+  # and a developer venv already carries transitive copies of half this extra,
+  # so a missing declaration resolves locally from something else's dependency.
+  #
+  # It also un-skips the real `detect-secrets` positive control, which is the
+  # only test that proves the secret scan reads files at all; without the extra
+  # it skips, and a broken invocation returns `[]` with every other secret test
+  # still green.
+  #
+  # ⚠ This job CAN red on upstream breakage that is not ours — an extra that
+  # resolves is a claim about the world, not about this commit. That is the
+  # cost, accepted deliberately: the alternative is learning the same thing
+  # from a worker that will not start.
+  workers-extra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[workers,dev]"
+      # Prove the extra RESOLVED rather than merely installed: both of these
+      # are the reason the job exists, and an import is the cheapest assertion
+      # that the wheel is present and loadable on this interpreter.
+      - name: The queue's driver is importable
+        run: python -c "import psycopg, pgqueuer; print(psycopg.__version__)"
+      - name: The secret scanner is on PATH
+        run: detect-secrets --version
+      - run: pytest
