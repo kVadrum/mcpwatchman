@@ -31,6 +31,7 @@ reader is owed the difference.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -58,6 +59,27 @@ class SourceState(StrEnum):
         disk is ours and is retryable.
         """
         return self in (SourceState.UNREACHABLE, SourceState.NOT_DECLARED)
+
+
+# An absolute filesystem path in a PUBLISHED reason is our scratch directory
+# leaking onto a public page. It happened: a fetch failure published
+# `/tmp/mcpw-scan-9evtt3fl/src/apps/mcp-server`, which tells a reader nothing
+# and tells everyone else where we unpack strangers' code. `base.md` §
+# *Host & system telemetry* puts absolute paths at Tier C — publishable to a
+# private remote, stripped on a public one, and this is as public as it gets.
+#
+# Same discipline `source._is_unreachable` already applies to URLs: sanitise
+# the text before it can steer or decorate a verdict.
+# The lookbehind keeps a URL intact: without it `https://github.com/x/y`
+# matches from the SECOND slash and publishes `https:/<path>`, which is
+# worse than the leak — it destroys a legitimate address while looking
+# like a redaction did its job.
+_ABSOLUTE_PATH = re.compile(r"(?<![:/\w])(?:/[\w.@+-]+){2,}/?")
+
+
+def redact_paths(text: str) -> str:
+    """Replace absolute filesystem paths with a placeholder."""
+    return _ABSOLUTE_PATH.sub("<path>", text)
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,9 +114,10 @@ class SourceAvailability:
         if self.state is SourceState.NOT_DECLARED:
             return "this server declares no source we know how to fetch"
         if self.state is SourceState.FETCH_FAILED:
+            detail = redact_paths(self.detail) if self.detail else ""
             return (
                 "the declared source could not be fetched for reasons on our "
-                f"side{f': {self.detail}' if self.detail else ''}; this is "
+                f"side{f': {detail}' if detail else ''}; this is "
                 "retryable and is not a finding about the server"
             )
         return "no source was fetched, so no documentation could be read"

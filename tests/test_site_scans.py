@@ -172,3 +172,30 @@ def test_the_pages_carry_no_inline_style_or_script() -> None:
         html = page.read_text()
         assert "<style" not in html, f"{page}: inline stylesheet"
         assert 'style="' not in html, f"{page}: inline style attribute"
+
+
+def test_no_published_field_carries_a_local_filesystem_path(reports) -> None:
+    """Measured leak, gated permanently.
+
+    A fetch failure published `/tmp/mcpw-scan-9evtt3fl/src/apps/mcp-server` into
+    `source_reason`. `base.md` § *Host & system telemetry* puts absolute paths at
+    Tier C — strip them on a public surface — and every byte of this file is
+    served to the internet.
+
+    ⚠ The first version of this check grepped for `/home/kv` and `/tmp/claude`
+    and reported clean, because the leaking prefix was `/tmp/mcpw-scan-`. A
+    pattern that cannot express its target returns a zero it did not earn.
+    """
+    blob = DATA.read_text()
+    # noqa S108: these literals are needles searched FOR, not paths opened.
+    for marker in ("/tmp/", "/home/", "/Users/", "/var/folders/", "mcpw-scan"):  # noqa: S108
+        assert marker not in blob, f"published data carries a local path: {marker}"
+
+
+def test_finding_paths_are_relative_to_the_scanned_tree(reports) -> None:
+    for report in reports:
+        for axis, entry in report["axes"].items():
+            for item in entry["evidence"]:
+                assert not item["path"].startswith("/"), (
+                    f"{report['name']}/{axis}: absolute evidence path {item['path']}"
+                )
