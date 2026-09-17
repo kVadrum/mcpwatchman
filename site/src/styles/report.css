@@ -1,0 +1,488 @@
+/* The server report pages.
+ *
+ * Extends the signature the tokens encode — a light evidence document inside
+ * dark instrument chrome — by giving each half a job the content actually has:
+ * the chrome carries the APPARATUS (axis meters, coverage, versions, what was
+ * excluded), and the paper carries the EVIDENCE (file, line, excerpt, and the
+ * rule that fired). Nothing here is decorative; if a rule is not encoding a
+ * fact about the scan it is not in this file.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--signal);
+  color: var(--signal-on);
+  padding: 0.6rem 1rem;
+  z-index: 10;
+}
+.skip:focus {
+  left: 0;
+}
+
+a {
+  color: var(--signal-ink);
+}
+a:hover {
+  color: var(--signal-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.hatch-defs {
+  position: absolute;
+}
+.hatch-line {
+  stroke: var(--void);
+}
+
+/* ── chrome bar ─────────────────────────────────────────────────────────── */
+
+.chrome-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--rule);
+  background: var(--ground-lift);
+}
+
+.wordmark {
+  font-family: var(--font-struct);
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.chrome-bar nav {
+  display: flex;
+  gap: 1.25rem;
+  margin-right: auto;
+  font-family: var(--font-struct);
+}
+
+.theme {
+  display: flex;
+  gap: 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.15rem;
+  margin: 0;
+}
+.theme label {
+  font-family: var(--font-struct);
+  font-size: 0.8rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 1px;
+  cursor: pointer;
+  color: var(--ink-dim);
+}
+.theme input:checked + label {
+  background: var(--panel);
+  color: var(--ink);
+}
+.theme input:focus-visible + label {
+  outline: 2px solid var(--signal);
+  outline-offset: 1px;
+}
+
+main {
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) 4rem;
+  max-width: 68rem;
+  margin-inline: auto;
+}
+
+/* ── server header ──────────────────────────────────────────────────────── */
+
+.report-head {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.report-head h1 {
+  font-family: var(--font-data);
+  font-size: clamp(1.25rem, 3.2vw, 1.9rem);
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0 0 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.report-version {
+  color: var(--ink-dim);
+  font-family: var(--font-data);
+  font-size: 0.9rem;
+}
+
+.report-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.5rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  font-family: var(--font-struct);
+}
+.report-facts b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.source-note {
+  border-left: 3px solid var(--signal);
+  padding: 0.75rem 0 0.75rem 1rem;
+  margin: 0 0 2rem;
+  max-width: 68ch;
+  color: var(--ink);
+}
+
+/* ── the axis rail ──────────────────────────────────────────────────────── */
+
+.rail {
+  display: grid;
+  gap: 1.75rem;
+  margin-bottom: 2.5rem;
+}
+@media (min-width: 46rem) {
+  .rail {
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+}
+
+.axis-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+.axis-name {
+  font-family: var(--font-struct);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.axis-weight {
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.meter {
+  display: block;
+  width: 100%;
+  max-width: 15rem;
+  height: auto;
+  margin: 0.5rem 0 0.4rem;
+}
+.m-lost {
+  fill: var(--deduct);
+}
+.m-scored {
+  fill: var(--signal);
+}
+.m-void {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+
+.axis-read {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.axis-score {
+  font-family: var(--font-data);
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 1;
+}
+.axis-cover,
+.axis-none {
+  font-size: 0.82rem;
+  color: var(--void-ink);
+  font-family: var(--font-struct);
+}
+.axis-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  max-width: 34ch;
+}
+
+/* ── the evidence document ──────────────────────────────────────────────── */
+
+.paper {
+  background: var(--paper);
+  color: var(--paper-ink);
+  border-radius: 3px;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  margin-bottom: 2rem;
+}
+.paper h2 {
+  font-family: var(--font-struct);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+.paper > p {
+  color: var(--paper-dim);
+  margin: 0 0 1.5rem;
+  max-width: 68ch;
+}
+.paper h3 {
+  font-family: var(--font-struct);
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--paper-rule);
+}
+.paper h3:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.finding {
+  display: grid;
+  gap: 0.3rem;
+}
+.finding-where {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.finding-rule {
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  color: var(--paper-dim);
+  overflow-wrap: anywhere;
+}
+.finding-why {
+  margin: 0;
+  max-width: 72ch;
+}
+.finding pre {
+  margin: 0.15rem 0 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--ground);
+  color: var(--ink);
+  border-radius: 2px;
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.nothing {
+  color: var(--paper-dim);
+  font-style: italic;
+}
+
+/* ── the non-assessment ─────────────────────────────────────────────────── */
+
+.non-assessment {
+  border-left: 3px solid var(--signal);
+}
+.non-assessment h2 {
+  margin-bottom: 0.6rem;
+}
+.not-evaluated {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.5rem;
+}
+.not-evaluated li {
+  display: grid;
+  gap: 0.1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--paper-rule);
+}
+.not-evaluated b {
+  font-family: var(--font-struct);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.not-evaluated span {
+  color: var(--paper-dim);
+  font-size: 0.9rem;
+  max-width: 72ch;
+}
+
+/* ── the index ledger ───────────────────────────────────────────────────── */
+
+.ledger-intro {
+  max-width: 62ch;
+  margin: 0 0 2rem;
+}
+.ledger-intro h1 {
+  font-family: var(--font-struct);
+  font-size: clamp(1.6rem, 4vw, 2.3rem);
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0 0 0.75rem;
+}
+.ledger-intro p {
+  color: var(--ink-dim);
+  margin: 0 0 0.75rem;
+}
+
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.75rem;
+  padding: 0.9rem 0;
+  margin: 0 0 2rem;
+  border-block: 1px solid var(--rule);
+  font-family: var(--font-struct);
+  font-size: 0.88rem;
+  color: var(--ink-dim);
+}
+.tally b {
+  font-family: var(--font-data);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.roster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border-block: 1px solid var(--rule);
+}
+.roster > li {
+  background: var(--ground);
+  padding: 1rem 0;
+}
+.roster-link {
+  display: grid;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0 0.5rem;
+}
+.roster-link:hover .roster-name,
+.roster-link:focus-visible .roster-name {
+  color: var(--signal-ink);
+}
+@media (min-width: 52rem) {
+  .roster-link {
+    grid-template-columns: minmax(0, 22rem) 1fr;
+    align-items: center;
+    gap: 1.5rem;
+  }
+}
+.roster-name {
+  font-family: var(--font-data);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.roster-state {
+  display: block;
+  font-family: var(--font-struct);
+  font-size: 0.78rem;
+  color: var(--void-ink);
+  margin-top: 0.15rem;
+}
+.roster-axes {
+  display: grid;
+  /* Five axes, one row wherever there is room. `auto-fit` wrapped them 3 + 2,
+     which reads as two groups and there are no groups — the five are peers. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1rem;
+}
+@media (min-width: 30rem) {
+  .roster-axes {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+.mini {
+  display: grid;
+  gap: 0.15rem;
+}
+.mini-label {
+  font-family: var(--font-struct);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+}
+.mini-value {
+  font-family: var(--font-data);
+  font-size: 0.95rem;
+}
+.mini-value[data-none="true"] {
+  color: var(--void-ink);
+}
+.mini svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.colophon {
+  border-top: 1px solid var(--rule);
+  padding: 1.75rem clamp(1rem, 4vw, 3rem) 3rem;
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+}
+.colophon p {
+  max-width: 68ch;
+  margin: 0 0 0.6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,0 +1,129 @@
+/* Theme tokens — the canonical home, imported by every page.
+ *
+ * Extracted from index.astro when the server pages landed. Three pages each
+ * carrying their own copy of a palette is the duplication `base.md` §
+ * *Canonical homes* calls a contract: a contrast fix applied to one page and
+ * not its siblings leaves the fleet disagreeing about what "--ink-dim" means,
+ * with nothing failing and no symbol to grep.
+ *
+ * The signature this encodes, stated in the markup it styles: **a light
+ * evidence document inside dark instrument chrome**. `--ground`/`--panel`/
+ * `--rule`/`--ink` are the instrument; `--paper*` is the document. That is why
+ * `--ground` stays grey in light mode — a white ground would make the document
+ * and the page one surface and the signature would stop existing.
+ *
+ * Both themes must define EVERY token. One present in one theme and absent in
+ * the other silently inherits the wrong palette.
+ */
+
+:root {
+  /* Instrument chrome — deep ink-slate, blue-shifted, never pure black. */
+  --ground: #10151b;
+  --ground-lift: #161d26;
+  --panel: #1a222c;
+  --rule: #27323f;
+  --ink: #e7ecf3;
+  --ink-dim: #8a97a8;
+  /* Was #5d6a7a — 3.33:1 on --ground, under AA, and this token carries
+     the colophon. Found by the contrast test written for the LIGHT theme
+     reading the dark one too: the defect predates the theme work and had
+     never been measured. #74818f is 4.61:1 and the same hue. */
+  --ink-faint: #74818f;
+
+  /* Amber reads as instrumentation, not alarm. Used for structure and emphasis.
+     TWO tokens, because on a lit ground one value cannot do both jobs:
+     --signal is the FILL (the CTA chip, the wordmark lens), --signal-ink is
+     anything drawn as TEXT or a hairline. On this theme they are equal. */
+  --signal: #e9a63f;
+  --signal-ink: #e9a63f;
+  --signal-hover: color-mix(in srgb, #e9a63f 88%, #fff);
+  --signal-on: #1a1204;
+  /* Reserved semantically: this colour ONLY ever marks a subtraction. */
+  --deduct: #d2654b;
+
+  /* The evidence document. Cool paper, not warm cream. */
+  --paper: #eceef0;
+  --paper-ink: #131920;
+  --paper-dim: #5a6673;
+  --paper-rule: #d2d7dc;
+
+  /* Unassessed coverage. Absence, not a value — see `--void` usage. */
+  --void: #27323f;
+  --void-ink: #74818f;
+
+  --measure: 68ch;
+  --gap: clamp(1.5rem, 4vw, 3rem);
+
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-struct: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* ── the light theme: a RELIGHTING, not an inversion ─────────────────
+   The page's signature is stated in its own markup — "a light evidence
+   document inside dark instrument chrome". Inverting the palette turns
+   the ground white, at which point the paper document and the page are
+   the same surface and the signature stops existing.
+
+   So the materials do not change: the housing is still slate, now lit
+   rather than photographed in a dark lab, and the document is still
+   paper. What reverses is which DIRECTION the document steps — on dark
+   it steps lighter, on light it steps brighter and crisper than a ground
+   that stays deliberately grey. Keeping --ground grey rather than white
+   is the whole reason the light theme still looks like this product.
+
+   Every text token was measured against its own ground rather than
+   eyeballed; the lowest is --ink-faint at 4.71:1, and --signal-ink exists
+   because #e9a63f is 1.39:1 here. The set is defined once, in a custom
+   property block, and applied by the two selectors below. */
+@media (prefers-color-scheme: light) {
+  /* System preference — but an explicit DARK choice still wins. */
+  :root:not([data-theme="dark"]) {
+    --ground: #ccd3db;
+    --ground-lift: #d6dce2;
+    --panel: #e0e5ea;
+    --rule: #aeb8c3;
+    --ink: #121820;
+    --ink-dim: #46525f;
+    --ink-faint: #4e5968;
+
+    --signal: #e9a63f;
+    --signal-ink: #744b04;
+    --signal-hover: color-mix(in srgb, #e9a63f 88%, #000);
+    --signal-on: #1a1204;
+    --deduct: #9c3517;
+
+    --paper: #fdfdfe;
+    --paper-ink: #131920;
+    --paper-dim: #5a6673;
+    --paper-rule: #dfe3e7;
+
+    --void: #aeb8c3;
+    --void-ink: #4e5968;
+  }
+}
+
+:root[data-theme="light"] {
+  --ground: #ccd3db;
+  --ground-lift: #d6dce2;
+  --panel: #e0e5ea;
+  --rule: #aeb8c3;
+  --ink: #121820;
+  --ink-dim: #46525f;
+  --ink-faint: #4e5968;
+
+  --signal: #e9a63f;
+  --signal-ink: #744b04;
+  --signal-hover: color-mix(in srgb, #e9a63f 88%, #000);
+  --signal-on: #1a1204;
+  --deduct: #9c3517;
+
+  --paper: #fdfdfe;
+  --paper-ink: #131920;
+  --paper-dim: #5a6673;
+  --paper-rule: #dfe3e7;
+
+  --void: #aeb8c3;
+  --void-ink: #4e5968;
+}
+

@@ -1,0 +1,82 @@
+---
+import "@fontsource/ibm-plex-sans/latin-400.css";
+import "@fontsource/ibm-plex-sans/latin-500.css";
+import "@fontsource/ibm-plex-sans-condensed/latin-500.css";
+import "@fontsource/ibm-plex-sans-condensed/latin-600.css";
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+import "../styles/tokens.css";
+import "../styles/report.css";
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+}
+const { title, description, canonical } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" data-scheme="dark" media="(prefers-color-scheme: dark)" content="#10151B" />
+    <meta name="theme-color" data-scheme="light" media="(prefers-color-scheme: light)" content="#CCD3DB" />
+    {/* Synchronous and in <head>: applies a stored theme BEFORE first paint.
+      `defer`/`type="module"` would apply it after the page painted in the other
+      theme, which is the flash it exists to prevent — and the usual inline
+      snippet is blocked by our own `script-src 'self'`. */}
+    <script is:inline src="/theme.js"></script>
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="chrome-bar">
+      <a class="wordmark" href="/">mcpwatchman</a>
+      <nav aria-label="Sections">
+        <a href="/servers/">Servers</a>
+        <a href="/api/servers.json">JSON</a>
+      </nav>
+      {/* Exactly the markup `theme.js` wires: it looks for `.theme`, checks the
+        radio matching the stored choice, and reveals the fieldset. A different
+        control here would be a control that silently never works — and it would
+        LOOK fine, because the page is correct with JS off. */}
+      <fieldset class="theme" hidden>
+        <legend class="sr-only">Colour theme</legend>
+        <input class="sr-only" type="radio" name="theme" id="theme-auto" value="auto" checked />
+        <label for="theme-auto">Auto</label>
+        <input class="sr-only" type="radio" name="theme" id="theme-dark" value="dark" />
+        <label for="theme-dark">Dark</label>
+        <input class="sr-only" type="radio" name="theme" id="theme-light" value="light" />
+        <label for="theme-light">Light</label>
+      </fieldset>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="colophon">
+      <p>
+        Scores are per-axis. The weighted composite is computed and withheld
+        until a hand-audited gold set validates the weights, so no single
+        number for a server appears anywhere on this site.
+      </p>
+      <p>
+        kVadrum © {year}. MIT-licensed. Not affiliated with Anthropic or with
+        the Model Context Protocol registry.
+      </p>
+    </footer>
+  </body>
+</html>

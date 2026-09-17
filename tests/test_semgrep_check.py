@@ -237,3 +237,77 @@ def test_a_rule_id_containing_a_dot_is_rejected(tmp_path: Path) -> None:
     )
     with pytest.raises(sc.RulesetError, match="must not contain"):
         sc.declared_rule_ids(root)
+
+
+# --- what must not be scored ---------------------------------------------
+
+
+def test_minified_bundles_are_not_scored(tmp_path: Path) -> None:
+    """The live failure that forced this, reproduced.
+
+    `ac.tandem/docs-mcp` scored **0** on Code Safety during the first real run
+    because its built documentation site ships a minified highlight.js, and
+    `guide/book/highlight-abc7f01d.js` matched the shell-exec rule four times on
+    its single line 6. The server's own source was never the problem.
+    """
+    docs = tmp_path / "guide" / "book"
+    docs.mkdir(parents=True)
+    bundle = docs / "highlight-abc7f01d.js"
+    bundle.write_text("!function(e){" + "var x=1;" * 200 + "require('child_process').exec(e)}\n")
+    (docs / "app.min.js").write_text("const a=1;\n")
+    (tmp_path / "server.js").write_text("const cp = require('child_process');\n")
+
+    pruned, sample = sc._prune_unscannable(tmp_path)
+    assert pruned == 2
+    assert not bundle.exists()
+    assert not (docs / "app.min.js").exists()
+    assert (tmp_path / "server.js").exists(), "authored source must survive"
+    assert any("highlight-abc7f01d.js" in s for s in sample)
+
+
+def test_vendored_trees_are_not_scored(tmp_path: Path) -> None:
+    """`excluded.py` calls itself a CONTRACT with two consumers.
+
+    semgrep was a silent third consumer honouring none of it, so a repository
+    that vendors its dependencies was scored on its dependencies' code.
+    """
+    (tmp_path / "node_modules" / "left-pad").mkdir(parents=True)
+    (tmp_path / "node_modules" / "left-pad" / "index.js").write_text("eval(x)\n")
+    (tmp_path / "vendor").mkdir()
+    (tmp_path / "vendor" / "dep.py").write_text("eval(x)\n")
+    (tmp_path / "server.py").write_text("print('hi')\n")
+
+    pruned, _ = sc._prune_unscannable(tmp_path)
+    assert pruned == 2
+    assert not (tmp_path / "node_modules").exists()
+    assert not (tmp_path / "vendor").exists()
+    assert (tmp_path / "server.py").exists()
+
+
+@pytest.mark.parametrize(("name", "body", "minified"), [
+    ("highlight-abc7f01d.js", "x\n", True),      # bundler content hash
+    ("app.min.js", "x\n", True),
+    ("vendor.bundle.js", "x\n", True),
+    ("server.js", "x" * 900 + "\n", True),       # no human wrote this line
+    ("server.js", "const x = 1;\n", False),
+    ("README.md", "x" * 900 + "\n", False),      # prose wraps long; not code
+    ("data-abc7f01d.json", "{}\n", True),        # hashed artifact, any suffix
+])
+def test_minification_detection(tmp_path: Path, name, body, minified) -> None:
+    path = tmp_path / name
+    path.write_text(body)
+    assert sc._is_minified(path) is minified
+
+
+def test_pruning_does_not_trip_the_zero_scanned_control(tmp_path, monkeypatch) -> None:
+    """A tree that is ALL vendored legitimately scans nothing.
+
+    The control exists to catch a scanner that looked at nothing it should have
+    looked at; it must not fire when there was correctly nothing left to read.
+    """
+    (tmp_path / "node_modules").mkdir()
+    (tmp_path / "node_modules" / "a.py").write_text("eval(x)\n")
+    _fake_run(monkeypatch, _payload([], scanned=()))
+    result = sc.run_semgrep(tmp_path, rules=RULES, inventory=_inventory(Language.PYTHON))
+    assert result.status is sc.SemgrepStatus.OK
+    assert result.pruned == 1

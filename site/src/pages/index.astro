@@ -8,6 +8,8 @@ import "@fontsource/ibm-plex-sans-condensed/latin-500.css";
 import "@fontsource/ibm-plex-sans-condensed/latin-600.css";
 import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
+// Canonical token home — see the file header for why it is not per-page.
+import "../styles/tokens.css";
 
 // Build-time, not hardcoded: a footer year that has to be remembered is a footer
 // year that goes wrong. The site rebuilds on every deploy.
@@ -84,7 +86,7 @@ const ledger = [
         "applicationCategory": "SecurityApplication",
         "operatingSystem": "Linux, macOS, Windows",
         "url": "https://mcpwatchman.com",
-        "abstract": "Independent, continuous security and quality audit of servers in the official Model Context Protocol registry. Pre-v0.1: no scores are published yet.",
+        "abstract": "Independent, continuous security and quality audit of servers in the official Model Context Protocol registry. Per-axis scores are published with the evidence behind every deduction; the weighted composite is computed and withheld until gold-set calibration validates the weights.",
         "description": "Scans the published source of MCP registry servers and reports evidence-linked, per-axis scores. Five axes are scored 0-100 independently: Code Safety, Auth Posture, Dependency Health, Maintenance, Transparency. Analysis is static; code is never executed and no running server is contacted.",
         "license": "https://spdx.org/licenses/MIT.html",
         "isAccessibleForFree": true,
@@ -154,9 +156,10 @@ const ledger = [
               produced it.
             </p>
             <p class="status-line">
-              <span class="pill">Pre-v0.1</span>
-              No scores are published yet. The scoring engine and registry crawler are
-              built; the scanner that feeds them is not.
+              <span class="pill">First scores</span>
+              <a href="/servers/">40 servers are scanned and published</a>, per axis,
+              with the file and line behind every deduction. 29 shipped source we
+              could read; 10 declare a repository nobody can reach.
             </p>
           </div>
 
@@ -306,107 +309,6 @@ const ledger = [
     <script type="module" src="/ledger.js" defer></script>
 
     <style is:global>
-      :root {
-        /* Instrument chrome — deep ink-slate, blue-shifted, never pure black. */
-        --ground: #10151b;
-        --ground-lift: #161d26;
-        --panel: #1a222c;
-        --rule: #27323f;
-        --ink: #e7ecf3;
-        --ink-dim: #8a97a8;
-        /* Was #5d6a7a — 3.33:1 on --ground, under AA, and this token carries
-           the colophon. Found by the contrast test written for the LIGHT theme
-           reading the dark one too: the defect predates the theme work and had
-           never been measured. #74818f is 4.61:1 and the same hue. */
-        --ink-faint: #74818f;
-
-        /* Amber reads as instrumentation, not alarm. Used for structure and emphasis.
-           TWO tokens, because on a lit ground one value cannot do both jobs:
-           --signal is the FILL (the CTA chip, the wordmark lens), --signal-ink is
-           anything drawn as TEXT or a hairline. On this theme they are equal. */
-        --signal: #e9a63f;
-        --signal-ink: #e9a63f;
-        --signal-hover: color-mix(in srgb, #e9a63f 88%, #fff);
-        --signal-on: #1a1204;
-        /* Reserved semantically: this colour ONLY ever marks a subtraction. */
-        --deduct: #d2654b;
-
-        /* The evidence document. Cool paper, not warm cream. */
-        --paper: #eceef0;
-        --paper-ink: #131920;
-        --paper-dim: #5a6673;
-        --paper-rule: #d2d7dc;
-
-        --measure: 68ch;
-        --gap: clamp(1.5rem, 4vw, 3rem);
-
-        --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-        --font-struct: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-        --font-data: "IBM Plex Mono", ui-monospace, monospace;
-      }
-
-      /* ── the light theme: a RELIGHTING, not an inversion ─────────────────
-         The page's signature is stated in its own markup — "a light evidence
-         document inside dark instrument chrome". Inverting the palette turns
-         the ground white, at which point the paper document and the page are
-         the same surface and the signature stops existing.
-
-         So the materials do not change: the housing is still slate, now lit
-         rather than photographed in a dark lab, and the document is still
-         paper. What reverses is which DIRECTION the document steps — on dark
-         it steps lighter, on light it steps brighter and crisper than a ground
-         that stays deliberately grey. Keeping --ground grey rather than white
-         is the whole reason the light theme still looks like this product.
-
-         Every text token was measured against its own ground rather than
-         eyeballed; the lowest is --ink-faint at 4.71:1, and --signal-ink exists
-         because #e9a63f is 1.39:1 here. The set is defined once, in a custom
-         property block, and applied by the two selectors below. */
-      @media (prefers-color-scheme: light) {
-        /* System preference — but an explicit DARK choice still wins. */
-        :root:not([data-theme="dark"]) {
-          --ground: #ccd3db;
-          --ground-lift: #d6dce2;
-          --panel: #e0e5ea;
-          --rule: #aeb8c3;
-          --ink: #121820;
-          --ink-dim: #46525f;
-          --ink-faint: #4e5968;
-
-          --signal: #e9a63f;
-          --signal-ink: #744b04;
-          --signal-hover: color-mix(in srgb, #e9a63f 88%, #000);
-          --signal-on: #1a1204;
-          --deduct: #9c3517;
-
-          --paper: #fdfdfe;
-          --paper-ink: #131920;
-          --paper-dim: #5a6673;
-          --paper-rule: #dfe3e7;
-        }
-      }
-
-      :root[data-theme="light"] {
-        --ground: #ccd3db;
-        --ground-lift: #d6dce2;
-        --panel: #e0e5ea;
-        --rule: #aeb8c3;
-        --ink: #121820;
-        --ink-dim: #46525f;
-        --ink-faint: #4e5968;
-
-        --signal: #e9a63f;
-        --signal-ink: #744b04;
-        --signal-hover: color-mix(in srgb, #e9a63f 88%, #000);
-        --signal-on: #1a1204;
-        --deduct: #9c3517;
-
-        --paper: #fdfdfe;
-        --paper-ink: #131920;
-        --paper-dim: #5a6673;
-        --paper-rule: #dfe3e7;
-      }
-
       *,
       *::before,
       *::after {

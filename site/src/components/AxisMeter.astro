@@ -1,0 +1,94 @@
+---
+/**
+ * One axis, drawn so a partial measurement cannot be misread as a whole one.
+ *
+ * This is the page's one bold element and it exists because of a real failure
+ * mode in the data: a server whose repository 404s still scores **80** on Auth
+ * Posture, because the transport sub-check reads the registry manifest and
+ * needs no source. Eighty of a quarter of an axis. Printed as "80" next to four
+ * other numbers it is simply a lie, and the lie is the kind this project exists
+ * to oppose.
+ *
+ * So the track is the WHOLE axis, and it has three regions:
+ *
+ *   ███████░░░░░░▚▚▚▚▚▚
+ *   scored  lost  never measured
+ *
+ * The unmeasured region is hatched rather than filled. A grey fill reads as
+ * zero or as "disabled"; a hatch reads as absence, which is what it is.
+ *
+ * SVG rather than a div with a width, because the site's CSP carries no
+ * `unsafe-inline` — and `style-src` governs inline style ATTRIBUTES too, so
+ * `style="width:40%"` is blocked. An SVG `width` is an attribute, not a style.
+ * Fixed viewBox and uniform scaling on purpose: `preserveAspectRatio="none"`
+ * would stretch the hatch by a different factor in every bar.
+ */
+interface Props {
+  axis: string;
+  label: string;
+  score: number | null;
+  assessedWeight: string;
+  weight: number;
+}
+
+const { axis, label, score, assessedWeight, weight } = Astro.props;
+
+const W = 240;
+const assessed = Math.max(0, Math.min(1, Number(assessedWeight) || 0));
+const assessedW = W * assessed;
+const scoredW = score === null ? 0 : (assessedW * score) / 100;
+const partial = score !== null && assessed < 1;
+
+const reading =
+  score === null
+    ? `${label}: not assessed`
+    : partial
+      ? `${label}: ${score} out of 100, measured on ${Math.round(assessed * 100)}% of the axis`
+      : `${label}: ${score} out of 100`;
+---
+
+<div class="axis" data-assessed={score === null ? "none" : partial ? "partial" : "full"}>
+  <div class="axis-head">
+    <span class="axis-name">{label}</span>
+    <span class="axis-weight">weight {weight}</span>
+  </div>
+
+  <svg
+    class="meter"
+    viewBox={`0 0 ${W} 10`}
+    width={W}
+    height="10"
+    role="img"
+    aria-label={reading}
+  >
+    <rect class="m-lost" x="0" y="0" width={assessedW} height="10" rx="1" />
+    {scoredW > 0 && <rect class="m-scored" x="0" y="0" width={scoredW} height="10" rx="1" />}
+    {assessed < 1 && (
+      <rect
+        class="m-void"
+        x={assessedW}
+        y="0"
+        width={W - assessedW}
+        height="10"
+        rx="1"
+        fill="url(#void-hatch)"
+      />
+    )}
+  </svg>
+
+  <p class="axis-read">
+    {score === null ? (
+      <span class="axis-none">not assessed</span>
+    ) : (
+      <>
+        <span class="axis-score">{score}</span>
+        {partial && (
+          <span class="axis-cover">
+            measured on {Math.round(assessed * 100)}% of this axis
+          </span>
+        )}
+      </>
+    )}
+  </p>
+  <slot />
+</div>

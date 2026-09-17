@@ -1,0 +1,146 @@
+---
+import Report from "../../layouts/Report.astro";
+import AxisMeter from "../../components/AxisMeter.astro";
+import VoidHatch from "../../components/VoidHatch.astro";
+import scans from "../../data/scans.json";
+
+const AXES = [
+  { key: "code_safety", label: "Code Safety", weight: 30 },
+  { key: "auth_posture", label: "Auth Posture", weight: 20 },
+  { key: "dependency_health", label: "Dependency Health", weight: 20 },
+  { key: "maintenance", label: "Maintenance", weight: 15 },
+  { key: "transparency", label: "Transparency", weight: 15 },
+];
+
+export function getStaticPaths() {
+  return scans.map((report) => ({
+    params: { slug: report.slug },
+    props: { report },
+  }));
+}
+
+const { report } = Astro.props;
+const scored = AXES.filter((a) => report.axes[a.key].score !== null);
+const withEvidence = AXES.filter((a) => report.axes[a.key].evidence.length > 0);
+const scannedDate = report.scanned_at.slice(0, 10);
+
+// When the source could not be read, every axis that needed it carries the
+// SAME sentence. Printed five times it becomes wallpaper and stops being read,
+// which is the opposite of the point. Stated once, prominently; the per-axis
+// note then only appears when it says something that sentence does not.
+const sourceNote =
+  report.source_state !== "fetched" ? report.source_reason : "";
+---
+
+<Report
+  title={`${report.name} — mcpwatchman`}
+  description={
+    scored.length === 0
+      ? `mcpwatchman could not assess ${report.name}. This page states what was not evaluated and why.`
+      : `Per-axis security and quality audit of ${report.name}, with the file and line behind every deduction.`
+  }
+  canonical={`https://mcpwatchman.com/servers/${report.slug}/`}
+>
+  <VoidHatch />
+
+  <div class="report-head">
+    <h1>{report.name}</h1>
+    <p class="report-version">version {report.version}</p>
+    <ul class="report-facts">
+      <li>scanned <b>{scannedDate}</b></li>
+      {report.repository_url && (
+        <li>source <a href={report.repository_url} rel="nofollow noopener">{report.repository_url.replace(/^https?:\/\//, "")}</a></li>
+      )}
+      {report.transport && <li>transport <b>{report.transport}</b></li>}
+      {report.files_scanned > 0 && <li>files read <b>{report.files_scanned}</b></li>}
+      <li>methodology <b>{report.methodology_version}</b></li>
+      {report.ruleset_version && <li>ruleset <b>{report.ruleset_version}</b></li>}
+    </ul>
+  </div>
+
+  {sourceNote && scored.length > 0 && (
+    <p class="source-note">{sourceNote}</p>
+  )}
+
+  {scored.length === 0 ? (
+    <section class="paper non-assessment">
+      <h2>This server was not assessed</h2>
+      <p>
+        No axis could be measured, so mcpwatchman publishes no score for
+        {" "}{report.name}. That is a statement about what we could read, not a
+        judgement about the server — an unassessed server is not a failing one,
+        and this page exists so the difference is never inferred from an absence.
+      </p>
+      <p><strong>{report.source_reason}</strong></p>
+      <ul class="not-evaluated">
+        {AXES.map((axis) => (
+          <li>
+            <b>{axis.label}</b>
+            <span>{report.axes[axis.key].reason || "not evaluated"}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ) : (
+    <section class="rail" aria-label="Axis scores">
+      {AXES.map((axis) => (
+        <AxisMeter
+          axis={axis.key}
+          label={axis.label}
+          score={report.axes[axis.key].score}
+          assessedWeight={report.axes[axis.key].assessed_weight}
+          weight={axis.weight}
+        >
+          {report.axes[axis.key].reason &&
+            report.axes[axis.key].reason !== sourceNote && (
+              <p class="axis-note">{report.axes[axis.key].reason}</p>
+            )}
+        </AxisMeter>
+      ))}
+    </section>
+  )}
+
+  {scored.length > 0 && (
+    <section class="paper">
+      <h2>The evidence</h2>
+      <p>
+        Every deduction below names the artefact that produced it. Nothing on
+        this page was executed: the source was read, never run, and no running
+        server was contacted.
+      </p>
+
+      {withEvidence.length === 0 ? (
+        <p class="nothing">
+          No findings were recorded on any assessed axis.
+        </p>
+      ) : (
+        withEvidence.map((axis) => (
+          <>
+            <h3>{axis.label}</h3>
+            <ul class="findings">
+              {report.axes[axis.key].evidence.map((item) => (
+                <li class="finding">
+                  {item.path ? (
+                    <span class="finding-where">
+                      {item.path}{item.line > 0 ? `:${item.line}` : ""}
+                    </span>
+                  ) : (
+                    <span class="finding-where">{item.label}</span>
+                  )}
+                  {item.path && <span class="finding-rule">{item.label}</span>}
+                  {item.detail && <p class="finding-why">{item.detail}</p>}
+                  {item.excerpt && <pre><code>{item.excerpt}</code></pre>}
+                  {item.url && (
+                    <span class="finding-rule">
+                      <a href={item.url} rel="nofollow noopener">{item.url}</a>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        ))
+      )}
+    </section>
+  )}
+</Report>

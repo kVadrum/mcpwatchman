@@ -52,6 +52,7 @@ from pathlib import Path
 
 import yaml
 
+from mcpwatchman.workers.excluded import EXCLUDED_DIRS
 from mcpwatchman.workers.scanner.inventory import Inventory, Language, Role
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
@@ -77,6 +78,16 @@ EVIDENCE_CONTEXT_LINES = 2
 # Scanner configuration a scanned repository may not supply. See the module
 # docstring: these are the files that let a repo decide what we look at.
 HOSTILE_CONFIG_FILES = (".semgrepignore",)
+
+# A line this long in a web asset means the file is machine-generated: minified,
+# bundled, or both. 500 is comfortably above hand-written code (this repository
+# lints at 100) and far below a minified bundle, which routinely runs to tens of
+# thousands of characters on one line.
+MINIFIED_LINE_CHARS = 500
+_MINIFIABLE_SUFFIXES = {".js", ".mjs", ".cjs", ".ts", ".jsx", ".tsx", ".css"}
+# Only the head is read: a bundle's first line is already over the threshold,
+# and this runs per file on trees of a few hundred.
+_MINIFIED_PROBE_BYTES = 64 * 1024
 
 # Languages the ruleset covers, keyed to the directory holding their rules.
 # Derived from what is on disk rather than listed, so adding rules/rust/ is a
@@ -146,6 +157,11 @@ class SemgrepResult:
     findings: tuple[CodeFinding, ...] = ()
     score: int | None = None
     files_scanned: int = 0
+    # Files and directories deliberately not read — vendored trees and minified
+    # bundles. Rendered, not silent: a reader comparing two servers deserves to
+    # know one of them shipped 245 files and was scored on 12 of them.
+    pruned: int = 0
+    pruned_sample: tuple[str, ...] = ()
     ruleset_version: str = ""
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
@@ -260,6 +276,70 @@ def ruleset_version(root: Path | None = None) -> str:
     raise RulesetError(f"{changelog} declares no `## <version>` heading")
 
 
+def _is_minified(path: Path) -> bool:
+    """Whether a web asset is machine-generated rather than authored.
+
+    Scoring a minified bundle is a false accusation with a score attached, and
+    it is not hypothetical — it is what sent a real server to **0** on Code
+    Safety during the first live run. `ac.tandem/docs-mcp` ships a built
+    documentation site, and `guide/book/highlight-abc7f01d.js` — a minified
+    highlight.js — matched the shell-exec rule four times on its single line 6.
+    The server's own source was never the problem.
+
+    Two signals, either sufficient: a build-artifact NAME (`*.min.js`, or a
+    content hash before the extension, which is what every bundler emits), or a
+    line long enough that no human wrote it.
+    """
+    stem = path.stem.lower()
+    if ".min" in stem or ".bundle" in stem or ".chunk" in stem:
+        return True
+    # `highlight-abc7f01d.js`, `book-a0b12cfe.js` — bundler content hashes.
+    tail = stem.rsplit("-", 1)[-1] if "-" in stem else ""
+    if len(tail) >= 8 and all(c in "0123456789abcdef" for c in tail):
+        return True
+    if path.suffix.lower() not in _MINIFIABLE_SUFFIXES:
+        return False
+    try:
+        head = path.open("rb").read(_MINIFIED_PROBE_BYTES)
+    except OSError:
+        return False
+    return any(len(line) > MINIFIED_LINE_CHARS for line in head.split(b"\n"))
+
+
+def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
+    """Remove from the scratch copy what must not be scored.
+
+    Two categories, one mechanism:
+
+    **`EXCLUDED_DIRS`.** That module exists because the crawler and the scanner
+    must agree on what is off-limits, and it names itself a CONTRACT with two
+    consumers. semgrep was a silent third consumer honouring none of it, so a
+    repository that vendors its dependencies was scored on its dependencies'
+    code. Passing `--exclude` per directory would work too; pruning keeps one
+    mechanism for both categories and matches what we already do to
+    `.semgrepignore`.
+
+    **Minified bundles** — see `_is_minified` for the live failure that forced
+    this.
+
+    Safe because `root` is a scratch copy `scan_workspace` throws away, and it
+    runs after `enumerate_tree`, so the inventory still records what shipped.
+    Returns the count and a bounded sample for the per-server page: "we did not
+    read these, and here is why" is a fact a reader is owed.
+    """
+    pruned: list[str] = []
+    for directory in sorted(EXCLUDED_DIRS):
+        for found in root.rglob(directory):
+            if found.is_dir():
+                pruned.append(f"{found.relative_to(root)}/")
+                shutil.rmtree(found, ignore_errors=True)
+    for path in sorted(root.rglob("*")):
+        if path.is_file() and _is_minified(path):
+            pruned.append(str(path.relative_to(root)))
+            path.unlink(missing_ok=True)
+    return len(pruned), tuple(pruned[:20])
+
+
 def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:
     """Remove scanner configuration supplied by the scanned repository.
 
@@ -323,6 +403,7 @@ def run_semgrep(
         )
 
     neutralised = _neutralise_hostile_config(root)
+    pruned_count, pruned_sample = _prune_unscannable(root)
 
     cmd = ["semgrep", "scan", "--json", "--quiet", "--no-git-ignore",
            "--max-memory", str(SEMGREP_MAX_MEMORY_MB), "--timeout", "0"]
@@ -340,6 +421,8 @@ def run_semgrep(
             status=SemgrepStatus.FAILED,
             reason=f"semgrep exceeded {timeout_s}s",
             neutralised=neutralised,
+            pruned=pruned_count,
+            pruned_sample=pruned_sample,
         )
 
     try:
@@ -353,10 +436,13 @@ def run_semgrep(
             reason=f"semgrep produced no JSON (exit {proc.returncode}): "
                    f"{proc.stderr.strip()[:200]}",
             neutralised=neutralised,
+            pruned=pruned_count,
+            pruned_sample=pruned_sample,
         )
 
     scanned = len(payload.get("paths", {}).get("scanned", []))
-    if inventory is not None and scanned == 0 and _scannable_source_files(inventory):
+    if (inventory is not None and scanned == 0
+            and _scannable_source_files(inventory) > pruned_count):
         # The positive control, wired in rather than left to a test: the
         # inventory says there was source in a language we cover, and semgrep
         # looked at nothing. That is a scanner defect, and reporting it as a
@@ -369,6 +455,8 @@ def run_semgrep(
                 "covered language"
             ),
             neutralised=neutralised,
+            pruned=pruned_count,
+            pruned_sample=pruned_sample,
         )
 
     ceiling = Confidence(confidence_ceiling(version))
@@ -413,6 +501,8 @@ def run_semgrep(
         ruleset_version=ruleset_version(rules),
         methodology_version=version,
         neutralised=neutralised,
+        pruned=pruned_count,
+        pruned_sample=pruned_sample,
     )
 
 

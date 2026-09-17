@@ -1,0 +1,22 @@
+---
+/**
+ * The hatch pattern every meter's unmeasured region references.
+ *
+ * Defined once per page and referenced by id: a pattern repeated inside each
+ * meter would be N identical definitions, and the stroke colour is a theme
+ * token, so they would have to change in lockstep.
+ */
+---
+<svg class="hatch-defs" aria-hidden="true" focusable="false" width="0" height="0">
+  <defs>
+    <pattern
+      id="void-hatch"
+      width="5"
+      height="5"
+      patternUnits="userSpaceOnUse"
+      patternTransform="rotate(40)"
+    >
+      <line class="hatch-line" x1="0" y1="0" x2="0" y2="5" stroke-width="1.6"></line>
+    </pattern>
+  </defs>
+</svg>

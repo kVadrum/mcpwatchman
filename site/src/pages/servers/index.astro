@@ -1,0 +1,98 @@
+---
+import Report from "../../layouts/Report.astro";
+import VoidHatch from "../../components/VoidHatch.astro";
+import scans from "../../data/scans.json";
+
+const AXES = [
+  { key: "code_safety", label: "Code" },
+  { key: "auth_posture", label: "Auth" },
+  { key: "dependency_health", label: "Deps" },
+  { key: "maintenance", label: "Maint" },
+  { key: "transparency", label: "Transp" },
+];
+
+const reports = [...scans].sort((a, b) => a.name.localeCompare(b.name));
+// Counted by what was READ, not by what produced a number. An unreachable
+// server still scores Auth Posture, because the transport sub-check reads the
+// registry manifest and needs no source — so "produced at least one score"
+// would count nine servers nobody could open, which is the kind of true-but-
+// misleading tally this project exists to avoid publishing.
+const read = reports.filter((r) => r.source_state === "fetched");
+const unreachable = reports.filter((r) => r.source_state === "unreachable");
+const partial = reports.filter((r) =>
+  Object.values(r.axes).some((a) => a.score !== null && Number(a.assessed_weight) < 1)
+);
+const scannedDate = reports.length ? reports[0].scanned_at.slice(0, 10) : "";
+const W = 96;
+---
+
+<Report
+  title="Scanned servers — mcpwatchman"
+  description="Per-axis security and quality scores for servers in the official Model Context Protocol registry, with the evidence behind every deduction."
+  canonical="https://mcpwatchman.com/servers/"
+>
+  <VoidHatch />
+
+  <div class="ledger-intro">
+    <h1>Scanned servers</h1>
+    <p>
+      A sample of the official registry, scanned on {scannedDate}. Each axis is
+      scored independently and shown with how much of it could actually be
+      measured — the hatched part of a bar is the share nobody assessed, and it
+      is drawn rather than rounded away.
+    </p>
+    <p>
+      There is no single number for a server here. The weighted composite is
+      computed and withheld until a hand-audited gold set validates the weights.
+    </p>
+  </div>
+
+  <p class="tally">
+    <span><b>{reports.length}</b> servers sampled</span>
+    <span><b>{read.length}</b> had source we could read</span>
+    <span><b>{unreachable.length}</b> declare a repository nobody can read</span>
+    <span><b>{partial.length}</b> carry at least one partly-measured axis</span>
+  </p>
+
+  <ul class="roster">
+    {reports.map((report) => (
+      <li>
+        <a class="roster-link" href={`/servers/${report.slug}/`}>
+          <span class="roster-name">
+            {report.name}
+            <span class="roster-state">
+              {report.source_state === "fetched"
+                ? `source read${report.files_scanned ? ` · ${report.files_scanned} files` : ""}`
+                : report.source_state === "unreachable"
+                  ? "declared repository not publicly reachable"
+                  : report.source_state.replace(/_/g, " ")}
+            </span>
+          </span>
+          <span class="roster-axes">
+            {AXES.map((axis) => {
+              const a = report.axes[axis.key];
+              const weight = Math.max(0, Math.min(1, Number(a.assessed_weight) || 0));
+              const aw = W * weight;
+              const sw = a.score === null ? 0 : (aw * a.score) / 100;
+              return (
+                <span class="mini">
+                  <span class="mini-label">{axis.label}</span>
+                  <span class="mini-value" data-none={a.score === null ? "true" : "false"}>
+                    {a.score === null ? "—" : a.score}
+                  </span>
+                  <svg viewBox={`0 0 ${W} 5`} width={W} height="5" aria-hidden="true">
+                    <rect class="m-lost" x="0" y="0" width={aw} height="5" />
+                    {sw > 0 && <rect class="m-scored" x="0" y="0" width={sw} height="5" />}
+                    {weight < 1 && (
+                      <rect class="m-void" x={aw} y="0" width={W - aw} height="5" fill="url(#void-hatch)" />
+                    )}
+                  </svg>
+                </span>
+              );
+            })}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Report>

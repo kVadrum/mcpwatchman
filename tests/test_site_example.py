@@ -104,10 +104,27 @@ def test_mislabelling_the_confidence_would_change_the_answer():
 # `PAGE` already lives under site/, so parents[2] IS the site root — appending
 # "site" again pointed every check at site/site/ and made them all FileNotFound.
 SITE = PAGE.parents[2]
+# Tokens were extracted from index.astro when the server pages landed: three
+# pages each carrying a copy of the palette is the duplication that lets a
+# contrast fix reach one page and not its siblings.
+TOKENS = SITE / "src" / "styles" / "tokens.css"
 
 
 def _public(name: str) -> pathlib.Path:
     return SITE / "public" / name
+
+
+# `llms.txt` and `sitemap.xml` are GENERATED now (src/pages/*.ts), because both
+# carry counts that went false the hour the server pages shipped. They only
+# exist after a build, so the checks that read them skip on an unbuilt checkout
+# rather than reporting a failure about a file that was never meant to be there.
+def _built(name: str) -> pathlib.Path:
+    return SITE / "dist" / name
+
+
+needs_built = pytest.mark.skipif(
+    not (SITE / "dist").is_dir(), reason="site not built"
+)
 
 
 def test_llms_txt_follows_the_llmstxt_spec():
@@ -115,7 +132,7 @@ def test_llms_txt_follows_the_llmstxt_spec():
     then prose WITHOUT headings, then H2 sections containing link lists. An
     earlier version put prose under H2s, which is the one structural rule the
     spec states outright."""
-    text = _public("llms.txt").read_text()
+    text = _built("llms.txt").read_text()
     lines = [ln for ln in text.splitlines() if ln.strip()]
     assert lines[0].startswith("# "), "first non-blank line must be the H1"
     assert lines[1].startswith("> "), "the H1 must be followed by a blockquote summary"
@@ -133,11 +150,24 @@ def test_llms_txt_follows_the_llmstxt_spec():
         assert any("](" in ln for ln in body), "each section needs a markdown link"
 
 
-def test_llms_txt_states_that_no_scores_are_published():
-    """The single most important fact for a machine reading this today. An agent
-    that concludes scores exist would act on an assessment we have not made."""
-    text = _public("llms.txt").read_text().lower()
-    assert "no scores are published" in text
+@needs_built
+def test_llms_txt_states_what_a_machine_must_not_infer():
+    """The most important facts for a machine reading this file.
+
+    ⚠ This test previously pinned "no scores are published", which was the
+    critical fact right up until scores were published — at which point the test
+    was enforcing a false claim on the surface written for the audience least
+    able to notice. What replaces it are the two claims that are load-bearing
+    NOW: the composite is withheld, and a score means nothing without the
+    coverage it was measured on.
+    """
+    text = _built("llms.txt").read_text().lower()
+    assert "composite" in text
+    assert "withheld" in text
+    assert "assessed_weight" in text
+    assert "no scores are published" not in text, (
+        "the file still carries a claim that went false when scores shipped"
+    )
 
 
 def test_robots_txt_blocks_nobody():
@@ -194,7 +224,12 @@ def test_the_page_carries_parseable_structured_data():
     assert data["@type"] == "SoftwareApplication"
     assert data["isAccessibleForFree"] is True
     # The pre-v0.1 position must be machine-readable, not only in prose.
-    assert "no scores are published" in data["abstract"].lower()
+    # Was "no scores are published" — true until they were. The durable claim
+    # is the one that is still true and still load-bearing: the composite is
+    # computed and withheld.
+    abstract = data["abstract"].lower()
+    assert "composite" in abstract and "withheld" in abstract
+    assert "no scores are published" not in abstract
 
 
 def test_no_html_comments_reach_the_reader():
@@ -251,7 +286,7 @@ def _theme_block(selector: str) -> str:
     vacuous pass. It did exactly that when first written — two empty strings
     compared equal and the test reported green having read nothing.
     """
-    source = PAGE.read_text()
+    source = TOKENS.read_text()
     at = source.index(selector)
     start = source.index("{", at) + 1
     depth, out = 1, []
@@ -303,7 +338,7 @@ def test_both_themes_define_the_same_tokens():
     """A token defined on one theme and missing on the other does not fail —
     it inherits the other palette's value, so a light page renders one dark
     element and nothing reports it."""
-    dark = _theme_block("\n      :root {")
+    dark = _theme_block("\n:root {")
     light = _theme_block(':root[data-theme="light"]')
     missing_light = [t for t in THEME_TOKENS if f"{t}:" not in light]
     missing_dark = [t for t in THEME_TOKENS if f"{t}:" not in dark]
@@ -360,7 +395,7 @@ def test_every_theme_text_token_clears_AA_on_its_own_ground():
         hi, lo = max(la, lb), min(la, lb)
         return (hi + 0.05) / (lo + 0.05)
 
-    for selector in ("\n      :root {", ':root[data-theme="light"]'):
+    for selector in ("\n:root {", ':root[data-theme="light"]'):
         block = _theme_block(selector)
         token = dict(
             re.findall(r"(--[a-z-]+):\s*(#[0-9a-fA-F]{6})", block)
@@ -402,12 +437,15 @@ def test_the_browser_chrome_colour_matches_the_page_ground():
     contract is enforced here — the same reason `test_published_example_matches_
     the_shipped_engine` exists in this file.
     """
+    # Grounds come from the token file, the meta tags from the page that
+    # carries them — two files since the extraction, one contract.
+    tokens = TOKENS.read_text()
     source = PAGE.read_text()
     grounds = {
-        "dark": re.search(r":root \{[^}]*?--ground:\s*(#[0-9a-fA-F]{6})", source, re.S),
+        "dark": re.search(r":root \{[^}]*?--ground:\s*(#[0-9a-fA-F]{6})", tokens, re.S),
         "light": re.search(
             r':root\[data-theme="light"\]\s*\{[^}]*?--ground:\s*(#[0-9a-fA-F]{6})',
-            source, re.S,
+            tokens, re.S,
         ),
     }
     assert all(grounds.values()), "could not read --ground from both themes"
