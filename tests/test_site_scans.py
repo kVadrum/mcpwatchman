@@ -13,7 +13,10 @@ careless edit away from being false, and none of them fails loudly on its own.
 
 from __future__ import annotations
 
+import ast
 import json
+import shutil
+import subprocess
 from decimal import Decimal
 from pathlib import Path
 
@@ -22,7 +25,8 @@ import pytest
 from mcpwatchman.workers.scanner.runner import AXES, slugify
 from mcpwatchman.workers.scoring.weights import composite_published
 
-SITE = Path(__file__).resolve().parents[1] / "site"
+ROOT = Path(__file__).resolve().parents[1]
+SITE = ROOT / "site"
 DATA = SITE / "src" / "data" / "scans.json"
 DIST = SITE / "dist"
 
@@ -638,3 +642,86 @@ def test_the_growth_key_depends_only_on_a_server_name() -> None:
     # first ten of the grown pool are NOT the first ten of the old one, which
     # is why a top-N draw could never have been stable.
     assert sorted(grown, key=sample_key)[:10] != order[:10]
+
+
+def _git() -> str:
+    """The git binary, resolved. A bare name is whatever PATH happens to hold."""
+    found = shutil.which("git")
+    assert found is not None, "git is unavailable, so provenance cannot be checked"
+    return found
+
+
+def _commit_declaring(version: str) -> str | None:
+    """The first commit whose `pyproject.toml` declares `version`, or None."""
+    revs = subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [_git(), "log", "--format=%H", "--", "pyproject.toml"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    for rev in revs.stdout.split():
+        blob = subprocess.run(  # noqa: S603 - argument list, never a shell string
+            [_git(), "show", f"{rev}:pyproject.toml"],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        if blob.returncode == 0 and f'version = "{version}"' in blob.stdout:
+            return rev
+    return None
+
+
+def test_the_stamped_scanner_version_could_have_produced_this_record(reports) -> None:
+    """`scanner_version` is a reproducibility claim, and it was not checkable.
+
+    ⚠ EVERY PUBLISHED RECORD STAMPED `0.22.0` WHILE CARRYING `fault`, A FIELD
+    `0.22.0` DID NOT HAVE. `ServerReport.scanner_version` defaults to
+    `__version__`, captured when the scan runs — and the scan ran before
+    `/bump` ticked the version, so the data and the stamp came from different
+    versions. A consumer following that provenance reaches code incapable of
+    producing the record it is trying to reproduce, which on a site whose whole
+    premise is checkable claims is the worst kind of wrong: confidently
+    specific, and addressed to the audience least able to notice.
+
+    Derived from git rather than from a hand-kept map of field-to-version,
+    because such a map is the per-site discipline that goes stale silently: the
+    stamped version's own `AxisScore` is read out of that commit and must
+    declare every key the data actually uses. Found by the Codex leg of a
+    `/qaa`; positive-controlled against the live defect, where it went red.
+    """
+    shallow = subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [_git(), "rev-parse", "--is-shallow-repository"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert shallow.stdout.strip() != "true", (
+        "shallow clone: this gate cannot read the history it needs and would "
+        "pass without checking — set `fetch-depth: 0` on the checkout"
+    )
+
+    published: set[str] = set()
+    for report in reports:
+        for axis in report["axes"].values():
+            published |= set(axis)
+
+    for version in sorted({r["scanner_version"] for r in reports}):
+        rev = _commit_declaring(version)
+        assert rev is not None, (
+            f"the data is stamped scanner_version {version!r}, which no commit "
+            "in this repository ever declared — the provenance names a version "
+            "that does not exist"
+        )
+        src = subprocess.run(  # noqa: S603 - argument list, never a shell string
+            [_git(), "show", f"{rev}:src/mcpwatchman/workers/scanner/runner.py"],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        fields = {
+            node.target.id
+            for cls in ast.walk(ast.parse(src.stdout))
+            if isinstance(cls, ast.ClassDef) and cls.name == "AxisScore"
+            for node in cls.body
+            if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+        }
+        assert fields, f"could not read AxisScore out of {version} ({rev[:8]})"
+        impossible = published - fields
+        assert not impossible, (
+            f"the data is stamped scanner_version {version!r} ({rev[:8]}) but "
+            f"publishes axis field(s) {sorted(impossible)} that version could "
+            "not produce — the scan ran against newer code than the stamp "
+            "names, so the record is not reproducible from it"
+        )

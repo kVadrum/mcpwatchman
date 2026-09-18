@@ -41,6 +41,7 @@ from pathlib import Path
 
 from mcpwatchman.workers.crawler.registry import RegistryEntry
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scanner.transport_check import Transport, TransportAssessment
 from mcpwatchman.workers.scoring.axes import AxisResult, SubCheck, score_axis
 
@@ -735,11 +736,31 @@ def _authentication_model(
     )
 
 
+# The two ways the credential scan does not happen. They are BOTH ours, so both
+# carry `Fault.ENVIRONMENT` and are refused at publication — but they are not the
+# same sentence, and the page states one of them about a named third party.
+# Saying "was not available" about a binary that was present and then timed out
+# is false, and it is false in the direction that hides a broken toolchain.
+CREDENTIAL_SCAN_ABSENT = (
+    "`detect-secrets` was not available to this worker, so the "
+    "committed-credential scan did not run. A clean result here would be a "
+    "scan that never happened."
+)
+CREDENTIAL_SCAN_FAILED = (
+    "`detect-secrets` was available but its run did not complete — it timed "
+    "out, or returned output this scanner could not read — so the "
+    "committed-credential scan produced no result. A clean result here would "
+    "be a scan that never finished."
+)
+
+
 def _secret_handling(
     secrets: list[SecretFinding] | None,
     source: str | None,
     readme: str,
     absent_reason: str = NO_SOURCE_FETCHED,
+    *,
+    tool_reason: str = CREDENTIAL_SCAN_ABSENT,
 ) -> SubCheck:
     """`03` §4's secret-handling sub-check."""
     name = "secret_handling"
@@ -765,12 +786,12 @@ def _secret_handling(
                    "committed credentials",
         )
     if secrets is None:
-        return SubCheck(
-            name, None,
-            reason="`detect-secrets` was not available to this worker, so the "
-                   "committed-credential scan did not run. A clean result here "
-                   "would be a scan that never happened.",
-        )
+        # ⚠ ATTRIBUTED, and this is the whole point of the field. The axis
+        # stays SCORED — `score_axis` renormalises this abstention away — so
+        # `cohort.unpublishable_gaps`, which only examines axes with no score,
+        # could not see it. Without the attribution our own broken toolchain
+        # reaches a stranger's page inside a number that looks measured.
+        return SubCheck(name, None, reason=tool_reason, fault=Fault.ENVIRONMENT.value)
 
     credential_vars = _env_credential_names(source)
     loads_secrets = any(t in source for t in _SECRET_LOADERS)
@@ -899,7 +920,17 @@ def assess_auth(
     if source is not None and not source.strip():
         source, absent_reason = None, SOURCE_UNREADABLE
 
+    # ⚠ WHICH FAILURE IT WAS IS DECIDED HERE, not inside `scan_secrets`, whose
+    # `None` deliberately means only "not assessed" and is relied on by six
+    # call sites. `shutil.which` before the run separates a binary that is
+    # missing from one that is present and then times out or emits output we
+    # cannot parse — Codex found the second case publishing the first case's
+    # sentence. Both are ours and both are refused; only the wording differs,
+    # and it is the wording that appears on someone else's page.
+    tool_reason = CREDENTIAL_SCAN_ABSENT
     if root is not None and has_source and secrets is None and scan_for_secrets:
+        if shutil.which("detect-secrets") is not None:
+            tool_reason = CREDENTIAL_SCAN_FAILED
         secrets = scan_secrets(root)
 
     return score_axis(
@@ -907,7 +938,9 @@ def assess_auth(
         [
             _authentication_model(entry, transport, source, readme, absent_reason),
             transport.subcheck,
-            _secret_handling(secrets, source, readme, absent_reason),
+            _secret_handling(
+                secrets, source, readme, absent_reason, tool_reason=tool_reason
+            ),
             _authorization_granularity(source, inventory, absent_reason),
         ],
     )

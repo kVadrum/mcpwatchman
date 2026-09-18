@@ -33,7 +33,7 @@ accident.
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import KW_ONLY, dataclass
 from decimal import Decimal
 
 from mcpwatchman.workers.scoring.composite import AXIS_MAX, dec, round_half_up
@@ -59,6 +59,30 @@ class SubCheck:
     # Paths (relative to the scan root) or URLs backing the score. `03` §10:
     # every point subtracted traces to an artifact.
     evidence: tuple[str, ...] = ()
+    # ⚠ KEYWORD-ONLY, for the reason `runner.AxisScore` is: this class is built
+    # positionally at 67 sites, so a field inserted ahead of `evidence` would
+    # silently capture an evidence tuple.
+    _: KW_ONLY
+    # WHOSE gap this abstention is, when `score is None` — a `reachability.Fault`
+    # value, carried as a plain string so the scoring layer keeps its
+    # independence from the scanner layer (nothing else here imports it).
+    #
+    # ⚠ THIS EXISTS BECAUSE AN AXIS-LEVEL ATTRIBUTION CANNOT SEE INSIDE A SCORED
+    # AXIS. `score_axis` renormalises an abstention away, so an axis whose
+    # sub-check failed for reasons of OURS still publishes a number, and
+    # `cohort.unpublishable_gaps` — which only examines axes where `score is
+    # None` — never looks at it. Measured: with `detect-secrets` timing out,
+    # Auth Posture went 85 -> 80 at coverage 0.85 -> 0.65, publication reported
+    # ZERO gaps, and the page carried *"`detect-secrets` was not available to
+    # this worker"* as a fact about a third party.
+    #
+    # Empty means "no separate claim": the abstention is already explained by
+    # the axis-level fault, which is the common case (no source was fetched, so
+    # every sub-check needing source abstains for the publisher's reason).
+    # Attribute explicitly wherever a sub-check can abstain because OUR tooling
+    # did not run — that is the case the axis-level fault structurally cannot
+    # represent.
+    fault: str = ""
 
     def __post_init__(self) -> None:
         if self.score is None:

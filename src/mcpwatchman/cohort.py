@@ -287,6 +287,33 @@ def unpublishable_gaps(name: str, report: dict) -> list[str]:
         return []
     problems: list[str] = []
     for axis, entry in sorted(report.get("axes", {}).items()):
+        # ⚠ CHECKED BEFORE THE `score is not None` SKIP BELOW, because a SCORED
+        # axis is exactly where this hides. `score_axis` renormalises an
+        # unassessable sub-check away, so an axis whose credential scan died
+        # for reasons of ours still publishes a number — and this function used
+        # to return at the next line, having looked at nothing. Measured:
+        # `detect-secrets` timing out took Auth Posture to 80 at coverage 0.65
+        # with ZERO gaps reported and *"`detect-secrets` was not available to
+        # this worker"* on the page. The axis-level `fault` is `None` whenever
+        # a score exists, so it could not have carried this.
+        for raw_sub in sorted(set(entry.get("unmeasured_faults") or ())):
+            try:
+                sub_fault = Fault(raw_sub)
+            except ValueError:
+                problems.append(
+                    f"{name}/{axis} renormalised away a sub-check with an "
+                    f"unrecognised fault {raw_sub!r} — publication refuses what "
+                    "it cannot attribute"
+                )
+                continue
+            if not sub_fault.publishable:
+                problems.append(
+                    f"{name}/{axis} scored {entry.get('score')} at coverage "
+                    f"{entry.get('assessed_weight')}, but part of it went "
+                    f"unmeasured and the gap is {sub_fault.value}, not the "
+                    "server's. A partly-measured axis publishes a number that "
+                    "looks like an answer — fix the run, do not publish it"
+                )
         if entry.get("score") is not None:
             continue
         raw = entry.get("fault") or Fault.UNATTRIBUTED.value

@@ -15,6 +15,7 @@ import pytest
 
 from mcpwatchman.workers.crawler.registry import Header, Package, RegistryEntry, Remote
 from mcpwatchman.workers.scanner import auth_check
+from mcpwatchman.workers.scanner import auth_check as ac
 from mcpwatchman.workers.scanner.auth_check import (
     _DETECT_SECRETS_ARGV,
     SecretFinding,
@@ -22,6 +23,7 @@ from mcpwatchman.workers.scanner.auth_check import (
     scan_secrets,
 )
 from mcpwatchman.workers.scanner.inventory import LARGE_FILE_BYTES, enumerate_tree
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scanner.transport_check import assess_transport
 
 
@@ -738,3 +740,41 @@ def test_the_deno_destructuring_branch_is_not_dead(tmp_path: Path) -> None:
     secret = _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling")
     assert secret.score == 70
     assert "OPENAI_API_KEY" in secret.evidence[0]
+
+
+def test_a_detect_secrets_RUNTIME_failure_is_attributed_and_named_honestly(
+    tmp_path, monkeypatch
+) -> None:
+    """Present-and-broken is not absent, and the page says which.
+
+    ⚠ TWO DEFECTS IN ONE BRANCH, both found by the Codex leg of a `/qaa`.
+    `shutil.which()` proves only that the binary EXISTS; `scan_secrets` then
+    collapses a timeout, a crash and unparseable output into the same `None`
+    that absence produces. So a `detect-secrets` that ran and died published
+    *"was not available to this worker"* — false about our own toolchain — and
+    the abstention carried no fault, so the axis stayed scored and
+    `cohort.unpublishable_gaps` never examined it.
+
+    The fault is the load-bearing half: both cases are ours, both are refused.
+    The wording is the honest half: only one of them is true at a time, and it
+    appears on a named third party's page.
+    """
+    (tmp_path / "app.py").write_text("import os\nKEY = os.environ['API_KEY']\n")
+    entry = _remote_entry()
+
+    monkeypatch.setattr(ac.shutil, "which", lambda _: "/usr/bin/detect-secrets")
+    monkeypatch.setattr(
+        ac, "scan_secrets", lambda *a, **k: None  # ran, produced nothing usable
+    )
+    failed = _sub(_assess(entry, tmp_path), "secret_handling")
+    assert failed.score is None
+    assert failed.fault == Fault.ENVIRONMENT.value, (
+        "a scan that did not complete was published as somebody else's gap"
+    )
+    assert "was available but its run did not complete" in failed.reason
+    assert "was not available to this worker" not in failed.reason
+
+    monkeypatch.setattr(ac.shutil, "which", lambda _: None)
+    absent = _sub(_assess(entry, tmp_path), "secret_handling")
+    assert absent.fault == Fault.ENVIRONMENT.value
+    assert "was not available to this worker" in absent.reason

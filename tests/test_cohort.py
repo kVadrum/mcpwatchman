@@ -506,3 +506,46 @@ def test_the_cohort_has_not_shrunk_since_it_last_changed(cohort: Cohort) -> None
         f"these servers were pinned at {rev[:8]} and are not pinned now, so "
         f"their published pages would stop existing: {dropped}"
     )
+
+
+def test_a_scored_axis_hiding_our_own_failure_is_refused() -> None:
+    """The gap an axis-level fault structurally cannot represent.
+
+    ⚠ `score_axis` RENORMALISES an unassessable sub-check away, so an axis
+    whose credential scan died for reasons of ours still publishes a number —
+    and `fault` is `None` the moment a score exists, so the attribution that
+    would have caught it does not exist on a scored axis. This function used to
+    `continue` past any scored axis before looking at anything.
+
+    Measured before the fix, through the real code path: with `detect-secrets`
+    timing out, Auth Posture went 85 -> 80 at coverage 0.85 -> 0.65, publication
+    reported ZERO gaps, and the page carried *"`detect-secrets` was not
+    available to this worker"* as the stated reason a third party was not fully
+    assessed. A partly-measured axis is exactly where this hides, because the
+    number reads as an answer.
+    """
+    def report(faults: tuple[str, ...]) -> dict:
+        return {"name": "x/y", "axes": {"auth_posture": {
+            "score": 80, "assessed_weight": "0.65", "fault": None,
+            "unmeasured_faults": list(faults), "reason": "",
+        }}}
+
+    assert unpublishable_gaps("x/y", report(("environment",))), (
+        "a scored axis whose missing part is OUR fault reached publication"
+    )
+    assert unpublishable_gaps("x/y", report(("unattributed",))), (
+        "the default must be refused on a scored axis too, or forgetting to "
+        "attribute a new sub-check costs a public page rather than a failed run"
+    )
+    assert unpublishable_gaps("x/y", report(("nonsense",))), (
+        "an unrecognised token must fail closed"
+    )
+    # The negative control, which is the half that keeps the gate usable: a
+    # publisher-side or project-side gap inside a scored axis is publishable,
+    # and an empty list means the axis fault already explains it.
+    assert not unpublishable_gaps("x/y", report(("publisher", "project")))
+    assert not unpublishable_gaps("x/y", report(()))
+    # Absent entirely — every report published before this field existed.
+    assert not unpublishable_gaps("x/y", {"name": "x/y", "axes": {"auth_posture": {
+        "score": 80, "assessed_weight": "0.65", "fault": None, "reason": "",
+    }}})

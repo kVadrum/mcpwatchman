@@ -1,3 +1,3 @@
 """mcpwatchman — independent security and quality audit for MCP servers."""
 
-__version__ = "0.23.3"
+__version__ = "0.24.0"

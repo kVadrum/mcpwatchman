@@ -125,6 +125,19 @@ class AxisScore:
     # already: a confident claim on a machine surface, addressed to the
     # audience least able to notice it is wrong.
     fault: str | None = None
+    # WHOSE gaps were renormalised AWAY inside this axis — the sub-checks that
+    # abstained while the axis still scored.
+    #
+    # ⚠ `fault` ABOVE CANNOT REPRESENT THIS, and the difference is not a nuance.
+    # It answers "whose gap is this axis", and is `None` the moment a score
+    # exists — so an axis that scored 80 of a 0.65 coverage because OUR tool
+    # died carries no attribution at all, and `cohort.unpublishable_gaps`
+    # examines only axes with no score. Measured with `detect-secrets` timing
+    # out: Auth Posture 85 -> 80, coverage 0.85 -> 0.65, publication reporting
+    # ZERO gaps, and the published sentence naming our own toolchain as a fact
+    # about a third party. A partly-measured axis is exactly where an
+    # environment gap hides, because the number looks like an answer.
+    unmeasured_faults: tuple[str, ...] = ()
     evidence: tuple[Evidence, ...] = ()
 
     @property
@@ -275,6 +288,14 @@ def _from_axis_result(
         reason=reason,
         assessed_weight=_fmt(result.assessed_weight),
         fault=None if result.score is not None else fault.value,
+        # Distinct, sorted, and only where a sub-check made its own claim. An
+        # empty `fault` means "already explained by the axis-level attribution"
+        # — the ordinary case, where no source was fetched and every sub-check
+        # needing source abstains for the publisher's reason. Carrying those up
+        # would restate the axis fault once per sub-check and say nothing.
+        unmeasured_faults=tuple(sorted({
+            s.fault for s in result.subchecks if s.score is None and s.fault
+        })),
         evidence=evidence,
     )
 
