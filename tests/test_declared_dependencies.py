@@ -158,3 +158,33 @@ def test_the_check_can_actually_fail() -> None:
     # the dev environment, or the union blindness is back.
     assert "sqlalchemy" in _declared_modules()
     assert "sqlalchemy" not in _declared_modules(("dev",))
+
+
+def test_the_imported_version_matches_the_manifest() -> None:
+    """Two independent readers of the same fact, because one of them can lie.
+
+    ⚠ **A stale `.pyc` made the scanner stamp 40 published reports with a
+    version that never existed in the source.** Measured: the bytecode was
+    written at 00:08:39.398 and the source restored at 00:08:39.565 — 167 ms
+    apart, inside the same second. CPython invalidates a cached module on
+    (source mtime truncated to SECONDS, source size), and `"0.20.1"` and
+    `"0.20.2"` are the same length, so both halves matched and the stale
+    bytecode was served.
+
+    No version-comparison gate can catch that, and the one this repo briefly
+    had would not have: it compared the stamp against `__version__`, and a
+    warm stale cache supplies the same wrong value to both sides.
+
+    What does catch it is reading the fact from somewhere bytecode cannot
+    reach. `pyproject.toml` is parsed as text; `__version__` is imported. If
+    they disagree, either a cache is stale or a bump moved one file and not the
+    other — which is also the lockstep drift `.version-source` exists for.
+    """
+    from mcpwatchman import __version__
+
+    manifest = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    declared = manifest["project"]["version"]
+    assert __version__ == declared, (
+        f"imported __version__ is {__version__} but pyproject declares "
+        f"{declared} — a stale .pyc, or a half-applied bump"
+    )

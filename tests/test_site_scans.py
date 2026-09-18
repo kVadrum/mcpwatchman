@@ -343,24 +343,96 @@ def test_no_built_surface_calls_a_package_failure_a_repository_failure(reports) 
     assert "publish a package we could not fetch" in roster
 
 
-def test_the_published_data_was_produced_by_the_current_scanner(reports) -> None:
-    """Provenance: a consumer must be able to tie results to an implementation.
+def test_the_published_data_matches_the_current_scoring_contract(reports) -> None:
+    """What invalidates a published score is a METHODOLOGY or RULESET change.
 
-    ⚠ This is an ORDERING trap, not a typo, which is why it needs a gate. The
-    workflow is regenerate → bump → commit, so the data is always stamped with
-    the version BEFORE the bump unless someone remembers to regenerate again.
-    It shipped that way: every report read `scanner_version: 0.19.1` in a commit
-    that set the scanner to 0.20.0 — and those reports carried semantics the
-    bump introduced (`source_subject`, corrected `ref_matched_version`), so the
-    stamp pointed at an implementation that could not have produced them.
+    ⚠ THIS GATE FIRST ASSERTED `scanner_version == __version__`, AND THAT WAS A
+    BAD GATE IN THE PRECISE WAY THIS REPO KEEPS RE-LEARNING. `scanner_version`
+    defaults to `__version__` at serialization, so the assertion fired on ANY
+    bump from ANY cause — roughly 15 of the preceding 25 commits would have gone
+    red, none of which touched the scanner. CI cannot self-heal it either:
+    regenerating needs live registry access, 40 third-party clones, semgrep and
+    osv-scanner. So the standing remedy at every bump was a 40-server re-scan
+    or editing the stamp — and the stamp is 40 plain JSON strings, so `sed`
+    greens it over arbitrarily old data. **A gate whose cheapest satisfaction
+    is falsifying it is worse than no gate, because it gets obeyed.**
 
-    The fix is to bump first and regenerate after; this test is what notices
-    when that order is forgotten.
+    What actually governs whether a score means what it says is the methodology
+    version (the weights and bands) and the ruleset version (what the rules
+    match). Those change deliberately, and when they do the published numbers
+    genuinely are from a different contract. A patch bump to the CLI is not.
+
+    `scanner_version` is still required to be PRESENT — provenance a consumer
+    can chase — but it is recorded, not asserted equal.
+
+    ⚠ **One half of the ordering hazard stays open and no gate closes it.** The
+    prescribed workflow is bump → regenerate → commit, which this catches when
+    the version moves after generation. It does NOT catch the tail: bump,
+    regenerate, then keep editing the scanner in the same commit. Stamp and
+    version still agree, this passes, and the data was produced by code that no
+    longer exists. Regenerate LAST, after the code is final.
     """
-    from mcpwatchman import __version__
+    from mcpwatchman.workers.scanner.semgrep_check import rules_root, ruleset_version
+    from mcpwatchman.workers.scoring.weights import CURRENT_METHODOLOGY_VERSION
 
-    stamped = {r["scanner_version"] for r in reports}
-    assert stamped == {__version__}, (
-        f"published data is stamped {sorted(stamped)} but the scanner is "
-        f"{__version__} — regenerate after bumping, not before"
-    )
+    expected_rules = ruleset_version(rules_root())
+    for report in reports:
+        assert report["methodology_version"] == CURRENT_METHODOLOGY_VERSION, (
+            f"{report['name']}: scored under methodology "
+            f"{report['methodology_version']}, but the engine is now "
+            f"{CURRENT_METHODOLOGY_VERSION} — the weights or bands moved, so "
+            "these numbers are from a different contract and must be regenerated"
+        )
+        # Only servers that actually reached semgrep carry a ruleset version.
+        if report["ruleset_version"]:
+            assert report["ruleset_version"] == expected_rules, (
+                f"{report['name']}: scored against ruleset "
+                f"{report['ruleset_version']}, current is {expected_rules}"
+            )
+        assert report["scanner_version"], f"{report['name']}: no provenance recorded"
+
+
+def test_no_report_claims_to_have_been_scanned_in_the_future(reports) -> None:
+    """A clock or serialization defect, and the only staleness check that earns
+    its place in a suite.
+
+    Deliberately NOT a freshness bound. A test that reds by the calendar fires
+    for an expected condition — data ages — and `base.md` § *Signal design* is
+    explicit that such a signal trains the reader to route around it. The page
+    prints the scan date instead, which is the honest mechanism: a reader can
+    see the age and judge it.
+    """
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    for report in reports:
+        scanned = datetime.fromisoformat(report["scanned_at"])
+        assert scanned <= now, (
+            f"{report['name']}: scanned_at {report['scanned_at']} is in the future"
+        )
+
+
+def test_the_sample_is_stable_under_registry_growth() -> None:
+    """⚠ A seeded shuffle is reproducible for a FIXED list and nothing more.
+
+    The driver used `random.Random(SEED).shuffle(entries)`, and the registry
+    grows between fetches — so the same seed selected a different sample every
+    run. Measured: two consecutive regenerations shared **21 of 40** servers.
+    That silently invalidated every score-diff taken between runs, which were
+    reported as one population changing while actually spanning two.
+
+    Hash-ordering by the server's own name fixes it: position depends only on
+    identity, so growth inserts without displacing.
+    """
+    from ops.scan_sample import sample_key
+
+    today = [f"srv-{i}" for i in range(50)]
+    grown = [*today, *(f"new-{i}" for i in range(500))]
+
+    pick_today = sorted(today, key=sample_key)[:10]
+    pick_grown = [n for n in sorted(grown, key=sample_key) if n in set(today)][:10]
+    assert pick_today == pick_grown, "the surviving members reordered as the pool grew"
+
+    # And the key depends on nothing but the name.
+    assert sample_key("a") == sample_key("a")
+    assert sample_key("a") != sample_key("b")

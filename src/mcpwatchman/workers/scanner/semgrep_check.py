@@ -692,11 +692,21 @@ def run_semgrep(
     # protection: `total > parsed` whenever there are unparsed files, so the
     # ratio is strictly < 1 and a cap could never bind — an earlier
     # `min(ratio, 0.99)` was a guard whose condition cannot be true.
-    weight_value = (
-        (dec(parsed) / dec(total)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        if unparsed and total
-        else Decimal(1)
-    )
+    # The `else` is the NO-UNPARSED case and means fully measured. But when
+    # `unparsed` is truthy and `total` is 0 it would also land here and publish
+    # "1" — fully measured, for a scan that read nothing. That state is
+    # unreachable today, because a non-empty `unparsed` implies non-empty
+    # `scan_errors` and the guard ~90 lines above returns FAILED on
+    # `scanned == 0`. Written to fail CLOSED anyway: the fail-safe living in a
+    # different guard a long way off is exactly how a local default becomes
+    # load-bearing when someone moves the other one.
+    if unparsed:
+        weight_value = (
+            (dec(parsed) / dec(total)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            if total else Decimal(0)
+        )
+    else:
+        weight_value = Decimal(1)
 
     # ⚠ JUDGE THE PUBLISHED VALUE, NOT THE RAW RATIO. This tested
     # `ratio < 0.005` — a half-up threshold against a ROUND_DOWN quantization —
