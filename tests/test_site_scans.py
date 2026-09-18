@@ -235,8 +235,18 @@ def test_the_pages_carry_no_inline_style_or_script() -> None:
 
     An inline `style="width:40%"` on a meter would be blocked and the bar would
     render at zero width — the page still fine, only the measurement gone.
+
+    ⚠ EVERY BUILT PAGE, not just `dist/servers/`. `public/_headers` sets the
+    policy on `/*`, so the homepage is governed identically — and it was the
+    one built page this gate did not glob. Found 2026-09-18 by controlling the
+    gate rather than trusting it: an injected `style="margin:0"` in
+    `dist/index.html` left it GREEN. A gate named for "the pages" that reads
+    492 of 494 is the shape this suite keeps paying for, and the miss is
+    invisible because the assertion it does run passes honestly.
     """
-    for page in (DIST / "servers").rglob("index.html"):
+    pages = sorted(DIST.rglob("*.html"))
+    assert pages, "no built pages to check — the gate would pass vacuously"
+    for page in pages:
         html = page.read_text()
         assert "<style" not in html, f"{page}: inline stylesheet"
         assert 'style="' not in html, f"{page}: inline style attribute"

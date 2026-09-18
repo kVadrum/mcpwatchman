@@ -95,3 +95,66 @@ jobs:
       - name: The secret scanner is on PATH
         run: detect-secrets --version
       - run: pytest
+
+  # ⚠ THIRTEEN GATES LIVED ONLY ON A LAPTOP UNTIL THIS JOB EXISTED. Every check
+  # that reads `site/dist` is `skipif(not DIST.is_dir())`, and no CI job built
+  # the site — so they skipped in the only environment that runs on every push,
+  # and `pytest` printed the count without naming one. Measured 2026-09-18: the
+  # `test` job reported 28 skips against 15 locally, and removing `site/dist`
+  # reproduced the difference exactly.
+  #
+  # What was dark matters more than the number. Among them:
+  # `test_the_pages_carry_no_inline_style_or_script` — the CSP gate, whose
+  # failure mode is a page that renders while silently losing all styling or
+  # behaviour, because our own header forbids what Astro inlined;
+  # `test_no_built_surface_still_claims_that_no_scores_exist`, which caught
+  # `llms.txt` telling agents scores did not exist an hour after they shipped;
+  # and the sitemap/API checks that keep a published URL from 404ing.
+  #
+  # It runs the WHOLE suite rather than the site files by name. Naming files is
+  # how the next site-surface test lands in a new module and silently never
+  # runs in the built state — the same shape as the skips this job exists to
+  # end. The duplicate ~9s against the `test` job is the price, and the two are
+  # not redundant: `test` proves the suite passes on a FRESH checkout with no
+  # dist, which is what a contributor has, and this proves it passes with one.
+  #
+  # ⚠ Like `workers-extra`, this job CAN red on upstream breakage that is not
+  # ours — `npm ci` reaching a registry is a claim about the world. Same
+  # accepted cost, same reason: the alternative is learning it from a broken
+  # page.
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        # Full history, for the reason spelled out on the `test` job above:
+        # the cohort and provenance gates walk git, and both now FAIL rather
+        # than skip on a shallow clone.
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          # READ from `engines.node`, never restated here. A hardcoded version
+          # is a second declaration of one constraint, and narrowing the real
+          # one in package.json would leave this silently testing outside it
+          # with nothing to report the drift.
+          node-version-file: site/package.json
+          # The lockfile is not at the repo root, and the automatic npm cache
+          # looks there by default.
+          cache-dependency-path: site/package-lock.json
+      - run: pip install -e ".[dev]"
+      # `ci`, not `install`: it honours the committed lockfile and fails rather
+      # than silently resolving something else.
+      - run: npm ci
+        working-directory: site
+      - run: npm run build
+        working-directory: site
+      # Assert the build actually produced the tree the gates read. Without it
+      # a build that emitted nothing leaves every dist-gated check skipping and
+      # the job green — which is the exact failure this job was added to end,
+      # reproduced one layer up.
+      - name: The site built
+        run: test -f site/dist/index.html && test -d site/dist/servers
+      - run: pytest
