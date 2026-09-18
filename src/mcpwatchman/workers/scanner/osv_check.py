@@ -57,7 +57,7 @@ from pathlib import Path
 
 from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_manifest
-from mcpwatchman.workers.scanner.reachability import redact_paths
+from mcpwatchman.workers.scanner.reachability import Fault, redact_paths
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
     Severity,
@@ -163,6 +163,48 @@ class OsvResult:
     @property
     def assessed(self) -> bool:
         return self.status is OsvStatus.OK
+    # WHOSE gap this is, when `status is OsvStatus.UNAVAILABLE` — the one status
+    # that merged two opposite answers. Read `fault`, never this field: it is
+    # meaningful only for UNAVAILABLE, and it DEFAULTS TO UNATTRIBUTED so a
+    # future unavailable-path that forgets to attribute is refused at
+    # publication rather than published as somebody else's gap.
+    explicit_fault: Fault = Fault.UNATTRIBUTED
+
+    @property
+    def fault(self) -> Fault:
+        """Whose gap this result represents, for publication to accept or refuse.
+
+        An explicit answer wins; otherwise `FAILED` derives to `ENVIRONMENT`,
+        because a tool that ran and crashed or emitted output we could not
+        parse is ours and is not deliberate.
+
+        ⚠ **A TIMEOUT WAS BRIEFLY ATTRIBUTED `PROJECT` HERE, ON A CLAIM THAT
+        DID NOT SURVIVE THE NEXT MEASUREMENT.** The argument was that `04` §7's
+        budget is fixed and documented, so a repository large enough to exceed
+        it exceeds it every run — deterministic, disclosed, therefore a product
+        limit rather than one run's accident. It was asserted from two
+        observations of `ai.klavis/strata` (1,277 files) timing out.
+
+        The third observation contradicted it: the same repository, the same
+        180s budget, **completed in the same run that this text was written
+        for** — `dependency_health` scored, 221s wall for the whole server. The
+        likely mechanism is osv-scanner's own vulnerability-database cache,
+        cold on the first heavy invocation and warm afterwards, which makes the
+        outcome depend on machine state rather than on the repository.
+
+        Load-dependent is accidental, so a timeout derives to `ENVIRONMENT`
+        like any other `FAILED`, and the remedy is the retry in
+        `ops/scan_cohort.py` — which on a warm cache is exactly the second
+        attempt that succeeds. `explicit_fault` stays, because the mechanism it
+        adds is sound and the UNAVAILABLE sites need it; only this claim was
+        wrong.
+        """
+        if self.explicit_fault is not Fault.UNATTRIBUTED:
+            return self.explicit_fault
+        if self.status is OsvStatus.FAILED:
+            return Fault.ENVIRONMENT
+        return Fault.UNATTRIBUTED
+
 
 
 def severity_from_cvss(score: Decimal | float | str | None) -> Severity | None:
@@ -350,6 +392,8 @@ def run_osv(
             status=OsvStatus.UNAVAILABLE,
             reason="osv-scanner is not on PATH; it is a Go binary installed in "
                    "the worker image, not a Python dependency",
+            # OURS.
+            explicit_fault=Fault.ENVIRONMENT,
             methodology_version=version,
         )
 
@@ -366,6 +410,12 @@ def run_osv(
             status=OsvStatus.UNAVAILABLE,
             reason="no lockfile in the fetched source; dependency versions are "
                    "unresolved, so no vulnerability can be attributed",
+            # THEIRS — the absence is a property of what they
+            # published. Our decision not to GENERATE one is a
+            # safety stance (`04` §7 forbids running a package
+            # manager on untrusted input), not a capability gap,
+            # and the reason above states the fact either way.
+            explicit_fault=Fault.PUBLISHER,
             lockfiles=(),
             transitive_coverage=False,
             methodology_version=version,
@@ -386,7 +436,9 @@ def run_osv(
     except subprocess.TimeoutExpired:
         return OsvResult(
             status=OsvStatus.FAILED,
-            reason=f"osv-scanner exceeded {timeout_s}s",
+            reason=f"osv-scanner exceeded the {timeout_s}s budget `04` §7 allows "
+                   "it for one repository, so its dependencies were not "
+                   "resolved",
             lockfiles=lockfiles,
             methodology_version=version,
         )

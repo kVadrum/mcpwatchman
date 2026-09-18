@@ -58,7 +58,12 @@ const sourceNote =
     </ul>
   </div>
 
-  {report.registry_state === "delisted" && (
+  {/* ⚠ ANY state other than `listed`, not just `delisted`. Keying on the one
+    literal meant a DEPRECATED server's note existed in the JSON API and
+    appeared on no human surface — against this project's humans-and-agents
+    parity rule, and against `CLAUDE.md`'s own "anything other than listed
+    must explain itself". 1 of the original 40 pins is deprecated today. */}
+  {report.registry_state !== "listed" && (
     <p class="source-note">{report.registry_note}</p>
   )}
 

@@ -56,3 +56,8 @@ RUNLOG.md
 
 # Playwright MCP screenshots — local design review artifacts, not deliverables.
 .playwright-mcp/
+
+# Workers-extra venv: semgrep + osv-scanner live here, NOT in .venv, because
+# CI's `test` job builds `[dev]` only and a workers dep on the dev path is
+# exactly what hid a red CI for a day (v0.19.1).
+.venv-workers/

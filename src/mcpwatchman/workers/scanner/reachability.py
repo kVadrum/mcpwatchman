@@ -36,6 +36,56 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 
+class Fault(StrEnum):
+    """WHOSE gap an unassessed result is — the question `score is None` cannot answer.
+
+    **The distinction already existed here and stopped at this module.**
+    `SourceState.publisher_fault` has drawn the ours-vs-theirs line since the
+    fetch stage was written, and until 2026-09-18 its only other mention in the
+    repository was a comment: nothing read it, no gate consulted it, and no
+    surface rendered it. One stage later the two faults were actively merged —
+    `assess_code_safety` returned the same `UNAVAILABLE` for "semgrep is not on
+    PATH" (ours) and "no source in a covered language" (theirs), which
+    `_code_axis` then flattened into `score=None` plus a sentence. So the fault
+    was knowable at the source and unrecoverable at the sink, and every
+    instance of that class had to be caught by a new hand-written check near
+    the source.
+
+    **The consequence is a published sentence about a third party.** A run
+    without its scanner binaries scanned 40 servers in 15 seconds, exited 0,
+    and would have published *"semgrep is not on PATH; it ships in the
+    `workers` extra"* as the reason nobody scored them — our infrastructure
+    stated as a fact about someone else's project, on pages whose whole premise
+    is that every claim is checkable.
+
+    Four values, because each one has a different consequence at publication:
+
+    `PUBLISHER` is theirs and is a fact their page owes its reader.
+    `PROJECT` is ours, systematic, and disclosed in our own voice site-wide —
+    `03` defines no band, or a capability is not built. The roster says
+    Maintenance is scored for nobody and why; a reader is not left inferring
+    that the server is at fault.
+    `ENVIRONMENT` is ours and ACCIDENTAL — a tool off PATH, a timeout, a full
+    scratch disk. It varies per run, it is disclosed nowhere, and it must never
+    reach a page. `cohort.publication_errors` refuses it.
+    `UNATTRIBUTED` is the DEFAULT, and it is refused for the same reason. That
+    inversion is the point: a new axis, a new tool, or a refactor that forgets
+    to attribute costs a failed run rather than a public page, because the site
+    nobody remembers to wire generates no symbol to grep and no failure to
+    observe (`base.md` § *Canonical homes* → the structural remedy).
+    """
+
+    PUBLISHER = "publisher"
+    PROJECT = "project"
+    ENVIRONMENT = "environment"
+    UNATTRIBUTED = "unattributed"
+
+    @property
+    def publishable(self) -> bool:
+        """Whether a non-assessment carrying this fault may reach a surface."""
+        return self in (Fault.PUBLISHER, Fault.PROJECT)
+
+
 class SourceState(StrEnum):
     """What happened when we tried to read a server's declared source."""
 
@@ -59,6 +109,21 @@ class SourceState(StrEnum):
         disk is ours and is retryable.
         """
         return self in (SourceState.UNREACHABLE, SourceState.NOT_DECLARED)
+
+    @property
+    def fault(self) -> Fault:
+        """Who is responsible for this state, as a `Fault`.
+
+        `FETCH_FAILED` maps to `ENVIRONMENT` — this module's own prose already
+        calls it *"reasons on our side … retryable and not a finding about the
+        server"*, and it said so while publishing it anyway. `NOT_ATTEMPTED` is
+        our queue, so it lands there too. `FETCHED` has no gap to attribute.
+        """
+        if self.publisher_fault:
+            return Fault.PUBLISHER
+        if self is SourceState.FETCHED:
+            return Fault.UNATTRIBUTED
+        return Fault.ENVIRONMENT
 
 
 # An absolute filesystem path in a PUBLISHED reason is our scratch directory
@@ -164,4 +229,4 @@ def from_exception(exc: BaseException, declared_url: str | None = None) -> Sourc
     return SourceAvailability(state=state, declared_url=declared_url, detail=str(exc))
 
 
-__all__ = ["SourceAvailability", "SourceState", "from_exception"]
+__all__ = ["Fault", "SourceAvailability", "SourceState", "from_exception"]

@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import shutil
 import tempfile
-from dataclasses import asdict, dataclass, field
+from dataclasses import KW_ONLY, asdict, dataclass, field
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import ROUND_DOWN, Decimal
 from pathlib import Path
 from typing import Any
 
@@ -40,6 +40,7 @@ from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.maintenance_check import assess_maintenance
 from mcpwatchman.workers.scanner.osv_check import assess_dependency_health
 from mcpwatchman.workers.scanner.reachability import (
+    Fault,
     SourceAvailability,
     SourceState,
     from_exception,
@@ -90,6 +91,40 @@ class AxisScore:
     score: int | None
     reason: str = ""
     assessed_weight: str = "1"
+    # ⚠ EVERYTHING BELOW IS KEYWORD-ONLY, and it is not a style preference.
+    # This class is built positionally throughout — `AxisScore("code_safety",
+    # None, reason, "0")` — so inserting `fault` as a fifth field silently
+    # reinterpreted the two five-positional calls that passed `evidence`
+    # there: the evidence tuple landed in `fault` and the evidence went empty,
+    # on the only two axes that carry findings. **824 tests passed**, because
+    # `test_findings_carry_the_evidence_they_claim` iterates the evidence list
+    # and an empty one iterates vacuously. mypy caught it; nothing else did.
+    # The keyword boundary makes the next field insertion unable to do this.
+    _: KW_ONLY
+    # WHOSE gap this is, when `score is None`. Meaningless when a score
+    # exists, and read only for the unassessed case.
+    #
+    # ⚠ **THE ATTRIBUTION WAS COMPUTED AND DISCARDED FOR AS LONG AS THIS
+    # REPORT HAS EXISTED.** `reachability.SourceState.publisher_fault` has
+    # drawn the ours-vs-theirs line since the fetch stage was written, and
+    # nothing read it; one stage later `SemgrepStatus.UNAVAILABLE` meant both
+    # "semgrep is not on PATH" (ours) and "no source in a covered language"
+    # (theirs), and this class flattened them into an identical `score=None`
+    # plus a sentence. The sentence is the damage: a run with no scanner
+    # binaries would have published *"semgrep is not on PATH; it ships in the
+    # `workers` extra"* as the reason 500 third-party servers went unscored.
+    #
+    # `cohort.publication_errors` refuses `environment` and `unattributed`.
+    # The default being the refused one is deliberate — a new axis that
+    # forgets to attribute costs a failed run, not a public page.
+    # ⚠ `None` WHEN A SCORE EXISTS, not the default token. Emitting a word
+    # here on a scored axis published `fault: "publisher"` beside a real
+    # number — an attribution for a gap that does not exist — while the JSON
+    # API's own note told agents only two values appear and only on gaps.
+    # That is the `llms.txt` class of defect this repo has paid for once
+    # already: a confident claim on a machine surface, addressed to the
+    # audience least able to notice it is wrong.
+    fault: str | None = None
     evidence: tuple[Evidence, ...] = ()
 
     @property
@@ -190,7 +225,25 @@ def slugify(name: str) -> str:
     return slug.strip("-")
 
 
-def _from_axis_result(result: AxisResult, reason_when_unassessed: str = "") -> AxisScore:
+def _gap_fault(default: Fault, availability: SourceAvailability) -> Fault:
+    """`default`, unless our own fetch failed — then it is ours, whatever else.
+
+    An ENVIRONMENT fault upstream cannot be reported downstream as the
+    publisher's gap: if we never got their source for reasons on our side,
+    every axis that needed it is unassessed because of us. `reachability`
+    already says so in prose — *"reasons on our side … retryable and not a
+    finding about the server"* — and published it anyway.
+    """
+    upstream = availability.state.fault
+    return upstream if upstream is Fault.ENVIRONMENT else default
+
+
+def _from_axis_result(
+    result: AxisResult,
+    reason_when_unassessed: str = "",
+    *,
+    fault: Fault = Fault.UNATTRIBUTED,
+) -> AxisScore:
     """Project a sub-check-scored axis (`03` §4, §5, §7) onto the report shape."""
     evidence = tuple(
         Evidence(
@@ -221,6 +274,7 @@ def _from_axis_result(result: AxisResult, reason_when_unassessed: str = "") -> A
         score=result.score,
         reason=reason,
         assessed_weight=_fmt(result.assessed_weight),
+        fault=None if result.score is not None else fault.value,
         evidence=evidence,
     )
 
@@ -346,9 +400,25 @@ def _assemble(
     deps = assess_dependency_health(root, inventory, version=version) if root else None
 
     axes: dict[str, AxisScore] = {
-        "auth_posture": _from_axis_result(auth, availability.reason),
-        "maintenance": _from_axis_result(maintenance),
-        "transparency": _from_axis_result(transparency, availability.reason),
+        # These three abstain only when there was nothing of the publisher's
+        # to read — an unreachable repository, or a fetched tree whose every
+        # file was oversized or excluded. Both are theirs. `_gap_fault` takes
+        # it back if OUR fetch is what failed.
+        "auth_posture": _from_axis_result(
+            auth, availability.reason, fault=_gap_fault(Fault.PUBLISHER, availability)
+        ),
+        # `03` §5's forge signals need a retrieval this project has not built,
+        # so Maintenance is dark on every server for a reason of OURS — but a
+        # systematic, disclosed one: the roster and `llms.txt` say so in our
+        # own voice, and a reader is never left inferring that the server is
+        # at fault. That is PROJECT, and it is publishable; ENVIRONMENT is the
+        # accidental kind and is not.
+        "maintenance": _from_axis_result(maintenance, fault=Fault.PROJECT),
+        "transparency": _from_axis_result(
+            transparency,
+            availability.reason,
+            fault=_gap_fault(Fault.PUBLISHER, availability),
+        ),
         "code_safety": _code_axis(code, availability),
         "dependency_health": _deps_axis(deps, availability),
     }
@@ -375,9 +445,18 @@ def _assemble(
 
 def _code_axis(result, availability) -> AxisScore:
     if result is None:
-        return AxisScore("code_safety", None, availability.reason, "0")
+        # No tree to scan, so the fetch stage owns the attribution.
+        return AxisScore(
+            "code_safety", None, availability.reason, "0",
+            fault=availability.state.fault.value,
+        )
     if not result.assessed:
-        return AxisScore("code_safety", None, result.reason, "0")
+        # semgrep knows which of the two it was — a missing binary or a repo
+        # with no source in a covered language — and now says so.
+        return AxisScore(
+            "code_safety", None, result.reason, "0",
+            fault=_gap_fault(result.fault, availability).value,
+        )
     evidence = tuple(
         Evidence(
             label=f"{f.rule_id} ({f.severity}/{f.confidence})",
@@ -407,15 +486,22 @@ def _code_axis(result, availability) -> AxisScore:
         )
         reason = f"{reason}; {note}" if reason else note
     return AxisScore(
-        "code_safety", result.score, reason, result.assessed_weight, evidence
+        "code_safety", result.score, reason, result.assessed_weight,
+        evidence=evidence,
     )
 
 
 def _deps_axis(result, availability) -> AxisScore:
     if result is None:
-        return AxisScore("dependency_health", None, availability.reason, "0")
+        return AxisScore(
+            "dependency_health", None, availability.reason, "0",
+            fault=availability.state.fault.value,
+        )
     if not result.assessed:
-        return AxisScore("dependency_health", None, result.reason, "0")
+        return AxisScore(
+            "dependency_health", None, result.reason, "0",
+            fault=_gap_fault(result.fault, availability).value,
+        )
     evidence = tuple(
         Evidence(
             label=f"{f.package} {f.version} — {f.osv_id}",
@@ -462,7 +548,10 @@ def _deps_axis(result, availability) -> AxisScore:
             f"{'y was' if len(result.findings) == 1 else 'ies were'} found and "
             "none could be placed in `03` §6's table — no CVSS score, or an "
             "ecosystem whose manifest we cannot parse for direct-vs-transitive",
-            "0", evidence,
+            # PROJECT: `03` §6 bands on a CVSS and defines nothing for its
+            # absence, so this abstention is our methodology declining to
+            # invent a band — disclosed, and nothing to do with this server.
+            "0", fault=Fault.PROJECT.value, evidence=evidence,
         )
     if result.unscored_findings:
         plural = "y" if result.unscored_findings == 1 else "ies"
@@ -471,8 +560,29 @@ def _deps_axis(result, availability) -> AxisScore:
             f"{result.unscored_findings} vulnerabilit{plural} could not be "
             f"placed in `03` §6's table and {verb} listed but not scored"
         )
-        weight = _fmt(dec(scored) / dec(len(result.findings)))
-    return AxisScore("dependency_health", result.score, reason, weight, evidence)
+        # ⚠ QUANTIZED, AND ROUNDED **DOWN** — both halves were missing, and
+        # the result is live on the site today: two servers publish an
+        # `assessed_weight` of 28 significant digits, because this was the one
+        # coverage claim computed by an ad-hoc division rather than through
+        # the convention `semgrep_check` already states at length. It only
+        # surfaced when a wider cohort produced a server with 4,155
+        # dependency findings, i.e. the first non-terminating division — at 40
+        # servers the axis was scored once and divided evenly.
+        #
+        # Down, not half-up: `CLAUDE.md` is explicit that a coverage CLAIM is
+        # the exception to rounding the published value, because 4110 of 4155
+        # rounds UP to "0.99" and then to "1.00" at two more findings, which
+        # publishes a partly-measured axis as fully measured — and the site
+        # keys its partly-measured banner on `Number(w) < 1`, so the
+        # over-claim erases its own disclosure.
+        weight = _fmt(
+            (dec(scored) / dec(len(result.findings))).quantize(
+                Decimal("0.01"), rounding=ROUND_DOWN
+            )
+        )
+    return AxisScore(
+        "dependency_health", result.score, reason, weight, evidence=evidence
+    )
 
 
 __all__ = ["AXES", "AxisScore", "Evidence", "ServerReport", "scan_entry", "slugify"]

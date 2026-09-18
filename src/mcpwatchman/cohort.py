@@ -33,11 +33,13 @@ regenerates cleanly, passes every other gate, and 404s in production.
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scanner.runner import slugify
 
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -161,6 +163,19 @@ def parse(payload: object) -> Cohort:
             "the cohort file has no 'servers' array — refusing to read a "
             "malformed file as an empty cohort, which would unpublish every page"
         )
+    # `count` is written by `save` and was never read, which left the one
+    # truncation this function claims to refuse wide open: `"servers": []`
+    # parses to an empty cohort, publishes nothing, and exits 0 — unpublishing
+    # every page while reporting success. Cross-checking the two makes a
+    # half-written file loud, and keeps the legitimate bootstrap case (0 and
+    # [] agree) working.
+    declared = payload.get("count")
+    if isinstance(declared, int) and declared != len(raw):
+        raise CohortError(
+            f"the cohort file declares {declared} servers and carries "
+            f"{len(raw)} — refusing a half-written file, which would "
+            "unpublish the difference"
+        )
     servers = []
     for item in raw:
         if not isinstance(item, dict):
@@ -203,6 +218,21 @@ def load(path: Path) -> Cohort:
     return parse(payload)
 
 
+def atomic_write(path: Path, text: str) -> None:
+    """Write `text` to `path` via a temp file and a rename.
+
+    Both files this module governs are the published record of what exists at
+    a public URL, and a partial write of either is the 404 mechanism: a
+    truncated `scans.json` publishes fewer pages than the cohort promises, and
+    a truncated `cohort.json` promises fewer than are published.
+    `os.replace` is atomic within a filesystem, so a reader sees the old file
+    or the new one.
+    """
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(text)
+    os.replace(tmp, path)
+
+
 def save(path: Path, cohort: Cohort) -> None:
     """Write the cohort back, name-ordered, one server per line.
 
@@ -218,7 +248,66 @@ def save(path: Path, cohort: Cohort) -> None:
             for s in cohort.servers
         ],
     }
-    path.write_text(json.dumps(body, indent=1) + "\n")
+    atomic_write(path, json.dumps(body, indent=1) + "\n")
+
+
+def unpublishable_gaps(name: str, report: dict) -> list[str]:
+    """Axes whose non-assessment is OURS, and so may not reach a page.
+
+    **This is the chokepoint the per-site guards could never be.** Every
+    instance of this repo's recurring failure — a capability absent, a
+    well-formed "nothing here", exit 0, no gate objecting — ends here, at a
+    value reaching a published surface that claims more measurement than
+    happened. Catching it at the source needs a new hand-written check per
+    source, and the source nobody remembers to guard produces no symbol to
+    grep and no failure to observe. Catching it at the write needs one check
+    that new axes and new tools inherit for free.
+
+    `environment` is refused because it is an accident of this run that varies
+    between runs and is disclosed nowhere: *"semgrep is not on PATH"* is true,
+    is ours, and would appear on a stranger's page as the reason nobody scored
+    them. `unattributed` is refused because it is the DEFAULT — so forgetting
+    to attribute costs a failed run rather than a public page, which is the
+    whole inversion (`base.md` § *Canonical homes* → the structural remedy).
+
+    `publisher` and `project` pass: the first is a fact the server's page owes
+    its reader, the second a limitation this site states in its own voice.
+    """
+    if report.get("registry_state") in CARRIED_STATES:
+        # ⚠ A CARRIED REPORT IS ALREADY-JUDGED CONTENT, AND RE-JUDGING IT HERE
+        # BLOCKED THE WHOLE RUN. Its gaps were vetted when it was published;
+        # it cannot be regenerated, because there is no current entry (or no
+        # successful scan) behind it. So the only two options for a carried
+        # report are "publish the last vetted version" and "delete a live
+        # page" — and refusing it chooses the second, for every other server
+        # in the run as well, permanently for a delisted one. Measured: every
+        # report published before `fault` existed lacks the key, reads as
+        # `unattributed`, and would have taken the next nightly run to exit 2
+        # having written nothing.
+        return []
+    problems: list[str] = []
+    for axis, entry in sorted(report.get("axes", {}).items()):
+        if entry.get("score") is not None:
+            continue
+        raw = entry.get("fault") or Fault.UNATTRIBUTED.value
+        try:
+            fault = Fault(raw)
+        except ValueError:
+            # An unknown token is not a reason to proceed. Fail closed, and
+            # say what arrived so a typo is one line from fixed.
+            problems.append(
+                f"{name}/{axis} is unassessed with an unrecognised fault "
+                f"{raw!r} — publication refuses what it cannot attribute"
+            )
+            continue
+        if not fault.publishable:
+            problems.append(
+                f"{name}/{axis} is unassessed and the gap is {fault.value}, "
+                f"not the server's: {entry.get('reason', '')[:90]!r}. Our own "
+                "tooling must not be published as the reason a third party "
+                "went unscored — fix the run, do not publish it"
+            )
+    return problems
 
 
 def publication_errors(cohort: Cohort, reports: Iterable[dict]) -> list[str]:
@@ -240,17 +329,19 @@ def publication_errors(cohort: Cohort, reports: Iterable[dict]) -> list[str]:
     """
     by_name = {r["name"]: r for r in reports}
     problems: list[str] = []
+    for name, report in sorted(by_name.items()):
+        problems.extend(unpublishable_gaps(name, report))
     for pin in cohort.servers:
-        report = by_name.get(pin.name)
-        if report is None:
+        pinned_report = by_name.get(pin.name)
+        if pinned_report is None:
             problems.append(
                 f"{pin.name} is pinned at /servers/{pin.slug}/ but produced no "
                 "report, so that page would stop existing"
             )
-        elif report["slug"] != pin.slug:
+        elif pinned_report["slug"] != pin.slug:
             problems.append(
                 f"{pin.name} is pinned at /servers/{pin.slug}/ but its report "
-                f"publishes /servers/{report['slug']}/"
+                f"publishes /servers/{pinned_report['slug']}/"
             )
     for name in sorted(set(by_name) - cohort.names):
         problems.append(
@@ -286,7 +377,16 @@ def mark_status(report: dict, *, status: str, observed_on: str) -> dict:
     return marked
 
 
-def carry_forward(previous: dict, *, checked_on: str, observation: str) -> dict:
+# A report that was published before and cannot be regenerated now. Both
+# states mean "the content below was measured earlier": `delisted` when the
+# registry no longer carries the server, `stale` when it does and this run
+# could not measure it. `unpublishable_gaps` does not re-litigate either.
+CARRIED_STATES = frozenset({"delisted", "stale"})
+
+
+def carry_forward(
+    previous: dict, *, checked_on: str, observation: str, state: str = "delisted"
+) -> dict:
     """The report to publish for a pinned server the registry no longer lists.
 
     **The page stays, and the numbers are NOT recomputed** — there is no current
@@ -305,8 +405,15 @@ def carry_forward(previous: dict, *, checked_on: str, observation: str) -> dict:
     deleted are different facts, and only the first one was measured.
     """
     scanned_on = str(previous.get("scanned_at", ""))[:10]
+    if state not in CARRIED_STATES:
+        raise ValueError(f"not a carried state: {state!r}")
     carried = dict(previous)
-    carried["registry_state"] = "delisted"
+    # ⚠ THIS WAS HARDCODED `"delisted"` AND PUBLISHED A CONTRADICTION. The
+    # our-side-failure caller passes an observation beginning "This server is
+    # listed in the registry…" while the state said `delisted` — two opposite
+    # claims about a named third party in one record. `stale` is that case:
+    # listed, and the scan below is the last one we could take.
+    carried["registry_state"] = state
     carried["registry_note"] = (
         f"{observation} (last checked {checked_on}). This page is kept because "
         "its URL is public; the scores below are from the last scan taken while "
@@ -319,10 +426,13 @@ def carry_forward(previous: dict, *, checked_on: str, observation: str) -> dict:
 
 
 __all__ = [
+    "CARRIED_STATES",
     "FILE_NOTE",
+    "atomic_write",
     "carry_forward",
     "mark_status",
     "publication_errors",
+    "unpublishable_gaps",
     "Cohort",
     "CohortError",
     "PinnedServer",

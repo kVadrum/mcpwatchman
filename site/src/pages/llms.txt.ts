@@ -24,7 +24,7 @@ const unfetchable = scans.filter((r) => r.source_subject === "package").length;
 const scanned = scans.length
   ? scans.map((r) => r.scanned_at).reduce((a, b) => (a > b ? a : b)).slice(0, 10)
   : "";
-const delisted = scans.filter((r) => r.registry_state === "delisted").length;
+const flagged = scans.filter((r) => r.registry_state !== "listed").length;
 const allAiPrefixed = scans.length > 0 && scans.every((r) => r.name.startsWith("ai."));
 
 const partial = scans.filter((r) =>
@@ -68,7 +68,7 @@ to store and re-fetch. It is not a random sample of the registry — the servers
 published first were drawn from the registry's alphabetical head, and everything
 added since is drawn from the whole registry.${allAiPrefixed ? " That head is why\nevery published name currently begins `ai.`." : ""} Do not read the set as
 representative, and do not infer anything from a server's absence: it means we
-have not published it, never that it was judged.${delisted ? `\n\n${delisted} of these servers are no longer listed in the registry. Their pages remain, carry the last scan taken while they were listed, and say so in \`registry_note\`; \`registry_state\` is "delisted" on those records in the JSON API.` : ""}
+have not published it, never that it was judged.${flagged ? `\n\n${flagged} of these servers carry a \`registry_state\` other than "listed": "delisted" (the registry no longer lists it, so the page keeps the last scan taken while it did), "deprecated" (the publisher's own label, relayed, scored by nothing), or "stale" (listed, but the most recent run could not measure it). Each such record explains itself in \`registry_note\`, and "listed" records carry no note.` : ""}
 
 Of the ${scans.length} servers published, ${read} shipped source we could read and
 ${unreachable} declare a repository that is not publicly reachable, and ${unfetchable} publish a package we could not fetch from its registry — a distinct fact, and not a claim about their repository. GitHub

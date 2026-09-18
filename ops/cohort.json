@@ -1,6 +1,6 @@
 {
  "note": "The published cohort. APPEND-ONLY: every entry here is a live URL at https://mcpwatchman.com/servers/<slug>/, so deleting a line breaks a page that is already in the sitemap and in agents' hands. Add servers with `ops/scan_cohort.py --grow N`; never remove one. See src/mcpwatchman/cohort.py for why this file exists.",
- "count": 40,
+ "count": 492,
  "servers": [
   {
    "name": "ai.1325/mcp",
@@ -13,13 +13,43 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.adoraads/beauty",
+   "slug": "ai-adoraads-beauty",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.agentdm/agentdm",
    "slug": "ai-agentdm-agentdm",
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.agenticaffiliate/affiliate-networks-mcp",
+   "slug": "ai-agenticaffiliate-affiliate-networks-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.agentutility/mcp-agentops",
+   "slug": "ai-agentutility-mcp-agentops",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.agentutility/mcp-matchpoint",
    "slug": "ai-agentutility-mcp-matchpoint",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.agentutility/mcp-mediakit",
+   "slug": "ai-agentutility-mcp-mediakit",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.agentutility/mcp-statline",
+   "slug": "ai-agentutility-mcp-statline",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.ankimcp/anki-mcp-server",
+   "slug": "ai-ankimcp-anki-mcp-server",
    "first_published": "2026-09-18"
   },
   {
@@ -33,8 +63,18 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.atdev/supershopping",
+   "slug": "ai-atdev-supershopping",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.authoryze/authoryze",
    "slug": "ai-authoryze-authoryze",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.autonomad/travel",
+   "slug": "ai-autonomad-travel",
    "first_published": "2026-09-18"
   },
   {
@@ -48,8 +88,28 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.bowmark/bowmark",
+   "slug": "ai-bowmark-bowmark",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.cabrini/market-data",
    "slug": "ai-cabrini-market-data",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.calendarmcp/server",
+   "slug": "ai-calendarmcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.callmcp/server",
+   "slug": "ai-callmcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.canaryusers/canaryusers",
+   "slug": "ai-canaryusers-canaryusers",
    "first_published": "2026-09-18"
   },
   {
@@ -73,6 +133,66 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.clize/storefront",
+   "slug": "ai-clize-storefront",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.cotal/cotal",
+   "slug": "ai-cotal-cotal",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.cralo/mcp",
+   "slug": "ai-cralo-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.creationloop/creationloop",
+   "slug": "ai-creationloop-creationloop",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.creativescope/creative-intelligence",
+   "slug": "ai-creativescope-creative-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dablock/visibility-index",
+   "slug": "ai-dablock-visibility-index",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dabyte/visibility-index",
+   "slug": "ai-dabyte-visibility-index",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.darkfunnels/docs",
+   "slug": "ai-darkfunnels-docs",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.deinai/creator-skill",
+   "slug": "ai-deinai-creator-skill",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.deskcrew/agentic",
+   "slug": "ai-deskcrew-agentic",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dinglebear/gotify-rmcp",
+   "slug": "ai-dinglebear-gotify-rmcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dinglebear/rapprise",
+   "slug": "ai-dinglebear-rapprise",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.dinglebear/rgotify",
    "slug": "ai-dinglebear-rgotify",
    "first_published": "2026-09-18"
@@ -83,8 +203,83 @@
    "first_published": "2026-09-17"
   },
   {
+   "name": "ai.dinglebear/runifi",
+   "slug": "ai-dinglebear-runifi",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dinglebear/rytdl",
+   "slug": "ai-dinglebear-rytdl",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dinglebear/soma",
+   "slug": "ai-dinglebear-soma",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.dinglebear/tailscale-rmcp",
    "slug": "ai-dinglebear-tailscale-rmcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dreamlit/mcp",
+   "slug": "ai-dreamlit-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dsght/public",
+   "slug": "ai-dsght-public",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.duami/intent-exchange",
+   "slug": "ai-duami-intent-exchange",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dxpert/mcp",
+   "slug": "ai-dxpert-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dxpert/uns-tools",
+   "slug": "ai-dxpert-uns-tools",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dynsoft/sac",
+   "slug": "ai-dynsoft-sac",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dynt.api/dynt",
+   "slug": "ai-dynt-api-dynt",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.elicitly/elicitly",
+   "slug": "ai-elicitly-elicitly",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.emberverse/emberverse",
+   "slug": "ai-emberverse-emberverse",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.everway/everway-mcp-server",
+   "slug": "ai-everway-everway-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.exa/exa",
+   "slug": "ai-exa-exa",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.explorium/mcp-explorium",
+   "slug": "ai-explorium-mcp-explorium",
    "first_published": "2026-09-18"
   },
   {
@@ -103,13 +298,83 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.fodda/mcp-server",
+   "slug": "ai-fodda-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.framethrower/framethrower",
+   "slug": "ai-framethrower-framethrower",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gateco/gateco",
+   "slug": "ai-gateco-gateco",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gavelin/mcp",
+   "slug": "ai-gavelin-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gemus/gemus",
+   "slug": "ai-gemus-gemus",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gency/gency-lite",
+   "slug": "ai-gency-gency-lite",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.getfacade/mcp",
    "slug": "ai-getfacade-mcp",
    "first_published": "2026-09-17"
   },
   {
+   "name": "ai.gethal/mcp",
+   "slug": "ai-gethal-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.getminds/minds",
+   "slug": "ai-getminds-minds",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.getoptimal/optibot",
+   "slug": "ai-getoptimal-optibot",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.getperspective/mcp",
+   "slug": "ai-getperspective-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.gondola/gondola",
    "slug": "ai-gondola-gondola",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gregbenza/meet",
+   "slug": "ai-gregbenza-meet",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gregbenza/openhouse",
+   "slug": "ai-gregbenza-openhouse",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.groundroute/web-search",
+   "slug": "ai-groundroute-web-search",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.gtfi/groundtruth",
+   "slug": "ai-gtfi-groundtruth",
    "first_published": "2026-09-18"
   },
   {
@@ -123,6 +388,11 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.hotker/hotker",
+   "slug": "ai-hotker-hotker",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.immopix/mcp",
    "slug": "ai-immopix-mcp",
    "first_published": "2026-09-18"
@@ -130,6 +400,16 @@
   {
    "name": "ai.justdrop/mcp",
    "slug": "ai-justdrop-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.kanonik/kanonik",
+   "slug": "ai-kanonik-kanonik",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.kavel/kavel-mcp",
+   "slug": "ai-kavel-kavel-mcp",
    "first_published": "2026-09-18"
   },
   {
@@ -143,8 +423,33 @@
    "first_published": "2026-09-17"
   },
   {
+   "name": "ai.knowall/reverie",
+   "slug": "ai-knowall-reverie",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.kolens/kolens-mcp",
    "slug": "ai-kolens-kolens-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.kubit/mcp-server",
+   "slug": "ai-kubit-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.lamdis/exchange",
+   "slug": "ai-lamdis-exchange",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.lateos/soar-record-gateway",
+   "slug": "ai-lateos-soar-record-gateway",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.latticenet/latticenet",
+   "slug": "ai-latticenet-latticenet",
    "first_published": "2026-09-18"
   },
   {
@@ -163,9 +468,24 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.limitguard.api/trust-intelligence",
+   "slug": "ai-limitguard-api-trust-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.lithtrix/lithtrix-mcp",
    "slug": "ai-lithtrix-lithtrix-mcp",
    "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.lucasandersen/mlp-tax",
+   "slug": "ai-lucasandersen-mlp-tax",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.lumify/sports-intelligence",
+   "slug": "ai-lumify-sports-intelligence",
+   "first_published": "2026-09-18"
   },
   {
    "name": "ai.mafdet/mcp",
@@ -173,14 +493,114 @@
    "first_published": "2026-09-17"
   },
   {
+   "name": "ai.magicinsights/insights",
+   "slug": "ai-magicinsights-insights",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mailjunky/mcp",
+   "slug": "ai-mailjunky-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mailmcp/mailmcp",
+   "slug": "ai-mailmcp-mailmcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.makerportal/compute",
+   "slug": "ai-makerportal-compute",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mangii/manga",
+   "slug": "ai-mangii-manga",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.marchward/mcp-server",
+   "slug": "ai-marchward-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.marketcore/mcp",
+   "slug": "ai-marketcore-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.marketintell/marketintell",
+   "slug": "ai-marketintell-marketintell",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.markettrace/agent-feed",
    "slug": "ai-markettrace-agent-feed",
    "first_published": "2026-09-17"
   },
   {
+   "name": "ai.matih/mcp",
+   "slug": "ai-matih-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.mcpanalytics/analytics",
    "slug": "ai-mcpanalytics-analytics",
    "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.mcpcap/mcpcap",
+   "slug": "ai-mcpcap-mcpcap",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mcpjunction/directory",
+   "slug": "ai-mcpjunction-directory",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.meetlark/mcp-server",
+   "slug": "ai-meetlark-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.meetsquad/squad",
+   "slug": "ai-meetsquad-squad",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.memcell/memcell",
+   "slug": "ai-memcell-memcell",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.memoket/memoket",
+   "slug": "ai-memoket-memoket",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mentionagent/mentionagent",
+   "slug": "ai-mentionagent-mentionagent",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mrmarket/mrmarket-mcp",
+   "slug": "ai-mrmarket-mrmarket-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.mysiren/siren",
+   "slug": "ai-mysiren-siren",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.myspaice/spaces",
+   "slug": "ai-myspaice-spaces",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.name/nameai-mcp",
+   "slug": "ai-name-nameai-mcp",
+   "first_published": "2026-09-18"
   },
   {
    "name": "ai.newzai.api/NewzAI",
@@ -193,14 +613,1854 @@
    "first_published": "2026-09-18"
   },
   {
+   "name": "ai.nocturnus/logic-server",
+   "slug": "ai-nocturnus-logic-server",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.novence/mcp",
    "slug": "ai-novence-mcp",
    "first_published": "2026-09-17"
   },
   {
+   "name": "ai.nudg3/brand-intelligence",
+   "slug": "ai-nudg3-brand-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
    "name": "ai.onelore/lore",
    "slug": "ai-onelore-lore",
    "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.oobeprotocol.sap.mcp/sap-mcp",
+   "slug": "ai-oobeprotocol-sap-mcp-sap-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.openaso/openaso",
+   "slug": "ai-openaso-openaso",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.orangepro/mcp",
+   "slug": "ai-orangepro-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.orchis/nimrod",
+   "slug": "ai-orchis-nimrod",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.ordercore/ordercore-mcp",
+   "slug": "ai-ordercore-ordercore-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.orggen/orggen",
+   "slug": "ai-orggen-orggen",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.outfitmaker/outfit-assistant",
+   "slug": "ai-outfitmaker-outfit-assistant",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.outlit/outlit",
+   "slug": "ai-outlit-outlit",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.outset/mcp",
+   "slug": "ai-outset-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.painspotter/painspotter",
+   "slug": "ai-painspotter-painspotter",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.palmyr/palmyr",
+   "slug": "ai-palmyr-palmyr",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.paperlantern/code",
+   "slug": "ai-paperlantern-code",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.parallel/task-mcp",
+   "slug": "ai-parallel-task-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.posteverywhere/mcp",
+   "slug": "ai-posteverywhere-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.searcheros/searcher-os",
+   "slug": "ai-searcheros-searcher-os",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.smithery/BigVik193-reddit-ads-mcp-api",
+   "slug": "ai-smithery-bigvik193-reddit-ads-mcp-api",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.smithery/sebastianall1977-gmail-mcp",
+   "slug": "ai-smithery-sebastianall1977-gmail-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.tensorfeed/x402-base-mcp",
+   "slug": "ai-tensorfeed-x402-base-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.trendsapi/wikipedia",
+   "slug": "ai-trendsapi-wikipedia",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "app.apiguru/amazon-data",
+   "slug": "app-apiguru-amazon-data",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "app.desktopcommander/remote-desktop-commander",
+   "slug": "app-desktopcommander-remote-desktop-commander",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "app.evlek/mcp-server",
+   "slug": "app-evlek-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "app.wishpool/chile-payments-mcp",
+   "slug": "app-wishpool-chile-payments-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "app.wishpool/global-logistics-mcp",
+   "slug": "app-wishpool-global-logistics-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "app.wishpool/hong-kong-payments-mcp",
+   "slug": "app-wishpool-hong-kong-payments-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "be.lexgo/jobs",
+   "slug": "be-lexgo-jobs",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "capital.hove/read-only-local-postgres-mcp-server",
+   "slug": "capital-hove-read-only-local-postgres-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "co.contraption/mcp",
+   "slug": "co-contraption-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.a2awire/data-hacker-news-front-page-tech-news",
+   "slug": "com-a2awire-data-hacker-news-front-page-tech-news",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.angelsforagents/funding",
+   "slug": "com-angelsforagents-funding",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.averray/mcp",
+   "slug": "com-averray-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.axiomatic-ai/prover",
+   "slug": "com-axiomatic-ai-prover",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.calibrd/agent",
+   "slug": "com-calibrd-agent",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.casemargin/casemargin-mcp-server",
+   "slug": "com-casemargin-casemargin-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.clauxel.chromedevtoolsmcp/chromedevtoolsmcp-mcp",
+   "slug": "com-clauxel-chromedevtoolsmcp-chromedevtoolsmcp-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.clauxel.fastmcpruntime/fastmcpruntime-mcp",
+   "slug": "com-clauxel-fastmcpruntime-fastmcpruntime-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.clauxel.semblecodesearchgate/semblecodesearchgate-mcp",
+   "slug": "com-clauxel-semblecodesearchgate-semblecodesearchgate-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.clauxel.unitymcptest/unitymcptest-mcp",
+   "slug": "com-clauxel-unitymcptest-unitymcptest-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.cypruscompanycost/site",
+   "slug": "com-cypruscompanycost-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.danubeai/danube",
+   "slug": "com-danubeai-danube",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.dmzagent/skill-builder-mcp",
+   "slug": "com-dmzagent-skill-builder-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.exploit-intel/eip-mcp",
+   "slug": "com-exploit-intel-eip-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.findmetool/lookup",
+   "slug": "com-findmetool-lookup",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.fintechstudios/studio",
+   "slug": "com-fintechstudios-studio",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.footballagentindex/site",
+   "slug": "com-footballagentindex-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.gonkbot/mcp",
+   "slug": "com-gonkbot-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.gumballtools/iso-week",
+   "slug": "com-gumballtools-iso-week",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.hankookilbo.mcp/hankookilbo-mcp",
+   "slug": "com-hankookilbo-mcp-hankookilbo-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.hasdata/amazon",
+   "slug": "com-hasdata-amazon",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.hovercode/mcp",
+   "slug": "com-hovercode-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.hreflangly/site",
+   "slug": "com-hreflangly-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.ilovevideoeditor/mcp-server",
+   "slug": "com-ilovevideoeditor-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.knowjudges/knowjudges",
+   "slug": "com-knowjudges-knowjudges",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.mambabuilt/mcp-clay-to-instantly-smartlead-push",
+   "slug": "com-mambabuilt-mcp-clay-to-instantly-smartlead-push",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.mambabuilt/mcp-tiktok-brand-presence-mapper",
+   "slug": "com-mambabuilt-mcp-tiktok-brand-presence-mapper",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.mcpbundles/uk-court-finder",
+   "slug": "com-mcpbundles-uk-court-finder",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.md-log/md-log-mcp",
+   "slug": "com-md-log-md-log-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.meta-council/decision-intelligence",
+   "slug": "com-meta-council-decision-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.metalroofcostcalculator/site",
+   "slug": "com-metalroofcostcalculator-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.mnemopay/gridstamp",
+   "slug": "com-mnemopay-gridstamp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.mux/mcp",
+   "slug": "com-mux-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.nlqdb/nlqdb",
+   "slug": "com-nlqdb-nlqdb",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.nyxory/nyxory",
+   "slug": "com-nyxory-nyxory",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.octoparse/octoparse-mcp",
+   "slug": "com-octoparse-octoparse-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.promptfrenzy/promptfrenzy",
+   "slug": "com-promptfrenzy-promptfrenzy",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.sarabalawson/afromorphism",
+   "slug": "com-sarabalawson-afromorphism",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.see-geo/seegeo",
+   "slug": "com-see-geo-seegeo",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.serpdive/serpdive-mcp",
+   "slug": "com-serpdive-serpdive-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.siftivo/siftivo",
+   "slug": "com-siftivo-siftivo",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.takocode/takocode",
+   "slug": "com-takocode-takocode",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.trimtabist/us-tariff-ledger",
+   "slug": "com-trimtabist-us-tariff-ledger",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.uibeats/mcp",
+   "slug": "com-uibeats-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "com.whichmadvisor/site",
+   "slug": "com-whichmadvisor-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.filetopdf/filetopdf-mcp",
+   "slug": "dev-filetopdf-filetopdf-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.primitive/email",
+   "slug": "dev-primitive-email",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.specpilot/specpilot",
+   "slug": "dev-specpilot-specpilot",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.uptimepage/uptimepage",
+   "slug": "dev-uptimepage-uptimepage",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.usetrail/trail",
+   "slug": "dev-usetrail-trail",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.vantagemcp/vantage",
+   "slug": "dev-vantagemcp-vantage",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "dev.veritap/locker",
+   "slug": "dev-veritap-locker",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "email.templated/mcp",
+   "slug": "email-templated-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "guide.bicycle/guide-registry",
+   "slug": "guide-bicycle-guide-registry",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.alterlab/mcp-server",
+   "slug": "io-alterlab-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.1powergrey/sios-gano-connector",
+   "slug": "io-github-1powergrey-sios-gano-connector",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.1shizaan/debugai-mcp",
+   "slug": "io-github-1shizaan-debugai-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ABWerks/pequod-mcp",
+   "slug": "io-github-abwerks-pequod-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.API-Disk-Integrations/agent-mandate",
+   "slug": "io-github-api-disk-integrations-agent-mandate",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Alepha188838884/context-firewall",
+   "slug": "io-github-alepha188838884-context-firewall",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.AliAkhtari78/spotifyscraper",
+   "slug": "io-github-aliakhtari78-spotifyscraper",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.AncientiCe/palace-rs",
+   "slug": "io-github-ancientice-palace-rs",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.AnkitPat/todo-mcp",
+   "slug": "io-github-ankitpat-todo-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.AnnasMazhar/pyspark-mcp",
+   "slug": "io-github-annasmazhar-pyspark-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.AutomateLab-tech/citation-intelligence",
+   "slug": "io-github-automatelab-tech-citation-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Botagram/trust-gate",
+   "slug": "io-github-botagram-trust-gate",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/canada-aida-ai-mcp",
+   "slug": "io-github-csoai-org-canada-aida-ai-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/fsa-food-safety-mcp",
+   "slug": "io-github-csoai-org-fsa-food-safety-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/meok-bft-governance-mcp",
+   "slug": "io-github-csoai-org-meok-bft-governance-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/meok-bs7121-mcp",
+   "slug": "io-github-csoai-org-meok-bs7121-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/meok-enterprise-compliance-checker",
+   "slug": "io-github-csoai-org-meok-enterprise-compliance-checker",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/resume-parser-ai-mcp",
+   "slug": "io-github-csoai-org-resume-parser-ai-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/scam-detector-mcp",
+   "slug": "io-github-csoai-org-scam-detector-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.CSOAI-ORG/supply-chain-mcp",
+   "slug": "io-github-csoai-org-supply-chain-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Cifero74/mcp-apple-music",
+   "slug": "io-github-cifero74-mcp-apple-music",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Cipher208/ariel-memory",
+   "slug": "io-github-cipher208-ariel-memory",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.DarthSander/agentdata-nl",
+   "slug": "io-github-darthsander-agentdata-nl",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.DataLeadsPRO/website-change-monitor",
+   "slug": "io-github-dataleadspro-website-change-monitor",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.DekryptLabs/dlbrowser",
+   "slug": "io-github-dekryptlabs-dlbrowser",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ECD5A/tkach-security",
+   "slug": "io-github-ecd5a-tkach-security",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ErikEJ/SqlServer.Rules",
+   "slug": "io-github-erikej-sqlserver-rules",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ExpertVagabond/guardrails",
+   "slug": "io-github-expertvagabond-guardrails",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Fato07/log-analyzer-mcp",
+   "slug": "io-github-fato07-log-analyzer-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.FedgeNo/conventions-mcp",
+   "slug": "io-github-fedgeno-conventions-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.GPTHuman-ai/humanizer",
+   "slug": "io-github-gpthuman-ai-humanizer",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.GabiUp2/taskchampion-mcp",
+   "slug": "io-github-gabiup2-taskchampion-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.GarAlex/promoshot",
+   "slug": "io-github-garalex-promoshot",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Hylouis233/bibverify",
+   "slug": "io-github-hylouis233-bibverify",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.JasonColapietro/suede-skills-mcp",
+   "slug": "io-github-jasoncolapietro-suede-skills-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.JaviMaligno/vitamind",
+   "slug": "io-github-javimaligno-vitamind",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.JinNing6/cyberhuatuo",
+   "slug": "io-github-jinning6-cyberhuatuo",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.KyaniteLabs/kinocut",
+   "slug": "io-github-kyanitelabs-kinocut",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.LeandroPG19/cuba-memorys",
+   "slug": "io-github-leandropg19-cuba-memorys",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Lukie-81/reporelay",
+   "slug": "io-github-lukie-81-reporelay",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.MarkNicholls/fsopenxmldsl-mcp",
+   "slug": "io-github-marknicholls-fsopenxmldsl-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.MayankTalwar0/startup-finance-metrics",
+   "slug": "io-github-mayanktalwar0-startup-finance-metrics",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Mike25app/scaleforge-mcp-meta-ads",
+   "slug": "io-github-mike25app-scaleforge-mcp-meta-ads",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.MohamedAbdallah-14/prompt-to-asset",
+   "slug": "io-github-mohamedabdallah-14-prompt-to-asset",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Ninjabeam20/sportiq-mcp",
+   "slug": "io-github-ninjabeam20-sportiq-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.QAtlasHub/doiget",
+   "slug": "io-github-qatlashub-doiget",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.RudrenduPaul/agenticworkspace",
+   "slug": "io-github-rudrendupaul-agenticworkspace",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.RyanKramer/rankedtoday-mcp",
+   "slug": "io-github-ryankramer-rankedtoday-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.RyanKramer/summitflow-mcp",
+   "slug": "io-github-ryankramer-summitflow-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.SPAZIO-GENESI/attest-mcp",
+   "slug": "io-github-spazio-genesi-attest-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Servosity/wordpress-mcp",
+   "slug": "io-github-servosity-wordpress-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.SunFlash12/forge-cascade-mcp",
+   "slug": "io-github-sunflash12-forge-cascade-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Techmatic-sys/indiamart-mcp-server",
+   "slug": "io-github-techmatic-sys-indiamart-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Thefirstmannnn/tack",
+   "slug": "io-github-thefirstmannnn-tack",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Vortiago/mcp-tekna",
+   "slug": "io-github-vortiago-mcp-tekna",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Whitemarmot/copyright01",
+   "slug": "io-github-whitemarmot-copyright01",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.Z333Q/p402",
+   "slug": "io-github-z333q-p402",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ZentricProtocol/zentric-protocol-mcp",
+   "slug": "io-github-zentricprotocol-zentric-protocol-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.adriancisnerosspeed-hub/civic-library-mcp",
+   "slug": "io-github-adriancisnerosspeed-hub-civic-library-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.alex-on-ai/webreaper",
+   "slug": "io-github-alex-on-ai-webreaper",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.aliengineering-byte/resilireplay",
+   "slug": "io-github-aliengineering-byte-resilireplay",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.andrewschristison/pondlog-ebird",
+   "slug": "io-github-andrewschristison-pondlog-ebird",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.angelo-leone/talent-augmenting-layer",
+   "slug": "io-github-angelo-leone-talent-augmenting-layer",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.artgas1/yandex-direct-api-mcp",
+   "slug": "io-github-artgas1-yandex-direct-api-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ashev87/propstack-mcp",
+   "slug": "io-github-ashev87-propstack-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.astuto-ai/onelens-mcp",
+   "slug": "io-github-astuto-ai-onelens-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.axiosdevs/agentscoin-mcp",
+   "slug": "io-github-axiosdevs-agentscoin-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.bakyang2/kr-crypto-intelligence",
+   "slug": "io-github-bakyang2-kr-crypto-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.bodyegypt/turkey-data-mcp",
+   "slug": "io-github-bodyegypt-turkey-data-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.brain-bbqs/neuro",
+   "slug": "io-github-brain-bbqs-neuro",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.byenzyme/enzyme",
+   "slug": "io-github-byenzyme-enzyme",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.bytedance/mcp-server-search",
+   "slug": "io-github-bytedance-mcp-server-search",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.cejor6/kalshi-mcp-server",
+   "slug": "io-github-cejor6-kalshi-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.chrischall/alphaportal-mcp",
+   "slug": "io-github-chrischall-alphaportal-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.chrischall/tripadvisor-mcp",
+   "slug": "io-github-chrischall-tripadvisor-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.codeChap/google-analytics",
+   "slug": "io-github-codechap-google-analytics",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.codespar/mcp-celcoin",
+   "slug": "io-github-codespar-mcp-celcoin",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.cwhited26/pocket-agent-mcp",
+   "slug": "io-github-cwhited26-pocket-agent-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.cyanheads/libofcongress-mcp-server",
+   "slug": "io-github-cyanheads-libofcongress-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.daedalus/mcp-server-find",
+   "slug": "io-github-daedalus-mcp-server-find",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.danielsousaoliveira/cal-auto-python",
+   "slug": "io-github-danielsousaoliveira-cal-auto-python",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.daredoole/audio-calibration-mcp",
+   "slug": "io-github-daredoole-audio-calibration-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.dawitlabs/capsule",
+   "slug": "io-github-dawitlabs-capsule",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.digitalgremlin/hn-developer-sentiment-mcp",
+   "slug": "io-github-digitalgremlin-hn-developer-sentiment-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.dockersamples/mcp-docker-release-information",
+   "slug": "io-github-dockersamples-mcp-docker-release-information",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.docracy1/runwayleft",
+   "slug": "io-github-docracy1-runwayleft",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.dwarehouse1/vrm-toolkit-mcp",
+   "slug": "io-github-dwarehouse1-vrm-toolkit-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.easytocloud/mac-letterhead",
+   "slug": "io-github-easytocloud-mac-letterhead",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.eldesh/random-mcp",
+   "slug": "io-github-eldesh-random-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.eltociear/skill-audit-mcp",
+   "slug": "io-github-eltociear-skill-audit-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.enzoemir1/adops-mcp",
+   "slug": "io-github-enzoemir1-adops-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.f-o-x11/metadata-connector",
+   "slug": "io-github-f-o-x11-metadata-connector",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.fabionfsc/nuzo-memory",
+   "slug": "io-github-fabionfsc-nuzo-memory",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.fernsugi/x402-api",
+   "slug": "io-github-fernsugi-x402-api",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.flujo-app/mcp-sandbox-computer-vm-for-ai",
+   "slug": "io-github-flujo-app-mcp-sandbox-computer-vm-for-ai",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.freema/openclaw-mcp",
+   "slug": "io-github-freema-openclaw-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.geeks-accelerator/inbed",
+   "slug": "io-github-geeks-accelerator-inbed",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.geoacpfilho/paygate-monetize-monetization-x402",
+   "slug": "io-github-geoacpfilho-paygate-monetize-monetization-x402",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.goww7/acttrace",
+   "slug": "io-github-goww7-acttrace",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.gregario/lorcana-oracle",
+   "slug": "io-github-gregario-lorcana-oracle",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.gulmezeren2-byte/ihalent",
+   "slug": "io-github-gulmezeren2-byte-ihalent",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.hassanahashish-design/agent-signals-mcp",
+   "slug": "io-github-hassanahashish-design-agent-signals-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.hidai25/evalview-mcp",
+   "slug": "io-github-hidai25-evalview-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.huandu/feishu-markdown-mcp",
+   "slug": "io-github-huandu-feishu-markdown-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.humanpen/humanpen-mcp",
+   "slug": "io-github-humanpen-humanpen-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ilyautov/chestny-znak-mcp-ru",
+   "slug": "io-github-ilyautov-chestny-znak-mcp-ru",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.im-sham/aegis-protocol",
+   "slug": "io-github-im-sham-aegis-protocol",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.imouiche/mitre-attack-mcp-server",
+   "slug": "io-github-imouiche-mitre-attack-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.imviky-ctrl/tickerr",
+   "slug": "io-github-imviky-ctrl-tickerr",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.infoinlet-marketplace/mcp-kafka",
+   "slug": "io-github-infoinlet-marketplace-mcp-kafka",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.infoinlet-marketplace/mcp-stripe",
+   "slug": "io-github-infoinlet-marketplace-mcp-stripe",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.inotakeh/symbol",
+   "slug": "io-github-inotakeh-symbol",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.jascal/orca-mcp-server",
+   "slug": "io-github-jascal-orca-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.jgalea/telegram-mcp",
+   "slug": "io-github-jgalea-telegram-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.jolucashornung/live-translate-mcp",
+   "slug": "io-github-jolucashornung-live-translate-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.jrullan/ducklab",
+   "slug": "io-github-jrullan-ducklab",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.korobkov-v/porkbun-mcp",
+   "slug": "io-github-korobkov-v-porkbun-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.kylastech/kylas-crm",
+   "slug": "io-github-kylastech-kylas-crm",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.kyrylopr/lenspr",
+   "slug": "io-github-kyrylopr-lenspr",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.lazymac2x/citation-verifier",
+   "slug": "io-github-lazymac2x-citation-verifier",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.lchampz/heimdall",
+   "slug": "io-github-lchampz-heimdall",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ldclabs/KIP",
+   "slug": "io-github-ldclabs-kip",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.letoribo/mcp-graphql-enhanced",
+   "slug": "io-github-letoribo-mcp-graphql-enhanced",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.levelsofself/ai-ops",
+   "slug": "io-github-levelsofself-ai-ops",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.lexbritten/probe",
+   "slug": "io-github-lexbritten-probe",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.lgpoliveira/bugiadata-mcp",
+   "slug": "io-github-lgpoliveira-bugiadata-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.liminalpepe/x402-dataviz-mcp",
+   "slug": "io-github-liminalpepe-x402-dataviz-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.linhnnmt/genai-capture",
+   "slug": "io-github-linhnnmt-genai-capture",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.lizhuojunx86/chinese-history-mcp",
+   "slug": "io-github-lizhuojunx86-chinese-history-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.malamutemayhem/hackernews",
+   "slug": "io-github-malamutemayhem-hackernews",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.malamutemayhem/ptv",
+   "slug": "io-github-malamutemayhem-ptv",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.marcelo-ochoa/mikrotik",
+   "slug": "io-github-marcelo-ochoa-mikrotik",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/crcp_certificado-mcp",
+   "slug": "io-github-mcp-dir-crcp-certificado-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/ecrvsp_docs_dados_cadastrais-mcp",
+   "slug": "io-github-mcp-dir-ecrvsp-docs-dados-cadastrais-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/ecrvsp_processos_crlve-mcp",
+   "slug": "io-github-mcp-dir-ecrvsp-processos-crlve-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/ibama_regularidade-mcp",
+   "slug": "io-github-mcp-dir-ibama-regularidade-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/mpt_cnf_unificada-mcp",
+   "slug": "io-github-mcp-dir-mpt-cnf-unificada-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/mpt_ms_cnf-mcp",
+   "slug": "io-github-mcp-dir-mpt-ms-cnf-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/pref_mg_itauna_cnd-mcp",
+   "slug": "io-github-mcp-dir-pref-mg-itauna-cnd-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/pref_pr_curitiba_cnd-mcp",
+   "slug": "io-github-mcp-dir-pref-pr-curitiba-cnd-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/pref_rs_montenegro_cnd-mcp",
+   "slug": "io-github-mcp-dir-pref-rs-montenegro-cnd-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/pref_se_laranjeiras_cnd-mcp",
+   "slug": "io-github-mcp-dir-pref-se-laranjeiras-cnd-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/registro_pf_br-mcp",
+   "slug": "io-github-mcp-dir-registro-pf-br-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/sefaz_mg_parcelamento-mcp",
+   "slug": "io-github-mcp-dir-sefaz-mg-parcelamento-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/sintegra-mcp",
+   "slug": "io-github-mcp-dir-sintegra-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/transparencia_indicadores_pj-mcp",
+   "slug": "io-github-mcp-dir-transparencia-indicadores-pj-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/tribunal_tjsp_pedido_criminal-mcp",
+   "slug": "io-github-mcp-dir-tribunal-tjsp-pedido-criminal-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mcp-dir/veiculo_historico-mcp",
+   "slug": "io-github-mcp-dir-veiculo-historico-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mharnett/reddit-ads",
+   "slug": "io-github-mharnett-reddit-ads",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.milos106/ares-mcp",
+   "slug": "io-github-milos106-ares-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mister-franklin/gdpr-decisions",
+   "slug": "io-github-mister-franklin-gdpr-decisions",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mister-franklin/wetwetwet-legislation",
+   "slug": "io-github-mister-franklin-wetwetwet-legislation",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.moelayyan90/xguard",
+   "slug": "io-github-moelayyan90-xguard",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mova-compact/mova-flat-runner",
+   "slug": "io-github-mova-compact-mova-flat-runner",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.mrslbt/paypay-mcp",
+   "slug": "io-github-mrslbt-paypay-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.musaddiq-dev/mysql-mcp-server",
+   "slug": "io-github-musaddiq-dev-mysql-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ni-c/google-search-console-mcp",
+   "slug": "io-github-ni-c-google-search-console-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.nicglazkov/commutescout",
+   "slug": "io-github-nicglazkov-commutescout",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.nightmoose/contractgate",
+   "slug": "io-github-nightmoose-contractgate",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.nirholas/3d-agent-mcp",
+   "slug": "io-github-nirholas-3d-agent-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.nowledge-co/server.json",
+   "slug": "io-github-nowledge-co-server-json",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.ofershap/devutils",
+   "slug": "io-github-ofershap-devutils",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.olgasafonova/nordic-registry-mcp-server",
+   "slug": "io-github-olgasafonova-nordic-registry-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.omniologynow-rgb/scout-intel-mcp",
+   "slug": "io-github-omniologynow-rgb-scout-intel-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.opsconduit/jobber-mcp",
+   "slug": "io-github-opsconduit-jobber-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.paiml/pforge",
+   "slug": "io-github-paiml-pforge",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pcaiano/toolscout",
+   "slug": "io-github-pcaiano-toolscout",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pdf4me/pdf4me-mcp",
+   "slug": "io-github-pdf4me-pdf4me-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pedroknigge/arkgate",
+   "slug": "io-github-pedroknigge-arkgate",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.penny4nonsense/mcp-pymupdf",
+   "slug": "io-github-penny4nonsense-mcp-pymupdf",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pijusz/mcp-gsc",
+   "slug": "io-github-pijusz-mcp-gsc",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/anapioficeandfire",
+   "slug": "io-github-pipeworx-io-anapioficeandfire",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/arcgis-sanjuannm",
+   "slug": "io-github-pipeworx-io-arcgis-sanjuannm",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/arcgis-washingtoncomn",
+   "slug": "io-github-pipeworx-io-arcgis-washingtoncomn",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/ban-fr",
+   "slug": "io-github-pipeworx-io-ban-fr",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/cornell-wex",
+   "slug": "io-github-pipeworx-io-cornell-wex",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/gnews",
+   "slug": "io-github-pipeworx-io-gnews",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/gnomad",
+   "slug": "io-github-pipeworx-io-gnomad",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/hackernews",
+   "slug": "io-github-pipeworx-io-hackernews",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/hsr-notices",
+   "slug": "io-github-pipeworx-io-hsr-notices",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/inspire-hep",
+   "slug": "io-github-pipeworx-io-inspire-hep",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/moralis",
+   "slug": "io-github-pipeworx-io-moralis",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/noaa-tides",
+   "slug": "io-github-pipeworx-io-noaa-tides",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/openaire",
+   "slug": "io-github-pipeworx-io-openaire",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/recurly",
+   "slug": "io-github-pipeworx-io-recurly",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/transport-feeds",
+   "slug": "io-github-pipeworx-io-transport-feeds",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pipeworx-io/useragent",
+   "slug": "io-github-pipeworx-io-useragent",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pree-dew/mcp-bookmark",
+   "slug": "io-github-pree-dew-mcp-bookmark",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pubnub/mcp-server",
+   "slug": "io-github-pubnub-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.pungggi/smart-terminal",
+   "slug": "io-github-pungggi-smart-terminal",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.quotewise/mcp",
+   "slug": "io-github-quotewise-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rajat79suri/visa-info",
+   "slug": "io-github-rajat79suri-visa-info",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.random-orbit/chemglyph",
+   "slug": "io-github-random-orbit-chemglyph",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rdcahalane/genome-industrial-intelligence",
+   "slug": "io-github-rdcahalane-genome-industrial-intelligence",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.reefapi/reefapi-mcp",
+   "slug": "io-github-reefapi-reefapi-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rendleyhq/rendley-mcp",
+   "slug": "io-github-rendleyhq-rendley-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rijul170/sophos-central-mcp",
+   "slug": "io-github-rijul170-sophos-central-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rocnubie/flowmusicai-mcp",
+   "slug": "io-github-rocnubie-flowmusicai-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rocnubie/tiermakerlist-mcp",
+   "slug": "io-github-rocnubie-tiermakerlist-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rogerberent-netizen/docverdict",
+   "slug": "io-github-rogerberent-netizen-docverdict",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rohith1125/sentinel-execution-mcp",
+   "slug": "io-github-rohith1125-sentinel-execution-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.rudimentall1/agent-guardrail",
+   "slug": "io-github-rudimentall1-agent-guardrail",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/acam-ok",
+   "slug": "io-github-sadri-dridi-acam-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/au-postcode",
+   "slug": "io-github-sadri-dridi-au-postcode",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/ca-postcode",
+   "slug": "io-github-sadri-dridi-ca-postcode",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/cc-fm",
+   "slug": "io-github-sadri-dridi-cc-fm",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/cc-hk",
+   "slug": "io-github-sadri-dridi-cc-hk",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/cc-is",
+   "slug": "io-github-sadri-dridi-cc-is",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/cc-lv",
+   "slug": "io-github-sadri-dridi-cc-lv",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/cc-sy",
+   "slug": "io-github-sadri-dridi-cc-sy",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/cc-tk",
+   "slug": "io-github-sadri-dridi-cc-tk",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/crc16-len",
+   "slug": "io-github-sadri-dridi-crc16-len",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/em-mm",
+   "slug": "io-github-sadri-dridi-em-mm",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/file-ext-ok",
+   "slug": "io-github-sadri-dridi-file-ext-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/fx-aud",
+   "slug": "io-github-sadri-dridi-fx-aud",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/fx-nok",
+   "slug": "io-github-sadri-dridi-fx-nok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/gpm-lps",
+   "slug": "io-github-sadri-dridi-gpm-lps",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/if-unmod-ok",
+   "slug": "io-github-sadri-dridi-if-unmod-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/json-bytes",
+   "slug": "io-github-sadri-dridi-json-bytes",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/lang-bn",
+   "slug": "io-github-sadri-dridi-lang-bn",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/mime-yaml",
+   "slug": "io-github-sadri-dridi-mime-yaml",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/offset-utc",
+   "slug": "io-github-sadri-dridi-offset-utc",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/png-magic",
+   "slug": "io-github-sadri-dridi-png-magic",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/puppet-ok",
+   "slug": "io-github-sadri-dridi-puppet-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/redirect-hop-ok",
+   "slug": "io-github-sadri-dridi-redirect-hop-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/redis-url-shape",
+   "slug": "io-github-sadri-dridi-redis-url-shape",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/rfc-status",
+   "slug": "io-github-sadri-dridi-rfc-status",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/st-hi",
+   "slug": "io-github-sadri-dridi-st-hi",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/st-wa",
+   "slug": "io-github-sadri-dridi-st-wa",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/tz-africa-harare",
+   "slug": "io-github-sadri-dridi-tz-africa-harare",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/tz-europe-budapest",
+   "slug": "io-github-sadri-dridi-tz-europe-budapest",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/tz-europe-kyiv",
+   "slug": "io-github-sadri-dridi-tz-europe-kyiv",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/tz-europe-uzhgorod",
+   "slug": "io-github-sadri-dridi-tz-europe-uzhgorod",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/tz-pacific-guadalcanal",
+   "slug": "io-github-sadri-dridi-tz-pacific-guadalcanal",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/upper-ok",
+   "slug": "io-github-sadri-dridi-upper-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/util-010",
+   "slug": "io-github-sadri-dridi-util-010",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/util-113",
+   "slug": "io-github-sadri-dridi-util-113",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sadri-dridi/uuid6-ok",
+   "slug": "io-github-sadri-dridi-uuid6-ok",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sandraschi/leanforge-mcp",
+   "slug": "io-github-sandraschi-leanforge-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.savhascelik/meta-api-mcp-server",
+   "slug": "io-github-savhascelik-meta-api-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.seankim-android/humanaway-mcp-server",
+   "slug": "io-github-seankim-android-humanaway-mcp-server",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.segentic-lab/glovebox-mcp",
+   "slug": "io-github-segentic-lab-glovebox-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.shashwatgtm/revenue-enablement-mcp",
+   "slug": "io-github-shashwatgtm-revenue-enablement-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.shibley/mymcptools",
+   "slug": "io-github-shibley-mymcptools",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.shigechika/gws-mcp",
+   "slug": "io-github-shigechika-gws-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.shulex-voc/smart-crawler",
+   "slug": "io-github-shulex-voc-smart-crawler",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.skyhook-io/radar",
+   "slug": "io-github-skyhook-io-radar",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.smeet666/mcp-databnf",
+   "slug": "io-github-smeet666-mcp-databnf",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.software-mansion/argent",
+   "slug": "io-github-software-mansion-argent",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.srotzin/hive-mcp-trade",
+   "slug": "io-github-srotzin-hive-mcp-trade",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.srotzin/hivebank",
+   "slug": "io-github-srotzin-hivebank",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.sudomock/mcp",
+   "slug": "io-github-sudomock-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.telsav/flutter-skill",
+   "slug": "io-github-telsav-flutter-skill",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.theYahia/roistat-mcp",
+   "slug": "io-github-theyahia-roistat-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.theluckystrike/calendar-ics-reader-events-freebusy-conflicts",
+   "slug": "io-github-theluckystrike-calendar-ics-reader-events-freebusy-conflicts",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.theluckystrike/fixed-assets",
+   "slug": "io-github-theluckystrike-fixed-assets",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.tlkc888-Jenkins/joy",
+   "slug": "io-github-tlkc888-jenkins-joy",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.tsviz/actions-pulse",
+   "slug": "io-github-tsviz-actions-pulse",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.usekaneo/kaneo",
+   "slug": "io-github-usekaneo-kaneo",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.vaemail/vaemail",
+   "slug": "io-github-vaemail-vaemail",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.varvararatta/finance_fintech_mcp",
+   "slug": "io-github-varvararatta-finance-fintech-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.varvararatta/home_automation_mcp",
+   "slug": "io-github-varvararatta-home-automation-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.vivek081166/japan-utils-mcp",
+   "slug": "io-github-vivek081166-japan-utils-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.vola-trebla/v8-cpu-profile-decoder-mcp",
+   "slug": "io-github-vola-trebla-v8-cpu-profile-decoder-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.vsh5dvsch7-png/yueying",
+   "slug": "io-github-vsh5dvsch7-png-yueying",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.wildsurfer/cnnfag",
+   "slug": "io-github-wildsurfer-cnnfag",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.xyzzylabs/wasm-mcp",
+   "slug": "io-github-xyzzylabs-wasm-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.yaver-io/yaver",
+   "slug": "io-github-yaver-io-yaver",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.yeyuan98/biomcp-ts",
+   "slug": "io-github-yeyuan98-biomcp-ts",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.github.zw008/vmware-pilot",
+   "slug": "io-github-zw008-vmware-pilot",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.prisma/mcp",
+   "slug": "io-prisma-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.sunaivacore/gate",
+   "slug": "io-sunaivacore-gate",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.tooloracle/predictoracle",
+   "slug": "io-tooloracle-predictoracle",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "io.usefulapi/youcanbookme",
+   "slug": "io-usefulapi-youcanbookme",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "net.kokofinance/koko-finance",
+   "slug": "net-kokofinance-koko-finance",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "org.heathy/nutrition",
+   "slug": "org-heathy-nutrition",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "pro.nomos/nomos-mcp",
+   "slug": "pro-nomos-nomos-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "services.gera/mcp-gera-data",
+   "slug": "services-gera-mcp-gera-data",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "uk.co.coldroominstallationcost/site",
+   "slug": "uk-co-coldroominstallationcost-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "uk.co.employmentcontractgenerator/site",
+   "slug": "uk-co-employmentcontractgenerator-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "uk.co.shipmycar/quote",
+   "slug": "uk-co-shipmycar-quote",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "uk.co.siteinvestigationcost/site",
+   "slug": "uk-co-siteinvestigationcost-site",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "vet.bio/biovet-mcp",
+   "slug": "vet-bio-biovet-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "xyz.draket/btcpay-mcp",
+   "slug": "xyz-draket-btcpay-mcp",
+   "first_published": "2026-09-18"
   }
  ]
 }

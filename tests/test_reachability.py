@@ -197,3 +197,33 @@ def test_redaction_leaves_a_url_intact() -> None:
     )
     # …while still catching the thing it is for.
     assert "<path>" in redact_paths("no tree at /tmp/mcpw-scan-9ev/src/apps")  # noqa: S108
+
+
+def test_every_source_state_attributes_its_gap() -> None:
+    """The distinction this module has always drawn, now readable by a caller.
+
+    `publisher_fault` existed from the start and its only other mention in the
+    repository was a COMMENT — nothing read it, no gate consulted it, no
+    surface rendered it. `Fault` is that property made consumable, and the
+    mapping is asserted here because `FETCH_FAILED` is the case that gets it
+    wrong: this module's own prose calls it *"reasons on our side … retryable
+    and not a finding about the server"*, and published it anyway.
+    """
+    from mcpwatchman.workers.scanner.reachability import Fault, SourceState
+
+    assert SourceState.UNREACHABLE.fault is Fault.PUBLISHER
+    assert SourceState.NOT_DECLARED.fault is Fault.PUBLISHER
+    assert SourceState.FETCH_FAILED.fault is Fault.ENVIRONMENT
+    assert SourceState.NOT_ATTEMPTED.fault is Fault.ENVIRONMENT
+    # A fetched source has no gap of its own to attribute: whatever abstains
+    # downstream is attributed by whoever found it, not by this stage.
+    assert SourceState.FETCHED.fault is Fault.UNATTRIBUTED
+
+    assert Fault.PUBLISHER.publishable and Fault.PROJECT.publishable
+    assert not Fault.ENVIRONMENT.publishable
+    assert not Fault.UNATTRIBUTED.publishable, (
+        "the default must be the refused one, or an omission fails open"
+    )
+    # Every state maps to something, so a new state cannot silently have no
+    # attribution at all.
+    assert all(isinstance(s.fault, Fault) for s in SourceState)

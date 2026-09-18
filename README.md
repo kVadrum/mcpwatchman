@@ -128,6 +128,32 @@ pip install mcpwatchman     # not yet published
 
 Requires Python 3.12+.
 
+### Running a scan yourself
+
+The published numbers are reproducible, and reproducing them needs two external
+binaries that are **not** Python dependencies. Both are resolved on `PATH`, so
+installing them into a venv is not enough — the venv's `bin` has to be on
+`PATH` when the scan runs.
+
+```sh
+python -m venv .venv-workers
+.venv-workers/bin/pip install -e ".[workers]"        # semgrep, detect-secrets
+# osv-scanner is a Go binary; take the release that matches your platform and
+# verify it against the published SHA256SUMS
+curl -sSLO https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64
+install -m 0755 osv-scanner_linux_amd64 .venv-workers/bin/osv-scanner
+
+PATH="$PWD/.venv-workers/bin:$PATH" .venv-workers/bin/python ops/scan_cohort.py \
+    --out site/src/data/scans.json --dry-run
+```
+
+**A missing binary does not fail — it produces a clean "not assessed".** Code
+Safety carries 30% of the weighting and Dependency Health 20%, so a scan run
+without them publishes a page that looks measured and is not. `ops/scan_cohort.py`
+refuses to start rather than let that happen, and the versions the scanners were
+written against are recorded in `workers/scanner/osv_check.py` (osv-scanner
+2.6.0) and the `workers` extra (semgrep >= 1.75).
+
 ## Repository layout
 
 ```

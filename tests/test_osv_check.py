@@ -12,6 +12,7 @@ import pytest
 
 from mcpwatchman.workers.scanner import osv_check as oc
 from mcpwatchman.workers.scanner.inventory import FileRecord, Inventory, Language, Role
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scoring.composite import Severity, axis_score
 
 needs_osv = pytest.mark.skipif(
@@ -449,3 +450,50 @@ def test_a_finding_in_an_unparsed_ecosystem_is_not_assumed_transitive() -> None:
     # Excluded from the arithmetic rather than scored at the kinder rate.
     assert oc.dependency_axis_score([unknown]) == 100
     assert oc.dependency_axis_score([unknown, _finding(Severity.CRITICAL)]) == 75
+
+
+def test_a_budget_timeout_is_ours_and_accidental_not_a_product_limit(
+    tmp_path,
+) -> None:
+    """⚠ THIS TEST ASSERTED THE OPPOSITE FOR ABOUT TEN MINUTES, AND THE CLAIM
+    BEHIND IT WAS FALSIFIED BY THE NEXT MEASUREMENT.
+
+    The argument for `PROJECT` was that `04` §7's budget is fixed and
+    documented, so a repository large enough to exceed it exceeds it every run.
+    Two observations of `ai.klavis/strata` (1,277 files) supported that. The
+    third did not: the same repository and the same 180s budget **completed**,
+    scoring `dependency_health` in 221s of wall time, with nothing else running
+    on the box. osv-scanner's vulnerability-database cache is cold on the first
+    heavy invocation and warm afterwards, so the outcome tracks machine state
+    rather than the repository.
+
+    Load-dependent is accidental, which is `ENVIRONMENT` — and the remedy is
+    the single retry in `ops/scan_cohort.py`, which on a warm cache is the
+    attempt that succeeds. A page is kept only if it fails twice.
+
+    The lesson is the reason this docstring is long: a confident rule was
+    written from two data points, and the mechanism behind it (a cache) was
+    never checked. `explicit_fault` survives because the UNAVAILABLE sites do
+    need a per-site answer; only the claim about timeouts was wrong.
+    """
+    if shutil.which("osv-scanner") is None:
+        pytest.skip("osv-scanner is a Go binary installed in the worker image")
+
+    (tmp_path / "package-lock.json").write_text('{"lockfileVersion": 3}')
+    # A zero budget makes `subprocess.run` raise TimeoutExpired immediately,
+    # which exercises the real timeout site rather than a hand-built result.
+    result = oc.run_osv(tmp_path, timeout_s=0)
+    assert result.status is oc.OsvStatus.FAILED
+    assert result.fault is Fault.ENVIRONMENT
+    assert not result.fault.publishable, (
+        "a timeout must not be published as the reason a third party went "
+        "unscored — it is ours, and the retry exists for it"
+    )
+    assert "budget" in result.reason and "04" in result.reason
+
+    # The UNAVAILABLE sites still carry their own answers, which is the
+    # mechanism `explicit_fault` was added for and which stands.
+    assert (
+        oc.OsvResult(status=oc.OsvStatus.UNAVAILABLE, explicit_fault=Fault.PUBLISHER).fault
+        is Fault.PUBLISHER
+    )

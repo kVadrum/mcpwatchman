@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.22.0"
+version = "0.23.0"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -65,6 +65,10 @@ dev = [
   # Pinned to a minor: ruff gates CI, and new lint rules ship in 0.x releases.
   "ruff~=0.16.7",
   "mypy>=1.10",
+  # mypy reports `semgrep_check`'s yaml import as untyped without these and
+  # then infers Any for everything downstream of it, which is how a real
+  # arg-type defect can hide behind a "clean" run.
+  "types-PyYAML>=6.0",
   # Stubs for the one untyped import in the scanner: `semgrep_check` reads the
   # ruleset's YAML, and without these mypy reports the import itself as an
   # error and then infers `Any` for everything downstream of it — so the
@@ -94,6 +98,25 @@ packages = ["src/mcpwatchman"]
 # RulesetError before semgrep started. It works from a checkout, which is the
 # only place it had ever been run.
 force-include = { "rules" = "mcpwatchman/rules" }
+
+[tool.mypy]
+# Gated in CI's `lint` job. mypy caught a defect 830 green tests did not — a
+# field inserted into `AxisScore` silently reinterpreted two five-positional
+# calls, so the evidence tuple landed in `fault` and every scored Code Safety
+# and Dependency Health axis published no evidence at all. `03` §10 is the
+# product's central claim; nothing else was going to report that.
+files = ["src"]
+
+[[tool.mypy.overrides]]
+# `sqlalchemy` and `fastapi` sit behind the `workers` and `api` extras, which
+# the lint job deliberately does not install — so without this the gate
+# reports two import errors in every CI run and gets ignored within a week.
+# Measured before wiring it up, in a `[dev]`-only venv built under `env -i`,
+# because the local venv carries both and would have hidden it. This silences
+# the ABSENT case only: where the packages are installed, their real types are
+# used and checked.
+module = ["sqlalchemy.*", "fastapi.*"]
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py312"

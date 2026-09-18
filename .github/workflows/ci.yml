@@ -21,6 +21,14 @@ jobs:
       # version — a floating ruff reds CI the day a release adds a rule.
       - run: pip install -e ".[dev]"
       - run: ruff check .
+      # ⚠ ADDED 2026-09-18, because this gate was the only thing that caught a
+      # defect the whole suite passed: a field inserted mid-dataclass
+      # reinterpreted two positional calls, emptying `evidence` on every
+      # scored Code Safety and Dependency Health axis. 830 tests green — the
+      # evidence assertion iterates the list, and an empty list iterates
+      # vacuously. mypy is in `[dev]` and was simply never run here, while
+      # STATE claimed "mypy clean" for weeks over 7 real errors.
+      - run: mypy
 
 # Publishing lives in release.yml, fired by a vX.Y.Z tag.
 

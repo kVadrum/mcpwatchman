@@ -60,7 +60,7 @@ from mcpwatchman.workers.scanner.inventory import (
     Role,
     read_text,
 )
-from mcpwatchman.workers.scanner.reachability import redact_paths
+from mcpwatchman.workers.scanner.reachability import Fault, redact_paths
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
     Confidence,
@@ -178,6 +178,32 @@ class SemgrepResult:
     @property
     def assessed(self) -> bool:
         return self.status is SemgrepStatus.OK
+    # WHOSE gap this is, when `status is SemgrepStatus.UNAVAILABLE` — the one status
+    # that merged two opposite answers. Read `fault`, never this field: it is
+    # meaningful only for UNAVAILABLE, and it DEFAULTS TO UNATTRIBUTED so a
+    # future unavailable-path that forgets to attribute is refused at
+    # publication rather than published as somebody else's gap.
+    explicit_fault: Fault = Fault.UNATTRIBUTED
+
+    @property
+    def fault(self) -> Fault:
+        """Whose gap this result represents, for publication to accept or refuse.
+
+        An explicit answer wins; otherwise `FAILED` derives to `ENVIRONMENT`,
+        because a tool that ran and crashed or emitted output we could not
+        parse is ours and is not deliberate.
+
+⚠ A timeout derives to `ENVIRONMENT` like any other failure: it is
+        load-dependent, not a property of the repository. The measurement that
+        settled it, and the `PROJECT` claim it falsified, are recorded once in
+        `osv_check.OsvResult.fault`.
+        """
+        if self.explicit_fault is not Fault.UNATTRIBUTED:
+            return self.explicit_fault
+        if self.status is SemgrepStatus.FAILED:
+            return Fault.ENVIRONMENT
+        return Fault.UNATTRIBUTED
+
 
 
 def rules_root(start: Path | None = None) -> Path:
@@ -493,6 +519,8 @@ def run_semgrep(
         return SemgrepResult(
             status=SemgrepStatus.UNAVAILABLE,
             reason="semgrep is not on PATH; it ships in the `workers` extra",
+            # OURS, and the whole reason this field exists.
+            explicit_fault=Fault.ENVIRONMENT,
         )
 
     neutralised = _neutralise_hostile_config(root)
@@ -522,7 +550,8 @@ def run_semgrep(
     except subprocess.TimeoutExpired:
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
-            reason=f"semgrep exceeded {timeout_s}s",
+            reason=f"semgrep exceeded the {timeout_s}s budget `04` §7 allows "
+                   "it for one repository, so this tree was not scanned",
             neutralised=neutralised,
             pruned=pruned_count,
             pruned_sample=pruned_sample,
@@ -761,6 +790,8 @@ def assess_code_safety(
             status=SemgrepStatus.UNAVAILABLE,
             reason="no source files in a language the ruleset covers "
                    "(python, javascript, typescript, go)",
+            # THEIRS: what they shipped is what we could not read.
+            explicit_fault=Fault.PUBLISHER,
             methodology_version=version,
         )
     return run_semgrep(root, rules=rules, inventory=inventory, version=version)

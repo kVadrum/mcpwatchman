@@ -878,9 +878,20 @@ def assess_auth(
     source, and this axis still has real work to do for those servers from the
     declared transport, endpoint scheme and credential headers alone.
     """
+    # The narrowing is inlined rather than held in `has_source`, because a
+    # type checker cannot carry `root is not None` through a boolean variable
+    # — and mypy is the only reason this file's five arg-type errors existed.
     has_source = root is not None and inventory is not None
-    source = _source_text(root, inventory) if has_source else None
-    readme = _readme_text(root, inventory) if has_source else ""
+    source = (
+        _source_text(root, inventory)
+        if root is not None and inventory is not None
+        else None
+    )
+    readme = (
+        _readme_text(root, inventory)
+        if root is not None and inventory is not None
+        else ""
+    )
 
     # See NO_SOURCE_FETCHED / SOURCE_UNREADABLE: an empty read is not an
     # assessed absence, and passing "" on as source text scored it as one.
@@ -888,7 +899,7 @@ def assess_auth(
     if source is not None and not source.strip():
         source, absent_reason = None, SOURCE_UNREADABLE
 
-    if has_source and secrets is None and scan_for_secrets:
+    if root is not None and has_source and secrets is None and scan_for_secrets:
         secrets = scan_secrets(root)
 
     return score_axis(

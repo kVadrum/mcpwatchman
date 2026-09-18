@@ -93,6 +93,34 @@ def test_a_score_never_travels_without_its_coverage(reports) -> None:
                 )
 
 
+def test_a_coverage_claim_is_quantized_and_never_rounds_up(reports) -> None:
+    """A coverage figure is the one value this project rounds DOWN.
+
+    ⚠ **THIS WAS LIVE ON THE SITE.** Two servers published an
+    `assessed_weight` of 28 significant digits — `0.8636363636363636363636363636`
+    — because one coverage claim was computed by an ad-hoc division instead of
+    through the convention `semgrep_check` states at length. It surfaced only
+    when a wider cohort produced a server with 4,155 dependency findings, the
+    first non-terminating division; at 40 servers that axis was scored once and
+    divided evenly.
+
+    Two decimal places, and `03`'s direction is down: 4110 of 4155 rounds UP to
+    0.99 and, two findings later, to 1.00 — which publishes a partly-measured
+    axis as fully measured, and the site keys its partly-measured banner on
+    `Number(w) < 1`, so the over-claim erases its own disclosure.
+    """
+    for report in reports:
+        for axis, entry in report["axes"].items():
+            weight = entry["assessed_weight"]
+            _, _, places = weight.partition(".")
+            assert len(places) <= 2, (
+                f"{report['name']}/{axis}: coverage {weight} is unquantized — "
+                "a published claim, not an intermediate value"
+            )
+            # And it must be a real fraction, not a rounded-up 1.
+            assert Decimal("0") <= Decimal(weight) <= Decimal("1")
+
+
 def test_scores_are_in_range(reports) -> None:
     for report in reports:
         for axis, entry in report["axes"].items():
@@ -115,6 +143,42 @@ def test_findings_carry_the_evidence_they_claim(reports) -> None:
         for axis, entry in report["axes"].items():
             for item in entry["evidence"]:
                 assert item["label"].strip(), f"{report['name']}/{axis}: unlabelled evidence"
+
+
+def test_a_deduction_is_never_published_without_its_evidence(reports) -> None:
+    """`03` §10: no point subtracted without an artefact — asserted, not trusted.
+
+    ⚠ **WRITTEN BECAUSE THE SUITE PASSED THROUGH A DEFECT THAT EMPTIED THIS
+    FIELD ON EVERY SCORED AXIS.** `AxisScore` gained a fifth field and two
+    construction sites passed `evidence` positionally, so the evidence tuple
+    landed in `fault` and the evidence went empty — on Code Safety and
+    Dependency Health, the only two axes that carry findings. 830 tests were
+    green: `test_findings_carry_the_evidence_they_claim` iterates the evidence
+    list, and iterating an empty list asserts nothing. mypy caught it and
+    nothing else did.
+
+    The invariant that is not vacuous: an axis opens at 100, so a score BELOW
+    100 means a deduction was taken, and a deduction comes from a finding that
+    carries a file and a line. No findings means no deduction means 100 — the
+    two are the same statement, which is why the absence of evidence at 100 is
+    correct and its absence below 100 is the product's central claim failing.
+    """
+    findings_axes = ("code_safety", "dependency_health")
+    checked = 0
+    for report in reports:
+        for axis in findings_axes:
+            entry = report["axes"][axis]
+            if entry["score"] is None or entry["score"] >= 100:
+                continue
+            checked += 1
+            assert entry["evidence"], (
+                f"{report['name']}/{axis} scored {entry['score']} — a deduction "
+                "was taken — and publishes no evidence for it"
+            )
+    assert checked, (
+        "no deducted axis was examined; this check cannot report a failure on "
+        "this corpus and proves nothing about it"
+    )
 
 
 # --- the built surfaces, when they have been built ------------------------
@@ -404,6 +468,40 @@ def test_the_published_data_matches_the_current_scoring_contract(reports) -> Non
         assert report["scanner_version"], f"{report['name']}: no provenance recorded"
 
 
+def test_no_published_gap_is_attributed_to_our_own_tooling(reports) -> None:
+    """The published-artifact half of the chokepoint gate.
+
+    `cohort.publication_errors` stops the driver writing this; this stops the
+    file being edited into that state afterwards, and it is the assertion that
+    would have caught the 2026-09-18 run — 40 servers, 15 seconds, exit 0,
+    Code Safety unassessed on every one because neither scanner binary was on
+    PATH, and *"semgrep is not on PATH; it ships in the `workers` extra"*
+    about to become the published reason a third party went unscored.
+
+    Note what this does NOT assert: that an axis was SCORED. Abstention is
+    legitimate and common — `03` renormalises around it, 45.3% of declared
+    repositories are not publicly reachable — so requiring a number would
+    fire for an expected condition. What it requires is that the gap belong
+    to somebody nameable: the publisher, or this project's own disclosed
+    limits. Never this run's accidents.
+    """
+    from mcpwatchman.workers.scanner.reachability import Fault
+
+    checked = 0
+    for report in reports:
+        for axis, entry in report["axes"].items():
+            if entry["score"] is not None:
+                continue
+            checked += 1
+            raw = entry.get("fault")
+            assert raw, f"{report['name']}/{axis}: unassessed with no attribution"
+            assert Fault(raw).publishable, (
+                f"{report['name']}/{axis} is unassessed and the gap is {raw} — "
+                f"ours, not the server's: {entry['reason'][:80]!r}"
+            )
+    assert checked, "no unassessed axis was examined — the check is vacuous"
+
+
 def test_every_report_says_what_the_registry_said_about_it(reports) -> None:
     """`registry_state` is present on every record, never inferred from absence.
 
@@ -461,6 +559,44 @@ def test_no_report_claims_to_have_been_scanned_in_the_future(reports) -> None:
         assert scanned <= now, (
             f"{report['name']}: scanned_at {report['scanned_at']} is in the future"
         )
+
+
+def test_the_driver_refuses_to_scan_without_its_scanner_binaries(monkeypatch) -> None:
+    """A missing binary publishes a clean non-assessment, so it must not run.
+
+    Measured 2026-09-18 by doing it: with neither `semgrep` nor `osv-scanner`
+    on PATH, a run scanned 40 servers in 15 seconds, exited **0**, and reported
+    Code Safety unassessed on every one — including the 16 that carry real
+    scores. No gate in this file would have caught the regenerated data,
+    because none of them requires an axis to be SCORED, and adding such a
+    requirement is the wrong fix: an unscored axis is legitimately the common
+    case (`03` renormalises around it).
+
+    The fix belongs before the scan, and this is its positive control — the
+    check has to be capable of passing, or it is a permanent refusal nobody
+    would notice either.
+    """
+    from ops.scan_cohort import REQUIRED_TOOLS, preflight
+
+    assert REQUIRED_TOOLS, "the positive control: an empty tool list never fails"
+
+    monkeypatch.setattr("shutil.which", lambda _tool: "/usr/bin/stub")
+    assert preflight() == []
+
+    monkeypatch.setattr("shutil.which", lambda _tool: None)
+    missing = preflight()
+    assert len(missing) == len(REQUIRED_TOOLS)
+    # Each line must name the tool AND the axis that silently goes dark: the
+    # tool alone reads as a setup nit rather than as published-data damage.
+    for (tool, axis, _where), line in zip(REQUIRED_TOOLS, missing, strict=True):
+        assert tool in line and axis in line
+
+    # And one tool missing is still a refusal — Dependency Health alone going
+    # dark is 20% of the composite.
+    monkeypatch.setattr(
+        "shutil.which", lambda tool: None if tool == "osv-scanner" else "/usr/bin/stub"
+    )
+    assert len(preflight()) == 1
 
 
 def test_the_growth_key_depends_only_on_a_server_name() -> None:

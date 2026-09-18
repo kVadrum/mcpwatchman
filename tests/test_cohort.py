@@ -135,13 +135,36 @@ def test_save_then_load_round_trips(tmp_path: Path) -> None:
     path = tmp_path / "cohort.json"
     save(path, original)
     assert load(path).servers == original.servers
-    # The count in the file is a convenience for a human reading it; it must
-    # not be the thing anyone trusts, so loading ignores it.
+    # ⚠ THIS TEST ASSERTED THE WEAKER CONTRACT AND SO PROTECTED THE DEFECT:
+    # it required `load` to IGNORE a disagreeing `count`, which is what left
+    # `"servers": []` parseable. An empty array unpublishes every page and
+    # exits 0 — the one outcome `parse`'s own docstring says it refuses. The
+    # count is now the cross-check that makes a half-written file loud.
     payload = json.loads(path.read_text())
     assert payload["count"] == 2
     payload["count"] = 99
     path.write_text(json.dumps(payload))
-    assert len(load(path)) == 2
+    with pytest.raises(CohortError, match="declares 99"):
+        load(path)
+
+
+def test_a_truncated_cohort_file_is_refused_rather_than_read_as_empty(
+    tmp_path: Path,
+) -> None:
+    """The failure the count cross-check exists for.
+
+    A half-written or half-edited file leaving `"servers": []` parsed to an
+    empty cohort, published nothing, and exited 0 — unpublishing all 140 pages
+    while reporting success. The bootstrap case (both zero) stays legal,
+    because a cohort has to start somewhere.
+    """
+    path = tmp_path / "cohort.json"
+    path.write_text(json.dumps({"count": 140, "servers": []}))
+    with pytest.raises(CohortError, match="refusing a half-written file"):
+        load(path)
+
+    path.write_text(json.dumps({"count": 0, "servers": []}))
+    assert len(load(path)) == 0
 
 
 def test_a_deprecated_server_is_scanned_and_labelled_not_carried_forward() -> None:
@@ -242,6 +265,68 @@ def test_publishing_is_refused_when_a_report_lands_on_the_wrong_url() -> None:
     assert len(problems) == 1
     assert "/servers/ai-a-one/" in problems[0]
     assert "/servers/ai-a-one-v2/" in problems[0]
+
+
+def test_an_our_side_gap_is_refused_at_publication() -> None:
+    """The recurring failure shape, caught at the chokepoint rather than at N sites.
+
+    A missing scanner binary produces a clean non-assessment, exit 0, and no
+    gate objects — so the run publishes 500 pages whose reason for not scoring
+    a third party is *our* broken environment. Measured 2026-09-18: 40 servers
+    scanned in 15 seconds with `code=—` on every one.
+
+    `environment` and `unattributed` are both refused, and the second is the
+    load-bearing one: it is the DEFAULT, so an axis or a tool added later
+    inherits the refusal without anyone remembering to wire it. The site
+    nobody remembers to guard is the site that generates no symbol to grep
+    and no failure to observe.
+    """
+    cohort = Cohort(servers=(_pin("ai.a/one"),))
+
+    def report(fault: str) -> dict:
+        return {
+            "name": "ai.a/one",
+            "slug": "ai-a-one",
+            "axes": {
+                "code_safety": {
+                    "score": None,
+                    "reason": "semgrep is not on PATH; it ships in the `workers` extra",
+                    "fault": fault,
+                }
+            },
+        }
+
+    for refused in ("environment", "unattributed", "", "typo-nobody-noticed"):
+        problems = publication_errors(cohort, [report(refused)])
+        assert problems, f"{refused!r} reached publication"
+        assert "code_safety" in problems[0]
+
+    for allowed in ("publisher", "project"):
+        assert publication_errors(cohort, [report(allowed)]) == [], allowed
+
+    # A MISSING key is the same as unattributed: data written before the field
+    # existed must not read as publishable.
+    bare = report("publisher")
+    del bare["axes"]["code_safety"]["fault"]
+    assert publication_errors(cohort, [bare])
+
+
+def test_a_scored_axis_needs_no_attribution() -> None:
+    """The narrowing half, and skipping it would make the gate fire on everything.
+
+    `fault` answers "whose gap is this", which is a question only an
+    unassessed axis has. A scored axis has a number and the field is
+    meaningless there — so it is read only when `score is None`.
+    """
+    cohort = Cohort(servers=(_pin("ai.a/one"),))
+    assert publication_errors(
+        cohort,
+        [{
+            "name": "ai.a/one",
+            "slug": "ai-a-one",
+            "axes": {"code_safety": {"score": 78, "reason": "", "fault": "unattributed"}},
+        }],
+    ) == []
 
 
 def test_a_correct_publication_produces_no_problems() -> None:
@@ -348,3 +433,214 @@ def test_the_cohort_has_not_shrunk_since_the_last_commit(cohort: Cohort) -> None
         "these servers were pinned in the last commit and are not pinned now, "
         f"so their published pages would stop existing: {dropped}"
     )
+
+
+# --- the driver's main flow ----------------------------------------------
+
+
+def test_the_driver_publishes_the_pin_and_appends_growth(tmp_path, monkeypatch) -> None:
+    """End-to-end over `main()` with a stubbed registry and scanner.
+
+    **The driver had no test of its main flow, which is where every decision
+    this module exists to enforce actually happens** — and an hour-long run is
+    a bad place to discover a slip in it. Stubbing the two expensive calls
+    leaves the part that is ours: the pinned/flagged/carried split, the
+    growth append, the refusal, and the write.
+    """
+    import ops.scan_cohort as driver
+
+    cohort_path = tmp_path / "cohort.json"
+    out = tmp_path / "scans.json"
+    save(cohort_path, Cohort(servers=(_pin("ai.pinned/one"),)))
+
+    class FakeEntry:
+        def __init__(self, name, status="active", is_latest=True):
+            self.name = name
+            self.version = "1.0.0"
+            self.status = status
+            self.is_latest = is_latest
+            self.repository = None
+            self.packages = ()
+            self.remotes = ()
+
+    entries = [
+        FakeEntry("ai.pinned/one"),
+        FakeEntry("ai.candidate/two"),
+        FakeEntry("ai.candidate/three"),
+    ]
+    monkeypatch.setattr(driver, "fetch_all", lambda: entries)
+    monkeypatch.setattr(driver, "current_entries", lambda es: es)
+    monkeypatch.setattr(driver, "preflight", lambda: [])
+
+    class FakeResolution:
+        scannable = True
+        primary = "github.com/x/y"
+
+    monkeypatch.setattr(driver, "resolve_source", lambda _e: FakeResolution())
+
+    def fake_scan(entry, *_a, **_kw):
+        from mcpwatchman.workers.scanner.runner import AxisScore, ServerReport
+
+        return ServerReport(
+            name=entry.name,
+            version=entry.version,
+            slug=slugify(entry.name),
+            scanned_at="2026-09-18T00:00:00+00:00",
+            axes={
+                a: AxisScore(a, 100, "", "1", fault="publisher") for a in ("code_safety",)
+            },
+        )
+
+    monkeypatch.setattr(driver, "scan_entry", fake_scan)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["scan_cohort.py", "--out", str(out), "--cohort", str(cohort_path), "--grow", "1"],
+    )
+
+    assert driver.main() == 0
+
+    published = json.loads(out.read_text())
+    grown = load(cohort_path)
+    # The pin is published, exactly one candidate was added, and the cohort
+    # grew in the same run that first published its page — the two must never
+    # come apart, which is what makes the URL a promise.
+    assert len(published) == 2
+    assert len(grown) == 2
+    assert "ai.pinned/one" in grown.names
+    assert grown.names == {r["name"] for r in published}
+    assert publication_errors(grown, published) == []
+    # Name order, so a regeneration diffs as changed values rather than a
+    # reshuffled file.
+    assert [r["name"] for r in published] == sorted(r["name"] for r in published)
+
+
+def test_adopting_a_name_pins_it_only_when_it_publishes(tmp_path, monkeypatch) -> None:
+    """Recovery of a lost URL follows growth's rule, and shares its code path.
+
+    100 pages were published before the pin existed and are 404 now. Bringing
+    them back by PRE-PINNING them was the wrong shape and cost a 500-server
+    run: one of them failed to measure on its first publication, had no
+    previous report to fall back to, and the run correctly refused to write.
+    Nothing had promised that page — so the failure must cost that one name,
+    not the other 499.
+    """
+    import ops.scan_cohort as driver
+
+    cohort_path = tmp_path / "cohort.json"
+    out = tmp_path / "scans.json"
+    adopt = tmp_path / "adopt.txt"
+    save(cohort_path, Cohort(servers=()))
+    adopt.write_text("ai.good/one\nai.broken/two\n")
+
+    class FakeEntry:
+        def __init__(self, name):
+            self.name = name
+            self.version = "1.0.0"
+            self.status = "active"
+            self.is_latest = True
+            self.repository = None
+
+    entries = [FakeEntry("ai.good/one"), FakeEntry("ai.broken/two")]
+    monkeypatch.setattr(driver, "fetch_all", lambda: entries)
+    monkeypatch.setattr(driver, "current_entries", lambda es: es)
+    monkeypatch.setattr(driver, "preflight", lambda: [])
+    monkeypatch.setattr(
+        driver,
+        "resolve_source",
+        lambda _e: type("R", (), {"scannable": True, "primary": "g"})(),
+    )
+
+    def scan(entry, *_a, **_kw):
+        from mcpwatchman.workers.scanner.runner import AxisScore, ServerReport
+
+        broken = entry.name == "ai.broken/two"
+        return ServerReport(
+            name=entry.name,
+            version=entry.version,
+            slug=slugify(entry.name),
+            scanned_at="2026-09-18T00:00:00+00:00",
+            axes={
+                "code_safety": AxisScore(
+                    "code_safety",
+                    None if broken else 80,
+                    "semgrep failed" if broken else "",
+                    "0" if broken else "1",
+                    fault="environment" if broken else "publisher",
+                )
+            },
+        )
+
+    monkeypatch.setattr(driver, "scan_entry", scan)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "scan_cohort.py", "--out", str(out),
+            "--cohort", str(cohort_path), "--adopt-file", str(adopt),
+        ],
+    )
+
+    assert driver.main() == 0
+    published = {r["name"] for r in json.loads(out.read_text())}
+    pinned = load(cohort_path).names
+    assert published == {"ai.good/one"}
+    assert pinned == {"ai.good/one"}, (
+        "the unmeasurable name must not be pinned — a pin records a published "
+        "page, and pinning an unpublished one promises a 404"
+    )
+
+
+def test_the_driver_refuses_rather_than_dropping_an_unmeasurable_new_pin(
+    tmp_path, monkeypatch
+) -> None:
+    """An our-side gap on a GROWTH candidate must not be pinned.
+
+    Publishing it would mint a URL whose very first version states our broken
+    run as the reason nobody scored that server — and then the pin would
+    promise to keep it. Skipped instead, so nothing is promised and the next
+    run may pick it up.
+    """
+    import ops.scan_cohort as driver
+
+    cohort_path = tmp_path / "cohort.json"
+    out = tmp_path / "scans.json"
+    save(cohort_path, Cohort(servers=()))
+
+    class FakeEntry:
+        name = "ai.candidate/only"
+        version = "1.0.0"
+        status = "active"
+        is_latest = True
+        repository = None
+
+    monkeypatch.setattr(driver, "fetch_all", lambda: [FakeEntry()])
+    monkeypatch.setattr(driver, "current_entries", lambda es: es)
+    monkeypatch.setattr(driver, "preflight", lambda: [])
+    monkeypatch.setattr(
+        driver, "resolve_source", lambda _e: type("R", (), {"scannable": True, "primary": "g"})()
+    )
+
+    def broken_scan(entry, *_a, **_kw):
+        from mcpwatchman.workers.scanner.runner import AxisScore, ServerReport
+
+        return ServerReport(
+            name=entry.name,
+            version=entry.version,
+            slug=slugify(entry.name),
+            scanned_at="2026-09-18T00:00:00+00:00",
+            # What a missing semgrep produces.
+            axes={
+                "code_safety": AxisScore(
+                    "code_safety", None, "not on PATH", "0", fault="environment"
+                )
+            },
+        )
+
+    monkeypatch.setattr(driver, "scan_entry", broken_scan)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["scan_cohort.py", "--out", str(out), "--cohort", str(cohort_path), "--grow", "1"],
+    )
+
+    assert driver.main() == 0
+    assert json.loads(out.read_text()) == []
+    assert len(load(cohort_path)) == 0, "an unmeasurable candidate must not be pinned"

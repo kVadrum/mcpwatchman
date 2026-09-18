@@ -403,7 +403,12 @@ def _entry_points(root: Path) -> tuple[str, ...]:
     # Deduplicate while preserving declaration order — the first-declared entry
     # point is the conventional one and checks may weight it.
     seen: set[str] = set()
-    return tuple(e for e in found if not (e in seen or seen.add(e)))
+    ordered: list[str] = []
+    for entry in found:
+        if entry not in seen:
+            seen.add(entry)
+            ordered.append(entry)
+    return tuple(ordered)
 
 
 def enumerate_tree(root: Path) -> Inventory:
