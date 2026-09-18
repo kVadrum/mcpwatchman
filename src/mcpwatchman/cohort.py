@@ -419,8 +419,20 @@ def carry_forward(
         "its URL is public; the scores below are from the last scan taken while "
         "the server was listed"
         + (f", on {scanned_on}" if scanned_on else "")
-        + ", and have not been recomputed, because there is no current entry to "
-        "scan."
+        + ", and have not been recomputed"
+        + (
+            # ⚠ THIS SUFFIX WAS UNCONDITIONAL AND CONTRADICTED THE STATE IT
+            # WAS PAIRED WITH — the second contradiction in this function
+            # tonight. `stale` means the registry DOES list the server, so the
+            # caller's observation says "this server is listed" while the tail
+            # said "there is no current entry to scan": two opposite claims in
+            # one published note about a named third party. Fixing the state
+            # and leaving the prose fixed half the defect.
+            ", because there is no current entry to scan."
+            if state == "delisted"
+            else ", because the scan that would have refreshed them did not "
+                 "complete."
+        )
     )
     return carried
 

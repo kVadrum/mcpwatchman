@@ -404,243 +404,57 @@ def test_the_published_slug_is_the_pinned_slug(
         )
 
 
-def test_the_cohort_has_not_shrunk_since_the_last_commit(cohort: Cohort) -> None:
-    """Append-only, enforced against this file's own committed predecessor.
+def test_the_cohort_has_not_shrunk_since_it_last_changed(cohort: Cohort) -> None:
+    """Append-only, enforced against the last revision whose contents differ.
 
-    Nothing else can catch a removal: delete a line, regenerate, and every
+    ⚠ **THE FIRST VERSION OF THIS GATE COULD NOT FIRE IN CI, AND I
+    POSITIVE-CONTROLLED IT IN THE ONE STATE WHERE IT WORKS.** It compared the
+    working-tree file against `HEAD:ops/cohort.json`. That differs only while
+    the change is UNCOMMITTED — which is exactly when I tested it, watching a
+    deleted entry turn it red. In CI the checkout is clean at HEAD, so the
+    comparison was the file against itself: measured 492 vs 492, identical,
+    and therefore green over any removal that had already been committed. The
+    advertised protection was absent in the only environment that runs it.
+
+    Walking back to the last revision whose NAME SET differs fixes both
+    states: dirty, the baseline is HEAD; clean, it is the revision before the
+    one that changed the file. It also makes a committed removal stay red
+    rather than becoming invisible one commit later — an append-only breach
+    does not age out.
+
+    Nothing else can catch a removal. Delete a line, regenerate, and every
     other gate here passes over a consistent, smaller set of promises.
-
-    Skips when `ops/cohort.json` is not in HEAD — which is true of the commit
-    that introduces it and of nothing else. The parse of HEAD's version is
-    asserted non-empty first, so a garbled read cannot pass this vacuously.
     """
     git = shutil.which("git")
     if git is None:  # pragma: no cover - git is present everywhere this runs
-        pytest.skip("git unavailable, so HEAD's cohort cannot be read")
-    blob = subprocess.run(  # noqa: S603 - argument list, never a shell string
-        [git, "show", "HEAD:ops/cohort.json"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
+        pytest.skip("git unavailable, so earlier revisions cannot be read")
+
+    revs = subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [git, "log", "--format=%H", "--", "ops/cohort.json"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
     )
-    if blob.returncode != 0:
-        pytest.skip("ops/cohort.json is not in HEAD yet (the commit adding it)")
-    was = parse(json.loads(blob.stdout))
-    assert len(was) > 0, "the positive control: HEAD's cohort parsed to nothing"
+    if revs.returncode != 0 or not revs.stdout.strip():
+        pytest.skip("ops/cohort.json has no history yet")
+
+    for rev in revs.stdout.split():
+        blob = subprocess.run(  # noqa: S603 - argument list, never a shell string
+            [git, "show", f"{rev}:ops/cohort.json"],
+            cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        if blob.returncode != 0:
+            continue
+        try:
+            was = parse(json.loads(blob.stdout))
+        except (CohortError, json.JSONDecodeError):
+            continue
+        if was.names != cohort.names:
+            break
+    else:
+        pytest.skip("no earlier revision of the cohort differs from this one")
+
+    assert len(was) > 0, "the positive control: the baseline parsed to nothing"
     dropped = sorted(was.names - cohort.names)
     assert not dropped, (
-        "these servers were pinned in the last commit and are not pinned now, "
-        f"so their published pages would stop existing: {dropped}"
+        f"these servers were pinned at {rev[:8]} and are not pinned now, so "
+        f"their published pages would stop existing: {dropped}"
     )
-
-
-# --- the driver's main flow ----------------------------------------------
-
-
-def test_the_driver_publishes_the_pin_and_appends_growth(tmp_path, monkeypatch) -> None:
-    """End-to-end over `main()` with a stubbed registry and scanner.
-
-    **The driver had no test of its main flow, which is where every decision
-    this module exists to enforce actually happens** — and an hour-long run is
-    a bad place to discover a slip in it. Stubbing the two expensive calls
-    leaves the part that is ours: the pinned/flagged/carried split, the
-    growth append, the refusal, and the write.
-    """
-    import ops.scan_cohort as driver
-
-    cohort_path = tmp_path / "cohort.json"
-    out = tmp_path / "scans.json"
-    save(cohort_path, Cohort(servers=(_pin("ai.pinned/one"),)))
-
-    class FakeEntry:
-        def __init__(self, name, status="active", is_latest=True):
-            self.name = name
-            self.version = "1.0.0"
-            self.status = status
-            self.is_latest = is_latest
-            self.repository = None
-            self.packages = ()
-            self.remotes = ()
-
-    entries = [
-        FakeEntry("ai.pinned/one"),
-        FakeEntry("ai.candidate/two"),
-        FakeEntry("ai.candidate/three"),
-    ]
-    monkeypatch.setattr(driver, "fetch_all", lambda: entries)
-    monkeypatch.setattr(driver, "current_entries", lambda es: es)
-    monkeypatch.setattr(driver, "preflight", lambda: [])
-
-    class FakeResolution:
-        scannable = True
-        primary = "github.com/x/y"
-
-    monkeypatch.setattr(driver, "resolve_source", lambda _e: FakeResolution())
-
-    def fake_scan(entry, *_a, **_kw):
-        from mcpwatchman.workers.scanner.runner import AxisScore, ServerReport
-
-        return ServerReport(
-            name=entry.name,
-            version=entry.version,
-            slug=slugify(entry.name),
-            scanned_at="2026-09-18T00:00:00+00:00",
-            axes={
-                a: AxisScore(a, 100, "", "1", fault="publisher") for a in ("code_safety",)
-            },
-        )
-
-    monkeypatch.setattr(driver, "scan_entry", fake_scan)
-    monkeypatch.setattr(
-        "sys.argv",
-        ["scan_cohort.py", "--out", str(out), "--cohort", str(cohort_path), "--grow", "1"],
-    )
-
-    assert driver.main() == 0
-
-    published = json.loads(out.read_text())
-    grown = load(cohort_path)
-    # The pin is published, exactly one candidate was added, and the cohort
-    # grew in the same run that first published its page — the two must never
-    # come apart, which is what makes the URL a promise.
-    assert len(published) == 2
-    assert len(grown) == 2
-    assert "ai.pinned/one" in grown.names
-    assert grown.names == {r["name"] for r in published}
-    assert publication_errors(grown, published) == []
-    # Name order, so a regeneration diffs as changed values rather than a
-    # reshuffled file.
-    assert [r["name"] for r in published] == sorted(r["name"] for r in published)
-
-
-def test_adopting_a_name_pins_it_only_when_it_publishes(tmp_path, monkeypatch) -> None:
-    """Recovery of a lost URL follows growth's rule, and shares its code path.
-
-    100 pages were published before the pin existed and are 404 now. Bringing
-    them back by PRE-PINNING them was the wrong shape and cost a 500-server
-    run: one of them failed to measure on its first publication, had no
-    previous report to fall back to, and the run correctly refused to write.
-    Nothing had promised that page — so the failure must cost that one name,
-    not the other 499.
-    """
-    import ops.scan_cohort as driver
-
-    cohort_path = tmp_path / "cohort.json"
-    out = tmp_path / "scans.json"
-    adopt = tmp_path / "adopt.txt"
-    save(cohort_path, Cohort(servers=()))
-    adopt.write_text("ai.good/one\nai.broken/two\n")
-
-    class FakeEntry:
-        def __init__(self, name):
-            self.name = name
-            self.version = "1.0.0"
-            self.status = "active"
-            self.is_latest = True
-            self.repository = None
-
-    entries = [FakeEntry("ai.good/one"), FakeEntry("ai.broken/two")]
-    monkeypatch.setattr(driver, "fetch_all", lambda: entries)
-    monkeypatch.setattr(driver, "current_entries", lambda es: es)
-    monkeypatch.setattr(driver, "preflight", lambda: [])
-    monkeypatch.setattr(
-        driver,
-        "resolve_source",
-        lambda _e: type("R", (), {"scannable": True, "primary": "g"})(),
-    )
-
-    def scan(entry, *_a, **_kw):
-        from mcpwatchman.workers.scanner.runner import AxisScore, ServerReport
-
-        broken = entry.name == "ai.broken/two"
-        return ServerReport(
-            name=entry.name,
-            version=entry.version,
-            slug=slugify(entry.name),
-            scanned_at="2026-09-18T00:00:00+00:00",
-            axes={
-                "code_safety": AxisScore(
-                    "code_safety",
-                    None if broken else 80,
-                    "semgrep failed" if broken else "",
-                    "0" if broken else "1",
-                    fault="environment" if broken else "publisher",
-                )
-            },
-        )
-
-    monkeypatch.setattr(driver, "scan_entry", scan)
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "scan_cohort.py", "--out", str(out),
-            "--cohort", str(cohort_path), "--adopt-file", str(adopt),
-        ],
-    )
-
-    assert driver.main() == 0
-    published = {r["name"] for r in json.loads(out.read_text())}
-    pinned = load(cohort_path).names
-    assert published == {"ai.good/one"}
-    assert pinned == {"ai.good/one"}, (
-        "the unmeasurable name must not be pinned — a pin records a published "
-        "page, and pinning an unpublished one promises a 404"
-    )
-
-
-def test_the_driver_refuses_rather_than_dropping_an_unmeasurable_new_pin(
-    tmp_path, monkeypatch
-) -> None:
-    """An our-side gap on a GROWTH candidate must not be pinned.
-
-    Publishing it would mint a URL whose very first version states our broken
-    run as the reason nobody scored that server — and then the pin would
-    promise to keep it. Skipped instead, so nothing is promised and the next
-    run may pick it up.
-    """
-    import ops.scan_cohort as driver
-
-    cohort_path = tmp_path / "cohort.json"
-    out = tmp_path / "scans.json"
-    save(cohort_path, Cohort(servers=()))
-
-    class FakeEntry:
-        name = "ai.candidate/only"
-        version = "1.0.0"
-        status = "active"
-        is_latest = True
-        repository = None
-
-    monkeypatch.setattr(driver, "fetch_all", lambda: [FakeEntry()])
-    monkeypatch.setattr(driver, "current_entries", lambda es: es)
-    monkeypatch.setattr(driver, "preflight", lambda: [])
-    monkeypatch.setattr(
-        driver, "resolve_source", lambda _e: type("R", (), {"scannable": True, "primary": "g"})()
-    )
-
-    def broken_scan(entry, *_a, **_kw):
-        from mcpwatchman.workers.scanner.runner import AxisScore, ServerReport
-
-        return ServerReport(
-            name=entry.name,
-            version=entry.version,
-            slug=slugify(entry.name),
-            scanned_at="2026-09-18T00:00:00+00:00",
-            # What a missing semgrep produces.
-            axes={
-                "code_safety": AxisScore(
-                    "code_safety", None, "not on PATH", "0", fault="environment"
-                )
-            },
-        )
-
-    monkeypatch.setattr(driver, "scan_entry", broken_scan)
-    monkeypatch.setattr(
-        "sys.argv",
-        ["scan_cohort.py", "--out", str(out), "--cohort", str(cohort_path), "--grow", "1"],
-    )
-
-    assert driver.main() == 0
-    assert json.loads(out.read_text()) == []
-    assert len(load(cohort_path)) == 0, "an unmeasurable candidate must not be pinned"

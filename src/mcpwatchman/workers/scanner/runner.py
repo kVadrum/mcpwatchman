@@ -575,11 +575,31 @@ def _deps_axis(result, availability) -> AxisScore:
         # publishes a partly-measured axis as fully measured — and the site
         # keys its partly-measured banner on `Number(w) < 1`, so the
         # over-claim erases its own disclosure.
-        weight = _fmt(
-            (dec(scored) / dec(len(result.findings))).quantize(
-                Decimal("0.01"), rounding=ROUND_DOWN
-            )
+        coverage = (dec(scored) / dec(len(result.findings))).quantize(
+            Decimal("0.01"), rounding=ROUND_DOWN
         )
+        # ⚠ THE QUANTIZATION FIX CREATED THIS ONE HOUR LATER. Rounding a
+        # coverage claim DOWN is right, and it means any ratio under 1% lands
+        # on exactly zero — so 1 scorable finding of 101 published a real
+        # score at `assessed_weight: "0"`, which is the report's own
+        # contradiction (`test_a_score_never_travels_without_its_coverage`:
+        # scored implies positive coverage). Measured: 1/101, 1/4155 and
+        # 41/4155 all quantize to "0".
+        #
+        # Below 1% is not a measurement, so it abstains exactly as the
+        # all-unscored case does — and the test is on the QUANTIZED value, not
+        # on the ratio. `CLAUDE.md` names that precise trap: the first guard
+        # written for this family compared `< 0.005` against a number produced
+        # by ROUND_DOWN, and so tested a boundary that could not occur.
+        if coverage == 0:
+            return AxisScore(
+                "dependency_health", None,
+                f"{scored} of {len(result.findings)} vulnerabilities could be "
+                f"placed in `03` §6's table — under 1% of what was found, "
+                "which is too little to score the axis on",
+                "0", fault=Fault.PROJECT.value, evidence=evidence,
+            )
+        weight = _fmt(coverage)
     return AxisScore(
         "dependency_health", result.score, reason, weight, evidence=evidence
     )
