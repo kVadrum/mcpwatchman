@@ -136,6 +136,17 @@ class ServerReport:
     # on a path that never established it. The page hides the field when true;
     # the JSON API, a primary surface, serves it verbatim.
     ref_matched_version: bool | None = None
+    # What the REGISTRY said about this server when this report was published,
+    # which is a different question from whether its source could be read.
+    #
+    # `"listed"` on every report the scanner produces, because a report is
+    # produced from a registry entry. The publisher sets `"delisted"` when a
+    # pinned server has left the registry's listing: its page stays — the URL
+    # is a promise (`mcpwatchman.cohort`) — carrying the last scan taken while
+    # it was listed, and `registry_note` says so with both dates. Silence there
+    # would leave an old scan reading as a current one.
+    registry_state: str = "listed"
+    registry_note: str = ""
     files_scanned: int = 0
     files_pruned: int = 0
     axes: dict[str, AxisScore] = field(default_factory=dict)

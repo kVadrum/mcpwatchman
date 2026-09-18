@@ -14,6 +14,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -184,6 +186,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -354,6 +358,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -524,6 +530,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 18,
   "files_pruned": 0,
   "axes": {
@@ -887,6 +895,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 5,
   "files_pruned": 0,
   "axes": {
@@ -1074,6 +1084,8 @@
   "transport": "streamable-http",
   "transport_mismatch": true,
   "ref_matched_version": true,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 1,
   "files_pruned": 1,
   "axes": {
@@ -1381,6 +1393,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -1551,6 +1565,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 1277,
   "files_pruned": 12,
   "axes": {
@@ -2578,6 +2594,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -2748,6 +2766,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -2918,6 +2938,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -3088,6 +3110,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -3258,6 +3282,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -3428,6 +3454,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -3598,6 +3626,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": true,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 21,
   "files_pruned": 1,
   "axes": {
@@ -4305,6 +4335,8 @@
   "transport": "streamable-http",
   "transport_mismatch": true,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 1,
   "files_pruned": 0,
   "axes": {
@@ -4475,6 +4507,8 @@
   "transport": "streamable-http",
   "transport_mismatch": true,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 2,
   "files_pruned": 1,
   "axes": {
@@ -5031,6 +5065,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -5201,6 +5237,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -5371,6 +5409,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -5541,6 +5581,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -5711,6 +5753,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 3,
   "files_pruned": 1,
   "axes": {
@@ -5881,6 +5925,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -6051,6 +6097,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": true,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 1,
   "files_pruned": 1,
   "axes": {
@@ -6238,6 +6286,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -6408,6 +6458,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 5,
   "files_pruned": 0,
   "axes": {
@@ -6595,6 +6647,8 @@
   "transport": "unknown",
   "transport_mismatch": false,
   "ref_matched_version": true,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 133,
   "files_pruned": 1,
   "axes": {
@@ -6831,6 +6885,8 @@
   "transport": "streamable-http",
   "transport_mismatch": true,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 3,
   "files_pruned": 1,
   "axes": {
@@ -7001,6 +7057,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -7171,6 +7229,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -7341,6 +7401,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -7511,6 +7573,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -7681,6 +7745,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -7851,6 +7917,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 9,
   "files_pruned": 2,
   "axes": {
@@ -8334,6 +8402,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": false,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -8504,6 +8574,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 9,
   "files_pruned": 2,
   "axes": {
@@ -8731,6 +8803,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -8901,6 +8975,8 @@
   "transport": "streamable-http",
   "transport_mismatch": false,
   "ref_matched_version": true,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 21,
   "files_pruned": 1,
   "axes": {
@@ -9600,6 +9676,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 0,
   "files_pruned": 0,
   "axes": {
@@ -9770,6 +9848,8 @@
   "transport": "stdio",
   "transport_mismatch": false,
   "ref_matched_version": null,
+  "registry_state": "listed",
+  "registry_note": "",
   "files_scanned": 2,
   "files_pruned": 2,
   "axes": {

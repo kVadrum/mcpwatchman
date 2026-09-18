@@ -1,0 +1,206 @@
+{
+ "note": "The published cohort. APPEND-ONLY: every entry here is a live URL at https://mcpwatchman.com/servers/<slug>/, so deleting a line breaks a page that is already in the sitemap and in agents' hands. Add servers with `ops/scan_cohort.py --grow N`; never remove one. See src/mcpwatchman/cohort.py for why this file exists.",
+ "count": 40,
+ "servers": [
+  {
+   "name": "ai.1325/mcp",
+   "slug": "ai-1325-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.adeu/adeu",
+   "slug": "ai-adeu-adeu",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.agentdm/agentdm",
+   "slug": "ai-agentdm-agentdm",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.agentutility/mcp-matchpoint",
+   "slug": "ai-agentutility-mcp-matchpoint",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.ankimcp/anki-mcp-server-addon",
+   "slug": "ai-ankimcp-anki-mcp-server-addon",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.arpi/arpi-mcp",
+   "slug": "ai-arpi-arpi-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.authoryze/authoryze",
+   "slug": "ai-authoryze-authoryze",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.blast-radius/blast-radius",
+   "slug": "ai-blast-radius-blast-radius",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.boundaryai/boundaryai",
+   "slug": "ai-boundaryai-boundaryai",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.cabrini/market-data",
+   "slug": "ai-cabrini-market-data",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.certscore/mcp",
+   "slug": "ai-certscore-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.clarx/mcp",
+   "slug": "ai-clarx-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.clawfetch/mcp",
+   "slug": "ai-clawfetch-mcp",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.clize/sites",
+   "slug": "ai-clize-sites",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dinglebear/rgotify",
+   "slug": "ai-dinglebear-rgotify",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.dinglebear/rtailscale",
+   "slug": "ai-dinglebear-rtailscale",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.dinglebear/tailscale-rmcp",
+   "slug": "ai-dinglebear-tailscale-rmcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.fairmind/project-context",
+   "slug": "ai-fairmind-project-context",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.featureboard/featureboard",
+   "slug": "ai-featureboard-featureboard",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.feedback1/mcp",
+   "slug": "ai-feedback1-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.getfacade/mcp",
+   "slug": "ai-getfacade-mcp",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.gondola/gondola",
+   "slug": "ai-gondola-gondola",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.haymon/database",
+   "slug": "ai-haymon-database",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.haymon/dbmcp",
+   "slug": "ai-haymon-dbmcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.immopix/mcp",
+   "slug": "ai-immopix-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.justdrop/mcp",
+   "slug": "ai-justdrop-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.keenable/web-search",
+   "slug": "ai-keenable-web-search",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.klavis/strata",
+   "slug": "ai-klavis-strata",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.kolens/kolens-mcp",
+   "slug": "ai-kolens-kolens-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.lattiq/x402-trading-signals",
+   "slug": "ai-lattiq-x402-trading-signals",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.law.mcp/lawyer-search",
+   "slug": "ai-law-mcp-lawyer-search",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.levelfour/levelfour-mcp",
+   "slug": "ai-levelfour-levelfour-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.lithtrix/lithtrix-mcp",
+   "slug": "ai-lithtrix-lithtrix-mcp",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.mafdet/mcp",
+   "slug": "ai-mafdet-mcp",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.markettrace/agent-feed",
+   "slug": "ai-markettrace-agent-feed",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.mcpanalytics/analytics",
+   "slug": "ai-mcpanalytics-analytics",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.newzai.api/NewzAI",
+   "slug": "ai-newzai-api-newzai",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.newzai.api/news-mcp",
+   "slug": "ai-newzai-api-news-mcp",
+   "first_published": "2026-09-18"
+  },
+  {
+   "name": "ai.novence/mcp",
+   "slug": "ai-novence-mcp",
+   "first_published": "2026-09-17"
+  },
+  {
+   "name": "ai.onelore/lore",
+   "slug": "ai-onelore-lore",
+   "first_published": "2026-09-17"
+  }
+ ]
+}

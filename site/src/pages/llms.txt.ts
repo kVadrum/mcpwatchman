@@ -18,7 +18,14 @@ const read = scans.filter((r) => r.source_state === "fetched").length;
 // the aggregate a claim about repositories that were never contacted.
 const unreachable = scans.filter((r) => r.source_subject === "repository").length;
 const unfetchable = scans.filter((r) => r.source_subject === "package").length;
-const scanned = scans.length ? scans[0].scanned_at.slice(0, 10) : "";
+// The MOST RECENT scan date, not the first record's. A pinned server that
+// leaves the registry keeps the last scan taken while it was listed, so the
+// set stops sharing one date and "scanned X" would be false for that page.
+const scanned = scans.length
+  ? scans.map((r) => r.scanned_at).reduce((a, b) => (a > b ? a : b)).slice(0, 10)
+  : "";
+const delisted = scans.filter((r) => r.registry_state === "delisted").length;
+const allAiPrefixed = scans.length > 0 && scans.every((r) => r.name.startsWith("ai."));
 
 const partial = scans.filter((r) =>
   Object.values(r.axes).some(
@@ -36,7 +43,8 @@ Safety (weight 30), Auth Posture (20), Dependency Health (20), Maintenance (15),
 Transparency (15). A score opens at 100 and every deduction names the finding,
 its severity, its confidence, and the file and line that produced it.
 
-Per-axis scores for ${scans.length} servers are published, scanned ${scanned}.
+Per-axis scores for ${scans.length} servers are published, most recently scanned
+${scanned}.
 The weighted COMPOSITE is computed and deliberately withheld until a
 hand-audited gold set validates the weights, so there is no single number for a
 server anywhere on this site or in the API. If you need one, you must weight the
@@ -54,7 +62,15 @@ methodology defines that tier as a measured false-positive rate against a gold
 set that has not been built, so every finding is capped at "medium" and every
 server presently scores better than it eventually will.
 
-Of the ${scans.length} servers sampled, ${read} shipped source we could read and
+The published set is PINNED and append-only: a server that has a page keeps it,
+and its URL does not change. The set only grows, so \`/servers/<slug>/\` is safe
+to store and re-fetch. It is not a random sample of the registry — the servers
+published first were drawn from the registry's alphabetical head, and everything
+added since is drawn from the whole registry.${allAiPrefixed ? " That head is why\nevery published name currently begins `ai.`." : ""} Do not read the set as
+representative, and do not infer anything from a server's absence: it means we
+have not published it, never that it was judged.${delisted ? `\n\n${delisted} of these servers are no longer listed in the registry. Their pages remain, carry the last scan taken while they were listed, and say so in \`registry_note\`; \`registry_state\` is "delisted" on those records in the JSON API.` : ""}
+
+Of the ${scans.length} servers published, ${read} shipped source we could read and
 ${unreachable} declare a repository that is not publicly reachable, and ${unfetchable} publish a package we could not fetch from its registry — a distinct fact, and not a claim about their repository. GitHub
 answers 404 for a private repository as well as an absent one, so that figure
 means "we could not read it" and never "it does not exist". We do not claim the

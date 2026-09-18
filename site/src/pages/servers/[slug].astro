@@ -58,6 +58,10 @@ const sourceNote =
     </ul>
   </div>
 
+  {report.registry_state === "delisted" && (
+    <p class="source-note">{report.registry_note}</p>
+  )}
+
   {report.ref_matched_version === false && (
     <p class="source-note">
       No tag matching version {report.version} was found in this repository, so

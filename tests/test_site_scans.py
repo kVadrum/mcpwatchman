@@ -377,6 +377,18 @@ def test_the_published_data_matches_the_current_scoring_contract(reports) -> Non
 
     expected_rules = ruleset_version(rules_root())
     for report in reports:
+        if report.get("registry_state") == "delisted":
+            # ⚠ THE ONE EXEMPTION, and it is not a softening. A delisted
+            # server has no current registry entry, so "regenerate it" is not
+            # an available remedy — the alternatives are to publish the last
+            # scan taken while it was listed, labelled as exactly that, or to
+            # delete a live page. The label is the field this branch reads, and
+            # `test_cohort.py` gates the label's own honesty.
+            assert report["registry_note"].strip(), (
+                f"{report['name']}: delisted and exempted from the contract "
+                "gate, yet says nothing about why its numbers are older"
+            )
+            continue
         assert report["methodology_version"] == CURRENT_METHODOLOGY_VERSION, (
             f"{report['name']}: scored under methodology "
             f"{report['methodology_version']}, but the engine is now "
@@ -390,6 +402,45 @@ def test_the_published_data_matches_the_current_scoring_contract(reports) -> Non
                 f"{report['ruleset_version']}, current is {expected_rules}"
             )
         assert report["scanner_version"], f"{report['name']}: no provenance recorded"
+
+
+def test_every_report_says_what_the_registry_said_about_it(reports) -> None:
+    """`registry_state` is present on every record, never inferred from absence.
+
+    A page can outlive its registry entry — the published set is pinned, so a
+    server that leaves the registry keeps its URL (`mcpwatchman.cohort`). The
+    field that distinguishes "scanned last night" from "last scanned while it
+    was still listed" therefore has to be on every record, because a consumer
+    reading it as optional would read a missing value as `listed` and publish
+    an old scan as a current one.
+
+    The state space is deliberately open past `listed`/`delisted`: a server
+    the registry carries with a non-active status gets the registry's OWN word
+    (`deprecated`), because that is the publisher's label and inventing a
+    vocabulary for it would put a term on the page that appears nowhere in the
+    registry. 1 of the 40 pinned servers is in that state today.
+
+    So the invariant is not an enumeration — it is that anything other than
+    `listed` EXPLAINS ITSELF, and that `listed` carries no note. The same
+    discipline `source_subject` is held to: a field that only means something
+    in one state must be empty in the other, or it becomes a place for a
+    sentence nobody can account for.
+    """
+    for report in reports:
+        state = report.get("registry_state")
+        assert isinstance(state, str) and state, (
+            f"{report['name']}: registry_state is {state!r}"
+        )
+        if state == "listed":
+            assert not report["registry_note"], (
+                f"{report['name']}: listed, yet carries a registry note: "
+                f"{report['registry_note'][:80]!r}"
+            )
+        else:
+            assert report["registry_note"].strip(), (
+                f"{report['name']}: registry_state is {state!r} and the report "
+                "says nothing about what that means"
+            )
 
 
 def test_no_report_claims_to_have_been_scanned_in_the_future(reports) -> None:
@@ -412,27 +463,42 @@ def test_no_report_claims_to_have_been_scanned_in_the_future(reports) -> None:
         )
 
 
-def test_the_sample_is_stable_under_registry_growth() -> None:
-    """⚠ A seeded shuffle is reproducible for a FIXED list and nothing more.
+def test_the_growth_key_depends_only_on_a_server_name() -> None:
+    """⚠ THIS TEST PASSED THROUGHOUT THE ROTATION IT WAS WRITTEN TO PREVENT.
 
-    The driver used `random.Random(SEED).shuffle(entries)`, and the registry
-    grows between fetches — so the same seed selected a different sample every
-    run. Measured: two consecutive regenerations shared **21 of 40** servers.
-    That silently invalidated every score-diff taken between runs, which were
-    reported as one population changing while actually spanning two.
+    It replaced a seeded shuffle — reproducible for a FIXED list and nothing
+    more — with `sha256(name)` ordering, and then asserted that the surviving
+    members of a grown pool keep their relative order. That assertion is true,
+    and it is not the property the published set needed. It filters the grown
+    pool down to today's members before taking the first 10, which is precisely
+    the step production could not take: a new server whose hash sorts low
+    DISPLACES the tenth, and the candidate pool was itself an alphabetical
+    prefix of the registry that every new registration shifted. Measured
+    2026-09-18 — two regenerations two days apart shared **4 of 40**, and 100
+    published pages have been lost this way.
 
-    Hash-ordering by the server's own name fixes it: position depends only on
-    identity, so growth inserts without displacing.
+    So the docstring's conclusion ("growth inserts without displacing") was a
+    claim about the ORDERING stated as a claim about the SAMPLE, and the test
+    read as covering the second. What actually keeps the set stable is
+    `ops/cohort.json`; `tests/test_cohort.py` gates it.
+
+    What survives here is the narrow property this key is still used for —
+    choosing which unpinned servers to ADD is reproducible and depends on
+    nothing but their identity, so two people growing the cohort by ten pick
+    the same ten.
     """
-    from ops.scan_sample import sample_key
+    from ops.scan_cohort import sample_key
 
-    today = [f"srv-{i}" for i in range(50)]
-    grown = [*today, *(f"new-{i}" for i in range(500))]
-
-    pick_today = sorted(today, key=sample_key)[:10]
-    pick_grown = [n for n in sorted(grown, key=sample_key) if n in set(today)][:10]
-    assert pick_today == pick_grown, "the surviving members reordered as the pool grew"
-
-    # And the key depends on nothing but the name.
     assert sample_key("a") == sample_key("a")
     assert sample_key("a") != sample_key("b")
+
+    pool = [f"srv-{i}" for i in range(50)]
+    grown = [*pool, *(f"new-{i}" for i in range(500))]
+    order = sorted(pool, key=sample_key)
+    survivors = [n for n in sorted(grown, key=sample_key) if n in set(pool)]
+    assert order == survivors, "a server's position moved when the pool grew"
+
+    # And the displacement the old test was shaped around not noticing: the
+    # first ten of the grown pool are NOT the first ten of the old one, which
+    # is why a top-N draw could never have been stable.
+    assert sorted(grown, key=sample_key)[:10] != order[:10]

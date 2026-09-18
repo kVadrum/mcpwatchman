@@ -37,7 +37,17 @@ const coverage = AXES.map((axis) => ({
   ...axis,
   scored: reports.filter((r) => r.axes[axis.key].score !== null).length,
 }));
-const scannedDate = reports.length ? reports[0].scanned_at.slice(0, 10) : "";
+// The MOST RECENT scan, not the first row's. Once a pinned server leaves the
+// registry its page keeps the last scan taken while it was listed, so the set
+// stops sharing one date — and "scanned on X" would then be false for it.
+const lastScanned = reports.length
+  ? reports.map((r) => r.scanned_at).reduce((a, b) => (a > b ? a : b)).slice(0, 10)
+  : "";
+const delisted = reports.filter((r) => r.registry_state === "delisted").length;
+// Derived so the sentence retires itself. The alphabetical-head selection is
+// why every published name currently begins `ai.`; the first growth step makes
+// that false, and a hand-typed clause would have stayed on the page.
+const allAiPrefixed = reports.length > 0 && reports.every((r) => r.name.startsWith("ai."));
 const W = 96;
 ---
 
@@ -51,10 +61,16 @@ const W = 96;
   <div class="ledger-intro">
     <h1>Scanned servers</h1>
     <p>
-      A sample of the official registry, scanned on {scannedDate}. Each axis is
-      scored independently and shown with how much of it could actually be
-      measured — the hatched part of a bar is the share nobody assessed, and it
-      is drawn rather than rounded away.
+      {reports.length} servers from the official registry, last scanned on {lastScanned}.
+      Each axis is scored independently and shown with how much of it could
+      actually be measured — the hatched part of a bar is the share nobody
+      assessed, and it is drawn rather than rounded away.
+    </p>
+    <p>
+      This set is pinned and only ever grows, so a page published here keeps its
+      URL. It is <b>not</b> a random sample: the servers published first were
+      drawn from the registry's alphabetical head{allAiPrefixed && <>, which is why every name here begins <code>ai.</code></>}, and everything added
+      since is drawn from the whole registry.{delisted > 0 && ` ${delisted} of these servers are no longer listed in the registry; their pages say so and keep the last scan taken while they were.`}
     </p>
     <p>
       There is no single number for a server here. The weighted composite is
