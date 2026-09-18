@@ -524,6 +524,16 @@ def _code_axis(result, availability) -> AxisScore:
         reason = f"{reason}; {note}" if reason else note
     return AxisScore(
         "code_safety", result.score, reason, result.assessed_weight,
+        # ⚠ PARTIAL COVERAGE IS A GAP TOO, and this constructor left it
+        # unattributed while the axis published a number. semgrep can succeed
+        # having parsed only part of the tree, which drops `assessed_weight`
+        # below 1 — the same shape `unmeasured_faults` exists for, arriving on
+        # the axes that do NOT go through `_from_axis_result`. Theirs: the
+        # files that would not parse are the ones they published.
+        unmeasured_faults=(
+            () if result.assessed_weight in ("1", "1.00")
+            else (Fault.PUBLISHER.value,)
+        ),
         evidence=evidence,
     )
 
@@ -638,7 +648,16 @@ def _deps_axis(result, availability) -> AxisScore:
             )
         weight = _fmt(coverage)
     return AxisScore(
-        "dependency_health", result.score, reason, weight, evidence=evidence
+        "dependency_health", result.score, reason, weight,
+        # PROJECT, for the same reason the all-unscored branch above is: the
+        # findings that could not be placed were dropped because `03` §6 bands
+        # on a CVSS and defines nothing for its absence. Our methodology
+        # declining to invent a band, disclosed in our own voice — never a
+        # property of this server.
+        unmeasured_faults=(
+            () if weight in ("1", "1.00") else (Fault.PROJECT.value,)
+        ),
+        evidence=evidence,
     )
 
 

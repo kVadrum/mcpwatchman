@@ -13,6 +13,11 @@ import scans from "../../data/scans.json";
  * have to weight the axes itself, and would then own that choice — which is the
  * honest arrangement while ours is unvalidated.
  */
+// Counted rather than asserted: the note below describes the data it ships with.
+const legacyAxes = scans.flatMap((r) =>
+  Object.values(r.axes).filter((a) => !("unmeasured_faults" in a)),
+).length;
+
 export const GET: APIRoute = () =>
   new Response(
     JSON.stringify(
@@ -29,8 +34,16 @@ export const GET: APIRoute = () =>
           "The set of servers here is pinned and append-only: a server that has a page keeps it, its URL does not change, and the set only grows. It is not a random sample of the registry — the servers published first were drawn from the registry's alphabetical head — so do not read it as representative, and never read a server's absence as a judgement. It means we have not published that server.",
         registry_state_note:
           "`registry_state` says what the registry held for this server when the report was published, and it has more than two values. \"listed\": active in the registry, and `registry_note` is empty. The registry's own word for a non-active entry, currently \"deprecated\": the entry is still there, so the server was scanned normally and the label is the publisher's, scored by nothing. \"delisted\": no current entry at all, so the page keeps the last scan taken while the server was listed. \"stale\": still listed, but the most recent run could not measure it, so the page keeps its last successful scan. Every value other than \"listed\" explains itself in `registry_note`; that invariant is the one to code against, because the registry may introduce a status we relay verbatim.",
+        // DERIVED, so the caveat retires itself. `unmeasured_faults` landed
+        // after the published set was last generated, so no record carries it
+        // today — and a hand-written note saying so would go false, silently,
+        // on the first regeneration. That is what an overtaken `do not` cost
+        // in `llms.txt`, addressed to the audience least able to notice.
         unmeasured_faults_note:
-          "On an axis that DOES carry a score, `unmeasured_faults` lists whose gap the unmeasured remainder is — the sub-checks that could not be evaluated and were renormalised out before the score was computed. It is empty only when the axis was measured in full. Otherwise it names the gap even when that gap is ordinary — `publisher` for a repository we could not read is the common case, not an exception. It never contains a gap caused by our own run: a partly-measured axis whose missing part is our fault is refused at publication exactly as a wholly unmeasured one is, so a scored axis here is never hiding a broken scanner. Read it together with `assessed_weight`, which says how much of the axis the score covers.",
+          (legacyAxes
+            ? `WARNING: ${legacyAxes} axes in this response PREDATE this field and omit it entirely. Check \`scanner_version\`. A missing key means unknown, never fully measured. `
+            : "") +
+          "On an axis that DOES carry a score, `unmeasured_faults` lists whose gap the unmeasured remainder is — the sub-checks that could not be evaluated and were renormalised out before the score was computed. Where present it is empty only when the axis was measured in full, and otherwise names the gap even when that gap is ordinary: `publisher` for a repository we could not read is the common case, not an exception. It never contains a gap caused by our own run — a partly-measured axis whose missing part is our fault is refused at publication exactly as a wholly unmeasured one is, so a scored axis here is never hiding a broken scanner. Read it together with `assessed_weight`, which says how much of the axis the score covers.",
         coverage_note:
           "`assessed_weight` is the share of an axis that could actually be measured. A score of 80 at an assessed_weight of 0.25 is 80 of a quarter of the axis, and must not be rendered as 80.",
         count: scans.length,

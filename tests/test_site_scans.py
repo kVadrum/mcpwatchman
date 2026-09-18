@@ -737,12 +737,22 @@ def test_the_stamped_scanner_version_could_have_produced_this_record(reports) ->
     )
 
     assert reports, "no published reports — the gate would pass vacuously"
-    published: set[str] = set()
+    # ⚠ PER VERSION, from only the records bearing it. A union across the whole
+    # file judged every stamped version against every other version's fields —
+    # so the moment ONE record is carried forward (`stale`/`delisted`, which is
+    # the design, not an edge case) its older stamp was required to define
+    # fields only the fresh records have, and CI failed on a set where every
+    # record was valid for its own stamp. Measured: one record left at 0.23.0
+    # beside 491 at 0.24.2 reds on `unmeasured_faults`. A mixed-version file is
+    # the NORMAL output of a regeneration that keeps a page it could not
+    # rescan.
+    by_version: dict[str, set[str]] = {}
     for report in reports:
+        fields = by_version.setdefault(report["scanner_version"], set())
         for axis in report["axes"].values():
-            published |= set(axis)
+            fields |= set(axis)
 
-    for version in sorted({r["scanner_version"] for r in reports}):
+    for version, published in sorted(by_version.items()):
         rev = _commit_declaring(version)
         assert rev is not None, (
             f"the data is stamped scanner_version {version!r}, which no commit "

@@ -281,7 +281,24 @@ def main() -> int:
     started = time.time()
     manifest = fetch_all()
     live = {e.name: e for e in current_entries(manifest)}
-    listed = {e.name: e for e in manifest}
+    # ⚠ `is_latest` WINS, rather than whichever row happens to come last. A
+    # plain `{e.name: e for e in manifest}` keeps the LAST occurrence, so a
+    # pinned server whose superseded version trails its current one in the
+    # manifest resolved to the superseded row — `is_latest` False — and the
+    # branch below then read "no current entry" and carried an old report
+    # forward as DELISTED, about a server the registry still lists and whose
+    # deprecated entry was scannable. A page frozen and mislabelled by manifest
+    # ordering. 349 of 33,081 entries are not active-and-latest, so the
+    # multi-version shape this depends on is ordinary.
+    listed: dict[str, RegistryEntry] = {}
+    # `row`, not `entry`: the name is reused below for a `RegistryEntry | None`,
+    # and binding it here as a non-optional made the later assignment a type
+    # error. mypy caught it — the gate over `ops` earning its place on the
+    # commit that widened it.
+    for row in manifest:
+        held = listed.get(row.name)
+        if held is None or (row.is_latest and not held.is_latest):
+            listed[row.name] = row
     print(
         f"registry: {len(manifest)} entries, {len(live)} active-latest "
         f"({time.time() - started:.0f}s)",
