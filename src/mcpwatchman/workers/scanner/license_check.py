@@ -34,6 +34,7 @@ from mcpwatchman.workers.scanner.inventory import (
     read_manifest,
     read_text,
 )
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scoring.axes import SubCheck
 
 # `SPDX-License-Identifier: MIT` as a DECLARATION — the tag standing on its own
@@ -417,6 +418,7 @@ def score_license(facts: LicenseFacts) -> SubCheck:
                         "by a different operator, so one offers a choice where "
                         "the other requires both. `03` §7 assigns no band to "
                         "that discrepancy and this build will not invent one."),
+                fault=Fault.PUBLISHER.value,
             )
         if relation == "exact":
             return SubCheck(
@@ -487,5 +489,6 @@ def assess_license(
                 "no source was fetched, so neither a LICENSE file nor a "
                 "package manifest could be read"
             ),
+            fault=Fault.PUBLISHER.value,
         )
     return score_license(license_facts(root, inventory))

@@ -39,7 +39,7 @@ from pathlib import Path
 
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
 from mcpwatchman.workers.scanner.license_check import assess_license
-from mcpwatchman.workers.scanner.reachability import SourceAvailability
+from mcpwatchman.workers.scanner.reachability import Fault, SourceAvailability
 from mcpwatchman.workers.scoring.axes import AxisResult, SubCheck, score_axis
 
 AXIS = "transparency"
@@ -288,6 +288,7 @@ def score_declared_scopes(facts: DocumentationFacts) -> SubCheck:
                    "INFERRED from static analysis, which is not built yet. "
                    "Scoring 100 on an empty inference would be a vacuous truth "
                    "— 'all ∅ inferred scopes are documented'.",
+            fault=Fault.PROJECT.value,
         )
     if _VAGUE_SCOPES.search(corpus):
         return SubCheck(
@@ -365,10 +366,10 @@ def assess_transparency(
         )
         return score_axis(AXIS, [
             assess_license(None, None, no_source),
-            SubCheck("readme_quality", None, reason=no_source),
-            SubCheck("declared_scopes", None, reason=no_source),
-            SubCheck("changelog", None, reason=no_source),
-            SubCheck("security_contact", None, reason=no_source),
+            SubCheck("readme_quality", None, reason=no_source, fault=Fault.PUBLISHER.value),
+            SubCheck("declared_scopes", None, reason=no_source, fault=Fault.PUBLISHER.value),
+            SubCheck("changelog", None, reason=no_source, fault=Fault.PUBLISHER.value),
+            SubCheck("security_contact", None, reason=no_source, fault=Fault.PUBLISHER.value),
         ])
 
     facts = documentation_facts(root, inventory)

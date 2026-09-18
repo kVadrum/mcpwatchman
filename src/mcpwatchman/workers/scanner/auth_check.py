@@ -629,6 +629,7 @@ def _authentication_model(
             name, None,
             reason="the registry entry declares no transport, so `03` §4's "
                    "stdio carve-out cannot be applied either way",
+            fault=Fault.PUBLISHER.value,
         )
 
     declared, required, unprotected = _declared_credentials(entry)
@@ -670,6 +671,7 @@ def _authentication_model(
                    "undeclared header is not an absent one — measured "
                    "2026-09-15, only 10 of 100 remotes declare one at all — so "
                    "`03` §4's \"no authentication\" band is not established.",
+            fault=Fault.PUBLISHER.value,
         )
 
     # ⚠ USE vs IMPORT, and the two reach different bands. See `_call_sites`.
@@ -784,6 +786,7 @@ def _secret_handling(
             name, None,
             reason=f"{absent_reason}, so there is nothing to scan for "
                    "committed credentials",
+            fault=Fault.PUBLISHER.value,
         )
     if secrets is None:
         # ⚠ ATTRIBUTED, and this is the whole point of the field. The axis
@@ -841,6 +844,7 @@ def _authorization_granularity(
             name, None,
             reason=f"{absent_reason}, so neither the tool count nor any "
                    "access-control logic can be read",
+            fault=Fault.PUBLISHER.value,
         )
 
     tools = _count_tools(source)
@@ -860,6 +864,7 @@ def _authorization_granularity(
                    + (" A tool-list handler IS present, so the tools are built "
                       "in a shape this counter could not enumerate."
                       if seen_handler else ""),
+            fault=Fault.PROJECT.value,
         )
     if tools <= GRANULARITY_TOOL_THRESHOLD:
         return SubCheck(
@@ -882,6 +887,7 @@ def _authorization_granularity(
         reason=f"{tools} tool registrations and no conditional access logic "
                "found — `03` §4 calls this case 'needs human review' and "
                "assigns it no score band, so it is not scored here",
+        fault=Fault.PROJECT.value,
     )
 
 
@@ -927,6 +933,12 @@ def assess_auth(
     # cannot parse — Codex found the second case publishing the first case's
     # sentence. Both are ours and both are refused; only the wording differs,
     # and it is the wording that appears on someone else's page.
+    # The `which` sits INSIDE the attempt deliberately: it separates a binary
+    # that is missing from one that is present and then died, and it can only
+    # say that about a scan this call actually made. Hoisting it out — tried,
+    # and reverted — made a caller that never scanned publish "its run did not
+    # complete", which is the same class of false sentence pointing the other
+    # way.
     tool_reason = CREDENTIAL_SCAN_ABSENT
     if root is not None and has_source and secrets is None and scan_for_secrets:
         if shutil.which("detect-secrets") is not None:

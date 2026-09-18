@@ -35,6 +35,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scoring.axes import AxisResult, SubCheck, ladder, score_axis
 
 AXIS = "maintenance"
@@ -105,6 +106,7 @@ def score_recency(signals: MaintenanceSignals, as_of: date) -> SubCheck:
         return SubCheck(
             name, None,
             reason="no last-commit date was retrieved for this repository",
+            fault=Fault.PROJECT.value,
         )
     if days < 0:
         # A future-dated commit is a forged or clock-skewed timestamp. Treat it
@@ -133,6 +135,7 @@ def score_release_cadence(signals: MaintenanceSignals, as_of: date) -> SubCheck:
         return SubCheck(
             name, None,
             reason="no release history was retrieved for this repository",
+            fault=Fault.PROJECT.value,
         )
 
     # Clamped for the same reason `score_recency` clamps, and this ladder was
@@ -157,6 +160,7 @@ def score_release_cadence(signals: MaintenanceSignals, as_of: date) -> SubCheck:
             name, None,
             reason="a release exists but no median release gap was computed, and "
                    "`03` §5's remaining bands are all defined on that median",
+            fault=Fault.PROJECT.value,
         )
     # Released within the year but with a median gap past the last rung: `03` §5
     # names this case explicitly and scores it 30.
@@ -200,6 +204,7 @@ def score_issue_responsiveness(signals: MaintenanceSignals) -> SubCheck:
                    "scores 0 under `03` §5, but an absent measurement is not an "
                    "unanswered issue, and a repository with no issues filed has "
                    "not failed to answer one.",
+            fault=Fault.PROJECT.value,
         )
     return SubCheck(
         name, ladder(median, ISSUE_RESPONSE_DAYS),
@@ -228,6 +233,7 @@ def score_bus_factor(signals: MaintenanceSignals, as_of: date) -> SubCheck:
         return SubCheck(
             name, None,
             reason="no contributor history was retrieved for this repository",
+            fault=Fault.PROJECT.value,
         )
 
     # ⚠ `or 0` here read UNKNOWN as "committed today": `_days_since` returns
@@ -262,6 +268,7 @@ def score_bus_factor(signals: MaintenanceSignals, as_of: date) -> SubCheck:
                        f"`03` §5 scores this 50 when active and 30 after "
                        f"{BUS_FACTOR_STALE_DAYS} quiet days, and nothing here "
                        "distinguishes the two",
+                fault=Fault.PROJECT.value,
             )
         return SubCheck(
             name, 30 if stale else 50,
@@ -296,6 +303,7 @@ def score_repository_signals(signals: MaintenanceSignals) -> SubCheck:
                    "which needs a distribution across every scanned server and "
                    "so cannot be computed while scanning one. It is a post-pass "
                    "over the crawl and that pass does not exist yet.",
+            fault=Fault.PROJECT.value,
         )
     if quartile not in (1, 2, 3, 4):
         raise ValueError(f"category_quartile must be 1-4, got {quartile!r}")

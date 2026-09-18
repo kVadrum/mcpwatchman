@@ -141,8 +141,22 @@ jobs:
           # one in package.json would leave this silently testing outside it
           # with nothing to report the drift.
           node-version-file: site/package.json
-          # The lockfile is not at the repo root, and the automatic npm cache
-          # looks there by default.
+          # ⚠ `engines.node` is a RANGE (">=22.12.0"), so this resolves to the
+          # newest satisfying release and CI's Node floats upward forever. That
+          # is deliberate — it catches a dependency dropping old-Node support
+          # early — but it is NOT the version the host builds with, so a green
+          # here is not evidence about the deploy runtime. Pin a `.node-version`
+          # if that ever needs to match.
+          # ⚠ `cache: npm` IS REQUIRED, and `cache-dependency-path` alone is
+          # inert — read out of setup-node at this pinned SHA rather than
+          # assumed. With `cache` unset it falls to the package-manager-cache
+          # branch, which resolves the manager from package.json's
+          # `packageManager` field; `site/package.json` has none, so
+          # `restoreCache` is never reached and the path is never consulted.
+          # This said "the automatic npm cache looks there by default" for one
+          # commit, which was a comment describing a cache that did not run.
+          cache: npm
+          # The lockfile is not at the repo root, so the default lookup misses.
           cache-dependency-path: site/package-lock.json
       - run: pip install -e ".[dev]"
       # `ci`, not `install`: it honours the committed lockfile and fails rather

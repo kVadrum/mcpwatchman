@@ -502,8 +502,25 @@ def test_no_published_gap_is_attributed_to_our_own_tooling(reports) -> None:
     from mcpwatchman.workers.scanner.reachability import Fault
 
     checked = 0
+    partly = 0
     for report in reports:
         for axis, entry in report["axes"].items():
+            # ⚠ BEFORE THE SKIP BELOW, because a SCORED axis can hide one.
+            # `cohort.unpublishable_gaps` was taught this and THIS GATE WAS NOT
+            # — one rule, two enforcers, and only the runtime half was fixed.
+            # Proven at the time: injecting `unmeasured_faults: ["environment"]`
+            # into one scored axis of the committed data had the driver refuse
+            # it and the whole suite pass, 828 green. The published-artifact
+            # half exists precisely for the state the driver never sees, so it
+            # has to know every rule the driver knows.
+            for raw_sub in entry.get("unmeasured_faults") or ():
+                partly += 1
+                assert Fault(raw_sub).publishable, (
+                    f"{report['name']}/{axis} scored {entry['score']} at "
+                    f"coverage {entry['assessed_weight']} with part of it "
+                    f"unmeasured, and that gap is {raw_sub} — ours, not the "
+                    "server's"
+                )
             if entry["score"] is not None:
                 continue
             checked += 1
@@ -514,6 +531,13 @@ def test_no_published_gap_is_attributed_to_our_own_tooling(reports) -> None:
                 f"ours, not the server's: {entry['reason'][:80]!r}"
             )
     assert checked, "no unassessed axis was examined — the check is vacuous"
+    # ⚠ NOT asserted non-zero, deliberately, and the asymmetry is the point:
+    # every record published before `unmeasured_faults` existed carries none,
+    # so requiring one would fire for an expected condition (`base.md` §
+    # *Signal design*) on exactly the data this gate has to keep passing. The
+    # count is surfaced instead, so a drop to zero after a regeneration is
+    # visible rather than silent.
+    print(f"\n  partly-measured axes examined: {partly}")
 
 
 def test_every_report_says_what_the_registry_said_about_it(reports) -> None:
@@ -662,12 +686,20 @@ def _git() -> str:
 
 
 def _commit_declaring(version: str) -> str | None:
-    """The first commit whose `pyproject.toml` declares `version`, or None."""
+    """The OLDEST commit whose `pyproject.toml` declares `version`, or None.
+
+    Oldest, not newest, and the direction is the gate's strictness. `git log` is
+    newest-first, so taking its first hit returns the LAST commit still carrying
+    that version — and any later config-only edit to `pyproject.toml` (legal
+    under the no-bump rule) would hand this check a tree with more fields than
+    the version actually shipped, quietly widening what it accepts. The oldest
+    is the bump itself: the smallest field set that version ever had.
+    """
     revs = subprocess.run(  # noqa: S603 - argument list, never a shell string
         [_git(), "log", "--format=%H", "--", "pyproject.toml"],
         cwd=ROOT, capture_output=True, text=True, check=False,
     )
-    for rev in revs.stdout.split():
+    for rev in reversed(revs.stdout.split()):
         blob = subprocess.run(  # noqa: S603 - argument list, never a shell string
             [_git(), "show", f"{rev}:pyproject.toml"],
             cwd=ROOT, capture_output=True, text=True, check=False,
@@ -704,6 +736,7 @@ def test_the_stamped_scanner_version_could_have_produced_this_record(reports) ->
         "pass without checking — set `fetch-depth: 0` on the checkout"
     )
 
+    assert reports, "no published reports — the gate would pass vacuously"
     published: set[str] = set()
     for report in reports:
         for axis in report["axes"].values():

@@ -35,7 +35,7 @@ from mcpwatchman.workers.crawler.registry import (
     SourceKind,
     resolve_source,
 )
-from mcpwatchman.workers.scanner.auth_check import assess_auth, scan_secrets
+from mcpwatchman.workers.scanner.auth_check import assess_auth
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.maintenance_check import assess_maintenance
 from mcpwatchman.workers.scanner.osv_check import assess_dependency_health
@@ -288,13 +288,22 @@ def _from_axis_result(
         reason=reason,
         assessed_weight=_fmt(result.assessed_weight),
         fault=None if result.score is not None else fault.value,
-        # Distinct, sorted, and only where a sub-check made its own claim. An
-        # empty `fault` means "already explained by the axis-level attribution"
-        # — the ordinary case, where no source was fetched and every sub-check
-        # needing source abstains for the publisher's reason. Carrying those up
-        # would restate the axis fault once per sub-check and say nothing.
+        # ⚠ EVERY abstention, not only the ones that differ from the axis. The
+        # filter here was `and s.fault`, which silently dropped the default —
+        # so a sub-check that forgot to attribute vanished instead of being
+        # refused, which is the fail-open this whole field exists to close.
+        #
+        # ⚠ AND THE UPSTREAM TAKE-BACK APPLIES PER SUB-CHECK, which is the case
+        # the axis level alone cannot cover. `_gap_fault` already says that if
+        # OUR fetch failed, the gap is ours whatever else — but an axis can
+        # still SCORE through a sub-check that needs no source: Auth Posture
+        # reads transport off the registry manifest, so a fetch we broke leaves
+        # it scored at 0.25 coverage with its other three sub-checks abstaining.
+        # Attributed on their own merits those read `publisher`, which is false
+        # and publishable — the exact pair that lets our failure onto a page.
         unmeasured_faults=tuple(sorted({
-            s.fault for s in result.subchecks if s.score is None and s.fault
+            fault.value if fault is Fault.ENVIRONMENT else s.fault
+            for s in result.subchecks if s.score is None
         })),
         evidence=evidence,
     )
@@ -410,8 +419,15 @@ def _assemble(
     inventory = enumerate_tree(root) if root is not None else None
 
     transport = assess_transport(entry, root, inventory)
-    secrets = scan_secrets(root) if root is not None else None
-    auth = assess_auth(entry, transport, root, inventory, secrets)
+    # ⚠ NO PRE-SCAN HERE. This used to run `scan_secrets` and pass the result
+    # in, and `assess_auth` then re-ran it on exactly the path where the first
+    # call returned None — i.e. after a TIMEOUT — so a slow tree paid the
+    # budget twice, doubled again by the per-server retry in
+    # `ops/scan_cohort.py`. That is the failure class `CLAUDE.md` flags as
+    # tracking machine state rather than the repository. The result was used
+    # nowhere else, so ownership moves wholly to `assess_auth`, which is also
+    # the only place that can tell a missing binary from a dead one.
+    auth = assess_auth(entry, transport, root, inventory)
     transparency = assess_transparency(root, inventory, availability)
     # `03` §5's forge signals need an API fetch that is not built; the axis
     # reports that rather than guessing a maintenance score from the tree.

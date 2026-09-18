@@ -36,6 +36,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import KW_ONLY, dataclass
 from decimal import Decimal
 
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scoring.composite import AXIS_MAX, dec, round_half_up
 from mcpwatchman.workers.scoring.weights import (
     CURRENT_METHODOLOGY_VERSION,
@@ -76,13 +77,19 @@ class SubCheck:
     # ZERO gaps, and the page carried *"`detect-secrets` was not available to
     # this worker"* as a fact about a third party.
     #
-    # Empty means "no separate claim": the abstention is already explained by
-    # the axis-level fault, which is the common case (no source was fetched, so
-    # every sub-check needing source abstains for the publisher's reason).
-    # Attribute explicitly wherever a sub-check can abstain because OUR tooling
-    # did not run — that is the case the axis-level fault structurally cannot
-    # represent.
-    fault: str = ""
+    # ⚠ DEFAULTS TO THE REFUSED VALUE, exactly as `runner.AxisScore.fault` does,
+    # and for the same reason spelled out there: a sub-check that forgets to
+    # attribute must cost a failed run, never a public page.
+    #
+    # It shipped as `""` for one commit, which filtered out of
+    # `unmeasured_faults` and so failed OPEN — the same judgement as the axis
+    # level with the opposite default, one layer down. That is not a
+    # hypothetical: `maintenance_check` abstains with *"no last-commit date was
+    # retrieved"* against `03` §5's forge fetch, and the day that fetch is built
+    # a rate-limited run would publish a Maintenance number at partial coverage
+    # with nothing reported. Every one of the 21 abstention sites is now
+    # attributed explicitly; a new one is refused until it says whose gap it is.
+    fault: str = Fault.UNATTRIBUTED.value
 
     def __post_init__(self) -> None:
         if self.score is None:
