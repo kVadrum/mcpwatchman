@@ -68,7 +68,7 @@ to store and re-fetch. It is not a random sample of the registry — the servers
 published first were drawn from the registry's alphabetical head, and everything
 added since is drawn from the whole registry.${allAiPrefixed ? " That head is why\nevery published name currently begins `ai.`." : ""} Do not read the set as
 representative, and do not infer anything from a server's absence: it means we
-have not published it, never that it was judged.${flagged ? `\n\n${flagged} of these servers carry a \`registry_state\` other than "listed": "delisted" (the registry no longer lists it, so the page keeps the last scan taken while it did), "deprecated" (the publisher's own label, relayed, scored by nothing), or "stale" (listed, but the most recent run could not measure it). Each such record explains itself in \`registry_note\`, and "listed" records carry no note.` : ""}
+have not published it, never that it was judged.${flagged ? `\n\n${flagged === 1 ? "One of these servers carries" : `${flagged} of these servers carry`} a \`registry_state\` other than "listed": "delisted" (the registry no longer lists it, so the page keeps the last scan taken while it did), "deprecated" (the publisher's own label, relayed, scored by nothing), or "stale" (listed, but the most recent run could not measure it). Each such record explains itself in \`registry_note\`, and "listed" records carry no note.` : ""}
 
 Of the ${scans.length} servers published, ${read} shipped source we could read and
 ${unreachable} declare a repository that is not publicly reachable, and ${unfetchable} publish a package we could not fetch from its registry — a distinct fact, and not a claim about their repository. GitHub

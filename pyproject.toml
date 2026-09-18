@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.23.1"
+version = "0.23.2"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -105,7 +105,14 @@ force-include = { "rules" = "mcpwatchman/rules" }
 # calls, so the evidence tuple landed in `fault` and every scored Code Safety
 # and Dependency Health axis published no evidence at all. `03` §10 is the
 # product's central claim; nothing else was going to report that.
-files = ["src"]
+# `ops` as well as `src`: `ops/scan_cohort.py` is the driver that writes the
+# published data, and it was outside the gate that exists to catch exactly the
+# defect it is most exposed to — a positional call silently reinterpreted by a
+# field insertion upstream. It could not be added until `py.typed` shipped:
+# without the marker, PEP 561 makes mypy treat the installed `mcpwatchman` as
+# untyped, so every call the driver makes into it inferred `Any` and the check
+# would have been vacuous rather than absent, which is worse.
+files = ["src", "ops"]
 
 [[tool.mypy.overrides]]
 # `sqlalchemy` and `fastapi` sit behind the `workers` and `api` extras, which

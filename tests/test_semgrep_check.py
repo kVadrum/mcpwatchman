@@ -22,6 +22,7 @@ from mcpwatchman.workers.scanner.inventory import (
     Language,
     Role,
 )
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scanner.semgrep_check import _prune_unscannable
 from mcpwatchman.workers.scoring.composite import Confidence, Severity
 
@@ -634,6 +635,17 @@ def test_a_coverage_that_rounds_to_zero_is_a_failure(
     )
     assert result.score is None
     assert "rounds to zero" in result.reason
+    # ⚠ THEIRS, and the assertion is the point rather than the value. `FAILED`
+    # derives to ENVIRONMENT, which `cohort.publication_errors` refuses — so
+    # attributing this site by default made a DETERMINISTIC publisher-side
+    # condition permanently unpublishable: a growth candidate re-drawn in the
+    # same hash order and re-skipped every run, and a pinned server frozen
+    # behind *"could not measure it for reasons on our side"*, which is false
+    # about a named third party. The enum exists to prevent that sentence.
+    assert result.fault is Fault.PUBLISHER, (
+        f"attributed {result.fault.value}, which publication refuses"
+    )
+    assert result.fault.publishable
 
 
 def test_a_coverage_that_survives_rounding_still_scores(tree, monkeypatch) -> None:

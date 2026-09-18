@@ -73,7 +73,7 @@ const W = 96;
       This set is pinned and only ever grows, so a page published here keeps its
       URL. It is <b>not</b> a random sample: the servers published first were
       drawn from the registry's alphabetical head{allAiPrefixed && <>, which is why every name here begins <code>ai.</code></>}, and everything added
-      since is drawn from the whole registry.{flagged > 0 && ` ${flagged} of these pages carry a registry note — no longer listed, deprecated by their publisher, or a scan we could not refresh — and each says which.`}
+      since is drawn from the whole registry.{flagged > 0 && ` ${flagged === 1 ? "One of these pages carries" : `${flagged} of these pages carry`} a registry note — no longer listed, deprecated by the publisher, or a scan we could not refresh — and each says which.`}
     </p>
     <p>
       There is no single number for a server here. The weighted composite is

@@ -367,6 +367,28 @@ def mark_status(report: dict, *, status: str, observed_on: str) -> dict:
     and `03` has no band for it — so it is reported and not scored, the same
     treatment `reachability` gives an unreadable repository.
     """
+    # ⚠ TWO VOCABULARIES SHARE THIS FIELD, AND ONE OF THEM IS A THIRD PARTY'S.
+    # `status` is relayed verbatim from the registry (`registry.py`:
+    # `_clean(official.get("status")) or "active"`), while `CARRIED_STATES`
+    # are words of OURS that `unpublishable_gaps` reads as "already vetted,
+    # do not re-judge". A registry that introduces `delisted` — an entirely
+    # natural word for it to choose, and the API note in `06` explicitly warns
+    # that new statuses are relayed — would hand a freshly-scanned server a
+    # bypass of the publication gate: measured, an `environment` gap on a
+    # marked report goes from 1 refusal to 0, publishing "semgrep is not on
+    # PATH" as the reason a third party went unscored.
+    #
+    # Fail closed, symmetric with `carry_forward`, which already refuses a
+    # state outside `CARRIED_STATES`. It cannot fire today (the registry uses
+    # `active` and `deprecated`), which is exactly when to install it — the
+    # durable fix is to stop sharing one field between the two vocabularies,
+    # and that is a published-schema decision rather than a guard.
+    if status in CARRIED_STATES:
+        raise CohortError(
+            f"the registry reported status {status!r}, which collides with a "
+            "state of ours that publication treats as already-vetted — "
+            "relaying it would disable the gap check for this server"
+        )
     marked = dict(report)
     marked["registry_state"] = status
     marked["registry_note"] = (

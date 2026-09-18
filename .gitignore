@@ -61,3 +61,9 @@ RUNLOG.md
 # CI's `test` job builds `[dev]` only and a workers dep on the dev path is
 # exactly what hid a red CI for a day (v0.19.1).
 .venv-workers/
+
+# `cohort.atomic_write` writes `<name>.tmp` and renames. A crash between the
+# two leaves the temp file behind, and both files it governs — ops/cohort.json
+# and the site data — are COMMITTED, so `git add -A` would stage a partial
+# write of the published record next to the real one.
+*.tmp

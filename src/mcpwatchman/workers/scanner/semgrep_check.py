@@ -751,6 +751,31 @@ def run_semgrep(
                 f"semgrep parsed {parsed} of {total} file(s); the share read "
                 "rounds to zero and cannot support a score"
             ),
+            # ⚠ THEIRS, AND IT HAS TO BE SAID EXPLICITLY, because `FAILED`
+            # derives to ENVIRONMENT and ENVIRONMENT is refused at publication
+            # — permanently, for a failure that is deterministic. A growth
+            # candidate in this state is re-drawn in the same hash order and
+            # re-skipped every run; a pinned one freezes its page behind
+            # *"the most recent scan could not measure it for reasons on our
+            # side"*, which is false about a named third party on a page whose
+            # premise is that every claim is checkable. The `Fault` enum was
+            # added to stop exactly that sentence, and this site pointed it the
+            # other way.
+            #
+            # The other four FAILED sites default correctly: no JSON, a
+            # scanned-zero scanner defect and a timeout are ours, and mixed
+            # unattributable errors fail closed. This one is different because
+            # semgrep RAN, exited cleanly, and named the files it could not
+            # parse — the gap is a property of what was published.
+            #
+            # PROJECT was the alternative and fails its own definition: it
+            # means systematic and disclosed in our own voice site-wide, and
+            # one repository's unparseable tree is neither. PUBLISHER matches
+            # the precedent three hundred lines below, where "no source in a
+            # covered language" is already THEIRS for the same reason — what
+            # they shipped is what we could not read. Neither value accuses:
+            # the reason string states a count, not a judgement.
+            explicit_fault=Fault.PUBLISHER,
             files_scanned=scanned,
             files_unparsed=len(unparsed),
             neutralised=neutralised,

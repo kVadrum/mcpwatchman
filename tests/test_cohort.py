@@ -20,6 +20,7 @@ from pathlib import Path
 import pytest
 
 from mcpwatchman.cohort import (
+    CARRIED_STATES,
     Cohort,
     CohortError,
     PinnedServer,
@@ -29,6 +30,7 @@ from mcpwatchman.cohort import (
     parse,
     publication_errors,
     save,
+    unpublishable_gaps,
 )
 from mcpwatchman.workers.scanner.runner import slugify
 
@@ -189,6 +191,32 @@ def test_a_deprecated_server_is_scanned_and_labelled_not_carried_forward() -> No
     assert "publisher's own label" in marked["registry_note"]
     assert "no axis scores it" in marked["registry_note"]
     assert "current" in marked["registry_note"]
+    # The label must not disable the gap check for the server it labels.
+    assert unpublishable_gaps("x", {
+        "name": "x", "registry_state": marked["registry_state"],
+        "axes": {"a": {"score": None, "fault": "environment", "reason": "r"}},
+    }), "a relayed status turned off the publication gate"
+
+
+@pytest.mark.parametrize("collision", sorted(CARRIED_STATES))
+def test_a_registry_status_may_not_impersonate_one_of_ours(collision: str) -> None:
+    """`registry_state` holds two vocabularies and only one of them is ours.
+
+    ⚠ `mark_status` relays the registry's word VERBATIM, and
+    `unpublishable_gaps` short-circuits on `CARRIED_STATES` — meaning "already
+    vetted when it was published, do not re-judge". Those are the same field.
+    A registry that introduced `delisted` (a natural word for it to pick, and
+    `06`'s API note says new statuses are relayed as-is) would hand a
+    freshly-scanned server a bypass of the publication gate: measured, an
+    `environment` gap on such a report went from 1 refusal to 0, publishing
+    our own broken toolchain as the reason a third party went unscored.
+
+    Fail closed, symmetric with `carry_forward`, which already refuses a state
+    outside `CARRIED_STATES`. Unreachable today — the registry uses `active`
+    and `deprecated` — which is why it is installed now rather than after.
+    """
+    with pytest.raises(CohortError, match="collides"):
+        mark_status({"name": "x"}, status=collision, observed_on="2026-09-18")
 
 
 def test_a_carried_forward_report_keeps_its_scan_date_and_says_it_did() -> None:
@@ -428,6 +456,26 @@ def test_the_cohort_has_not_shrunk_since_it_last_changed(cohort: Cohort) -> None
     git = shutil.which("git")
     if git is None:  # pragma: no cover - git is present everywhere this runs
         pytest.skip("git unavailable, so earlier revisions cannot be read")
+
+    # ⚠ A SHALLOW CLONE IS A DARK GATE, NOT A MISSING ONE, so it fails rather
+    # than skips. At `fetch-depth: 1` — actions/checkout's DEFAULT — HEAD is
+    # grafted with no parents, the walk below sees one revision, the file is
+    # compared against itself, and the loop falls through to a skip. Measured
+    # 2026-09-18 in a real depth-1 clone: a pinned server deleted from both
+    # files committed green with `1 skipped`. That is the second time this
+    # gate has been green while protecting nothing, and the first fix — the
+    # dirty-vs-clean baseline below — did not touch this half. The environment
+    # is now asserted, so the protection cannot be removed by a workflow edit
+    # without something going red.
+    shallow = subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [git, "rev-parse", "--is-shallow-repository"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert shallow.stdout.strip() != "true", (
+        "this is a shallow clone, so the append-only gate cannot read the "
+        "history it needs and would skip silently — set `fetch-depth: 0` on "
+        "the checkout"
+    )
 
     revs = subprocess.run(  # noqa: S603 - argument list, never a shell string
         [git, "log", "--format=%H", "--", "ops/cohort.json"],

@@ -36,6 +36,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        # ⚠ FULL HISTORY, because `test_the_cohort_has_not_shrunk_since_it_last_changed`
+        # walks back through `ops/cohort.json`'s revisions to find the last one whose
+        # name set differs. The default `fetch-depth: 1` grafts HEAD with no parents, so
+        # that walk sees exactly one revision — the file compared against itself — and
+        # the gate SKIPS. Measured 2026-09-18 in a real depth-1 clone: a pinned server
+        # deleted from both files committed green, `1 skipped`, every sibling gate
+        # passing over a consistent smaller set. The gate that guards live URLs was the
+        # one thing dark in the only environment that runs it.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"
@@ -63,6 +73,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        # ⚠ FULL HISTORY, because `test_the_cohort_has_not_shrunk_since_it_last_changed`
+        # walks back through `ops/cohort.json`'s revisions to find the last one whose
+        # name set differs. The default `fetch-depth: 1` grafts HEAD with no parents, so
+        # that walk sees exactly one revision — the file compared against itself — and
+        # the gate SKIPS. Measured 2026-09-18 in a real depth-1 clone: a pinned server
+        # deleted from both files committed green, `1 skipped`, every sibling gate
+        # passing over a consistent smaller set. The gate that guards live URLs was the
+        # one thing dark in the only environment that runs it.
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"

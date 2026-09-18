@@ -188,3 +188,25 @@ def test_the_imported_version_matches_the_manifest() -> None:
         f"imported __version__ is {__version__} but pyproject declares "
         f"{declared} — a stale .pyc, or a half-applied bump"
     )
+
+
+def test_the_package_ships_its_py_typed_marker() -> None:
+    """Annotations we wrote are annotations a consumer is allowed to see.
+
+    Under PEP 561 a package without this marker is treated as untyped no matter
+    how completely it is annotated, and the failure is the silent kind: nothing
+    errors, every import resolves, and type checking downstream simply stops
+    happening.
+
+    It is load-bearing in-tree as well as out. `ops/scan_cohort.py` — the driver
+    that writes the published data — is inside the mypy gate, and without the
+    marker every call it makes into `mcpwatchman` infers `Any`. That is worse
+    than leaving the driver out: an absent check is visible in the config, a
+    vacuous one reports success. Measured 2026-09-18 — the driver reported three
+    `import-untyped` errors without the marker and checked clean with it.
+    """
+    marker = SRC / "py.typed"
+    assert marker.is_file(), (
+        "src/mcpwatchman/py.typed is missing — consumers and the mypy gate over "
+        "`ops` both silently fall back to treating this package as untyped"
+    )
