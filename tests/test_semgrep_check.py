@@ -607,3 +607,43 @@ def test_partial_coverage_never_rounds_up_to_fully_measured(tree, monkeypatch) -
     assert result.files_unparsed == 1
     assert result.assessed_weight == "0.99", result.assessed_weight
     assert float(result.assessed_weight) < 1, "an incomplete scan read as complete"
+
+
+@pytest.mark.parametrize(("scanned_n", "unparsed_n"), [(200, 199), (150, 149), (101, 100)])
+def test_a_coverage_that_rounds_to_zero_is_a_failure(
+    tree, monkeypatch, scanned_n, unparsed_n
+) -> None:
+    """⚠ The previous guard tested the RAW ratio against a half-up threshold.
+
+    Coverage quantizes ROUND_DOWN, so anything under 0.01 floors to "0.00" —
+    and 1 file parsed of 200, 150 or 101 all sailed past a `< 0.005` test and
+    published a score on zero declared coverage. That is the defect the guard
+    was added to prevent, off by the rounding mode. Judging the value actually
+    published is also robust to the quantum ever changing.
+    """
+    bad = [{"path": f"bad{i}.ts"} for i in range(unparsed_n)]
+    payload = json.dumps({
+        "results": [],
+        "errors": [{"type": ["PartialParsing", bad]}],
+        "paths": {"scanned": [f"f{i}.py" for i in range(scanned_n)]},
+    })
+    _fake_run(monkeypatch, payload)
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.status is sc.SemgrepStatus.FAILED, (
+        f"{scanned_n - unparsed_n} of {scanned_n} parsed was published as a score"
+    )
+    assert result.score is None
+    assert "rounds to zero" in result.reason
+
+
+def test_a_coverage_that_survives_rounding_still_scores(tree, monkeypatch) -> None:
+    """The negative control — the guard must not swallow a real partial scan."""
+    payload = json.dumps({
+        "results": [],
+        "errors": [{"type": ["PartialParsing", [{"path": "bad.ts"}]]}],
+        "paths": {"scanned": ["a.py", "b.py", "bad.ts"]},
+    })
+    _fake_run(monkeypatch, payload)
+    result = sc.run_semgrep(tree, rules=RULES)
+    assert result.status is sc.SemgrepStatus.OK
+    assert result.assessed_weight == "0.66"

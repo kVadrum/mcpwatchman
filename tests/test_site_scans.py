@@ -341,3 +341,26 @@ def test_no_built_surface_calls_a_package_failure_a_repository_failure(reports) 
         assert "the repository this server declares" not in page
     roster = (DIST / "servers" / "index.html").read_text()
     assert "publish a package we could not fetch" in roster
+
+
+def test_the_published_data_was_produced_by_the_current_scanner(reports) -> None:
+    """Provenance: a consumer must be able to tie results to an implementation.
+
+    ⚠ This is an ORDERING trap, not a typo, which is why it needs a gate. The
+    workflow is regenerate → bump → commit, so the data is always stamped with
+    the version BEFORE the bump unless someone remembers to regenerate again.
+    It shipped that way: every report read `scanner_version: 0.19.1` in a commit
+    that set the scanner to 0.20.0 — and those reports carried semantics the
+    bump introduced (`source_subject`, corrected `ref_matched_version`), so the
+    stamp pointed at an implementation that could not have produced them.
+
+    The fix is to bump first and regenerate after; this test is what notices
+    when that order is forgotten.
+    """
+    from mcpwatchman import __version__
+
+    stamped = {r["scanner_version"] for r in reports}
+    assert stamped == {__version__}, (
+        f"published data is stamped {sorted(stamped)} but the scanner is "
+        f"{__version__} — regenerate after bumping, not before"
+    )

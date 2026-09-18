@@ -683,15 +683,34 @@ def run_semgrep(
     # with a syntax error appears in both lists.
     total = scanned
     parsed = max(0, scanned - len(unparsed))
-    if unparsed and total and (dec(parsed) / dec(total)) < Decimal("0.005"):
-        # Rounds to "0.00": a score measured on none of the axis. `_deps_axis`
-        # already refuses this shape — "a score carries positive coverage" — and
-        # Code Safety had no equivalent, so 1 file read of 201 published 100.
+    # ⚠ ROUND DOWN. 1276 of 1277 files parsed quantizes to "1.00" under
+    # half-up, publishing an incomplete scan as fully measured — and the site
+    # tests `Number(w) < 1`, so "1.00" reads as complete and the server drops
+    # out of the partly-measured tally. Every other rounding decision in this
+    # codebase rounds the PUBLISHED value half-up; this one is a coverage
+    # CLAIM, where the honest direction is down. ROUND_DOWN is the whole
+    # protection: `total > parsed` whenever there are unparsed files, so the
+    # ratio is strictly < 1 and a cap could never bind — an earlier
+    # `min(ratio, 0.99)` was a guard whose condition cannot be true.
+    weight_value = (
+        (dec(parsed) / dec(total)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        if unparsed and total
+        else Decimal(1)
+    )
+
+    # ⚠ JUDGE THE PUBLISHED VALUE, NOT THE RAW RATIO. This tested
+    # `ratio < 0.005` — a half-up threshold against a ROUND_DOWN quantization —
+    # so anything under 0.01 floored to "0.00" and sailed past: 1 file parsed
+    # of 200, 150 or 101 each published a score on zero declared coverage,
+    # which is the defect the guard was added to prevent, off by the rounding
+    # mode. Testing the value that actually ships also survives the quantum
+    # ever changing.
+    if unparsed and weight_value <= 0:
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
             reason=(
-                f"semgrep parsed {parsed} of {total} file(s); the share read is "
-                "too small to support a score"
+                f"semgrep parsed {parsed} of {total} file(s); the share read "
+                "rounds to zero and cannot support a score"
             ),
             files_scanned=scanned,
             files_unparsed=len(unparsed),
@@ -699,28 +718,7 @@ def run_semgrep(
             pruned=pruned_count,
             pruned_sample=pruned_sample,
         )
-    if not unparsed:
-        weight = "1"
-    else:
-        # ⚠ ROUND DOWN, AND NEVER REACH 1. 1276 of 1277 files parsed quantizes
-        # to "1.00" under half-up, which publishes an incomplete scan as fully
-        # measured — and the site tests `Number(w) < 1`, so "1.00" is read as
-        # complete and the server drops out of the partly-measured tally. Every
-        # other rounding decision in this codebase rounds the PUBLISHED value
-        # half-up; this one is a coverage CLAIM, where the honest direction is
-        # down. Capped just under 1 so "some files were not read" can never
-        # render as "all files were read".
-        # ROUND_DOWN is the protection. `total > scanned` whenever this
-        # branch runs, so the ratio is strictly < 1 and a cap could never bind
-        # — the earlier `min(ratio, 0.99)` was a guard whose condition cannot
-        # be true, which is this repo's own named failure shape. Removed rather
-        # than kept as decoration that misattributes what is load-bearing.
-        weight = format(
-            (dec(parsed) / dec(total)).quantize(
-                Decimal("0.01"), rounding=ROUND_DOWN
-            ),
-            "f",
-        )
+    weight = format(weight_value, "f") if unparsed else "1"
     return SemgrepResult(
         status=SemgrepStatus.OK,
         findings=tuple(findings),
