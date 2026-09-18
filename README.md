@@ -130,8 +130,9 @@ Requires Python 3.12+.
 
 ### Running a scan yourself
 
-The published numbers are reproducible, and reproducing them needs two external
-binaries that are **not** Python dependencies. Both are resolved on `PATH`, so
+The published numbers are reproducible, and reproducing them needs three
+external binaries that are **not** Python dependencies: `semgrep`,
+`detect-secrets` and `osv-scanner`. All three are resolved on `PATH`, so
 installing them into a venv is not enough — the venv's `bin` has to be on
 `PATH` when the scan runs.
 
@@ -143,9 +144,21 @@ python -m venv .venv-workers
 curl -sSLO https://github.com/google/osv-scanner/releases/download/v2.6.0/osv-scanner_linux_amd64
 install -m 0755 osv-scanner_linux_amd64 .venv-workers/bin/osv-scanner
 
+# Preview the plan — what would be scanned, carried forward, or grown.
+# `--dry-run` returns BEFORE scanning anything and writes no data.
 PATH="$PWD/.venv-workers/bin:$PATH" .venv-workers/bin/python ops/scan_cohort.py \
     --out site/src/data/scans.json --dry-run
+
+# The actual scan. Drop `--dry-run` — this one rewrites the published data, and
+# on the current cohort it takes hours, most of it cloning.
+PATH="$PWD/.venv-workers/bin:$PATH" .venv-workers/bin/python ops/scan_cohort.py \
+    --out site/src/data/scans.json
 ```
+
+Run it on a quiet machine. A scan's failure rate is dominated by concurrent
+load rather than by the repository being scanned: measured 2026-09-18, 3 of 29
+servers came back unmeasurable while a test run and a second scan shared the
+box, against 0 of 492 on an idle one.
 
 **A missing binary does not fail — it produces a clean "not assessed".** Code
 Safety carries 30% of the weighting and Dependency Health 20%, so a scan run
