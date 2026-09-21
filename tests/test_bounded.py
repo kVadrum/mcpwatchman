@@ -24,8 +24,11 @@ from __future__ import annotations
 
 import contextlib
 import os
+import signal
 import subprocess
 import time
+
+import pytest
 
 from mcpwatchman.workers.bounded import run_bounded
 
@@ -108,3 +111,50 @@ def test_a_command_that_finishes_is_returned_untouched() -> None:
     result = run_bounded(["sh", "-c", "printf out; printf err >&2; exit 3"], timeout=10)
     assert (result.returncode, result.stdout, result.stderr) == (3, "out", "err")
     assert result.timed_out is False
+
+
+def test_cancellation_kills_the_grandchild_too(tmp_path) -> None:
+    """The half of the leak fix that `start_new_session=True` CREATES.
+
+    A timeout is not the only way out of `communicate`, and the others were
+    unhandled. Because the child is put in its own process group, a Ctrl-C at
+    the driver is delivered to the parent and never to the tree — so a
+    cancelled 492-server run left exactly the orphan this module exists to
+    end, reached through the mechanism that fixes the timeout case.
+
+    Asserts on the GRANDCHILD, by PID, for the reason this file's docstring
+    gives: the bug is about process trees, and `pgrep -f` can match the
+    harness running the probe.
+
+    `KeyboardInterrupt` rather than a plain exception, because that is the
+    real shape and it is not an `Exception` — an `except Exception` arm would
+    pass a test written with the wrong one.
+    """
+    pidfile = tmp_path / "gc.pid"
+    real = subprocess.Popen.communicate
+    calls = {"n": 0}
+
+    def interrupt_once(self, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+        calls["n"] += 1
+        if calls["n"] == 1:
+            _read_pid(pidfile)  # let the grandchild exist before we bail
+            raise KeyboardInterrupt
+        return real(self, *a, **kw)  # the cleanup reap must still work
+
+    subprocess.Popen.communicate = interrupt_once  # type: ignore[method-assign]
+    try:
+        with pytest.raises(KeyboardInterrupt):
+            run_bounded(_spawner(pidfile), timeout=60)
+    finally:
+        subprocess.Popen.communicate = real  # type: ignore[method-assign]
+
+    gc_pid = int(pidfile.read_text().strip())
+    for _ in range(100):
+        try:
+            os.kill(gc_pid, 0)
+        except ProcessLookupError:
+            return
+        time.sleep(0.02)
+    with contextlib.suppress(ProcessLookupError):
+        os.kill(gc_pid, signal.SIGKILL)
+    pytest.fail("the grandchild outlived a cancelled run_bounded — the orphan is back")

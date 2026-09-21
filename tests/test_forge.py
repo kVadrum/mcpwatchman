@@ -217,10 +217,13 @@ def test_release_bots_are_not_maintainers() -> None:
 
 def test_version_tags_stand_in_when_a_project_publishes_no_releases() -> None:
     """`03` §5 measures shipping, and tagging plus a registry publish is shipping."""
+    # Names are load-bearing now: only VERSION tags stand in for releases, so a
+    # fixture without them is not stating the case this test is about.
     tagged = _payload(refs={"nodes": [
-        {"target": {"committedDate": _iso(10)}},
-        {"target": {"target": {"committedDate": _iso(50)}}},  # annotated tag
-        {"target": {"committedDate": _iso(95)}},
+        {"name": "v1.4.2", "target": {"committedDate": _iso(10)}},
+        {"name": "v1.4.1",  # annotated tag
+         "target": {"target": {"committedDate": _iso(50)}}},
+        {"name": "v1.4.0", "target": {"committedDate": _iso(95)}},
     ]})
     signals = _signals(tagged)
     assert signals.release_basis == "tags"
@@ -527,3 +530,71 @@ def test_issue_sample_completeness_is_reported_to_the_scorer() -> None:
     }))
     assert small.issue_history_complete is True
     assert small.lifetime_first_response_days is not None
+
+
+def test_a_deploy_tag_is_not_a_release() -> None:
+    """`03` §5's cadence ladder measures SHIPPING, and `_release_dates`' own
+    docstring says so by naming `v1.4.2` — but the loop counted every ref under
+    `refs/tags/`, so CI bookkeeping fed it.
+
+    Measured before the filter: a repository whose only tags are `deploy-prod`
+    and `nightly-2026-09-01` reported a release 3 days old and took §5's **100**
+    band, which reserves that score for having released inside 30 days.
+
+    The positive half is `test_version_tags_stand_in_when_a_project_publishes_
+    no_releases`; this is the half that keeps the filter from being vacuous, and
+    it asserts the SAFE direction of failure — an empty basis abstains, so a
+    project we cannot read a version tag from is never accused of never
+    shipping.
+    """
+    ci_only = _signals(_payload(refs={"nodes": [
+        {"name": "deploy-prod", "target": {"committedDate": _iso(3)}},
+        {"name": "nightly-2026-09-01", "target": {"committedDate": _iso(4)}},
+        {"name": "latest", "target": {"committedDate": _iso(5)}},
+        {"name": "build-17", "target": {"committedDate": _iso(6)}},
+    ]}))
+    assert ci_only.last_release is None
+    assert ci_only.median_release_gap_days is None
+
+    cadence = next(
+        s for s in assess_maintenance(ci_only, as_of=AS_OF).subchecks
+        if s.name == "release_cadence"
+    )
+    assert cadence.score is None  # abstains; never a 0 it did not earn
+    assert cadence.score != 100
+
+    # And a package-prefixed or CalVer tag is still a release — erring narrow
+    # must not mean erring blind.
+    for name in ("pkg-v2.0.1", "@scope/pkg@3.1.0", "release/2.0.1", "2026.09.01"):
+        got = _signals(_payload(refs={"nodes": [
+            {"name": name, "target": {"committedDate": _iso(3)}},
+        ]}))
+        assert got.last_release is not None, name
+
+
+def test_the_unread_tail_can_promote_an_author_not_only_create_one() -> None:
+    """`_bus_factor`'s case 3, which was asking the wrong question.
+
+    The guard was `(total - fetched) // 5 == 0` — "is the tail too short to
+    raise a NEW author from zero" — and that ignores every author already
+    part-way to `03` §5's five-commit bar. One unread commit cannot make an
+    author out of nobody; it can very easily make one out of somebody with
+    four.
+
+    Measured before the fix: `{a: 5, b: 4}` with one commit unread returned a
+    confident single author, which `03` §5 scores 50, when that commit could
+    be b's fifth and score 80. Case 3's own docstring calls publishing "sole
+    maintainer" about a project with more the thing it exists to refuse.
+    """
+    # One commit unread, and b is one commit short. The answer can move.
+    assert _bus_factor({"a": 5, "b": 4}, fetched=300, total=301) == (None, None)
+
+    # Same tail, nobody part-way: one commit cannot make an author, so the
+    # count is still safe to report. The fix must not swallow this.
+    assert _bus_factor({"a": 5}, fetched=300, total=301) == (1, None)
+
+    # Exhausted history stays exact regardless of who is part-way.
+    assert _bus_factor({"a": 9, "b": 4}, fetched=13, total=13) == (1, 2)
+
+    # Four unread commits and a deficit of four: still reachable, still abstains.
+    assert _bus_factor({"a": 5, "b": 1}, fetched=100, total=104) == (None, None)

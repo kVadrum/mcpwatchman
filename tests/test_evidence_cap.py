@@ -54,10 +54,13 @@ def _code(severity: Severity, confidence: Confidence, n: int) -> CodeFinding:
     )
 
 
-def _dep(severity: Severity | None, cvss: Decimal | None, n: int) -> DependencyFinding:
+def _dep(
+    severity: Severity | None, cvss: Decimal | None, n: int, *,
+    direct: bool | None = True,
+) -> DependencyFinding:
     return DependencyFinding(
         package=f"pkg{n}", ecosystem="PyPI", version="1.0",
-        osv_id=f"OSV-{n}", severity=severity, cvss=cvss, direct=True,
+        osv_id=f"OSV-{n}", severity=severity, cvss=cvss, direct=direct,
         lockfile="poetry.lock",
     )
 
@@ -149,3 +152,38 @@ def test_the_count_survives_serialisation() -> None:
         READABLE,
     )
     assert asdict(axis)["evidence_omitted"] == 30
+
+
+def test_directness_outranks_cvss_because_03_6s_table_does() -> None:
+    """The cap claims to keep the WORST findings, and `03` §6 decides worst.
+
+    §6 keys on (severity, direct-vs-transitive): a direct critical deducts 25
+    against a transitive one's 15. Ranking a severity band by CVSS alone
+    therefore drops heavier-deducting direct findings to keep lighter
+    transitive ones, so a page can omit the worst finding while saying it
+    shows the worst fifty.
+
+    The ordering is asserted rather than the cap, because the sort applies
+    whether or not the cap bites — two servers' pages must not be ordered by
+    different rules depending on their finding count.
+    """
+    # Every finding is CRITICAL, so only the tiebreak can separate them. The
+    # transitive ones carry HIGHER CVSS, which is what made CVSS-only ranking
+    # keep the wrong half.
+    findings = (
+        [_dep(Severity.CRITICAL, Decimal("9.9"), 100 + i, direct=False)
+         for i in range(60)]
+        + [_dep(Severity.CRITICAL, Decimal("7.1"), 1, direct=True)]
+        + [_dep(Severity.CRITICAL, Decimal("9.5"), 2, direct=True)]
+        # Directness unknown: `03` §6 has no band for it, so it deducts
+        # nothing and is the cheapest thing to omit.
+        + [_dep(Severity.CRITICAL, Decimal("10.0"), 3, direct=None)]
+    )
+    axis = _deps_axis(_DepsResult(findings), READABLE)
+
+    labels = [e.label for e in axis.evidence]
+    assert "OSV-2" in labels[0], labels[:3]   # direct, higher CVSS first
+    assert "OSV-1" in labels[1], labels[:3]   # direct, lower CVSS still beats
+    assert "OSV-100" in labels[2], labels[:3]  # transitive 9.9 only then
+    # The 10.0 with unknown directness must not lead the page.
+    assert "OSV-3" not in labels[0]

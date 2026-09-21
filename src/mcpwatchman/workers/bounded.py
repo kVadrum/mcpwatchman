@@ -106,6 +106,23 @@ def run_bounded(
         except subprocess.TimeoutExpired:
             stdout, stderr = "", ""
         return Bounded(proc.returncode or -9, stdout or "", stderr or "", timed_out=True)
+    except BaseException:
+        # ⚠ **A TIMEOUT IS NOT THE ONLY WAY OUT OF `communicate`, AND THE OTHERS
+        # LEAK THE SAME ORPHAN.** `start_new_session=True` is exactly what makes
+        # this necessary: the child sits in its OWN process group, so a Ctrl-C
+        # at the driver is delivered to us and never to it. Without this arm a
+        # cancelled 492-server run leaves `semgrep-core` holding two or three
+        # cores indefinitely — the precise failure this module was written to
+        # end, arriving through the half of the fix that creates the group.
+        #
+        # `BaseException`, deliberately: `KeyboardInterrupt` and `SystemExit`
+        # are the cases that matter and neither is an `Exception`. The group is
+        # killed, reaped, and the exception re-raised unchanged — this arm
+        # changes what is left running, never what the caller sees.
+        _kill_group(proc)
+        with contextlib.suppress(Exception):
+            proc.communicate(timeout=10)
+        raise
 
 
 def _kill_group(proc: subprocess.Popen) -> None:

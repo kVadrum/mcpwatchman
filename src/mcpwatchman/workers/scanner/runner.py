@@ -658,8 +658,23 @@ def _deps_axis(result, availability) -> AxisScore:
             "dependency_health", None, result.reason, "0",
             fault=_gap_fault(result.fault, availability).value,
         )
+    # ⚠ **DIRECTNESS OUTRANKS CVSS, because `03` §6's TABLE does.** §6 keys on
+    # (severity, direct-vs-transitive) and a direct critical deducts 25 against
+    # a transitive one's 15 — so ranking a severity band by CVSS alone can drop
+    # a heavier-deducting direct finding to keep a lighter transitive one, and
+    # the page then claims to be showing the worst 50 while omitting the worst.
+    # Unknown directness sorts last: `03` §6 defines no band for it, so it
+    # deducts nothing and is the cheapest thing to omit.
+    #
+    # This is the same table `CLAUDE.md` forbids sharing with `03` §3, which is
+    # why it is applied HERE as this caller's own tiebreak rather than inside
+    # `_worst_first`.
     shown, omitted = _worst_first(
-        result.findings, lambda f: -f.cvss if f.cvss is not None else 1
+        result.findings,
+        lambda f: (
+            0 if f.direct is True else (1 if f.direct is False else 2),
+            -f.cvss if f.cvss is not None else 1,
+        ),
     )
     evidence = tuple(
         Evidence(

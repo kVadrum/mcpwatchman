@@ -190,7 +190,8 @@ def _scan_once_more_if_ours(
 
 
 def _keep_previous(
-    name: str, previous: dict[str, dict], today: str, gaps: list[str]
+    name: str, previous: dict[str, dict], today: str, gaps: list[str],
+    *, observation: str | None = None,
 ) -> dict | None:
     """The last publishable report for a pinned server this run could not measure.
 
@@ -221,7 +222,14 @@ def _keep_previous(
         # LISTED, and the scan is what is stale — the state must not say
         # `delisted` about a server the registry still carries.
         state="stale",
-        observation=(
+        # ⚠ **THE DEFAULT SENTENCE SAYS THE SCAN FAILED, so a caller whose
+        # scan SUCCEEDED must override it.** The status-collision path reaches
+        # here with a complete, publishable scan in hand — only the registry's
+        # status word was unrepresentable — and publishing "could not measure
+        # it" about that server is false on its page. Same borrowed-sentence
+        # defect `v0.28.2` fixed at the fetch stage, arriving through a shared
+        # helper instead of a copied string.
+        observation=observation or (
             "This server is listed in the registry, but the most recent scan "
             "could not measure it for reasons on our side"
         ),
@@ -469,7 +477,17 @@ def main() -> int:
             # reason is printed rather than raised — and it IS ours: the
             # collision is our schema sharing one field with a third party's
             # vocabulary, not a defect in what they published.
-            kept = _keep_previous(entry.name, previous, today, [str(exc)])
+            kept = _keep_previous(
+                entry.name, previous, today, [str(exc)],
+                # The scan COMPLETED; what failed is representing the
+                # registry's own status word in our schema. Saying otherwise
+                # publishes a false account of this server's page.
+                observation=(
+                    "This server is listed in the registry under a status this "
+                    "scanner cannot represent, so the last scan taken under a "
+                    "status it could represent is shown instead"
+                ),
+            )
             if kept is None:
                 return 2
             reports[entry.name] = kept

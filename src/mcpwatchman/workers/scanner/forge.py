@@ -62,7 +62,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from mcpwatchman.workers.scanner.maintenance_check import MaintenanceSignals
+from mcpwatchman.workers.scanner.maintenance_check import (
+    BUS_FACTOR_MIN_COMMITS,
+    MaintenanceSignals,
+)
 from mcpwatchman.workers.scanner.reachability import Fault
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
@@ -112,6 +115,25 @@ _BOT_LOGIN = re.compile(r"(\[bot\]$|^(dependabot|github-actions|renovate)(\[bot\
 # CONTRIBUTOR is deliberately absent: it means only that someone once had a
 # patch merged, which is not authority to answer an issue.
 MAINTAINER_ASSOCIATIONS = frozenset({"OWNER", "MEMBER", "COLLABORATOR"})
+
+# ⚠ **A TAG IS NOT A RELEASE, and `_release_dates` counted every one.** The
+# fallback exists because "a project that tags `v1.4.2` and publishes to npm
+# has released" — a claim about VERSION tags specifically — but the query
+# fetched only commit dates, so `deploy-prod`, `nightly-2026-09-01` and
+# `latest` all fed `last_release`, and a CI deploy tag could award `03` §5's
+# 100 band to a project that has never shipped a version.
+#
+# Requires `<digits>.<digits>`, optionally `v`-prefixed and optionally behind a
+# package prefix — `v1.4.2`, `1.4`, `pkg-v2.0.1`, `@scope/pkg@3.1.0`,
+# `release/2.0.1`, and CalVer's `2026.09.01`. It does NOT match `nightly-
+# 2026-09-01` (dashes, not dots), `build-17`, `latest` or `stable`.
+#
+# Erring narrow is the safe direction here and that is why the bar is two
+# numeric components: a project whose only tags are unrecognised keeps an
+# EMPTY release list, and `score_release_cadence` then abstains rather than
+# scoring 0 — an unassessed sub-check, never a false accusation of never
+# having shipped.
+_VERSION_TAG = re.compile(r"(?:^|[/@_-])v?[0-9]+\.[0-9]+")
 
 
 class ForgeError(RuntimeError):
@@ -246,6 +268,7 @@ query($owner:String!, $name:String!, $since:GitTimestamp!, $commits:Int!,
     refs(refPrefix:"refs/tags/", first:$tags,
          orderBy:{field:TAG_COMMIT_DATE, direction:DESC}) {
       nodes {
+        name
         target {
           ... on Commit { committedDate }
           ... on Tag { target { ... on Commit { committedDate } } }
@@ -391,7 +414,29 @@ def _bus_factor(
         # reporting the lower bound as if it were measured would be the same
         # over-claim in the favourable direction.
         return 3, None
-    if (total - fetched) // 5 == 0:
+    # ⚠ **THE TAIL PROMOTES AUTHORS IT DOES NOT CREATE, and asking only
+    # whether it could create one misses the cheaper move.** This read
+    # `(total - fetched) // 5 == 0` — "is the tail too short to raise a new
+    # author from zero" — which ignores every author already part-way to the
+    # bar. Measured: counts `{a: 5, b: 4}` with one commit unread returned a
+    # confident 1 (a sole maintainer, `03` §5 scores 50) when that single
+    # commit could be b's fifth, making 2 and scoring 80. Exactly the
+    # over-claim case 3 exists to refuse, one author short of where it looked.
+    #
+    # So spend the tail on the SMALLEST deficits first — that maximises the
+    # authors it could add — and abstain unless the answer cannot move. Any
+    # increase at all crosses a §5 band here (0->1 is 30 to 50, 1->2 is 50 to
+    # 80, 2->3 is 80 to 100), so "could not move" is the whole test and the
+    # band arithmetic collapses into it.
+    remaining = total - fetched
+    reachable = qualifying
+    for deficit in sorted(BUS_FACTOR_MIN_COMMITS - n for n in counts.values() if n < 5):
+        if deficit > remaining:
+            break
+        remaining -= deficit
+        reachable += 1
+    reachable += remaining // BUS_FACTOR_MIN_COMMITS  # wholly unseen authors
+    if reachable == qualifying:
         return qualifying, None
     return None, None
 
@@ -406,6 +451,11 @@ def _release_dates(payload: dict) -> tuple[list[datetime], str]:
     Treating only Releases as releases would score a steadily-shipping project
     as having never shipped, which is a false accusation rather than a
     conservative reading.
+
+    ⚠ **VERSION tags only — see `_VERSION_TAG`.** The sentence above names
+    `v1.4.2` and the code counted every ref under `refs/tags/`, so a deploy or
+    nightly tag was read as a release. The filter makes the loop do what this
+    docstring already claimed it did.
     """
     releases = [
         dt
@@ -416,6 +466,9 @@ def _release_dates(payload: dict) -> tuple[list[datetime], str]:
         return sorted(releases, reverse=True), "releases"
     tags: list[datetime] = []
     for node in _nodes(payload, "refs", "nodes"):
+        name = node.get("name")
+        if not isinstance(name, str) or not _VERSION_TAG.search(name):
+            continue
         target = node.get("target")
         if not isinstance(target, dict):
             continue

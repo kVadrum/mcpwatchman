@@ -139,6 +139,19 @@ def test_a_colliding_registry_status_costs_one_page_its_refresh_not_the_run(
     assert "collides" in printed, "the reason has to reach a human"
     assert "ai.b/two" in printed
 
+    # ⚠ AND THE CARRIED PAGE MUST NOT SAY THE SCAN FAILED. This path reaches
+    # the carry-forward with a COMPLETE, publishable scan in hand — only the
+    # registry's status word was unrepresentable — but it reused the
+    # scan-failure helper unchanged, so the page read "the most recent scan
+    # could not measure it for reasons on our side" about a server measured in
+    # full moments earlier. Same borrowed-sentence defect `v0.28.2` fixed at
+    # the fetch stage, arriving through a shared helper instead of a copied
+    # string, which is why the fix is an override at the call site.
+    carried = next(r for r in json.loads(written) if r["name"] == "ai.b/two")
+    note = carried.get("registry_note", "")
+    assert "could not measure it" not in note, note
+    assert "cannot represent" in note, note
+
 
 def test_a_colliding_status_with_no_previous_page_still_refuses_the_write(
     driver, capsys
