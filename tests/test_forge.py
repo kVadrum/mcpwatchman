@@ -395,7 +395,13 @@ def test_an_unreadable_repository_is_theirs_and_a_rate_limit_is_ours(tmp_path: P
         client=_Client(_Response(200, {"errors": [{"type": "NOT_FOUND"}]})),
     )
     assert theirs.fault is Fault.PUBLISHER
-    assert "not publicly reachable" in theirs.reason
+    # ⚠ Asserts the sentence names its OWN stage. The fetch stage's wording
+    # ("the repository this server declares…") is forbidden on the page of a
+    # server whose PACKAGE failed, and reusing it here put it there — caught
+    # by `test_no_built_surface_calls_a_package_failure_a_repository_failure`
+    # on a real 492-server regeneration, not by this file.
+    assert "GitHub API" in theirs.reason
+    assert "the repository this server declares" not in theirs.reason
 
     ours = fetch_signals(
         "https://github.com/acme/srv", token="t", cache_dir=tmp_path, as_of=AS_OF,

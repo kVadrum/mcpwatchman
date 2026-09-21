@@ -686,8 +686,22 @@ def _classify_errors(errors: list) -> Exception:
     types = {e.get("type") for e in errors if isinstance(e, dict)}
     if "NOT_FOUND" in types:
         return ForgeUnreachableError(
-            "the repository this server declares is not publicly reachable — "
-            "note that a private repository and an absent one are "
+            # ⚠ DELIBERATELY NOT the fetch stage's wording. `reachability`
+            # says "the repository this server declares is not publicly
+            # reachable" when the SOURCE fetch fails, and
+            # `test_no_built_surface_calls_a_package_failure_a_repository_
+            # failure` forbids that sentence on the page of a server whose
+            # PACKAGE is what failed — because an npm 404 once published it
+            # about a repository nobody had contacted.
+            #
+            # This is a different stage making a different claim: we really
+            # did contact the GitHub API about the declared repository. The
+            # claim is true, and phrased in the fetch stage's words it is
+            # indistinguishable from the false one, so it names its own stage
+            # instead. Caught by that gate on a real regeneration.
+            "this server's declared repository could not be read through the "
+            "GitHub API, so `03` §5's maintenance signals were not retrieved "
+            "— note that a private repository and an absent one are "
             "indistinguishable from outside"
         )
     if "RATE_LIMITED" in types:
@@ -744,7 +758,8 @@ def _post(client: Any, query: str, variables: dict, token: str) -> dict:
         # for this, but a null with no explanation is still THEIR repository
         # being unreadable rather than our request failing.
         raise ForgeUnreachableError(
-            "the repository this server declares is not publicly reachable"
+            "this server's declared repository could not be read through the "
+            "GitHub API, so `03` §5's maintenance signals were not retrieved"
         )
     if not isinstance(repository, dict):
         raise ForgeError("the GitHub API returned a repository of an unexpected shape")
