@@ -618,6 +618,10 @@ def test_the_driver_refuses_to_scan_without_its_scanner_binaries(monkeypatch) ->
 
     assert REQUIRED_TOOLS, "the positive control: an empty tool list never fails"
 
+    # A token is a REQUIRED tool by the same argument, and it is set here so the
+    # binary half of this test still has its positive control. The token half
+    # gets its own below.
+    monkeypatch.setenv("MCPWATCHMAN_GITHUB_TOKEN", "stub")
     monkeypatch.setattr("shutil.which", lambda _tool: "/usr/bin/stub")
     assert preflight() == []
 
@@ -634,6 +638,37 @@ def test_the_driver_refuses_to_scan_without_its_scanner_binaries(monkeypatch) ->
     monkeypatch.setattr(
         "shutil.which", lambda tool: None if tool == "osv-scanner" else "/usr/bin/stub"
     )
+    assert len(preflight()) == 1
+
+
+def test_the_driver_refuses_to_scan_without_a_forge_token(monkeypatch) -> None:
+    """A missing credential is quieter than a missing binary, not louder.
+
+    Without a token `scanner.forge` attributes Maintenance `ENVIRONMENT` on
+    every server; `unpublishable_gaps` then refuses each one and every pinned
+    page falls back to its previous report. The run exits **0** and the summary
+    line reads like a successful regeneration — where a missing binary at least
+    renders a dash on every page. So the refusal has to happen before the
+    registry sweep, alongside the binaries it is modelled on.
+    """
+    from ops.scan_cohort import TOKEN_ENV_VARS, preflight
+
+    monkeypatch.setattr("shutil.which", lambda _tool: "/usr/bin/stub")
+    for name in TOKEN_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    missing = preflight()
+    assert len(missing) == 1
+    assert "Maintenance" in missing[0] and TOKEN_ENV_VARS[0] in missing[0]
+
+    # ⚠ The value must never appear. `preflight`'s output is printed to a
+    # terminal and pasted into transcripts; naming the variable is the whole
+    # point and naming its contents is the whole hazard.
+    monkeypatch.setenv(TOKEN_ENV_VARS[0], "ghp_notarealtoken")
+    assert preflight() == []
+
+    # An empty or whitespace value is not a token, and reading it as one
+    # produces the silent carry-forward this check exists to prevent.
+    monkeypatch.setenv(TOKEN_ENV_VARS[0], "   ")
     assert len(preflight()) == 1
 
 

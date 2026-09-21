@@ -21,6 +21,7 @@ from mcpwatchman.workers.scanner.maintenance_check import (
     score_release_cadence,
     score_repository_signals,
 )
+from mcpwatchman.workers.scanner.reachability import Fault
 
 AS_OF = date(2026, 9, 15)
 
@@ -108,9 +109,36 @@ def test_no_issues_filed_is_not_an_unanswered_issue() -> None:
     # ⚠ The distinction the axis turns on. A repository nobody has filed against
     # has not failed to answer anything; a 0 here would penalise a server for
     # being uncontroversial.
-    result = score_issue_responsiveness(MaintenanceSignals(issues_sampled=0))
+    #
+    # `retrieved=True` is load-bearing and was not here while it could not be:
+    # `issues_sampled=0` is only a coherent statement about a forge we actually
+    # read. Without it this is the OTHER claim — that we never looked — and the
+    # two must not share a sentence.
+    result = score_issue_responsiveness(
+        MaintenanceSignals(issues_sampled=0, retrieved=True, fault=Fault.PUBLISHER.value)
+    )
     assert result.score is None
     assert "has not failed to answer" in result.reason
+    assert result.fault == Fault.PUBLISHER.value
+
+
+def test_an_unread_forge_and_an_empty_one_do_not_share_a_reason() -> None:
+    """The pair `_absent` exists to separate, asserted as a pair.
+
+    Both abstain, and a reader of either page is owed a different fact: one
+    says the publisher has no issues, the other says we did not look. They were
+    one sentence for as long as only the second was possible.
+    """
+    unread = score_issue_responsiveness(MaintenanceSignals(fault=Fault.ENVIRONMENT.value))
+    read = score_issue_responsiveness(
+        MaintenanceSignals(issues_sampled=0, retrieved=True, fault=Fault.PUBLISHER.value)
+    )
+    assert unread.reason != read.reason
+    assert "not retrieved" in unread.reason or "was retrieved" in unread.reason
+    assert "this repository" in read.reason
+    # And the attribution travels with the phrasing, which is the half that
+    # decides whether the page may be published at all.
+    assert (unread.fault, read.fault) == (Fault.ENVIRONMENT.value, Fault.PUBLISHER.value)
 
 
 # ── bus factor ──────────────────────────────────────────────────────────────

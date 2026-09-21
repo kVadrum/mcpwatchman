@@ -5,29 +5,33 @@ it?"** It is the axis that says an unmaintained server with no findings today is
 a riskier choice than a maintained one with a medium finding today, because the
 unmaintained one cannot respond to the next finding.
 
-**This module is the scoring half and it is complete.** All five of `03` §5's
-ladders are here and pure — no network, no clock beyond the `as_of` the caller
-supplies, so the same signals always score the same way and the gold-set
-calibration can run them a few thousand times.
+**This module is the SCORING half.** All five of `03` §5's ladders are here and
+pure — no network, no clock beyond the `as_of` the caller supplies, so the same
+signals always score the same way and the gold-set calibration can run them a
+few thousand times. The fetch half is `scanner.forge`.
 
-**The FETCH half is not built, and the reason is a named blocker rather than a
-shrug.** Two of them, and only the first is the ordinary kind:
+⚠ **This docstring said "the FETCH half is not built" and listed two named
+blockers. One of them is gone and the sentence outlived it.** `scanner.forge`
+retrieves four of the five sub-checks' signals from the GitHub GraphQL API. The
+surviving blocker is the second one and it is unchanged:
 
-1. **A forge client with conditional requests.** `04` §7 wants last-commit time,
-   tag history, issue response times, and 12-month author counts from the GitHub
-   or GitLab API, cached 24h per repo with etags. Real work, no design question
-   in it.
-2. **`repository_signals` is not a per-server measurement at all.** `03` §5
-   scores it by z-score *within the server's category*, falling back to the
-   registry-wide distribution for categories under ten servers. That needs a
-   distribution across every scanned server, so it cannot be computed while
-   scanning one — it is a post-pass over the whole crawl. Until that exists the
-   sub-check reports unassessed and its 10% renormalises away, which is the
-   correct handling and not a gap to paper over.
+**`repository_signals` is not a per-server measurement at all.** `03` §5 scores
+it by z-score *within the server's category*, falling back to the registry-wide
+distribution for categories under ten servers. That needs a distribution across
+every scanned server, so it cannot be computed while scanning one — it is a
+post-pass over the whole crawl. It also needs a *category*, and a registry entry
+carries none. Until both exist the sub-check reports unassessed and its 10%
+renormalises away, which is the correct handling and not a gap to paper over.
 
 Every sub-check abstains independently, so a partial fetch scores what it
 brought back instead of failing the axis: a repository whose commits are
 readable but whose issues are not still scores recency, cadence and bus factor.
+
+⚠ **An absent field now has TWO meanings and `MaintenanceSignals.retrieved`
+separates them.** While no fetch existed, `last_release=None` could only mean
+"we never looked". It can now also mean "this project has never released" —
+opposite claims about who is at fault, and `_absent` is what keeps the published
+sentence matching the one that actually holds.
 """
 
 from __future__ import annotations
@@ -88,9 +92,41 @@ class MaintenanceSignals:
     # scanning a single server — see the module docstring.
     category_quartile: int | None = None
 
+    # ⚠ Whether `scanner.forge` actually READ the repository. It decides what an
+    # absent field MEANS, and the two readings are opposite claims: before the
+    # fetch existed, `last_release=None` meant "we never looked"; now it can
+    # also mean "this project has never released". Publishing the first
+    # sentence about the second case blames our own unbuilt capability for a
+    # measurement we have taken.
+    retrieved: bool = False
+    # Whether `median_release_gap_days` was derived from GitHub Releases or from
+    # version tags. `03` §5 says "releases" and a project that tags `v1.4.2` and
+    # publishes to npm has released — but a reader is owed which artefact the
+    # number came from, so it is rendered rather than assumed.
+    release_basis: str = "releases"
+    # WHOSE gap an absent field is, as a `reachability.Fault` value. ⚠ DEFAULTS
+    # TO THE REFUSED VALUE for the reason `SubCheck.fault` does: a caller that
+    # builds signals without saying where they came from must cost a failed run,
+    # never a public page. `assess_maintenance()` with no arguments is exactly
+    # that caller, and it was this module's only entry point for as long as the
+    # fetch did not exist.
+    fault: str = Fault.UNATTRIBUTED.value
+
 
 def _days_since(when: date | None, as_of: date) -> int | None:
     return None if when is None else (as_of - when).days
+
+
+def _absent(signals: MaintenanceSignals, *, read: str, unread: str) -> str:
+    """Why a signal is missing — *the repository has none* vs *we did not look*.
+
+    Two different claims that produced one sentence while only the second was
+    possible. A page saying "no release history was retrieved" about a project
+    that demonstrably publishes none is not merely imprecise: it attributes to
+    our tooling a fact the publisher owns, on a surface whose premise is that
+    every claim is checkable.
+    """
+    return read if signals.retrieved else unread
 
 
 def score_recency(signals: MaintenanceSignals, as_of: date) -> SubCheck:
@@ -105,8 +141,12 @@ def score_recency(signals: MaintenanceSignals, as_of: date) -> SubCheck:
     if days is None:
         return SubCheck(
             name, None,
-            reason="no last-commit date was retrieved for this repository",
-            fault=Fault.PROJECT.value,
+            reason=_absent(
+                signals,
+                read="this repository has no commit on its default branch",
+                unread="no last-commit date was retrieved for this repository",
+            ),
+            fault=signals.fault,
         )
     if days < 0:
         # A future-dated commit is a forged or clock-skewed timestamp. Treat it
@@ -134,8 +174,12 @@ def score_release_cadence(signals: MaintenanceSignals, as_of: date) -> SubCheck:
     if since_release is None and gap is None:
         return SubCheck(
             name, None,
-            reason="no release history was retrieved for this repository",
-            fault=Fault.PROJECT.value,
+            reason=_absent(
+                signals,
+                read="this repository publishes neither releases nor version tags",
+                unread="no release history was retrieved for this repository",
+            ),
+            fault=signals.fault,
         )
 
     # Clamped for the same reason `score_recency` clamps, and this ladder was
@@ -147,26 +191,34 @@ def score_release_cadence(signals: MaintenanceSignals, as_of: date) -> SubCheck:
     if since_release is not None and since_release <= RECENT_RELEASE_DAYS:
         return SubCheck(
             name, 100,
-            evidence=(f"released {since_release} day(s) ago, inside `03` §5's "
+            evidence=(f"released {since_release} day(s) ago (by "
+                      f"{signals.release_basis}), inside `03` §5's "
                       f"{RECENT_RELEASE_DAYS}-day window",),
         )
     if since_release is not None and since_release > 365:
         return SubCheck(
             name, 0,
-            evidence=(f"no release in {since_release} days — over a year",),
+            evidence=(f"no release in {since_release} days (by "
+                      f"{signals.release_basis}) — over a year",),
         )
     if gap is None:
         return SubCheck(
             name, None,
-            reason="a release exists but no median release gap was computed, and "
-                   "`03` §5's remaining bands are all defined on that median",
+            reason="a release exists but fewer than two fall inside `03` §5's "
+                   "12-month window, so no median gap can be taken — and §5's "
+                   "remaining bands are all defined on that median. A limit of "
+                   "the methodology, not of this repository.",
             fault=Fault.PROJECT.value,
         )
     # Released within the year but with a median gap past the last rung: `03` §5
     # names this case explicitly and scores it 30.
     return SubCheck(
         name, ladder(gap, RELEASE_GAP_DAYS, floor=30),
-        evidence=(f"median release gap {gap:.0f} days"
+        # The basis is rendered, never assumed. `03` §5 says "releases"; a
+        # project that ships by tagging and publishing to a package registry
+        # has released, and a reader comparing two servers is owed which
+        # artefact each number was taken from.
+        evidence=(f"median release gap {gap:.0f} days (by {signals.release_basis})"
                   + (f", last release {since_release} day(s) ago"
                      if since_release is not None else ""),),
     )
@@ -200,11 +252,16 @@ def score_issue_responsiveness(signals: MaintenanceSignals) -> SubCheck:
     if median is None:
         return SubCheck(
             name, None,
-            reason="no issue-response median was retrieved. An unanswered issue "
-                   "scores 0 under `03` §5, but an absent measurement is not an "
-                   "unanswered issue, and a repository with no issues filed has "
-                   "not failed to answer one.",
-            fault=Fault.PROJECT.value,
+            reason=_absent(
+                signals,
+                read="this repository has no issues `03` §5's window covers. An "
+                     "unanswered issue scores 0 under §5, but a repository with "
+                     "no issues filed has not failed to answer one.",
+                unread="no issue-response median was retrieved. An unanswered "
+                       "issue scores 0 under `03` §5, but an absent measurement "
+                       "is not an unanswered issue.",
+            ),
+            fault=signals.fault,
         )
     return SubCheck(
         name, ladder(median, ISSUE_RESPONSE_DAYS),
@@ -232,8 +289,21 @@ def score_bus_factor(signals: MaintenanceSignals, as_of: date) -> SubCheck:
     if authors is None:
         return SubCheck(
             name, None,
-            reason="no contributor history was retrieved for this repository",
-            fault=Fault.PROJECT.value,
+            reason=_absent(
+                signals,
+                # ⚠ WHEN THE FORGE WAS READ, THIS GAP IS OURS AND NOT THEIRS.
+                # `forge._bus_factor` returns None only when our own page bound
+                # left the count spanning more than one of `03` §5's bands —
+                # the repository answered in full and we stopped reading.
+                # Attributing that to the publisher would be the precise
+                # inversion `reachability.Fault` exists to prevent.
+                read="this repository's 12-month history is longer than the "
+                     "bounded walk `04` §7 performs, and the authors found so "
+                     "far span more than one of `03` §5's bands. A limit of "
+                     "ours, not a finding about the server.",
+                unread="no contributor history was retrieved for this repository",
+            ),
+            fault=Fault.PROJECT.value if signals.retrieved else signals.fault,
         )
 
     # ⚠ `or 0` here read UNKNOWN as "committed today": `_days_since` returns
@@ -268,7 +338,7 @@ def score_bus_factor(signals: MaintenanceSignals, as_of: date) -> SubCheck:
                        f"`03` §5 scores this 50 when active and 30 after "
                        f"{BUS_FACTOR_STALE_DAYS} quiet days, and nothing here "
                        "distinguishes the two",
-                fault=Fault.PROJECT.value,
+                fault=signals.fault,
             )
         return SubCheck(
             name, 30 if stale else 50,

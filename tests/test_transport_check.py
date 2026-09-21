@@ -234,3 +234,38 @@ def test_a_real_framework_import_is_still_detected(
 ) -> None:
     root = _tree(tmp_path, **{filename: source_text})
     assert infer_transport(root, enumerate_tree(root)) is Transport.STREAMABLE_HTTP
+
+
+def test_every_transport_abstention_names_whose_gap_it_is() -> None:
+    """⚠ Both of these reached `SubCheck`'s refused default, and nothing fired.
+
+    `cohort.publication_errors` refuses an `unattributed` fault, so an entry
+    declaring no transport at all would have failed a 492-server run at the
+    publication gate with nothing in the output naming this sub-check as the
+    cause. It never fired because every pinned entry declares a package or a
+    remote — a synthetic entry built for an end-to-end smoke test found it on
+    the first call.
+
+    The positive control is the second case: a declared network transport with
+    no endpoint URL is a DIFFERENT abstention reaching the same default, so one
+    of them passing would not have proved the other.
+    """
+    from mcpwatchman.workers.scanner.reachability import Fault
+    from mcpwatchman.workers.scanner.transport_check import assess_transport
+
+    nothing_declared = RegistryEntry(name="x/y", version="1")
+    sub = assess_transport(nothing_declared, None, None).subcheck
+    assert sub.score is None
+    assert sub.fault == Fault.PUBLISHER.value
+    assert Fault(sub.fault).publishable
+
+    # A network transport declared with no URL to read a scheme from — the
+    # other abstention, which shares neither branch nor reason.
+    no_url = RegistryEntry(
+        name="x/y", version="1",
+        remotes=(Remote(type="streamable-http", url=""),),
+    )
+    other = assess_transport(no_url, None, None).subcheck
+    assert other.score is None
+    assert other.reason != sub.reason
+    assert other.fault == Fault.PUBLISHER.value

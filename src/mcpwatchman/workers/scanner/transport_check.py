@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 
 from mcpwatchman.workers.crawler.registry import RegistryEntry
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
+from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scoring.axes import SubCheck
 
 # How many source files the code-level cross-check will open. Entry points are
@@ -257,14 +258,15 @@ def assess_transport(
         else None
     )
     posture = tls_posture(entry, declared)
-    score, reason, evidence = _score_transport_security(declared, posture, entry)
+    score, reason, evidence, fault = _score_transport_security(declared, posture, entry)
 
     return TransportAssessment(
         declared=declared,
         inferred=inferred,
         tls=posture,
         subcheck=SubCheck(
-            name="transport_security", score=score, reason=reason, evidence=evidence
+            name="transport_security", score=score, reason=reason,
+            evidence=evidence, fault=fault,
         ),
         evidence=evidence,
     )
@@ -272,8 +274,20 @@ def assess_transport(
 
 def _score_transport_security(
     declared: Transport, posture: TlsPosture, entry: RegistryEntry
-) -> tuple[int | None, str, tuple[str, ...]]:
-    """`03` §4's transport-security ladder, applied to declared facts only."""
+) -> tuple[int | None, str, tuple[str, ...], str]:
+    """`03` §4's transport-security ladder, applied to declared facts only.
+
+    ⚠ **RETURNS THE FAULT AS A FOURTH ELEMENT, so a new branch cannot forget
+    it.** Both abstentions here were reaching `SubCheck`'s default —
+    `UNATTRIBUTED`, which `cohort.publication_errors` refuses — so an entry
+    declaring no transport at all would have failed the whole run at
+    publication with nothing naming this as the cause. It never fired because
+    every entry the cohort holds declares a package or a remote; a synthetic
+    entry built for an end-to-end smoke test found it in one call.
+
+    Both are the PUBLISHER's: the entry's own declarations are what is missing,
+    exactly as `authentication_model` already says one line away.
+    """
     urls = tuple(r.url for r in entry.remotes if r.url)
 
     if declared is Transport.STDIO:
@@ -283,12 +297,14 @@ def _score_transport_security(
             ("declared transport: stdio — launched as a subprocess by the client, "
              "so the security boundary is the client process, not a network port "
              "(`03` §4)",),
+            Fault.UNATTRIBUTED.value,
         )
     if declared is Transport.UNKNOWN:
         return (
             None,
             "the registry entry declares no transport for any package or remote",
             (),
+            Fault.PUBLISHER.value,
         )
 
     if posture is TlsPosture.HTTPS_ONLY:
@@ -299,22 +315,26 @@ def _score_transport_security(
              "scored 80, not 100: `03` §4 reserves 100 for HTTPS *with HSTS*, and "
              "an HSTS header can only be seen by connecting, which `04` §9 does "
              "not do. This is an unverifiable band, not an observed absence."),
+            Fault.UNATTRIBUTED.value,
         )
     if posture is TlsPosture.MIXED:
         return (
             50,
             "",
             (f"both HTTP and HTTPS endpoints declared: {', '.join(urls)}",),
+            Fault.UNATTRIBUTED.value,
         )
     if posture is TlsPosture.PLAINTEXT:
         return (
             20,
             "",
             (f"declared endpoint(s) are plaintext HTTP: {', '.join(urls)}",),
+            Fault.UNATTRIBUTED.value,
         )
     return (
         None,
         f"transport is {declared.value} but the entry declares no endpoint URL "
         "to read a scheme from",
         (),
+        Fault.PUBLISHER.value,
     )

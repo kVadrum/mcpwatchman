@@ -30,13 +30,19 @@ const unreachablePkg = reports.filter((r) => r.source_subject === "package");
 // is partial for 38 servers because its transport sub-check needs no source.
 //
 // Per-axis coverage is the fact a reader actually needs, and it surfaces the
-// one this page was silent about: Maintenance is scored for NOBODY, because
-// the forge fetch does not exist. A whole weight-15 axis dark on every server
-// is not something to leave inferable from five dashes in a row.
+// one this page was silent about — a whole axis dark on every server is not
+// something to leave inferable from five dashes in a row.
 const coverage = AXES.map((axis) => ({
   ...axis,
   scored: reports.filter((r) => r.axes[axis.key].score !== null).length,
 }));
+// ⚠ DERIVED, because the paragraph below used to ASSERT that Maintenance was
+// scored for nobody. That was true for as long as `03` §5's forge fetch did
+// not exist, and it is the shape `llms.txt` already cost us once: a static
+// sentence that goes false on the first regeneration, addressed to a reader
+// who has no way to notice. The axis says how many it scored; the prose reads
+// the axis.
+const maintenanceScored = coverage.find((a) => a.key === "maintenance")?.scored ?? 0;
 // The MOST RECENT scan, not the first row's. Once a pinned server leaves the
 // registry its page keeps the last scan taken while it was listed, so the set
 // stops sharing one date — and "scanned on X" would then be false for it.
@@ -80,10 +86,25 @@ const W = 96;
       computed and withheld until a hand-audited gold set validates the weights.
     </p>
     <p>
-      Maintenance is scored for no server yet: it reads commit and release
-      history from the hosting forge, and that retrieval is not built. It shows
-      as not assessed rather than as a guess, and the axis counts for nothing
-      until it can be measured.
+      {maintenanceScored === 0 ? (
+        <>
+          Maintenance is scored for no server yet: it reads commit and release
+          history from the hosting forge, and that retrieval is not built. It
+          shows as not assessed rather than as a guess, and the axis counts for
+          nothing until it can be measured.
+        </>
+      ) : (
+        <>
+          Maintenance reads commit history, release cadence, issue response
+          times and contributor spread from the hosting forge. It is scored for
+          {" "}<b>{maintenanceScored}</b> of these {reports.length} servers; the
+          rest declare a repository we cannot read, or one on a forge this
+          scanner does not query yet, and each page says which. Its
+          popularity-within-category sub-check is still unassessed for
+          everyone — that needs a distribution across the whole registry, and a
+          category the registry does not record.
+        </>
+      )}
     </p>
   </div>
 

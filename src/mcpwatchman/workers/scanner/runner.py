@@ -24,7 +24,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 from dataclasses import KW_ONLY, asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
 from pathlib import Path
 from typing import Any
@@ -36,8 +36,12 @@ from mcpwatchman.workers.crawler.registry import (
     resolve_source,
 )
 from mcpwatchman.workers.scanner.auth_check import assess_auth
+from mcpwatchman.workers.scanner.forge import ForgeOutcome, fetch_signals
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
-from mcpwatchman.workers.scanner.maintenance_check import assess_maintenance
+from mcpwatchman.workers.scanner.maintenance_check import (
+    MaintenanceSignals,
+    assess_maintenance,
+)
 from mcpwatchman.workers.scanner.osv_check import assess_dependency_health
 from mcpwatchman.workers.scanner.reachability import (
     Fault,
@@ -403,6 +407,42 @@ def scan_entry(
             shutil.rmtree(ws, ignore_errors=True)
 
 
+def _scan_date(scanned_at: str) -> date:
+    """The scan's own date, so a re-run against stored signals reproduces it.
+
+    `03` §5's ladders are all "days since", so the answer moves with the clock.
+    Deriving it from `scanned_at` rather than calling `date.today()` is what
+    makes a report recomputable from its own published timestamp — which is the
+    claim `06` makes for every number on the site.
+    """
+    try:
+        return datetime.fromisoformat(scanned_at).date()
+    except ValueError:
+        return datetime.now(UTC).date()
+
+
+def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
+    """`03` §5's forge signals for this entry, or whose gap it is that there are none.
+
+    ⚠ **Never raises.** `scan_entry`'s contract is that a server's own defects
+    are outcomes, and the forge honours it: an unreadable repository comes back
+    as a `PUBLISHER` outcome. The bare `except` is for the third class — a bug
+    of ours in the fetch path — which must degrade this axis rather than lose
+    the other four. It is attributed `ENVIRONMENT`, so it is refused at
+    publication and retried instead of reaching a page.
+    """
+    url = entry.repository.url if entry.repository else ""
+    try:
+        return fetch_signals(url, as_of=_scan_date(scanned_at))
+    except Exception as exc:  # noqa: BLE001 - attributed to us, never published
+        return ForgeOutcome(
+            MaintenanceSignals(fault=Fault.ENVIRONMENT.value),
+            Fault.ENVIRONMENT,
+            f"the maintenance fetch failed unexpectedly ({type(exc).__name__}); "
+            "this is retryable and is not a finding about the server",
+        )
+
+
 def _assemble(
     entry, resolution, availability, root, scanned_at, version, ref_matched=None
 ) -> ServerReport:
@@ -429,9 +469,13 @@ def _assemble(
     # the only place that can tell a missing binary from a dead one.
     auth = assess_auth(entry, transport, root, inventory)
     transparency = assess_transparency(root, inventory, availability)
-    # `03` §5's forge signals need an API fetch that is not built; the axis
-    # reports that rather than guessing a maintenance score from the tree.
-    maintenance = assess_maintenance()
+    # `03` §5's forge signals come from the API, not the tree — nothing a
+    # repository ships tells you whether anyone answers its issues. The fetch
+    # carries its own fault attribution because the three ways it can come back
+    # empty are not the same claim: their repository is unreadable, their forge
+    # is one we have not built for, or our own run failed.
+    forge = _forge_signals(entry, scanned_at)
+    maintenance = assess_maintenance(forge.signals, as_of=_scan_date(scanned_at))
 
     code = assess_code_safety(root, inventory, version=version) if root else None
     deps = assess_dependency_health(root, inventory, version=version) if root else None
@@ -444,13 +488,17 @@ def _assemble(
         "auth_posture": _from_axis_result(
             auth, availability.reason, fault=_gap_fault(Fault.PUBLISHER, availability)
         ),
-        # `03` §5's forge signals need a retrieval this project has not built,
-        # so Maintenance is dark on every server for a reason of OURS — but a
-        # systematic, disclosed one: the roster and `llms.txt` say so in our
-        # own voice, and a reader is never left inferring that the server is
-        # at fault. That is PROJECT, and it is publishable; ENVIRONMENT is the
-        # accidental kind and is not.
-        "maintenance": _from_axis_result(maintenance, fault=Fault.PROJECT),
+        # ⚠ THIS WAS HARDCODED `PROJECT` — correct while the fetch did not
+        # exist and wrong the moment it did. Maintenance now abstains for three
+        # distinguishable reasons and only `forge` knows which: a repository
+        # nobody can read is PUBLISHER and belongs on their page; a forge we
+        # have not built for is PROJECT and is disclosed in our own voice; a
+        # rate limit or a dead network is ENVIRONMENT, which
+        # `cohort.publication_errors` refuses and the driver retries. A
+        # constant here would have published our outage as their neglect.
+        "maintenance": _from_axis_result(
+            maintenance, forge.reason, fault=forge.fault
+        ),
         "transparency": _from_axis_result(
             transparency,
             availability.reason,

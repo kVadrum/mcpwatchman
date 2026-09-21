@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcpwatchman"
-version = "0.24.3"
+version = "0.25.0"
 description = "Independent security and quality audit for Model Context Protocol servers."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -144,7 +144,13 @@ select = ["E", "F", "I", "UP", "B", "SIM", "S"]
 
 [tool.ruff.lint.per-file-ignores]
 # S101 bans `assert`, which is the entire vocabulary of a pytest suite.
-"tests/**" = ["S101"]
+# S106 flags a literal passed as a `token=`/`password=` argument. Every one in
+# this suite is a two-character stub standing in for a credential the test
+# deliberately does not have — `tests/test_forge.py` passes `token="t"` to
+# prove the fetch path classifies a 403 as OURS. S105 stays ON, so a literal
+# ASSIGNED to a secret-shaped name still flags, and a real credential reaching
+# a tracked file is the pre-commit guard's job rather than the linter's.
+"tests/**" = ["S101", "S106"]
 
 [tool.pytest.ini_options]
 testpaths = ["src", "tests"]

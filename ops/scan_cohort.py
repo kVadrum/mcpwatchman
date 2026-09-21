@@ -64,6 +64,7 @@ from mcpwatchman.workers.crawler.registry import (
     fetch_all,
     resolve_source,
 )
+from mcpwatchman.workers.scanner.forge import TOKEN_ENV_VARS, token_from_env
 from mcpwatchman.workers.scanner.runner import scan_entry, slugify
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -121,14 +122,29 @@ def preflight() -> list[str]:
     binary is ours, and it belongs in this script's exit status rather than on
     a public page.
 
-    Checked once, before the registry sweep, so the run costs nothing to fail.
+    ⚠ **A CREDENTIAL IS THE SAME HAZARD AS A BINARY, and it fails WORSE.**
+    Without a GitHub token `scanner.forge` attributes Maintenance
+    `ENVIRONMENT` on every server, which `unpublishable_gaps` then refuses —
+    so every pinned page falls back to its previous report and the run exits
+    **0 having changed nothing**. That is quieter than the missing-binary case
+    it is modelled on: a dark axis at least renders as a dash, whereas a
+    whole-cohort carry-forward looks like a successful regeneration in the
+    summary line. Named here rather than discovered at 03:00.
     """
-    return [
+    missing = [
         f"{tool} is not on PATH — {axis} would be unassessed on every server "
         f"({where})"
         for tool, axis, where in REQUIRED_TOOLS
         if shutil.which(tool) is None
     ]
+    if token_from_env() is None:
+        missing.append(
+            "no GitHub token is configured — Maintenance (`03` §5) would be "
+            "unassessed on every server, attributed to our environment, and "
+            f"every pinned page would silently carry forward (set "
+            f"{TOKEN_ENV_VARS[0]})"
+        )
+    return missing
 
 
 def _scan(entry: RegistryEntry, label: str, index: int, total: int) -> dict:
