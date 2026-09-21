@@ -50,6 +50,7 @@ from pathlib import Path
 
 from mcpwatchman.cohort import (
     Cohort,
+    CohortError,
     atomic_write,
     carry_forward,
     load,
@@ -449,10 +450,33 @@ def main() -> int:
             reports[entry.name] = kept
             unmeasured.append(entry.name)
             continue
-        reports[entry.name] = mark_status(
-            report, status=entry.status, observed_on=today
-        )
+        try:
+            reports[entry.name] = mark_status(
+                report, status=entry.status, observed_on=today
+            )
+        except CohortError as exc:
+            # ⚠ FAIL CLOSED, BUT PER SERVER. `mark_status` refuses a registry
+            # status that collides with a state of OURS, and it refuses it
+            # correctly — relaying the word would disable this server's
+            # publication gate. Uncaught, though, that refusal aborted a
+            # 492-page run with a traceback over one entry, which is a wider
+            # blast radius than every other refusal here takes: the project's
+            # own stance is that a refused gap costs that page its refresh,
+            # not the run.
+            #
+            # So it lands in the same machinery an our-side gap does. The
+            # server keeps the last scan we could take, labelled, and the
+            # reason is printed rather than raised — and it IS ours: the
+            # collision is our schema sharing one field with a third party's
+            # vocabulary, not a defect in what they published.
+            kept = _keep_previous(entry.name, previous, today, [str(exc)])
+            if kept is None:
+                return 2
+            reports[entry.name] = kept
+            unmeasured.append(entry.name)
+            continue
     published_growth: list[RegistryEntry] = []
+    skipped: list[str] = []
     for entry in growth:
         index += 1
         report, gaps = _scan_once_more_if_ours(entry, "new", index, total)
@@ -461,6 +485,7 @@ def main() -> int:
         # broken run as the reason nobody scored them.
         if gaps:
             print(f"[skipped] {entry.name} — our side failed; not pinned")
+            skipped.append(entry.name)
             continue
         reports[entry.name] = report
         published_growth.append(entry)
@@ -501,6 +526,18 @@ def main() -> int:
         f"{len(to_carry)} carried, {len(unmeasured)} kept) "
         f"in {time.time() - started:.0f}s"
     )
+    # ⚠ NAMED, NOT TALLIED. The counts above describe what was PUBLISHED, so
+    # the two outcomes that are worth a human's attention — a pinned page that
+    # kept an older scan, and a growth candidate that did not get pinned —
+    # appear either as a number with no names or not at all. Both were
+    # printed per server as the run went, hundreds of lines earlier, so
+    # answering "which ones?" meant grepping a log that may not have been
+    # kept. A run that keeps ten servers is either a broken toolchain or a
+    # transient fault and those want opposite responses.
+    if unmeasured:
+        print(f"kept previous scan ({len(unmeasured)}): {', '.join(sorted(unmeasured))}")
+    if skipped:
+        print(f"not pinned, our side failed ({len(skipped)}): {', '.join(sorted(skipped))}")
     return 0
 
 
