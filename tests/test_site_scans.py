@@ -813,3 +813,48 @@ def test_the_stamped_scanner_version_could_have_produced_this_record(reports) ->
             "not produce — the scan ran against newer code than the stamp "
             "names, so the record is not reproducible from it"
         )
+
+
+@needs_dist
+def test_every_server_page_offers_a_way_to_contest_its_findings() -> None:
+    """⚠ 65 of the published servers carry at least one axis scored 0, and the
+    site said "appeal" nowhere.
+
+    `08` §5 calls the appeals process "the single most important fairness
+    mechanism in the project"; §2.2 promises a maintainer "a link to file an
+    appeal"; §6.3 calls a documented, honored process the strongest defense
+    against bad-faith claims of inaccuracy. All three describe a route that
+    existed only in a gitignored spec — measured by grepping the built tree for
+    "appeal" and getting 0, against 3,006 hits for "evidence" as the control.
+    """
+    pages = sorted(DIST.glob("servers/*/index.html"))
+    assert pages, "the positive control: no pages means this test proves nothing"
+    missing = [
+        p.parent.name for p in pages
+        if "Contest a finding" not in p.read_text(encoding="utf-8")
+    ]
+    assert not missing, f"{len(missing)} server page(s) offer no way to contest a finding"
+
+
+@needs_dist
+def test_the_site_never_advertises_a_mailbox_that_cannot_receive_mail() -> None:
+    """⚠ `08` §5.2 names `appeals@mcpwatchman.com`, and the domain has NO MX RECORD.
+
+    Publishing it would hand a maintainer a channel that swallows their appeal
+    in silence — strictly worse than publishing the one channel that works,
+    because they would believe they had filed. This is the `llms.txt` failure
+    shape aimed at the person we just scored: a confident instruction on a
+    public surface, addressed to the reader least able to discover it is dead.
+
+    Delete this test when the mailbox exists. Until then it is what keeps a
+    well-meaning edit from copying the address out of the spec.
+    """
+    offenders = [
+        p.relative_to(DIST).as_posix()
+        for p in DIST.rglob("*")
+        if p.is_file() and p.suffix in (".html", ".txt", ".json", ".xml")
+        and "appeals@mcpwatchman.com" in p.read_text(encoding="utf-8", errors="ignore")
+    ]
+    assert not offenders, (
+        "these built files advertise a mailbox with no MX record: " + ", ".join(offenders)
+    )

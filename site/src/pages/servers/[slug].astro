@@ -22,6 +22,25 @@ export function getStaticPaths() {
 const { report } = Astro.props;
 const scored = AXES.filter((a) => report.axes[a.key].score !== null);
 const withEvidence = AXES.filter((a) => report.axes[a.key].evidence.length > 0);
+// ⚠ GITHUB ONLY. `08` §5.2 also names `appeals@mcpwatchman.com`, and
+// mcpwatchman.com has NO MX RECORD — mail to it is not delivered anywhere.
+// Publishing that address would hand a maintainer a channel that swallows
+// their appeal silently, which is worse than publishing one channel. Add it
+// here when the mailbox exists, not before.
+const appealUrl =
+  "https://github.com/kVadrum/mcpwatchman/issues/new?title=" +
+  encodeURIComponent(`Appeal: ${report.name}`) +
+  "&body=" +
+  encodeURIComponent(
+    `Server: ${report.name}\n` +
+    `Page: https://mcpwatchman.com/servers/${report.slug}/\n` +
+    `Scanned: ${report.scanned_at}\n\n` +
+    "Finding (the rule or advisory ID shown beside it on the page):\n\n" +
+    "Why it is incorrect or misleading:\n\n" +
+    "Context not visible from the source (for example, a runtime check the " +
+    "rule does not model):\n\n" +
+    "Are you the maintainer, or filing as a third party?\n"
+  );
 const scannedDate = report.scanned_at.slice(0, 10);
 
 // When the source could not be read, every axis that needed it carries the
@@ -170,4 +189,36 @@ const sourceNote =
       )}
     </section>
   )}
+
+  {/* Addressed to a DIFFERENT reader than everything above it, and that is
+    why it is on the ground rather than on paper. The report speaks to someone
+    deciding whether to install this server; this speaks to the person who
+    wrote it. The page already encodes that split — evidence on `--paper`, the
+    instrument's own voice on the dark ground, as the colophon does — so the
+    change of address gets the change of surface rather than a new device.
+
+    Quiet rule, not `--signal`. A maintainer disagreeing with us is an
+    expected and welcome condition, and `base.md` § *Signal design* is that a
+    fault signal raised for an expected condition trains the reader to
+    discount the channel. */}
+  <section class="contest">
+    <h2>Contest a finding</h2>
+    <p>
+      Every number here comes from a rule reading published source, and rules
+      get things wrong. If something on this page is incorrect — or correct but
+      mitigated by a check the rule cannot see — open an issue and we answer it
+      in writing. A finding we got wrong is removed and the rule is fixed; one
+      that stands is answered on the record.
+    </p>
+    <p>
+      Anyone can file: the maintainer, a researcher who disagrees with the
+      classification, or a user who tested the server and could not reproduce
+      it. Name this server and the rule or advisory ID shown beside the finding
+      above. We aim to reply within five business days and to resolve within
+      ten.
+    </p>
+    <p class="contest-go">
+      <a href={appealUrl} rel="nofollow noopener">Open an appeal on GitHub</a>
+    </p>
+  </section>
 </Report>

@@ -502,3 +502,46 @@ main {
     transition: none !important;
   }
 }
+
+/* ── contesting a finding ───────────────────────────────────────────────── */
+
+/* On the GROUND, not on paper. Every section above addresses someone deciding
+   whether to install this server; this one addresses the person who wrote it,
+   and the page already has a device for that change of voice — the colophon
+   speaks from the same surface. Reusing it costs no new vocabulary.
+
+   The rule is `--rule`, deliberately not `--signal`. `.non-assessment` earns
+   the amber edge because it qualifies a measurement; an invitation to
+   disagree is an expected condition, and `base.md` § *Signal design* is that
+   a fault raised for an expected condition trains the reader to discount the
+   channel the real faults arrive on. */
+.contest {
+  max-width: var(--measure);
+  margin: var(--gap) auto 0;
+  padding: 1.4rem 0 0 1.2rem;
+  border-left: 3px solid var(--rule);
+  color: var(--ink-dim);
+}
+.contest h2 {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-struct);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+.contest p {
+  margin: 0 0 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.contest-go {
+  margin-bottom: 0;
+}
+.contest-go a {
+  color: var(--signal-ink);
+  text-underline-offset: 3px;
+}
+.contest-go a:hover {
+  color: var(--signal-hover);
+}
