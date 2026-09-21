@@ -482,3 +482,48 @@ def test_a_leap_day_scan_does_not_crash(tmp_path: Path) -> None:
         as_of=date(2028, 2, 29), client=client,
     )
     assert outcome.fault is Fault.PUBLISHER
+
+
+def test_issue_sample_completeness_is_reported_to_the_scorer() -> None:
+    """The producer half of `03` §5's lifetime-fallback attribution.
+
+    `score_issue_responsiveness` decides whose gap a missing fallback is by
+    reading `issue_history_complete`, so a scorer test built from hand-made
+    signals proves only half of it — this pins the half that actually sets the
+    flag. Both directions, because a constant `True` and a constant `False`
+    each satisfy one of them.
+    """
+    # A tracker larger than `ISSUE_SAMPLE_SIZE`: we hold 2 of 500, so §5's
+    # lifetime median is out of our reach and the flag must say so.
+    bounded = _signals(_payload(issues={
+        "totalCount": 500,
+        "nodes": [
+            {"createdAt": _iso(10), "author": {"login": "asker"},
+             "comments": {"nodes": []}},
+            {"createdAt": _iso(400), "author": {"login": "asker"},
+             "comments": {"nodes": []}},
+        ],
+    }))
+    assert bounded.issue_history_complete is False
+    assert bounded.issues_sampled == 1  # one inside §5's 6-month window
+
+    # The whole history, and it is empty — the publisher's own fact.
+    assert _signals(_payload()).issue_history_complete is True
+
+    # The whole history, and it is small but non-empty: §5's fallback APPLIES,
+    # which is the case the flag must not spoil.
+    small = _signals(_payload(issues={
+        "totalCount": 2,
+        "nodes": [
+            {"createdAt": _iso(10), "author": {"login": "asker"},
+             "comments": {"nodes": [{"createdAt": _iso(8),
+                                     "authorAssociation": "OWNER",
+                                     "author": {"login": "amy"}}]}},
+            {"createdAt": _iso(20), "author": {"login": "asker"},
+             "comments": {"nodes": [{"createdAt": _iso(19),
+                                     "authorAssociation": "OWNER",
+                                     "author": {"login": "amy"}}]}},
+        ],
+    }))
+    assert small.issue_history_complete is True
+    assert small.lifetime_first_response_days is not None

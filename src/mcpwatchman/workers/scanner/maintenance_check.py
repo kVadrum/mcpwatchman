@@ -82,6 +82,19 @@ class MaintenanceSignals:
     issues_sampled: int | None = None
     # Lifetime median, used when `issues_sampled` is under ISSUE_SAMPLE_MIN.
     lifetime_first_response_days: float | None = None
+    # Whether the issue sample really was the repository's WHOLE issue history.
+    #
+    # ⚠ It is the only thing that separates `03` §5's fallback being
+    # INAPPLICABLE from it being UNAVAILABLE, and those are opposite faults. A
+    # repository with no issues at all cannot be scored on issue response and
+    # that is a fact about it; a repository with 500 issues and one this month
+    # cannot be scored because OUR fetch reads 50 — the same "our page bound
+    # stopped us" case `score_bus_factor` attributes to PROJECT.
+    #
+    # Defaults to False so a caller that does not say costs us the disclosure
+    # rather than costing a publisher a false one, matching `fault`'s default
+    # one field down.
+    issue_history_complete: bool = False
     # Distinct authors with >= BUS_FACTOR_MIN_COMMITS commits in 12 months.
     authors_12mo: int | None = None
     # Distinct authors with ANY commit in 12 months. Separates "one person
@@ -250,6 +263,36 @@ def score_issue_responsiveness(signals: MaintenanceSignals) -> SubCheck:
         )
 
     if median is None:
+        # ⚠ THREE CASES, NOT TWO, AND THE THIRD IS OURS. `03` §5 mandates the
+        # lifetime median whenever fewer than three issues fall in the window,
+        # so when that fallback is the reason we have no number, the question
+        # is why it was unavailable. If our own fetch bound the issue history,
+        # the fallback was not inapplicable — it was unreachable, by us. That
+        # is `score_bus_factor`'s bounded-walk case exactly, and it is
+        # attributed PROJECT there.
+        #
+        # Reported as one defect rather than two because it is one: the
+        # publisher-attributed branch ALSO stated "no issues §5's window
+        # covers" about a repository with issues in the window, since falling
+        # back on a sample of one discards a median that was computed. Measured
+        # on a payload of 500 issues with one this month: score None, fault
+        # `publisher`, and a sentence contradicted by `issues_sampled`.
+        if (
+            signals.retrieved
+            and not signals.issue_history_complete
+            and sampled is not None
+            and sampled < ISSUE_SAMPLE_MIN
+        ):
+            return SubCheck(
+                name, None,
+                reason=f"only {sampled} issue(s) fall inside `03` §5's 6-month "
+                       f"window, which is under §5's floor of {ISSUE_SAMPLE_MIN}, "
+                       "and §5's lifetime-median fallback needs this "
+                       "repository's whole issue history — more of it than "
+                       "`04` §7's bounded fetch reads. A limit of ours, not a "
+                       "finding about the server.",
+                fault=Fault.PROJECT.value,
+            )
         return SubCheck(
             name, None,
             reason=_absent(

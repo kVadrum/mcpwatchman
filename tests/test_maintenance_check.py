@@ -115,7 +115,14 @@ def test_no_issues_filed_is_not_an_unanswered_issue() -> None:
     # read. Without it this is the OTHER claim — that we never looked — and the
     # two must not share a sentence.
     result = score_issue_responsiveness(
-        MaintenanceSignals(issues_sampled=0, retrieved=True, fault=Fault.PUBLISHER.value)
+        MaintenanceSignals(
+            issues_sampled=0, retrieved=True, fault=Fault.PUBLISHER.value,
+            # A repository with no issues at all has a COMPLETE issue history,
+            # which is what the producer emits (total 0 <= 0 sampled). Without
+            # it this fixture is the other case — a tracker our fetch bound —
+            # and `03` §5's lifetime fallback being unreachable is ours.
+            issue_history_complete=True,
+        )
     )
     assert result.score is None
     assert "has not failed to answer" in result.reason
@@ -131,7 +138,14 @@ def test_an_unread_forge_and_an_empty_one_do_not_share_a_reason() -> None:
     """
     unread = score_issue_responsiveness(MaintenanceSignals(fault=Fault.ENVIRONMENT.value))
     read = score_issue_responsiveness(
-        MaintenanceSignals(issues_sampled=0, retrieved=True, fault=Fault.PUBLISHER.value)
+        MaintenanceSignals(
+            issues_sampled=0, retrieved=True, fault=Fault.PUBLISHER.value,
+            # A repository with no issues at all has a COMPLETE issue history,
+            # which is what the producer emits (total 0 <= 0 sampled). Without
+            # it this fixture is the other case — a tracker our fetch bound —
+            # and `03` §5's lifetime fallback being unreachable is ours.
+            issue_history_complete=True,
+        )
     )
     assert unread.reason != read.reason
     assert "not retrieved" in unread.reason or "was retrieved" in unread.reason
@@ -240,3 +254,49 @@ def test_a_future_dated_release_is_clamped_like_a_future_dated_commit() -> None:
         MaintenanceSignals(last_release=date(2027, 12, 1)), AS_OF
     )
     assert "-" not in result.evidence[0].split("day")[0]
+
+
+def test_a_bounded_issue_fetch_is_ours_and_never_the_publishers() -> None:
+    """`03` §5's lifetime fallback being UNREACHABLE is not the same fact as
+    it being INAPPLICABLE, and only one of them belongs on a server's page.
+
+    §5 mandates the lifetime median below its three-issue floor. A repository
+    with a large tracker and one issue this month satisfies the floor's
+    condition while `04` §7's bounded fetch cannot supply the fallback — so the
+    gap is our reach, not their neglect. `score_bus_factor` already draws this
+    line for its own bounded walk; this is the same bound one sub-check over.
+
+    Measured before the fix: fault `publisher`, and a reason reading "this
+    repository has no issues `03` §5's window covers" about a repository with
+    one in it — a sentence its own `issues_sampled` contradicts.
+    """
+    bounded = score_issue_responsiveness(
+        MaintenanceSignals(
+            median_first_response_days=30.0,  # computed, then discarded by §5
+            issues_sampled=1,
+            lifetime_first_response_days=None,
+            retrieved=True,
+            issue_history_complete=False,
+            fault=Fault.PUBLISHER.value,
+        )
+    )
+    assert bounded.score is None
+    assert bounded.fault == Fault.PROJECT.value
+    assert "limit of ours" in bounded.reason
+    # The old sentence asserted an absence the sample contradicts.
+    assert "no issues" not in bounded.reason
+
+
+def test_the_empty_tracker_keeps_its_own_sentence() -> None:
+    """The negative half: widening the fault above must not swallow the case
+    next to it. A repository with a complete, empty issue history is the
+    publisher's fact and stays attributed to them.
+    """
+    empty = score_issue_responsiveness(
+        MaintenanceSignals(
+            issues_sampled=0, retrieved=True, issue_history_complete=True,
+            fault=Fault.PUBLISHER.value,
+        )
+    )
+    assert empty.fault == Fault.PUBLISHER.value
+    assert "has not failed to answer" in empty.reason

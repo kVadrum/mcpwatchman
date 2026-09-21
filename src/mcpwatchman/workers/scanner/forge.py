@@ -85,6 +85,12 @@ MAX_COMMIT_PAGES = 3
 # Most recent issues to consider. `03` §5 wants those filed in the last 6
 # months; this bounds the fetch and the surplus serves the small-sample
 # fallback — see `_issue_medians`.
+#
+# ⚠ Raising this is not cosmetic: it is the bound that decides how often §5's
+# lifetime fallback is out of reach, and an out-of-reach fallback costs the
+# sub-check its score. `signals_from_payload` reports whether the sample was
+# complete so that cost is attributed to US; raising the number would shrink
+# the cost rather than move it.
 ISSUE_SAMPLE_SIZE = 50
 # First comments to inspect per issue. A maintainer who has not spoken in the
 # first ten comments on their own issue has not "first-responded" in any sense
@@ -488,18 +494,36 @@ def _first_response_days(issue: dict, as_of_dt: datetime) -> float | None:
 
 def _issue_medians(
     payload: dict, as_of_dt: datetime
-) -> tuple[float | None, int | None, float | None]:
-    """`03` §5's response medians: (last 6 months, sample size, lifetime).
+) -> tuple[float | None, int | None, float | None, bool]:
+    """`03` §5's medians: (last 6 months, sample size, lifetime, sample complete).
+
+    ⚠ **The fourth element is not bookkeeping — it decides WHOSE gap an
+    abstention is.** `score_issue_responsiveness` must fall back to the
+    lifetime median below §5's three-issue floor, and when that median is
+    absent the reason is either that the repository has no issue history or
+    that OURS is the bound that could not read it. Without this flag the two
+    are indistinguishable at the scoring site and both were attributed to the
+    publisher.
 
     ⚠ **The lifetime median is returned ONLY when the sample really is the
     repository's whole issue history.** `ISSUE_SAMPLE_SIZE` bounds the fetch,
     so on a busy tracker the newest 50 issues are a recent sample and calling
     their median a lifetime figure would be an over-claim — and
     `score_issue_responsiveness` renders the words "lifetime median" verbatim
-    onto a public page. Withholding it costs nothing in practice: the fallback
-    exists for repositories with fewer than three issues in six months, and
-    those have few issues in total, so the sample is complete exactly where
-    the fallback fires.
+    onto a public page.
+
+    ⚠ **WITHHOLDING IT IS NOT FREE, AND THIS DOCSTRING ARGUED THAT IT WAS.**
+    It read: *"the fallback exists for repositories with fewer than three
+    issues in six months, and those have few issues in total, so the sample is
+    complete exactly where the fallback fires."* The counter-case is an
+    ABANDONED tracker — hundreds of issues, none this half-year — which is
+    both common and precisely what `03` §5's issue ladder exists to catch, so
+    the fallback fires most usefully exactly where the sample is NOT complete.
+    Reproduced on a 500-issue payload with one issue in the window.
+
+    The withholding still stands; what was wrong was calling it costless. The
+    cost is a sub-check that cannot score, and the fourth return element is
+    what stops that cost being billed to the publisher.
     """
     issues = _nodes(payload, "issues", "nodes")
     total = _dict(payload, "issues").get("totalCount")
@@ -520,7 +544,7 @@ def _issue_medians(
     median_recent = statistics.median(recent) if recent else None
     complete = isinstance(total, int) and total <= len(issues)
     lifetime = statistics.median(every) if (complete and every) else None
-    return median_recent, sampled, lifetime
+    return median_recent, sampled, lifetime, complete
 
 
 def signals_from_payload(
@@ -551,7 +575,7 @@ def signals_from_payload(
     authors, contributors = _bus_factor(counts, fetched=fetched, total=total)
 
     releases, basis = _release_dates(payload)
-    median_recent, sampled, lifetime = _issue_medians(payload, as_of_dt)
+    median_recent, sampled, lifetime, issues_complete = _issue_medians(payload, as_of_dt)
 
     return MaintenanceSignals(
         last_commit=last_commit_dt.date() if last_commit_dt else None,
@@ -560,6 +584,7 @@ def signals_from_payload(
         median_first_response_days=median_recent,
         issues_sampled=sampled,
         lifetime_first_response_days=lifetime,
+        issue_history_complete=issues_complete,
         authors_12mo=authors,
         contributors_12mo=contributors,
         # Not computable per server — see the module docstring.
