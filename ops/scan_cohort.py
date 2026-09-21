@@ -191,7 +191,7 @@ def _scan_once_more_if_ours(
 
 def _keep_previous(
     name: str, previous: dict[str, dict], today: str, gaps: list[str],
-    *, observation: str | None = None,
+    *, observation: str | None = None, not_recomputed_because: str | None = None,
 ) -> dict | None:
     """The last publishable report for a pinned server this run could not measure.
 
@@ -222,6 +222,7 @@ def _keep_previous(
         # LISTED, and the scan is what is stale — the state must not say
         # `delisted` about a server the registry still carries.
         state="stale",
+        not_recomputed_because=not_recomputed_because,
         # ⚠ **THE DEFAULT SENTENCE SAYS THE SCAN FAILED, so a caller whose
         # scan SUCCEEDED must override it.** The status-collision path reaches
         # here with a complete, publishable scan in hand — only the registry's
@@ -486,6 +487,13 @@ def main() -> int:
                     "This server is listed in the registry under a status this "
                     "scanner cannot represent, so the last scan taken under a "
                     "status it could represent is shown instead"
+                ),
+                # ⚠ The default tail says the scan did not complete. It did —
+                # only the status was unrepresentable — so overriding the head
+                # and leaving the tail published both claims at once.
+                not_recomputed_because=(
+                    ", because this run could not record the status the "
+                    "registry now lists for it."
                 ),
             )
             if kept is None:

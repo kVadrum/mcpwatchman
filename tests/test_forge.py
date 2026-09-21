@@ -9,19 +9,23 @@ branches, not a protocol.
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
 from mcpwatchman.workers.scanner.forge import (
+    CACHE_SCHEMA,
     CACHE_TTL_SECONDS,
+    TAG_SAMPLE_SIZE,
     ForgeError,
     ForgeUnreachableError,
     RepoRef,
     _bus_factor,
     _cache_path,
     _classify_errors,
+    _read_cache,
     classify_repo_url,
     fetch_signals,
     parse_repo_url,
@@ -598,3 +602,74 @@ def test_the_unread_tail_can_promote_an_author_not_only_create_one() -> None:
 
     # Four unread commits and a deficit of four: still reachable, still abstains.
     assert _bus_factor({"a": 5, "b": 1}, fetched=100, total=104) == (None, None)
+
+
+def test_a_cache_from_an_older_query_shape_is_refetched(tmp_path) -> None:
+    """A TTL knows how OLD a cached payload is, never what SHAPE it has.
+
+    Adding `name` to the tag refs made `_release_dates` require a field no
+    existing cache carried, so for up to 24 hours a tag-only repository lost
+    every tag and abstained — a wrong page produced by a correct fix, reached
+    only through a warm cache. `CACHE_SCHEMA` turns that into a cache miss.
+    """
+    ref = RepoRef("github.com", "acme", "srv")
+    path = _cache_path(tmp_path, ref)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # A v0.29.1-shaped entry: fresh, well-formed, and one schema behind.
+    path.write_text(json.dumps({
+        "fetched_at": 1_000_000.0,
+        "payload": {"repository": {}, "fetched": 0, "total": 0},
+    }))
+    assert _read_cache(tmp_path, ref, 1_000_001.0) is None, "stale shape must miss"
+
+    # Stamped and fresh: a hit, so the miss above is the schema and not the TTL.
+    path.write_text(json.dumps({
+        "schema": CACHE_SCHEMA, "fetched_at": 1_000_000.0,
+        "payload": {"repository": {}, "fetched": 0, "total": 0},
+    }))
+    assert _read_cache(tmp_path, ref, 1_000_001.0) is not None
+
+    # And the TTL still applies to a correctly stamped entry.
+    assert _read_cache(tmp_path, ref, 1_000_000.0 + CACHE_TTL_SECONDS + 1) is None
+
+
+def test_a_bounded_tag_page_cannot_assert_that_no_version_tag_exists() -> None:
+    """The defect the version-tag filter introduced, in the same shape the
+    lifetime-median fix had just removed one sub-check over.
+
+    `04` §7 reads the newest `TAG_SAMPLE_SIZE` tags. A repository whose recent
+    tags are all CI bookkeeping can have version tags just past that page — so
+    an empty result is our reach, not their absence, and publishing "this
+    repository publishes neither releases nor version tags" bills it to them.
+
+    `CLAUDE.md`: a bound added to one path is owed to the others.
+    """
+    ci_only = {"nodes": [
+        {"name": f"deploy-{i}", "target": {"committedDate": _iso(3)}}
+        for i in range(TAG_SAMPLE_SIZE)
+    ], "totalCount": TAG_SAMPLE_SIZE * 4}          # far more tags than we read
+    bounded = _signals(_payload(refs=ci_only))
+    assert bounded.tag_sample_complete is False
+
+    cadence = next(
+        s for s in assess_maintenance(bounded, as_of=AS_OF).subchecks
+        if s.name == "release_cadence"
+    )
+    assert cadence.score is None
+    assert cadence.fault == Fault.PROJECT.value
+    assert "limit of ours" in cadence.reason
+
+    # The negative half: a COMPLETE tag list with no version tag really is the
+    # publisher's fact, and must keep its own sentence.
+    complete = _signals(_payload(refs={
+        "nodes": [{"name": "latest", "target": {"committedDate": _iso(3)}}],
+        "totalCount": 1,
+    }))
+    assert complete.tag_sample_complete is True
+    theirs = next(
+        s for s in assess_maintenance(complete, as_of=AS_OF).subchecks
+        if s.name == "release_cadence"
+    )
+    assert theirs.fault == Fault.PUBLISHER.value
+    assert "neither releases nor version tags" in theirs.reason

@@ -80,6 +80,15 @@ TOKEN_ENV_VARS = ("MCPWATCHMAN_GITHUB_TOKEN", "GITHUB_TOKEN")
 # TTL rather than the etag the spec names.
 CACHE_TTL_SECONDS = 24 * 60 * 60
 
+# ⚠ **BUMP THIS WHENEVER `_QUERY` ASKS FOR A FIELD THE PARSERS RELY ON.** A
+# cached payload is a response to an OLDER query, and the TTL only knows how
+# old it is — not what shape it has. Measured: adding `name` to the tag refs
+# made `_release_dates` require a field no existing cache carried, so for up to
+# 24 hours a tag-only repository silently lost every tag and abstained. A
+# schema stamp turns that into a cache miss, which is a refetch rather than a
+# wrong page.
+CACHE_SCHEMA = 2
+
 # Server-side page size for commit history. `03` §5's bus factor needs authors
 # over 12 months, which on a busy repository is thousands of commits; this
 # bounds one page and MAX_COMMIT_PAGES bounds the walk.
@@ -267,6 +276,7 @@ query($owner:String!, $name:String!, $since:GitTimestamp!, $commits:Int!,
     }
     refs(refPrefix:"refs/tags/", first:$tags,
          orderBy:{field:TAG_COMMIT_DATE, direction:DESC}) {
+      totalCount
       nodes {
         name
         target {
@@ -628,6 +638,18 @@ def signals_from_payload(
     authors, contributors = _bus_factor(counts, fetched=fetched, total=total)
 
     releases, basis = _release_dates(payload)
+    # ⚠ **THE TAG PAGE IS BOUNDED, SO AN EMPTY RESULT IS NOT AN ABSENCE.**
+    # `TAG_SAMPLE_SIZE` newest-first tags can be entirely CI bookkeeping while
+    # version tags sit just past the page — and `score_release_cadence` would
+    # then publish "this repository publishes neither releases nor version
+    # tags" and bill it to the publisher. The same bound-versus-absence
+    # distinction `issue_history_complete` draws one sub-check over; `04` §7
+    # bounds both fetches and owes both the same disclosure.
+    ref_total = _dict(payload, "refs").get("totalCount")
+    tags_complete = (
+        ref_total <= len(_nodes(payload, "refs", "nodes"))
+        if isinstance(ref_total, int) else False
+    )
     median_recent, sampled, lifetime, issues_complete = _issue_medians(payload, as_of_dt)
 
     return MaintenanceSignals(
@@ -646,6 +668,7 @@ def signals_from_payload(
         # the repository rather than a gap in our reading.
         retrieved=True,
         release_basis=basis,
+        tag_sample_complete=tags_complete,
         fault=Fault.PUBLISHER.value,
     )
 
@@ -722,6 +745,10 @@ def _read_cache(cache_dir: Path, ref: RepoRef, now: float) -> dict | None:
         return None
     if not isinstance(raw, dict):
         return None
+    if raw.get("schema") != CACHE_SCHEMA:
+        # A payload from an older query shape. Refetch rather than parse it:
+        # the parsers assume fields that entry may predate.
+        return None
     stamped = raw.get("fetched_at")
     if not isinstance(stamped, int | float) or now - stamped > CACHE_TTL_SECONDS:
         return None
@@ -735,7 +762,8 @@ def _write_cache(cache_dir: Path, ref: RepoRef, payload: dict, now: float) -> No
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
         tmp.write_text(
-            json.dumps({"fetched_at": now, "payload": payload}), encoding="utf-8"
+            json.dumps({"schema": CACHE_SCHEMA, "fetched_at": now,
+                        "payload": payload}), encoding="utf-8"
         )
         tmp.replace(path)
     except OSError:

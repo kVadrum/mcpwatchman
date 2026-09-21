@@ -147,10 +147,21 @@ def test_a_colliding_registry_status_costs_one_page_its_refresh_not_the_run(
     # full moments earlier. Same borrowed-sentence defect `v0.28.2` fixed at
     # the fetch stage, arriving through a shared helper instead of a copied
     # string, which is why the fix is an override at the call site.
+    # ⚠ ASSERT THE CLAIM, NOT THE PHRASE. The first version of this check
+    # looked for the exact wording the fix removed ("could not measure it") and
+    # passed while `carry_forward` appended a DIFFERENT scan-failure sentence
+    # to the same note — so the record said "shown instead" and "the scan that
+    # would have refreshed them did not complete" at once. Found by the review
+    # leg on the commit that added this test.
     carried = next(r for r in json.loads(written) if r["name"] == "ai.b/two")
     note = carried.get("registry_note", "")
-    assert "could not measure it" not in note, note
     assert "cannot represent" in note, note
+    for failed_scan_claim in (
+        "could not measure it",
+        "did not complete",
+        "no current entry to scan",
+    ):
+        assert failed_scan_claim not in note, f"{failed_scan_claim!r} in {note!r}"
 
 
 def test_a_colliding_status_with_no_previous_page_still_refuses_the_write(

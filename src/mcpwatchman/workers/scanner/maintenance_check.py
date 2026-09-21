@@ -117,6 +117,11 @@ class MaintenanceSignals:
     # publishes to npm has released — but a reader is owed which artefact the
     # number came from, so it is rendered rather than assumed.
     release_basis: str = "releases"
+    # Whether the tag page `04` §7 fetched was the repository's WHOLE tag list.
+    # ⚠ Same role as `issue_history_complete`, and the same fail-closed
+    # default: an empty version-tag result from a BOUNDED page is our reach,
+    # not their absence, and only this separates the two.
+    tag_sample_complete: bool = False
     # WHOSE gap an absent field is, as a `reachability.Fault` value. ⚠ DEFAULTS
     # TO THE REFUSED VALUE for the reason `SubCheck.fault` does: a caller that
     # builds signals without saying where they came from must cost a failed run,
@@ -185,6 +190,25 @@ def score_release_cadence(signals: MaintenanceSignals, as_of: date) -> SubCheck:
     gap = signals.median_release_gap_days
 
     if since_release is None and gap is None:
+        # ⚠ **A BOUNDED TAG PAGE CANNOT ASSERT AN ABSENCE.** `04` §7 fetches the
+        # newest `TAG_SAMPLE_SIZE` tags; a repository whose recent tags are all
+        # CI bookkeeping can have version tags just past that page, and saying
+        # it "publishes neither releases nor version tags" is then false and
+        # billed to the publisher. Identical to the lifetime-median case in
+        # `score_issue_responsiveness` — `04` §7 bounds both fetches and
+        # `CLAUDE.md` is explicit that a bound added to one path is owed to the
+        # others. Introduced here by the version-tag filter and caught by the
+        # review leg on that same commit.
+        if signals.retrieved and not signals.tag_sample_complete:
+            return SubCheck(
+                name, None,
+                reason="no GitHub release is published and no version tag "
+                       "appears in the newest tags `04` §7 reads, which is a "
+                       "bounded page — so version tags may exist beyond it and "
+                       "`03` §5's cadence could not be measured. A limit of "
+                       "ours, not a finding about the server.",
+                fault=Fault.PROJECT.value,
+            )
         return SubCheck(
             name, None,
             reason=_absent(

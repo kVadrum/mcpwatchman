@@ -434,7 +434,8 @@ CARRIED_STATES = frozenset({"delisted", "stale"})
 
 
 def carry_forward(
-    previous: dict, *, checked_on: str, observation: str, state: str = "delisted"
+    previous: dict, *, checked_on: str, observation: str, state: str = "delisted",
+    not_recomputed_because: str | None = None,
 ) -> dict:
     """The report to publish for a pinned server the registry no longer lists.
 
@@ -477,7 +478,18 @@ def carry_forward(
             # said "there is no current entry to scan": two opposite claims in
             # one published note about a named third party. Fixing the state
             # and leaving the prose fixed half the defect.
-            ", because there is no current entry to scan."
+            #
+            # ⚠ AND IT HAPPENED A THIRD TIME, which is why the tail is now
+            # overridable rather than derived from `state` alone. `stale` was
+            # standing in for "our scan failed", but the status-collision
+            # caller reaches it with a scan that SUCCEEDED — so its new
+            # observation ("shown instead") was published followed by "the scan
+            # that would have refreshed them did not complete", contradicting
+            # the sentence written to fix the contradiction. A caller that
+            # knows why the scores are stale must be able to say so.
+            not_recomputed_because
+            if not_recomputed_because
+            else ", because there is no current entry to scan."
             if state == "delisted"
             else ", because the scan that would have refreshed them did not "
                  "complete."
