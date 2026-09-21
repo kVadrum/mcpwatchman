@@ -535,8 +535,26 @@ def run_semgrep(
     # shell=True)  # nosemgrep` is invisible by default and flagged with this
     # flag. A deleted config FILE cannot reach a comment inside a source line,
     # so neutralising `.semgrepignore` never touched this.
+    # ⚠ `--jobs 1`, AND IT IS A CORRECTNESS FLAG, NOT A POLITENESS ONE.
+    # semgrep-core's parallel worker pool intermittently produces a corrupt
+    # aggregate — `SemgrepError: unexpected errors in json output`, exit 2,
+    # zero files reported scanned — on the SAME tree it scans cleanly at other
+    # times. `run_semgrep` correctly refuses to read that as "no findings", so
+    # it surfaces as `code_safety` unassessed and attributed to our
+    # environment, and the server's page carries its previous scan forward
+    # rather than publishing.
+    #
+    # Measured 2026-09-21 on `Software-As-Content/software-as-content-sdk`,
+    # 12 runs of each against one fetched tree with no other scan running:
+    # **default 1/12 clean, `--jobs 1` 12/12 clean**, 1.7s vs 1.9s per run.
+    # It is what kept ~2% of a 492-server run from regenerating, twice.
+    #
+    # The cost is measured on ONE small repository. semgrep parallelises
+    # across files, so a large tree will pay more than 12% — `04` §4.4's 300s
+    # budget is the bound, and a timeout is a clean non-assessment rather than
+    # a wrong number, which is the trade this project makes everywhere else.
     cmd = ["semgrep", "scan", "--json", "--quiet", "--no-git-ignore",
-           "--disable-nosem",
+           "--disable-nosem", "--jobs", "1",
            "--max-memory", str(SEMGREP_MAX_MEMORY_MB), "--timeout", "0"]
     for config in configs:
         cmd += ["--config", str(config)]
