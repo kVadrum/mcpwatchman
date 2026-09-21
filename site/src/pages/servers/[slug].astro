@@ -134,6 +134,16 @@ const sourceNote =
         withEvidence.map((axis) => (
           <>
             <h3>{axis.label}</h3>
+            {(report.axes[axis.key].evidence_omitted ?? 0) > 0 && (
+              <p class="capped">
+                Showing the {report.axes[axis.key].evidence.length} most severe
+                of {report.axes[axis.key].evidence.length + report.axes[axis.key].evidence_omitted}
+                {" "}findings on this axis. The score was computed over all of
+                them — findings beyond the fourth of a severity still deduct at
+                a tenth of their weight — so the remainder is omitted from this
+                page, not from the arithmetic.
+              </p>
+            )}
             <ul class="findings">
               {report.axes[axis.key].evidence.map((item) => (
                 <li class="finding">

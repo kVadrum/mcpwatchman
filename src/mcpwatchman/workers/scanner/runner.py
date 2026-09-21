@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+from collections.abc import Sequence
 from dataclasses import KW_ONLY, asdict, dataclass, field
 from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
@@ -54,7 +55,7 @@ from mcpwatchman.workers.scanner.source import SourceSpec, fetch
 from mcpwatchman.workers.scanner.transparency_check import assess_transparency
 from mcpwatchman.workers.scanner.transport_check import assess_transport
 from mcpwatchman.workers.scoring.axes import AxisResult
-from mcpwatchman.workers.scoring.composite import dec
+from mcpwatchman.workers.scoring.composite import Confidence, Severity, dec
 from mcpwatchman.workers.scoring.weights import (
     CURRENT_METHODOLOGY_VERSION,
     composite_published,
@@ -129,6 +130,19 @@ class AxisScore:
     # already: a confident claim on a machine surface, addressed to the
     # audience least able to notice it is wrong.
     fault: str | None = None
+    # How many findings this axis produced that are NOT in `evidence`.
+    #
+    # ⚠ **A TRUNCATION THAT DOES NOT SAY SO IS A LIE ABOUT THE SCORE'S BASIS.**
+    # `03` §10 commits us to a trail for every point, and the deduction ladder
+    # does NOT stop at the cap: `_STACKING_TAIL` is 0.10, not 0, so finding
+    # 4,000 still subtracts something. So this cannot be described as "the rest
+    # changed nothing" — the honest statement is that the score was computed
+    # over all of them and the page lists the worst `MAX_EVIDENCE_PER_AXIS`.
+    #
+    # It exists because one server — `ai.klavis/strata`, 4,155 vulnerable
+    # dependencies — was a megabyte of a 4.8 MB published file, 21% of every
+    # reader's download for one page nobody scrolls to the end of.
+    evidence_omitted: int = 0
     # WHOSE gaps were renormalised AWAY inside this axis — the sub-checks that
     # abstained while the axis still scored.
     #
@@ -311,6 +325,44 @@ def _from_axis_result(
         })),
         evidence=evidence,
     )
+
+
+# `03` §10 owes a trail for every point, and a reader owes nothing to the
+# 4,000th entry of a list. 50 is a surface-size decision rather than a
+# methodological one: it is far past where a page stays readable and far past
+# where the stacking ladder is still moving the number materially.
+MAX_EVIDENCE_PER_AXIS = 50
+
+# Derived from the enum's own declaration order, never a parallel list — a
+# severity added to `Severity` would otherwise sort as unknown here while
+# every test stayed green.
+_SEVERITY_RANK = {level: rank for rank, level in enumerate(Severity)}
+# Same construction, same reason. Note `.value` would NOT work here: both enums
+# are StrEnums, so sorting on the string puts "high" after "critical" by luck
+# and after "medium" by alphabet.
+_CONFIDENCE_RANK = {level: rank for rank, level in enumerate(Confidence)}
+
+
+def _worst_first(findings: Sequence[Any], tiebreak) -> tuple[list[Any], int]:
+    """The worst `MAX_EVIDENCE_PER_AXIS` findings, and how many were left out.
+
+    ⚠ **SEVERITY IS THE ONLY KEY SHARED HERE. The deduction TABLE is not, and
+    must not be.** `03` §3 keys on (severity, confidence) and `03` §6 on
+    (severity, direct-vs-transitive); every row differs, and `CLAUDE.md` is
+    explicit that borrowing one for the other compiles and returns a
+    confidently wrong number. So each caller passes its own `tiebreak` and no
+    table crosses this boundary.
+
+    Sorting applies whether or not the cap bites. A page whose worst finding is
+    35th because that is the order semgrep emitted is worse for every reader,
+    and making the order depend on the list's LENGTH would mean two servers'
+    pages are ordered by different rules.
+    """
+    ordered = sorted(
+        findings,
+        key=lambda f: (_SEVERITY_RANK.get(f.severity, len(_SEVERITY_RANK)), tiebreak(f)),
+    )
+    return ordered[:MAX_EVIDENCE_PER_AXIS], max(len(ordered) - MAX_EVIDENCE_PER_AXIS, 0)
 
 
 _BARE_ARTEFACTS = frozenset(
@@ -542,6 +594,14 @@ def _code_axis(result, availability) -> AxisScore:
             "code_safety", None, result.reason, "0",
             fault=_gap_fault(result.fault, availability).value,
         )
+    # Tiebreak on CONFIDENCE, which is Code Safety's own second dimension
+    # (`03` §3) — a high-confidence critical belongs above a medium-confidence
+    # one. `Confidence` declares HIGH first, so its rank orders correctly for
+    # free; `.value` would sort alphabetically and put "high" after "medium".
+    shown, omitted = _worst_first(
+        result.findings,
+        lambda f: _CONFIDENCE_RANK.get(f.confidence, len(_CONFIDENCE_RANK)),
+    )
     evidence = tuple(
         Evidence(
             label=f"{f.rule_id} ({f.severity}/{f.confidence})",
@@ -550,7 +610,7 @@ def _code_axis(result, availability) -> AxisScore:
             line=f.line,
             excerpt=f.excerpt,
         )
-        for f in result.findings
+        for f in shown
     )
     reason = ""
     if result.pruned:
@@ -582,6 +642,7 @@ def _code_axis(result, availability) -> AxisScore:
             () if result.assessed_weight in ("1", "1.00")
             else (Fault.PUBLISHER.value,)
         ),
+        evidence_omitted=omitted,
         evidence=evidence,
     )
 
@@ -597,6 +658,9 @@ def _deps_axis(result, availability) -> AxisScore:
             "dependency_health", None, result.reason, "0",
             fault=_gap_fault(result.fault, availability).value,
         )
+    shown, omitted = _worst_first(
+        result.findings, lambda f: -f.cvss if f.cvss is not None else 1
+    )
     evidence = tuple(
         Evidence(
             label=f"{f.package} {f.version} — {f.osv_id}",
@@ -619,7 +683,7 @@ def _deps_axis(result, availability) -> AxisScore:
             path=f.lockfile,
             url=f"https://osv.dev/vulnerability/{f.osv_id}" if f.osv_id else "",
         )
-        for f in result.findings
+        for f in shown
     )
     # ⚠ `assessed_weight` was hardcoded "1" here, which is the one field the
     # whole product promises not to overstate. A vulnerability excluded from
@@ -646,7 +710,8 @@ def _deps_axis(result, availability) -> AxisScore:
             # PROJECT: `03` §6 bands on a CVSS and defines nothing for its
             # absence, so this abstention is our methodology declining to
             # invent a band — disclosed, and nothing to do with this server.
-            "0", fault=Fault.PROJECT.value, evidence=evidence,
+            "0", fault=Fault.PROJECT.value,
+            evidence_omitted=omitted, evidence=evidence,
         )
     if result.unscored_findings:
         plural = "y" if result.unscored_findings == 1 else "ies"
@@ -692,7 +757,8 @@ def _deps_axis(result, availability) -> AxisScore:
                 f"{scored} of {len(result.findings)} vulnerabilities could be "
                 f"placed in `03` §6's table — under 1% of what was found, "
                 "which is too little to score the axis on",
-                "0", fault=Fault.PROJECT.value, evidence=evidence,
+                "0", fault=Fault.PROJECT.value,
+                evidence_omitted=omitted, evidence=evidence,
             )
         weight = _fmt(coverage)
     return AxisScore(
@@ -705,6 +771,7 @@ def _deps_axis(result, availability) -> AxisScore:
         unmeasured_faults=(
             () if weight in ("1", "1.00") else (Fault.PROJECT.value,)
         ),
+        evidence_omitted=omitted,
         evidence=evidence,
     )
 

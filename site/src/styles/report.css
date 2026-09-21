@@ -325,6 +325,22 @@ main {
   font-style: italic;
 }
 
+/* A truncation notice sits INSIDE the evidence document, not in the page
+   chrome: it is a statement about the list beneath it, and a reader who
+   scrolls to the end of fifty findings must be able to tell that the list
+   ended because we stopped printing rather than because the scanner stopped
+   finding. Rule-above rather than a tinted box — it is a caveat, not a
+   fault, and `base.md` § *Signal design* is what makes that distinction
+   worth keeping. */
+.capped {
+  margin: 0 0 0.9rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--paper-rule);
+  color: var(--paper-dim);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
 /* ── the non-assessment ─────────────────────────────────────────────────── */
 
 .non-assessment {
