@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import types
 from pathlib import Path
 
 import pytest
@@ -67,12 +68,28 @@ def tree(tmp_path: Path) -> Path:
 
 
 def _fake_run(monkeypatch, stdout, returncode=0, raises=None):
+    """Stub the bounded runner, not `subprocess.run`.
+
+    The seam moved when the scanner stopped orphaning `semgrep-core` on
+    timeout: `run_bounded` must SURVIVE the expiry in order to kill the process
+    group, so a timeout is a returned `timed_out=True` rather than a raised
+    `TimeoutExpired`. Tests that passed the exception keep passing it and it is
+    translated here, so each test still says what it means.
+    """
+    import subprocess as _sp
+
     def fake(cmd, **kw):
+        if isinstance(raises, _sp.TimeoutExpired):
+            return types.SimpleNamespace(
+                returncode=-9, stdout="", stderr="", timed_out=True
+            )
         if raises is not None:
             raise raises
-        return subprocess.CompletedProcess(cmd, returncode, stdout, "")
+        return types.SimpleNamespace(
+            returncode=returncode, stdout=stdout, stderr="", timed_out=False
+        )
     monkeypatch.setattr(sc.shutil, "which", lambda _: "/usr/bin/semgrep")
-    monkeypatch.setattr(sc.subprocess, "run", fake)
+    monkeypatch.setattr(sc, "run_bounded", fake)
 
 
 # --- the ways a broken scan must NOT read as clean ------------------------

@@ -16,7 +16,6 @@ from __future__ import annotations
 import os
 import re
 import shutil
-import subprocess
 import tarfile
 import tempfile
 import time
@@ -26,6 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
 
+from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.crawler.registry import SourceKind
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS
 
@@ -253,17 +253,20 @@ def _run(
     — and a shell would make that an injection surface in the one tool whose
     subject is injection.
     """
+    # `run_bounded` for the same reason the two scanners use it: `git clone`
+    # spawns `git-remote-https`, and the stdlib timeout kills the parent while
+    # leaving the transfer running. A leaked fetch holds a socket and scratch
+    # space rather than cores, so it is quieter than the semgrep case and the
+    # same fix covers it.
     try:
-        proc = subprocess.run(  # noqa: S603 - argument list, never a shell string
-            cmd, cwd=cwd, timeout=timeout, capture_output=True, text=True, check=False
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise FetchError(f"timed out after {timeout}s: {' '.join(cmd[:3])}") from exc
+        proc = run_bounded(cmd, timeout=timeout, cwd=cwd)
     except FileNotFoundError as exc:
         # The binary is absent from the image. Previously this escaped as a raw
         # FileNotFoundError past every FetchError handler, so a worker built
         # without git failed each job with a traceback rather than a scan result.
         raise FetchError(f"{cmd[0]} is not installed in this image") from exc
+    if proc.timed_out:
+        raise FetchError(f"timed out after {timeout}s: {' '.join(cmd[:3])}")
     if proc.returncode != 0:
         combined = (proc.stderr or "") + (proc.stdout or "")
         tail = combined.strip().splitlines()[-1:] or [""]

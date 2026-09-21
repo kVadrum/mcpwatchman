@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import types
 from decimal import Decimal
 from pathlib import Path
 
@@ -164,12 +165,28 @@ def test_a_malformed_manifest_does_not_abort_the_scan(tmp_path: Path) -> None:
 
 
 def _fake_run(monkeypatch, stdout, returncode=0, raises=None):
+    """Stub the bounded runner, not `subprocess.run`.
+
+    The seam moved when the scanner stopped orphaning `semgrep-core` on
+    timeout: `run_bounded` must SURVIVE the expiry in order to kill the process
+    group, so a timeout is a returned `timed_out=True` rather than a raised
+    `TimeoutExpired`. Tests that passed the exception keep passing it and it is
+    translated here, so each test still says what it means.
+    """
+    import subprocess as _sp
+
     def fake(cmd, **kw):
+        if isinstance(raises, _sp.TimeoutExpired):
+            return types.SimpleNamespace(
+                returncode=-9, stdout="", stderr="", timed_out=True
+            )
         if raises is not None:
             raise raises
-        return subprocess.CompletedProcess(cmd, returncode, stdout, "")
+        return types.SimpleNamespace(
+            returncode=returncode, stdout=stdout, stderr="", timed_out=False
+        )
     monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
-    monkeypatch.setattr(oc.subprocess, "run", fake)
+    monkeypatch.setattr(oc, "run_bounded", fake)
 
 
 @pytest.fixture

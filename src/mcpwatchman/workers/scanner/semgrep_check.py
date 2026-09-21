@@ -45,7 +45,6 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 from dataclasses import dataclass
 from decimal import ROUND_DOWN, Decimal
 from enum import StrEnum
@@ -53,6 +52,7 @@ from pathlib import Path
 
 import yaml
 
+from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS, HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import (
     Inventory,
@@ -542,12 +542,15 @@ def run_semgrep(
         cmd += ["--config", str(config)]
     cmd.append(str(root))
 
-    try:
-        proc = subprocess.run(  # noqa: S603 - argv form, no shell; `cmd` is
-            # built here from a fixed binary name and our own rule paths.
-            cmd, capture_output=True, text=True, timeout=timeout_s, check=False
-        )
-    except subprocess.TimeoutExpired:
+    # ⚠ `run_bounded`, NEVER `subprocess.run(timeout=)`. semgrep is a Python
+    # wrapper around `semgrep-core`, and the stdlib call kills the wrapper
+    # while ORPHANING the core — which then holds 2-3 cores until the box is
+    # rebooted. Each orphan makes the next timeout likelier, so the failure
+    # rate compounds: measured, a clean run reached six live `semgrep-core`
+    # processes and a 16-in-20 failure rate by server 300. `workers.bounded`
+    # carries the full measurement.
+    proc = run_bounded(cmd, timeout=timeout_s)
+    if proc.timed_out:
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
             reason=f"semgrep exceeded the {timeout_s}s budget `04` §7 allows "

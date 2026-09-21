@@ -48,13 +48,13 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 import tomllib
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from pathlib import Path
 
+from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_manifest
 from mcpwatchman.workers.scanner.reachability import Fault, redact_paths
@@ -429,11 +429,11 @@ def run_osv(
     neutralised = _neutralise_hostile_config(root)
 
     cmd = [binary, "scan", "source", "--format", "json", "-r", str(root)]
-    try:
-        proc = subprocess.run(  # noqa: S603 - argv form, no shell, fixed binary
-            cmd, capture_output=True, text=True, timeout=timeout_s, check=False
-        )
-    except subprocess.TimeoutExpired:
+    # `run_bounded`, for the reason `semgrep_check` documents: the stdlib
+    # timeout orphans grandchildren, and a leaked scanner starves every server
+    # scanned after it.
+    proc = run_bounded(cmd, timeout=timeout_s)
+    if proc.timed_out:
         return OsvResult(
             status=OsvStatus.FAILED,
             reason=f"osv-scanner exceeded the {timeout_s}s budget `04` §7 allows "

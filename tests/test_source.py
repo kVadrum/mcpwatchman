@@ -42,6 +42,19 @@ NPM = [{"registryType": "npm", "identifier": "pkg", "version": "1.2.3"}]
 # --- THE contract: crawler output parses here ----------------------------
 
 
+def _bounded(proc, *, timed_out=False):
+    """A `workers.bounded.Bounded` shaped like the old `CompletedProcess` stub.
+
+    The seam these tests patch moved from `subprocess.run` to `run_bounded`
+    when the scanner stopped orphaning its grandchildren on timeout. The stubs
+    keep their original shape and gain the one field the new contract adds.
+    """
+    return types.SimpleNamespace(
+        returncode=proc.returncode, stdout=proc.stdout, stderr=proc.stderr,
+        timed_out=timed_out,
+    )
+
+
 @pytest.mark.parametrize(
     "fields",
     [
@@ -517,7 +530,7 @@ def test_a_missing_binary_surfaces_as_FetchError(monkeypatch, tmp_path):
     def missing(*a, **kw):
         raise FileNotFoundError(2, "No such file or directory", "git")
 
-    monkeypatch.setattr(S.subprocess, "run", missing)
+    monkeypatch.setattr(S, "run_bounded", missing)
     with pytest.raises(FetchError, match="not installed in this image"):
         S._run(["git", "--version"])
 
@@ -838,7 +851,7 @@ def test_missing_repository_is_unreachable_not_a_generic_fetch_error(monkeypatch
         stderr="fatal: repository 'https://github.com/nope/nope.git/' not found\n",
         stdout="",
     )
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.SourceUnreachableError):
         source._run(["git", "clone", "https://github.com/nope/nope"], remote=True)
 
@@ -860,7 +873,7 @@ def test_every_shape_of_not_public_classifies_as_unreachable(monkeypatch, stderr
     # Leaving the auth phrasings out would classify the PRIVATE half as an
     # infrastructure fault and retry it forever.
     proc = types.SimpleNamespace(returncode=128, stderr=stderr, stdout="")
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.SourceUnreachableError):
         source._run(["git", "clone", "https://example.invalid/x"], remote=True)
 
@@ -878,7 +891,7 @@ def test_our_own_failures_stay_generic_and_retryable(monkeypatch, stderr):
     # publisher's would publish a finding about a server we simply failed to
     # reach — the exact over-claim this project exists to avoid.
     proc = types.SimpleNamespace(returncode=128, stderr=stderr, stdout="")
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "clone", "https://example.invalid/x"], remote=True)
     assert not isinstance(exc.value, source.SourceUnreachableError)
@@ -891,10 +904,16 @@ def test_unreachable_is_still_a_fetch_error_so_existing_handlers_hold():
 
 
 def test_timeout_is_not_mistaken_for_an_absent_repository(monkeypatch):
+    # ⚠ A timeout is now an OUTCOME, not an exception: `run_bounded` has to
+    # survive the expiry in order to kill the process GROUP, so it returns
+    # `timed_out=True` rather than propagating `TimeoutExpired`. The thing this
+    # test protects is unchanged — a timeout is OURS and must never be read as
+    # an absent repository.
     def boom(*a, **k):
-        raise source.subprocess.TimeoutExpired(cmd="git", timeout=1)
+        return _bounded(types.SimpleNamespace(returncode=-9, stdout="", stderr=""),
+                        timed_out=True)
 
-    monkeypatch.setattr(source.subprocess, "run", boom)
+    monkeypatch.setattr(source, "run_bounded", boom)
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "clone", "https://example.invalid/x"])
     assert not isinstance(exc.value, source.SourceUnreachableError)
@@ -925,7 +944,7 @@ def test_post_clone_local_git_is_never_the_publishers_fault(monkeypatch, cmd):
         stderr="fatal: could not create work tree dir '/scans/abc': Permission denied",
         stdout="",
     )
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.FetchError) as exc:
         source._run(cmd)  # no remote=True — these never contact a remote
     assert not isinstance(exc.value, source.SourceUnreachableError)
@@ -939,7 +958,7 @@ def test_a_missing_TAG_is_not_a_missing_REPOSITORY(monkeypatch):
         stderr="fatal: Remote branch v1.2.3 not found in upstream origin",
         stdout="",
     )
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "fetch", "origin", "refs/tags/v1.2.3"], remote=True)
     assert not isinstance(exc.value, source.SourceUnreachableError)
@@ -955,7 +974,7 @@ def test_a_hostile_repository_url_cannot_steer_the_classifier(monkeypatch, tmp_p
         stderr=f"fatal: unable to access '{url}': Could not resolve host",
         stdout="",
     )
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "clone", "--", url, str(tmp_path)], remote=True, url=url)
     assert not isinstance(exc.value, source.SourceUnreachableError)
@@ -969,7 +988,7 @@ def test_permission_denied_still_counts_when_git_names_the_REMOTE(monkeypatch):
                "fatal: Could not read from remote repository.",
         stdout="",
     )
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.SourceUnreachableError):
         source._run(["git", "clone", "git@github.com:x/y"], remote=True)
 
@@ -989,7 +1008,7 @@ def test_the_remote_guard_holds_even_for_unambiguous_remote_wording(monkeypatch)
         stderr="fatal: Authentication failed for 'https://github.com/x/y.git/'",
         stdout="",
     )
-    monkeypatch.setattr(source.subprocess, "run", lambda *a, **k: proc)
+    monkeypatch.setattr(source, "run_bounded", lambda *a, **k: _bounded(proc))
     with pytest.raises(source.FetchError) as exc:
         source._run(["git", "gc", "--prune=now"])  # local-only, no remote=True
     assert not isinstance(exc.value, source.SourceUnreachableError)
