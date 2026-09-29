@@ -18,5 +18,10 @@ ExecStart=%h/dev/projects/mcpwatchman/ops/nightly.sh
 EnvironmentFile=-%h/.config/mcpwatchman/nightly.env
 # 492 servers took 46 minutes; the budget leaves room for growth and a slow night.
 TimeoutStartSec=3h
+# Exit 11 is "origin/main predates the staleness guard — sync first": an
+# EXPECTED state between arming and the next sync, so it must not mark the unit
+# failed (base.md § Signal design). The journal still carries the line. Every
+# other non-zero exit is a real failure and fails the unit.
+SuccessExitStatus=11
 Nice=10
 IOSchedulingClass=idle

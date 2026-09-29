@@ -68,7 +68,7 @@ MAIN="$WORK/main"
 # Fail closed on a `main` that predates the systemic-staleness guard: without it
 # an exhausted token writes our outage onto every page and exits 0.
 PYTHONPATH="$MAIN/src" "$PY" -c 'from mcpwatchman.cohort import systemic_staleness' 2>/dev/null \
-  || die 11 "origin/main ($MAIN_SHA) predates cohort.systemic_staleness — sync first"
+  || { log "SKIPPED: origin/main (${MAIN_SHA:0:9}) predates cohort.systemic_staleness — waiting for a sync"; exit 11; }
 
 for f in site/src/data/scans.json ops/cohort.json; do
   git -C "$REPO" show "$DEV_SHA:$f" > "$MAIN/$f"
