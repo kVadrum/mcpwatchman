@@ -890,6 +890,21 @@ def assess_code_safety(
                 methodology_version=version,
                 build_output_only=True,
             )
+        if inventory.build_output_truncated:
+            # Nothing covered FOUND, but the probe ran out of budget before it
+            # finished — so "no covered source" would be a bounded search
+            # asserting an absence about a named publisher. Ours, and said so.
+            return SemgrepResult(
+                status=SemgrepStatus.UNAVAILABLE,
+                reason=(
+                    "no source in a covered language outside build output, and "
+                    "this scanner's bounded look inside build output (dist/, "
+                    "build/) stopped before it finished — so whether covered "
+                    "code is there is unknown"
+                ),
+                explicit_fault=Fault.PROJECT,
+                methodology_version=version,
+            )
         return SemgrepResult(
             status=SemgrepStatus.UNAVAILABLE,
             reason="no source files in a language the ruleset covers "

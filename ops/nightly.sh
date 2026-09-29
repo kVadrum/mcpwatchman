@@ -136,7 +136,9 @@ if [[ "$MAIN_CONTRACT" != "$DEV_CONTRACT" ]]; then
   # regenerated under the newer contract. Publish main's consistent pair;
   # leave dev's data alone until the sync brings the contracts back together.
   log "NOT committing to dev: main scores under $MAIN_CONTRACT, dev under $DEV_CONTRACT"
+  COMMITTED=0
 else
+COMMITTED=1
 log "committing the data to dev"
 git -C "$REPO" worktree add -q --detach "$WORK/dev" "$DEV_SHA"
 cp "$MAIN/site/src/data/scans.json" "$WORK/dev/site/src/data/scans.json"
@@ -175,6 +177,14 @@ EOF
       log "dev's data changed during the run — not overwriting it"
       exit 14
     fi
+    # The contract was compared against the dev we STARTED from. A ruleset or
+    # methodology change landing mid-run would otherwise be rebased over and
+    # pushed under — main-scored rows in a dev whose gates reject them (Codex
+    # leg, 2026-09-29).
+    if [[ "$(contract origin/dev)" != "$MAIN_CONTRACT" ]]; then
+      log "dev's scoring contract changed during the run — not committing"
+      exit 14
+    fi
     git rebase -q origin/dev || { git rebase --abort; exit 15; }
   done
   exit 15
@@ -182,8 +192,15 @@ EOF
 fi
 
 if [[ "$PUBLISH" != "1" ]]; then
-  log "committed to dev; MCPW_PUBLISH is not 1, so not deployed (the next sync publishes it)"
-  exit 0
+  if [[ "$COMMITTED" == "1" ]]; then
+    log "committed to dev; MCPW_PUBLISH is not 1, so not deployed (the next sync publishes it)"
+    exit 0
+  fi
+  # Neither committed nor deployed. The contract mismatch behind it is the
+  # ordinary between-syncs state, so this is the same quiet "waiting for a
+  # sync" as a main without the guard — never a success that claims a commit.
+  log "SKIPPED: nothing committed or deployed — the contracts differ until the next sync"
+  exit 11
 fi
 
 log "deploying"

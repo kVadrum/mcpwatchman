@@ -685,7 +685,32 @@ def test_build_output_probe_is_bounded_by_its_own_budget(tmp_path, monkeypatch):
 
     assert sum(inv.build_output.values()) == 3
     assert inv.truncated is False
+    assert inv.build_output_truncated is True
     assert [f.path for f in inv.files] == ["src.py"]
+
+
+def test_an_exhausted_probe_says_so_even_when_it_found_nothing(tmp_path, monkeypatch):
+    """The Codex leg's case: the budget spent on entries that are not covered
+    code. An empty count must then read as "stopped looking", not "none"."""
+    monkeypatch.setattr(inventory, "BUILD_OUTPUT_MAX_VISITS", 3)
+    # The covered file sits one level down, behind six entries at the top of
+    # dist/ — out of a three-visit budget whatever order the listing comes in.
+    (tmp_path / "dist" / "sub").mkdir(parents=True)
+    for i in range(5):
+        (tmp_path / "dist" / f"img{i}.png").write_bytes(b"x")
+    (tmp_path / "dist" / "sub" / "index.js").write_text("x")
+
+    inv = enumerate_tree(tmp_path)
+
+    assert inv.build_output == {}
+    assert inv.build_output_truncated is True
+
+
+def test_a_finished_probe_is_not_marked_truncated(tree):
+    (tree / "dist").mkdir()
+    (tree / "dist" / "a.js").write_text("x")
+    inv = enumerate_tree(tree)
+    assert inv.build_output_truncated is False
 
 
 def test_a_repository_with_source_is_unchanged_by_its_build_output(tree):

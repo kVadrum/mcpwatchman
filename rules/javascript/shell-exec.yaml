@@ -68,6 +68,15 @@ rules:
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$
+          # Inline spawn with a shell — the old free `$CP` matched an inline
+          # require receiver, and the first cut of 0.1.1 dropped it (Codex leg).
+          - patterns:
+              - pattern-either:
+                  - pattern: "require(\"$M\").spawn($CMD, ..., {shell: true})"
+                  - pattern: "require(\"$M\").spawnSync($CMD, ..., {shell: true})"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
       - pattern-not: $CP.$F("...", ...)
       - pattern-not: $F("...", ...)
 

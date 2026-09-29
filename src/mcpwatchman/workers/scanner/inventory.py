@@ -218,6 +218,10 @@ class Inventory:
     # (the publisher's), or only build output we chose not to read (ours)?
     # A lower bound once `BUILD_OUTPUT_MAX_VISITS` is spent.
     build_output: dict[str, int] = field(default_factory=dict)
+    # True when BUILD_OUTPUT_MAX_VISITS ran out before the probe finished. An
+    # empty `build_output` then means "we stopped looking", never "none there"
+    # — a bounded search may not assert an absence (CLAUDE.md).
+    build_output_truncated: bool = False
 
     def by_language(self, language: Language) -> tuple[FileRecord, ...]:
         return tuple(f for f in self.files if f.language is language)
@@ -473,10 +477,12 @@ def enumerate_tree(root: Path) -> Inventory:
     stack: list[tuple[Path, bool]] = [(root, False)]
     build_visits = 0
     build_output: dict[str, int] = {}
+    build_truncated = False
 
     while stack and not stopped:
         current, in_build = stack.pop()
         if in_build and build_visits >= BUILD_OUTPUT_MAX_VISITS:
+            build_truncated = True
             continue
         try:
             scanner = os.scandir(current)
@@ -492,6 +498,7 @@ def enumerate_tree(root: Path) -> Inventory:
                     # as skipped: the directory is still excluded, this only asks
                     # what kind of thing it holds. Symlink test first, as below.
                     if build_visits >= BUILD_OUTPUT_MAX_VISITS:
+                        build_truncated = True
                         break
                     build_visits += 1
                     if entry.is_symlink() or entry.name in EXCLUDED_DIRS:
@@ -571,6 +578,7 @@ def enumerate_tree(root: Path) -> Inventory:
         skipped=skipped,
         truncated=truncated,
         build_output=build_output,
+        build_output_truncated=build_truncated,
     )
 
 

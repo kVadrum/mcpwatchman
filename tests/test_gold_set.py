@@ -161,3 +161,33 @@ def test_the_calibration_gate_fires(monkeypatch) -> None:
     monkeypatch.setitem(weights.RULESET_CALIBRATED, "0.2.0", True)
     with pytest.raises(AssertionError, match="calibration needs"):
         test_calibration_cannot_be_declared_on_too_few_ratified_entries()
+
+
+def _report(*findings: tuple[str, str, int], omitted: int = 0) -> dict:
+    return {"axes": {"code_safety": {
+        "evidence": [{"label": f"{r} (critical/medium)", "path": p, "line": n}
+                     for r, p, n in findings],
+        "evidence_omitted": omitted,
+    }}}
+
+
+def test_labels_reconcile_against_what_the_scanner_reports_now() -> None:
+    """A label is about ONE finding. If the scanner no longer reports it — the
+    rule was fixed, the code moved — the label is stale and may not count
+    toward a rule's measured rate (Codex leg of this file's /qaa)."""
+    e = gs.parse(entry())  # labels mcp-js-ssrf-nonliteral-url src/fetch.ts:33 as fp
+    same = gs.reconcile(e, _report(("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 33)))
+    assert len(same.matched) == 1 and not same.stale and not same.unlabeled
+
+    moved = gs.reconcile(
+        e, _report(("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 40)), 
+    )
+    assert not moved.matched and len(moved.stale) == 1
+    assert moved.unlabeled == (("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 40),)
+
+
+def test_rates_come_only_from_reconciled_labels() -> None:
+    e = gs.parse(entry())
+    rec = gs.reconcile(e, _report(omitted=12))
+    assert gs.fp_rates(rec.matched) == {}
+    assert rec.evidence_omitted == 12

@@ -746,3 +746,13 @@ def test_git_metadata_is_pruned_but_never_counted(tmp_path: Path) -> None:
 
     assert not (tmp_path / ".git").exists(), "semgrep must still not read it"
     assert (pruned, sample) == (1, ("node_modules/",))
+
+
+def test_an_exhausted_build_output_probe_never_blames_the_publisher() -> None:
+    """A bounded search may not assert an absence (CLAUDE.md): with the probe
+    out of budget and nothing found, the gap is ours, and says why."""
+    inv = Inventory(build_output={}, build_output_truncated=True)
+    result = sc.assess_code_safety(Path("/nonexistent"), inv)
+    assert result.fault is Fault.PROJECT
+    assert "stopped before it finished" in result.reason
+    assert result.build_output_only is False

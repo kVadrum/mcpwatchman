@@ -17,6 +17,7 @@ Found by the gold-set audits; measured on the 2026-09-29 regeneration: 273 of th
 
 Two halves, because neither alone reaches every binding form: semgrep's import resolution (`child_process.exec(...)`) follows a require-bound name and a named import, alias included; explicit `pattern-inside` branches catch destructured requires, namespace and default imports, and an inline `require`, each constrained to `^(node:)?child_process$`.
 `tests/fixtures/semgrep/receivers/` pins both directions with `// FIRE:` markers, and the old rules produce 9 findings on its look-alikes.
+The first cut dropped inline `require("child_process").spawn(…, {shell: true})` (and `spawnSync`), which the free `$CP` had matched — caught by the Codex leg before release and restored; `main`'s published data held no such finding, so nothing published under the first cut changes.
 
 **The JS and Python SSRF rules now require a request method.**
 `axios.$M(...)`, `requests.$M(...)`, `httpx.$M(...)` and the aiohttp session method matched any attribute, so `axios.create(config)`, `axios.isAxiosError(err)` and `httpx.BasicAuth(user, pw)` were published as "an outbound request is made to a URL that is not a literal".

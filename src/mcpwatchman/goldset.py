@@ -250,15 +250,51 @@ def compare(entry: GoldEntry, report: Mapping[str, Any], composite: int | None) 
     return drift
 
 
-def fp_rates(entries: Iterable[GoldEntry]) -> dict[str, tuple[int, int]]:
-    """Per rule: (false positives, labelled findings), across every entry given."""
+@dataclass(frozen=True, slots=True)
+class Reconciliation:
+    """An entry's labels matched against what the scanner reports NOW."""
+
+    matched: tuple[Label, ...]
+    # Labels for findings the scanner no longer reports — the rule changed, or
+    # the code moved. Counting them would measure a rule against findings it
+    # does not produce, so they are excluded from rates and the entry needs
+    # re-auditing before calibration can be declared.
+    stale: tuple[Label, ...]
+    # Current findings no label covers. Reported, not refused: auditors label a
+    # sample (the first 15 per rule), and evidence is capped at 50 per axis,
+    # so an unlabelled finding is a coverage fact, not an error.
+    unlabeled: tuple[tuple[str, str, int], ...]
+    evidence_omitted: int
+
+
+def reconcile(entry: GoldEntry, report: Mapping[str, Any]) -> Reconciliation:
+    """Match an entry's Code Safety labels to the report's current findings.
+
+    Identity is `(rule, path, line)` — a label is about ONE finding, and a
+    label that no longer has its finding is evidence about a rule that no
+    longer exists in that form (Codex leg, 2026-09-29: rates were computed from
+    labels regardless of what the scanner now reports).
+    """
+    axis = report["axes"]["code_safety"]
+    current = {
+        (e["label"].split(" (", 1)[0], e["path"], e["line"]) for e in axis.get("evidence", [])
+    }
+    matched = tuple(f for f in entry.findings if (f.rule, f.path, f.line) in current)
+    stale = tuple(f for f in entry.findings if (f.rule, f.path, f.line) not in current)
+    labelled = {(f.rule, f.path, f.line) for f in entry.findings}
+    unlabeled = tuple(sorted(current - labelled))
+    return Reconciliation(matched, stale, unlabeled, int(axis.get("evidence_omitted", 0) or 0))
+
+
+def fp_rates(labels: Iterable[Label]) -> dict[str, tuple[int, int]]:
+    """Per rule: (false positives, labelled findings), over the labels given —
+    pass RECONCILED labels, never an entry's raw list."""
     counts: dict[str, list[int]] = {}
-    for entry in entries:
-        for f in entry.findings:
-            fp_total = counts.setdefault(f.rule, [0, 0])
-            fp_total[1] += 1
-            if f.label == "fp":
-                fp_total[0] += 1
+    for f in labels:
+        fp_total = counts.setdefault(f.rule, [0, 0])
+        fp_total[1] += 1
+        if f.label == "fp":
+            fp_total[0] += 1
     return {rule: (fp, total) for rule, (fp, total) in counts.items()}
 
 
@@ -284,6 +320,7 @@ __all__ = [
     "GoldSetError",
     "Label",
     "MIN_RATIFIED_ENTRIES",
+    "Reconciliation",
     "compare",
     "entry_files",
     "fp_rates",
@@ -291,4 +328,5 @@ __all__ = [
     "measured_tier",
     "parse",
     "ratified_entries",
+    "reconcile",
 ]
