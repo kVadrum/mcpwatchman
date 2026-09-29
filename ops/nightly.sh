@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mcpwatchman nightly rescan — `10-operations.md` §2's poseidon batch.
+# mcpwatchman nightly rescan — the nightly batch `10-operations.md` §2 specifies.
 #
 # Rescans the pinned cohort, gates the result, commits the data to `dev`, and
 # (only when MCPW_PUBLISH=1) deploys it. Run by ops/systemd/mcpwatchman-nightly.*;
@@ -50,6 +50,23 @@ exec 9>"$REPO/scratch/nightly/.lock"
 flock -n 9 || die 10 "another nightly run holds the lock"
 trap cleanup EXIT
 
+# Node is installed through nvm, whose directory no systemd unit PATH carries —
+# measured: under the unit's environment `npm` is not found, and the build step
+# would have died after a 46-minute scan. Resolve it here, and check every tool
+# the run needs BEFORE the scan, so a broken toolchain costs seconds.
+if ! command -v npm >/dev/null 2>&1; then
+  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+    set +u  # nvm.sh is not nounset-clean
+    # shellcheck disable=SC1091
+    . "$NVM_DIR/nvm.sh" && nvm use --silent default >/dev/null
+    set -u
+  fi
+fi
+for tool in git npm npx; do
+  command -v "$tool" >/dev/null 2>&1 || die 18 "$tool is not on PATH — nothing was scanned"
+done
+
 # The token is read from the environment (the unit's EnvironmentFile), else from
 # the operator's `gh` login — into the environment only, never argv, never
 # printed. Without one every server takes an our-side gap on Maintenance.
@@ -66,9 +83,15 @@ git -C "$REPO" worktree add -q --detach "$WORK/main" "$MAIN_SHA"
 MAIN="$WORK/main"
 
 # Fail closed on a `main` that predates the systemic-staleness guard: without it
-# an exhausted token writes our outage onto every page and exits 0.
-PYTHONPATH="$MAIN/src" "$PY" -c 'from mcpwatchman.cohort import systemic_staleness' 2>/dev/null \
+# an exhausted token writes our outage onto every page and exits 0. Asked of
+# the COMMIT, not of an import — the import also fails on a broken venv, and
+# exit 11 is a quiet success to the unit, so a broken environment would have
+# read as "waiting for a sync" forever (base.md § Signal design).
+git -C "$REPO" grep -q 'def systemic_staleness' "$MAIN_SHA" -- src/mcpwatchman/cohort.py \
   || { log "SKIPPED: origin/main (${MAIN_SHA:0:9}) predates cohort.systemic_staleness — waiting for a sync"; exit 11; }
+# The environment itself, loudly: any failure here is a fault, never a skip.
+PYTHONPATH="$MAIN/src" "$PY" -c 'import mcpwatchman.cohort, mcpwatchman.workers.scanner.runner' \
+  || die 19 "main's code does not import under $PY — the venv needs rebuilding"
 
 for f in site/src/data/scans.json ops/cohort.json; do
   git -C "$REPO" show "$DEV_SHA:$f" > "$MAIN/$f"
@@ -94,6 +117,26 @@ log "running the publication gates"
     tests/test_site_scans.py tests/test_site_example.py tests/test_cohort.py ) \
   || die 13 "publication gates failed on the new data"
 
+# The scoring CONTRACT each ref publishes under: ruleset version (the first
+# release heading of the rules changelog) and methodology version.
+contract() {
+  local rules method
+  rules=$(git -C "$REPO" show "$1:rules/_meta/changelog.md" | sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' | head -1)
+  method=$(git -C "$REPO" show "$1:src/mcpwatchman/workers/scoring/weights.py" \
+    | sed -n 's/^CURRENT_METHODOLOGY_VERSION = "\(.*\)"/\1/p')
+  printf 'ruleset %s, methodology %s' "$rules" "$method"
+}
+MAIN_CONTRACT="$(contract "$MAIN_SHA")"
+DEV_CONTRACT="$(contract "$DEV_SHA")"
+
+if [[ "$MAIN_CONTRACT" != "$DEV_CONTRACT" ]]; then
+  # dev moved to a newer ruleset or methodology and has not been synced. Its
+  # contract gate requires every row to carry dev's versions, so committing
+  # main-scored data would turn dev's CI red and overwrite data dev already
+  # regenerated under the newer contract. Publish main's consistent pair;
+  # leave dev's data alone until the sync brings the contracts back together.
+  log "NOT committing to dev: main scores under $MAIN_CONTRACT, dev under $DEV_CONTRACT"
+else
 log "committing the data to dev"
 git -C "$REPO" worktree add -q --detach "$WORK/dev" "$DEV_SHA"
 cp "$MAIN/site/src/data/scans.json" "$WORK/dev/site/src/data/scans.json"
@@ -109,26 +152,34 @@ rows = json.load(open("site/src/data/scans.json"))
 states = [r.get("registry_state") for r in rows]
 print(f"{len(rows)} servers, {states.count('stale')} kept an older scan")
 EOF
-)"
+)" || exit 17
   # Data only: no version bump. The version names the software, and the
   # software did not change — each record carries its own scanner_version and
   # scanned_at. `bump-audit.sh` lists these at sync; that is the review.
-  git add site/src/data/scans.json
+  # ⚠ EVERY STEP IS CHECKED BY HAND. This subshell sits on the left of `||`,
+  # and there bash IGNORES `set -e` for everything inside it — measured. A
+  # rejected commit (the pre-commit telemetry guard, say) left HEAD at the
+  # detached $DEV_SHA, the push then answered "Everything up-to-date" with
+  # exit 0, and the run logged "committed" and went on to deploy.
+  git add site/src/data/scans.json || exit 17
   git commit -q -m "data — nightly rescan ${STAMP}: ${summary}" \
-    -m "Scanned with main at ${MAIN_SHA:0:9}. Code from main, data from dev (ops/nightly.sh)."
+    -m "Scanned with main at ${MAIN_SHA:0:9}. Code from main, data from dev (ops/nightly.sh)." \
+    || exit 17
+  [[ "$(git rev-parse HEAD)" != "$DEV_SHA" ]] || exit 17
   for attempt in 1 2; do
     git push -q origin HEAD:dev && exit 0
     # dev moved during the run. Rebase only if nobody else touched the data:
     # two writers of the published record is a conflict to surface, not merge.
-    git fetch -q origin dev
+    git fetch -q origin dev || exit 15
     if ! git diff --quiet "$DEV_SHA" origin/dev -- site/src/data/scans.json ops/cohort.json; then
       log "dev's data changed during the run — not overwriting it"
       exit 14
     fi
-    git rebase -q origin/dev
+    git rebase -q origin/dev || { git rebase --abort; exit 15; }
   done
   exit 15
 ) || die $? "could not commit the data to dev"
+fi
 
 if [[ "$PUBLISH" != "1" ]]; then
   log "committed to dev; MCPW_PUBLISH is not 1, so not deployed (the next sync publishes it)"

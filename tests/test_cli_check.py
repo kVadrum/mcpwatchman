@@ -173,3 +173,21 @@ def test_the_api_override_refuses_a_non_http_scheme(monkeypatch) -> None:
     result = run("io.example/tool")
     assert result.exit_code == 5
     assert "http(s)" in result.output
+
+
+def test_a_repository_shared_by_several_servers_is_refused_not_guessed(api, monkeypatch) -> None:
+    """A monorepo declares one repository for many servers; answering with the
+    first match prints one stranger's scores as the answer for the rest."""
+    shared = {"servers": [
+        {"name": "io.example/a", "slug": "io-example-a", "package": "",
+         "repository_url": "https://github.com/example/mono"},
+        {"name": "io.example/b", "slug": "io-example-b", "package": "",
+         "repository_url": "https://github.com/example/mono"},
+    ]}
+    monkeypatch.setattr(
+        chk, "get_json", lambda url: shared if url.endswith("/index.json") else None
+    )
+    result = run("https://github.com/example/mono")
+    assert result.exit_code == chk.EXIT_USAGE
+    assert "matches 2 published servers" in result.output
+    assert "io.example/a, io.example/b" in result.output

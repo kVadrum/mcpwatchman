@@ -241,11 +241,7 @@ def _ip(*octets: int) -> str:
         (f'"{_ip(100, 64, 0, 1)}"', '"100.64.x.x"'),     # bottom of 100.64/10
         (_ip(100, 127, 255, 254), "100.64.x.x"),         # top of it
         (_ip(100, 63, 0, 1), _ip(100, 63, 0, 1)),        # just below — public space
-        # 100.128/100.129 are OUTSIDE /10 but the workspace guard's pattern
-        # (`1[0-2][0-9]`) blocks them too — and matching the guard, not the RFC,
-        # is the point: redaction exists so a commit is not blocked.
-        (_ip(100, 129, 0, 1), "100.64.x.x"),
-        (_ip(100, 130, 0, 1), _ip(100, 130, 0, 1)),      # past what the guard blocks
+        (_ip(100, 128, 0, 1), _ip(100, 128, 0, 1)),      # just above — public space
         ("v1" + _ip(100, 64, 0, 12), "v1" + _ip(100, 64, 0, 12)),  # not a standalone address
     ],
 )

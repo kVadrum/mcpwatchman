@@ -427,7 +427,14 @@ def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
                 continue
             # Counted only if it actually went. A prune count that includes
             # failures is a number the per-server page publishes as fact.
-            if removed(found):
+            #
+            # ⚠ `.git` is pruned but NEVER counted. The count is rendered as
+            # "N vendored or minified paths were excluded", and `.git` is
+            # version-control metadata our own clone created, not the server's
+            # code — so every repository-scanned page said we had excluded
+            # vendored code (131 of 201 pages mentioning a prune, measured
+            # 2026-09-29, said exactly "1", and that one was `.git`).
+            if removed(found) and directory != ".git":
                 pruned.append(f"{found.relative_to(root)}/")
 
     for path in sorted(root.rglob("*")):
@@ -626,16 +633,19 @@ def run_semgrep(
         )
 
     scanned = len(payload.get("paths", {}).get("scanned", []))
-    # ⚠ NO SUBTRACTION. This read `> pruned_count`, which compared two DISJOINT
-    # sets: `_scannable_source_files` counts from the inventory, and
-    # `enumerate_tree` already skips EXCLUDED_DIRS, so it can never count a
-    # file that pruning removes. Every git clone prunes `.git`, so
-    # `pruned_count >= 1` always — and for a small server (one covered source
-    # file, one pruned path) `1 > 1` is False and the control silently did not
-    # fire. Seven of the forty published servers were in exactly that state.
-    # The genuinely-all-vendored case does not need the subtraction: it is
-    # caught upstream in `assess_code_safety`, which returns UNAVAILABLE before
-    # semgrep is invoked at all.
+    # ⚠ NO SUBTRACTION. This read `> pruned_count`, which compared sets that
+    # mostly do not overlap: `enumerate_tree` skips EXCLUDED_DIRS, so the
+    # inventory never counts a directory pruning removes. `.git` was then
+    # counted as pruned on every clone, so `pruned_count >= 1` always, and for
+    # a small server (one covered source file, one pruned path) `1 > 1` was
+    # False and the control silently did not fire — seven of the forty
+    # published servers at the time. The genuinely-all-vendored case needs no
+    # subtraction: `assess_code_safety` returns UNAVAILABLE before semgrep runs.
+    #
+    # ⚠ The sets DO overlap in one place: a file `_is_minified` prunes is one
+    # the inventory counted. If that probe misfires on authored source, THIS
+    # control is what fires — which is how a one-long-line `index.ts` kept two
+    # pages stale until `_is_minified` learned to judge the whole file.
     if inventory is not None and scanned == 0 and _scannable_source_files(inventory):
         # The positive control, wired in rather than left to a test: the
         # inventory says there was source in a language we cover, and semgrep

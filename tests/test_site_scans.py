@@ -951,8 +951,7 @@ def test_no_published_string_carries_a_cgnat_address(reports) -> None:
     """The artifact half of `runner._redacted`: the committed file must never
     hold a 100.64/10 literal, or the pre-commit telemetry guard blocks the
     nightly's data commit on a stranger's quoted code."""
-    import re
 
-    pattern = re.compile(r"\b100\.(6[4-9]|[7-9][0-9]|1[0-2][0-9])\.[0-9]{1,3}\.[0-9]{1,3}\b")
+    from mcpwatchman.workers.scanner.reachability import _CGNAT as pattern
     hits = [r["name"] for r in reports if pattern.search(json.dumps(r))]
     assert not hits, f"CGNAT literal in published data: {hits}"

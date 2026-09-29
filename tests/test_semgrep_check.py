@@ -728,3 +728,21 @@ def test_no_covered_code_anywhere_stays_the_publishers() -> None:
         assert result.fault is Fault.PUBLISHER
         assert result.build_output_only is False
         assert "ruleset covers" in result.reason
+
+
+def test_git_metadata_is_pruned_but_never_counted(tmp_path: Path) -> None:
+    """The count is published as "N vendored or minified paths were excluded".
+
+    `.git` is our own clone's metadata, so counting it told every
+    repository-scanned page's reader we had excluded vendored code — 131 of
+    201 pages mentioning a prune said exactly "1", and that one was `.git`.
+    """
+    (tmp_path / ".git" / "objects").mkdir(parents=True)
+    (tmp_path / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
+    (tmp_path / "node_modules" / "dep").mkdir(parents=True)
+    (tmp_path / "server.js").write_text("const x = 1;\n")
+
+    pruned, sample = sc._prune_unscannable(tmp_path)
+
+    assert not (tmp_path / ".git").exists(), "semgrep must still not read it"
+    assert (pruned, sample) == (1, ("node_modules/",))

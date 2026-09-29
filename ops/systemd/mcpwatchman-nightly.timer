@@ -3,7 +3,7 @@ Description=mcpwatchman nightly rescan (02:00 UTC, `10-operations.md` §2)
 
 [Timer]
 OnCalendar=*-*-* 02:00:00 UTC
-# poseidon is a home box: a night it was off runs at next boot rather than never.
+# The scan host is not always on: a night it was off runs at next boot, not never.
 Persistent=true
 RandomizedDelaySec=10m
 

@@ -134,15 +134,25 @@ def resolve(server: str, base: str) -> dict[str, Any] | None:
     entries = index.get("servers", [])
     if looks_like_url:
         wanted = _repo_key(server)
-        match = next((e for e in entries if _repo_key(e.get("repository_url", "")) == wanted), None)
+        matches = [e for e in entries if _repo_key(e.get("repository_url", "")) == wanted]
     else:
-        match = next(
-            (e for e in entries if e.get("package") and _package_matches(e["package"], server)),
-            None,
-        )
-    if match is None:
+        matches = [
+            e for e in entries if e.get("package") and _package_matches(e["package"], server)
+        ]
+    if not matches:
         return None
-    return get_json(f"{base}/api/servers/{match['slug']}.json")
+    if len(matches) > 1:
+        # A monorepo declares one repository for many servers — 11 published
+        # URLs are shared, one by 36. Picking the first would print one
+        # stranger's scores as the answer for all of them.
+        names = ", ".join(sorted(e["name"] for e in matches)[:10])
+        more = f" (and {len(matches) - 10} more)" if len(matches) > 10 else ""
+        raise CheckError(
+            f"{server!r} matches {len(matches)} published servers: {names}{more}. "
+            "Name one by its registry name.",
+            EXIT_USAGE,
+        )
+    return get_json(f"{base}/api/servers/{matches[0]['slug']}.json")
 
 
 def _bar(score: int | None, weight: float, *, unicode_ok: bool) -> str:

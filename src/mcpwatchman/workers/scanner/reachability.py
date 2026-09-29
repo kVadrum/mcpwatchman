@@ -153,11 +153,13 @@ def redact_paths(text: str) -> str:
 # ranges it rejects), and a published excerpt carrying one BLOCKED the data
 # commit — so an unattended nightly would have failed on a stranger's code.
 # The placeholder keeps the range legible and cannot itself match.
-# ⚠ The pattern is the GUARD'S, byte for byte, not RFC 6598's: its second octet
-# `1[0-2][0-9]` also takes 100.128–100.129, outside /10. Mirrored on purpose —
-# what must hold is "nothing the guard blocks is published", so the two move in
-# lockstep; a tighter pattern here would let the guard block a commit again.
-_CGNAT = re.compile(r"\b100\.(6[4-9]|[7-9][0-9]|1[0-2][0-9])\.[0-9]{1,3}\.[0-9]{1,3}\b")
+# ⚠ LOCKSTEP with the pre-commit guard's pattern (`ops/git-hooks/
+# telemetry-patterns.sh`, CRITICAL_PATTERNS), which is exactly /10: a narrower
+# one here lets the guard block a commit again, a wider one rewrites public
+# addresses in a stranger's quoted code. This first shipped claiming to be the
+# guard's pattern "byte for byte" while carrying `/qaa`'s wider leak-grep form
+# (100.128–129 too) — found by the review leg, never compared by the author.
+_CGNAT = re.compile(r"\b100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.[0-9]{1,3}\.[0-9]{1,3}\b")
 CGNAT_PLACEHOLDER = "100.64.x.x"
 
 
