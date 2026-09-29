@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 import shutil
 import subprocess
 from decimal import Decimal
@@ -218,6 +219,37 @@ def test_no_built_surface_still_claims_that_no_scores_exist() -> None:
         text = (DIST / name).read_text().lower()
         for claim in stale:
             assert claim not in text, f"{name} still claims: {claim}"
+
+
+@needs_dist
+def test_the_homepage_leads_with_the_published_data() -> None:
+    """Assert the CLAIM, not a phrase: the data is reachable from the top of the page.
+
+    The homepage's status band read "Not yet: Any published score, the
+    per-server pages, the API" for a week after all three shipped, while the
+    hero above it said the opposite — and the phrase list in the test above
+    passed throughout, because none of its strings were those words. So the
+    masthead and the hero's primary action must lead to the data, and the
+    "Not yet" entry may not name a surface that exists.
+    """
+    html = (DIST / "index.html").read_text()
+    nav = re.search(r'<nav class="masthead__nav"[^>]*>(.*?)</nav>', html, re.S)
+    assert nav, "no masthead nav in the built homepage"
+    for href in ('href="/servers/"', 'href="/api/servers.json"'):
+        assert href in nav.group(1), f"masthead does not link the data: {href}"
+
+    hero = re.search(r'<section class="hero"[^>]*>(.*?)</section>', html, re.S)
+    assert hero, "no hero in the built homepage"
+    primary = re.search(r'<a class="cta__primary" href="([^"]+)"', hero.group(1))
+    assert primary and primary.group(1) == "/servers/", "the hero's primary action is not the data"
+
+    not_yet = re.search(r"<dt>Not yet</dt>\s*<dd>(.*?)</dd>", html, re.S)
+    assert not_yet, "no 'Not yet' entry to check"
+    listed = not_yet.group(1).lower()
+    for live in ("score", "server page", "per-server", "api", "json"):
+        # "weighted composite" is the one score that is genuinely withheld.
+        text = listed.replace("the weighted composite", "")
+        assert live not in text, f"'Not yet' names a surface that is live: {live}"
 
 
 @needs_dist

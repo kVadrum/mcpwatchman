@@ -10,6 +10,7 @@ import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
 // Canonical token home — see the file header for why it is not per-page.
 import "../styles/tokens.css";
+import VoidHatch from "../components/VoidHatch.astro";
 import scans from "../data/scans.json";
 
 // Build-time, not hardcoded: a footer year that has to be remembered is a footer
@@ -25,14 +26,47 @@ const fetchedCount = scans.filter((r) => r.source_state === "fetched").length;
 // SUBJECT, not state — see servers/index.astro. Counting package failures
 // here asserted something false about third-party repositories.
 const unreachableCount = scans.filter((r) => r.source_subject === "repository").length;
+// The NEWEST scan, as servers/index.astro computes it: a delisted server keeps
+// the last scan taken while it was listed, so the set stops sharing one date.
+const lastScanned = scans.length
+  ? scans.map((r) => r.scanned_at).reduce((a, b) => (a > b ? a : b)).slice(0, 10)
+  : "";
+
+// The data is the product, so it is also stated for agents: a Dataset node
+// pointing at the JSON, dated by the scans rather than by the build. Built as
+// an object and serialised, because Astro does not evaluate `{}` inside a
+// literal <script> body.
+const dataset = {
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  name: "mcpwatchman scans of the official MCP registry",
+  description: `Per-axis security and quality scores for ${scans.length} servers in the official Model Context Protocol registry, each with the coverage it was measured on and the evidence behind every deduction. The weighted composite is withheld until calibration.`,
+  url: "https://mcpwatchman.com/servers/",
+  dateModified: lastScanned,
+  license: "https://spdx.org/licenses/MIT.html",
+  isAccessibleForFree: true,
+  creator: { "@type": "Organization", name: "KeMeK Network", url: "https://github.com/kVadrum" },
+  distribution: {
+    "@type": "DataDownload",
+    encodingFormat: "application/json",
+    contentUrl: "https://mcpwatchman.com/api/servers.json",
+  },
+};
 
 const axes = [
-  { name: "Code Safety", weight: 30, reads: "Shell exec in tool handlers, unvalidated URL fetches, unsafe deserialization, path traversal — matched against an MCP-specific semgrep ruleset." },
-  { name: "Auth Posture", weight: 20, reads: "Whether a server requires a key, uses OAuth, or accepts anyone — read against the transport it declares." },
-  { name: "Dependency Health", weight: 20, reads: "Known CVEs in the resolved dependency set, via OSV. Transitive coverage where a lockfile exists, and said plainly where it doesn't." },
-  { name: "Maintenance", weight: 15, reads: "Last commit, release cadence, open-to-closed issue ratio, sole-maintainer risk." },
-  { name: "Transparency", weight: 15, reads: "License presence and SPDX validity, and whether the manifest's claims match what the code actually does." },
-];
+  { key: "code_safety", name: "Code Safety", weight: 30, reads: "Shell exec in tool handlers, unvalidated URL fetches, unsafe deserialization, path traversal — matched against an MCP-specific semgrep ruleset." },
+  { key: "auth_posture", name: "Auth Posture", weight: 20, reads: "Whether a server requires a key, uses OAuth, or accepts anyone — read against the transport it declares." },
+  { key: "dependency_health", name: "Dependency Health", weight: 20, reads: "Known CVEs in the resolved dependency set, via OSV. Transitive coverage where a lockfile exists, and said plainly where it doesn't." },
+  { key: "maintenance", name: "Maintenance", weight: 15, reads: "Last commit, release cadence, open-to-closed issue ratio, sole-maintainer risk." },
+  { key: "transparency", name: "Transparency", weight: 15, reads: "License presence and SPDX validity, and whether the manifest's claims match what the code actually does." },
+].map((axis) => ({
+  ...axis,
+  // "Scored" in the servers index's sense: the axis produced a number, which
+  // may itself be partial. Same count, same word, so the two pages agree.
+  scored: scans.filter((r) => r.axes[axis.key].score !== null).length,
+}));
+// Coverage bar geometry. SVG, because the CSP blocks `style="width:…"`.
+const CW = 120;
 
 const ledger = [
   { label: "starting score", detail: "every axis opens at 100", value: 100, display: "100", kind: "start" },
@@ -87,8 +121,10 @@ const ledger = [
 
       It is here because an agent parsing this page should not have to infer the
       project's identity, licence and status from prose. The `abstract` states
-      the pre-v0.1 position explicitly: a machine reading this must not conclude
-      that scores exist. */}
+      that per-axis scores are published and the composite is withheld.
+      No `softwareVersion`: it read 0.9.0 against a repo at 0.29 and a PyPI
+      package at 0.2 — a typed version is wrong by the next release, and there
+      is no one version this page could truthfully name. */}
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -104,7 +140,6 @@ const ledger = [
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
         "codeRepository": "https://github.com/kVadrum/mcpwatchman",
         "downloadUrl": "https://pypi.org/project/mcpwatchman/",
-        "softwareVersion": "0.9.0",
         "releaseNotes": "https://github.com/kVadrum/mcpwatchman/commits/main",
         "author": { "@type": "Organization", "name": "KeMeK Network", "url": "https://github.com/kVadrum" },
         "audience": {
@@ -118,8 +153,10 @@ const ledger = [
         }
       }
     </script>
+    <script type="application/ld+json" set:html={JSON.stringify(dataset)} />
   </head>
   <body>
+    <VoidHatch />
     <div class="frame">
       <header class="masthead">
         <a class="wordmark" href="/">
@@ -127,7 +164,9 @@ const ledger = [
           mcpwatchman
         </a>
         <div class="masthead__controls">
-          <nav class="masthead__nav">
+          <nav class="masthead__nav" aria-label="Site">
+            <a href="/servers/">Servers</a>
+            <a href="/api/servers.json">API</a>
             <a href="https://github.com/kVadrum/mcpwatchman">Source</a>
             <a href="https://pypi.org/project/mcpwatchman/">PyPI</a>
           </nav>
@@ -166,12 +205,14 @@ const ledger = [
               at 100, and every deduction names the finding, the file and the line that
               produced it.
             </p>
+            <div class="cta cta--hero">
+              <a class="cta__primary" href="/servers/">Browse all {scans.length} servers</a>
+              <a class="cta__secondary" href="/api/servers.json">Get the data as JSON</a>
+            </div>
             <p class="status-line">
-              <span class="pill">First scores</span>
-              <a href="/servers/">{scans.length} servers are scanned and published</a>, per
-              axis, with the file and line behind every deduction.
-              {fetchedCount} shipped source we could read; {unreachableCount}
-              declare a repository nobody can reach.
+              {fetchedCount} of {scans.length} shipped source we could read;{" "}
+              {unreachableCount} declare a repository nobody can reach.{" "}
+              Last scanned <time datetime={lastScanned}>{lastScanned}</time>.
             </p>
           </div>
 
@@ -263,9 +304,30 @@ const ledger = [
                     <h3>{axis.name}</h3>
                     <p>{axis.reads}</p>
                   </div>
+                  <p class="axis__cover">
+                    <svg viewBox={`0 0 ${CW} 6`} width={CW} height="6" aria-hidden="true">
+                      <rect class="c-scored" x="0" y="0" width={(CW * axis.scored) / scans.length} height="6" />
+                      {axis.scored < scans.length && (
+                        <rect
+                          class="c-void"
+                          x={(CW * axis.scored) / scans.length}
+                          y="0"
+                          width={CW - (CW * axis.scored) / scans.length}
+                          height="6"
+                          fill="url(#void-hatch)"
+                        />
+                      )}
+                    </svg>
+                    <span>scored for <b>{axis.scored}</b> of {scans.length}</span>
+                  </p>
                 </li>
               ))}
             </ul>
+            <p class="gate">
+              The hatched share of each bar is servers that axis could not be
+              assessed for — a missing lockfile, an unreachable repository — and
+              each <a href="/servers/">server's page</a> says which.
+            </p>
             <p class="gate">
               Each axis ships its own 0–100 score. The weighted composite is computed
               but <strong>not published</strong> until a hand-audited gold set says the weights
@@ -281,20 +343,32 @@ const ledger = [
             <p class="eyebrow">Where it actually is</p>
             <dl class="now">
               <div>
-                <dt>Built</dt>
-                <dd>Scoring engine and registry crawler, with tests. MIT, public.</dd>
+                <dt>Live</dt>
+                <dd>
+                  <a href="/servers/">{scans.length} server pages</a>, every deduction
+                  linked to its file and line. The same data as{" "}
+                  <a href="/api/servers.json">one JSON file</a>, and an{" "}
+                  <a href="/llms.txt">llms.txt</a> index for agents.
+                </dd>
               </div>
               <div>
                 <dt>Next</dt>
-                <dd>The scanner: source fetch, semgrep ruleset, dependency and auth checks.</dd>
+                <dd>
+                  Scheduled rescans, so a page's date moves on its own. The
+                  current data was scanned on <time datetime={lastScanned}>{lastScanned}</time>.
+                </dd>
               </div>
               <div>
                 <dt>Not yet</dt>
-                <dd>Any published score, the per-server pages, the API, the badge.</dd>
+                <dd>
+                  The weighted composite, withheld until calibrated. The CLI's{" "}
+                  <code>check</code> command, the badge, the RSS feed.
+                </dd>
               </div>
             </dl>
             <div class="cta">
-              <a class="cta__primary" href="https://github.com/kVadrum/mcpwatchman">
+              <a class="cta__primary" href="/servers/">Browse all {scans.length} servers</a>
+              <a class="cta__secondary" href="https://github.com/kVadrum/mcpwatchman">
                 Read the source
               </a>
               <a class="cta__secondary" href="https://github.com/kVadrum/mcpwatchman/issues">
@@ -368,23 +442,46 @@ const ledger = [
       }
 
       /* ── masthead ───────────────────────────────────────────── */
-      /* Mobile-first, because the wordmark and the controls do not fit on one
-         line on a phone. Side by side they force the controls to wrap
-         internally, which drops the theme options onto a second line and leaves
-         the divider hairline dividing nothing — a stray vertical mark. Stacked,
-         the nav and the three theme options sit on one comfortable row and the
-         hairline does its job again. */
+      /* Mobile-first, because the wordmark, four nav links and the theme
+         options do not fit one line on a phone — and nav plus theme do not fit
+         one line either once Servers and API joined Source and PyPI: the theme
+         options wrapped under the nav and the divider hairline divided nothing.
+         So on a phone the theme control sits beside the wordmark (no hairline;
+         the row's own space separates them) and the nav gets a row to itself.
+         `display: contents` lets the controls wrapper's two children take grid
+         areas of their own. */
       .masthead {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.875rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+          "mark theme"
+          "nav nav";
+        align-items: center;
+        gap: 0.875rem 1rem;
         padding: 1.75rem 0;
         border-bottom: 1px solid var(--rule);
       }
 
-      @media (min-width: 34rem) {
+      .wordmark {
+        grid-area: mark;
+        justify-self: start;
+      }
+
+      .masthead__controls {
+        display: contents;
+      }
+
+      .masthead__nav {
+        grid-area: nav;
+      }
+
+      .theme {
+        grid-area: theme;
+      }
+
+      @media (min-width: 40rem) {
         .masthead {
+          display: flex;
           flex-direction: row;
           align-items: center;
           justify-content: space-between;
@@ -424,16 +521,12 @@ const ledger = [
         background: var(--signal);
       }
 
-      .masthead__controls {
-        display: flex;
-        align-items: center;
-        gap: 1.25rem 1.5rem;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-      }
-
-      @media (min-width: 34rem) {
+      @media (min-width: 40rem) {
         .masthead__controls {
+          display: flex;
+          align-items: center;
+          gap: 1.25rem 1.5rem;
+          flex-wrap: wrap;
           justify-content: flex-end;
         }
       }
@@ -453,13 +546,20 @@ const ledger = [
            has to be guessed from the labels. The hairline says it outright. */
         gap: 0.625rem;
         margin: 0;
-        padding: 0 0 0 1.25rem;
+        padding: 0;
         border: 0;
-        border-left: 1px solid var(--rule);
         font-family: var(--font-struct);
         font-size: 0.6875rem;
         text-transform: uppercase;
         letter-spacing: 0.1em;
+      }
+
+      /* The hairline only where the theme control shares a row with the nav. */
+      @media (min-width: 40rem) {
+        .theme {
+          padding-left: 1.25rem;
+          border-left: 1px solid var(--rule);
+        }
       }
 
       .theme[hidden] {
@@ -554,10 +654,6 @@ const ledger = [
       }
 
       .status-line {
-        display: flex;
-        align-items: baseline;
-        flex-wrap: wrap;
-        gap: 0.65rem;
         margin: 0;
         max-width: 48ch;
         font-size: 0.9375rem;
@@ -566,16 +662,24 @@ const ledger = [
         padding-left: 1rem;
       }
 
-      .pill {
-        flex: none;
-        font-family: var(--font-data);
-        font-size: 0.6875rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--signal-ink);
-        border: 1px solid color-mix(in srgb, var(--signal-ink) 40%, transparent);
-        border-radius: 999px;
-        padding: 0.15rem 0.55rem;
+      /* The data is the page's primary action, so it sits directly under the
+         lede rather than inside a sentence at the bottom of the hero. */
+      .cta--hero {
+        margin: 0 0 1.75rem;
+      }
+
+      .status-line time {
+        white-space: nowrap;
+      }
+
+      /* The hatch pattern's colour is a theme token; the pattern itself is
+         defined once by <VoidHatch />, as on the report pages. */
+      .hatch-defs {
+        position: absolute;
+      }
+
+      .hatch-line {
+        stroke: var(--void);
       }
 
       /* ── the ledger: light document, dark chrome ────────────── */
@@ -790,7 +894,7 @@ const ledger = [
 
       @media (min-width: 52rem) {
         .axis {
-          grid-template-columns: 5rem 16rem minmax(0, 1fr);
+          grid-template-columns: 5rem 14rem minmax(0, 1fr) 11rem;
           gap: 2rem;
         }
 
@@ -843,10 +947,79 @@ const ledger = [
         }
       }
 
-      .gate {
+      /* Coverage, per axis: how many published servers the axis produced a
+         number for. Column 2 on the phone grid (under the description), its own
+         fourth column on the wide one. */
+      /* Bar above count at every width: side by side they overflow a 375px
+         phone by the width of "of 492". */
+      .axis__cover {
+        grid-column: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
         margin: 0;
+        font-family: var(--font-data);
+        font-variant-numeric: tabular-nums;
+        font-size: 0.75rem;
+        color: var(--ink-faint);
+        white-space: nowrap;
+      }
+
+      @media (min-width: 52rem) {
+        .axis__cover {
+          grid-column: 4;
+        }
+      }
+
+      .axis__cover svg {
+        flex: none;
+        display: block;
+      }
+
+      .axis__cover b {
+        color: var(--ink);
+        font-weight: 500;
+      }
+
+      /* Fill in --signal, EDGE in --signal-ink: amber on lit slate is 1.39:1,
+         so on the light theme the boundary is what makes the bar visible — the
+         CTA chip's fix, for the same reason. On dark the two are equal. */
+      .c-scored {
+        fill: var(--signal);
+        stroke: var(--signal-ink);
+        stroke-width: 1;
+      }
+
+      .c-void {
+        stroke: var(--rule);
+        stroke-width: 1;
+      }
+
+      .gate {
+        margin: 0 0 1rem;
         max-width: 62ch;
         color: var(--ink-dim);
+      }
+
+      .gate:last-child {
+        margin-bottom: 0;
+      }
+
+      .gate a,
+      .now dd a {
+        text-decoration-color: var(--signal-ink);
+        text-underline-offset: 0.2em;
+      }
+
+      .gate a:hover,
+      .now dd a:hover {
+        color: var(--ink);
+      }
+
+      .now code {
+        font-family: var(--font-data);
+        font-size: 0.875em;
       }
 
       .gate strong {
