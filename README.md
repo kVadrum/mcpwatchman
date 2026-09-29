@@ -19,9 +19,11 @@ MCP adoption is accelerating across Claude Code, Cursor, Continue, Zed, Goose an
 
 The measured picture is not reassuring, and it is worth being precise about who measured what:
 
-- A 2026 measurement study of **7,973 live remote MCP servers** found [**40.55% expose tools with no authentication at all**](https://arxiv.org/abs/2605.22333). Of the 119 servers with testable OAuth deployments, *every one* carried at least one authentication flaw.
+- A 2026 measurement study of **7,973 live remote MCP servers** found [**40.55% expose tools with no authentication at all**](https://arxiv.org/abs/2605.22333).
+  Of the 119 servers with testable OAuth deployments, *every one* carried at least one authentication flaw.
 - A survey of [**8,060 servers across six registries**](https://arxiv.org/abs/2509.25292) found fewer than half of listed projects valid or non-trivial, and 21.9% with no update in over a year.
-- Vendor scans report SSRF patterns in roughly a third of servers and command-injection paths in over 40% ([BlueRock](https://www.bluerock.io/mcp-trust-registry), Equixly). We cite these as motivation, not as fact: their sample construction and false-positive rates are unpublished, and the firms reporting them sell products in this space.
+- Vendor scans report SSRF patterns in roughly a third of servers and command-injection paths in over 40% ([BlueRock](https://www.bluerock.io/mcp-trust-registry), Equixly).
+  We cite these as motivation, not as fact: their sample construction and false-positive rates are unpublished, and the firms reporting them sell products in this space.
 
 That last bullet is the whole problem in miniature — the numbers everyone quotes come from parties with something to sell, and nobody can check them.
 `mcpwatchman` publishes its rules, its evidence, and its false-positive rate, so ours can be checked.
@@ -114,27 +116,28 @@ Scores are recomputed, not negotiated: if the evidence is wrong the finding goes
 
 | Surface | What it is |
 |---|---|
-| **Site** | Per-server pages with the evidence behind every axis, search and filtering, and the full methodology |
-| **JSON API** | The same data, machine-readable — built to be consumed by agents and CI as a first-class audience, not as an afterthought |
-| **RSS** | High-severity findings and score drops, for people who want to watch the ecosystem rather than one server |
-| **Badges** | An auto-updating SVG a maintainer can put in their own README |
-| **CLI** | `pip install mcpwatchman`, then `mcpwatchman check <server>` before you install it — with a `--threshold` exit code for CI |
+| **Site** | Per-server pages with the evidence behind every axis — [mcpwatchman.com/servers/](https://mcpwatchman.com/servers/). Search, filtering and a methodology section are not built yet |
+| **JSON API** | The same data, machine-readable, built for agents and CI as a first-class audience: `/api/servers/<slug>.json` per server, `/api/index.json` to find one, `/api/servers.json` for everything |
+| **CLI** | `pip install mcpwatchman`, then `mcpwatchman check <server>` before you install it |
+| **RSS** | High-severity findings and score drops — specified, not built yet |
+| **Badges** | An auto-updating SVG a maintainer can put in their own README — specified, not built yet |
 
 ## Install
 
 ```sh
-pip install mcpwatchman     # not yet published
+pip install mcpwatchman
+mcpwatchman check io.github.owner/server           # a registry name or slug
+mcpwatchman check @scope/package --format json     # an npm or PyPI name, or a repository URL
 ```
 
 Requires Python 3.12+.
+Every score is printed with the share of its axis that could actually be measured, and there is no single composite number yet — so `--threshold` is accepted but does nothing until the composite is published, and says so.
+Exit codes: `0` found, `1` not published, `4` network error, `5` bad arguments; `2` is reserved for a failed threshold.
 
 ### Running a scan yourself
 
-The published numbers are reproducible, and reproducing them needs three
-external binaries that are **not** Python dependencies: `semgrep`,
-`detect-secrets` and `osv-scanner`. All three are resolved on `PATH`, so
-installing them into a venv is not enough — the venv's `bin` has to be on
-`PATH` when the scan runs.
+The published numbers are reproducible, and reproducing them needs three external binaries that are **not** Python dependencies: `semgrep`, `detect-secrets` and `osv-scanner`.
+All three are resolved on `PATH`, so installing them into a venv is not enough — the venv's `bin` has to be on `PATH` when the scan runs.
 
 ```sh
 python -m venv .venv-workers
@@ -155,17 +158,12 @@ PATH="$PWD/.venv-workers/bin:$PATH" .venv-workers/bin/python ops/scan_cohort.py 
     --out site/src/data/scans.json
 ```
 
-Run it on a quiet machine. A scan's failure rate is dominated by concurrent
-load rather than by the repository being scanned: measured 2026-09-18, 3 of 29
-servers came back unmeasurable while a test run and a second scan shared the
-box, against 0 of 492 on an idle one.
+Run it on a quiet machine.
+A scan's failure rate is dominated by concurrent load rather than by the repository being scanned: measured 2026-09-18, 3 of 29 servers came back unmeasurable while a test run and a second scan shared the box, against 0 of 492 on an idle one.
 
-**A missing binary does not fail — it produces a clean "not assessed".** Code
-Safety carries 30% of the weighting and Dependency Health 20%, so a scan run
-without them publishes a page that looks measured and is not. `ops/scan_cohort.py`
-refuses to start rather than let that happen, and the versions the scanners were
-written against are recorded in `workers/scanner/osv_check.py` (osv-scanner
-2.6.0) and the `workers` extra (semgrep >= 1.75).
+**A missing binary does not fail — it produces a clean "not assessed".**
+Code Safety carries 30% of the weighting and Dependency Health 20%, so a scan run without them publishes a page that looks measured and is not.
+`ops/scan_cohort.py` refuses to start rather than let that happen, and the versions the scanners were written against are recorded in `workers/scanner/osv_check.py` (osv-scanner 2.6.0) and the `workers` extra (semgrep >= 1.75).
 
 ## Repository layout
 
@@ -186,24 +184,17 @@ site/                  public site (Astro)
 
 ## Reporting a problem
 
-**A vulnerability in mcpwatchman itself** — the site, the CLI, the scanner or the
-published package — goes to [GitHub's private advisory form](https://github.com/kVadrum/mcpwatchman/security/advisories/new).
-Private vulnerability reporting is enabled on this repository, so the report is
-not public while it is being fixed. `/.well-known/security.txt` carries the same
-addresses in machine-readable form.
+**A vulnerability in mcpwatchman itself** — the site, the CLI, the scanner or the published package — goes to [GitHub's private advisory form](https://github.com/kVadrum/mcpwatchman/security/advisories/new).
+Private vulnerability reporting is enabled on this repository, so the report is not public while it is being fixed.
+`/.well-known/security.txt` carries the same addresses in machine-readable form.
 
-**A mistake in the methodology or a wrong number** goes to [the issue tracker](https://github.com/kVadrum/mcpwatchman/issues),
-in public. These are the most useful contributions right now: several figures in
-this README have already been corrected by people checking them, and a
-methodology that cannot be audited is the thing this project exists to replace.
+**A mistake in the methodology or a wrong number** goes to [the issue tracker](https://github.com/kVadrum/mcpwatchman/issues), in public.
+These are the most useful contributions right now: several figures in this README have already been corrected by people checking them, and a methodology that cannot be audited is the thing this project exists to replace.
 
-**A vulnerability in an MCP server that mcpwatchman scores is not ours to
-receive.** Report it to that server's maintainer. If you believe we have scored a
-server wrongly — a false positive, a finding already fixed, a rule misfiring —
-open an issue and we will correct it and say that we did. When we find something
-in a server ourselves, we follow coordinated disclosure before publishing: the
-maintainer is contacted first and given a remediation window, and the schedule is
-documented rather than improvised.
+**A vulnerability in an MCP server that mcpwatchman scores is not ours to receive.**
+Report it to that server's maintainer.
+If you believe we have scored a server wrongly — a false positive, a finding already fixed, a rule misfiring — open an issue and we will correct it and say that we did.
+When we find something in a server ourselves, we follow coordinated disclosure before publishing: the maintainer is contacted first and given a remediation window, and the schedule is documented rather than improvised.
 
 ## Contributing
 

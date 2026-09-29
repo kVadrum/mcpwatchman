@@ -890,3 +890,38 @@ def test_the_site_never_advertises_a_mailbox_that_cannot_receive_mail() -> None:
     assert not offenders, (
         "these built files advertise a mailbox with no MX record: " + ", ".join(offenders)
     )
+
+
+@needs_dist
+def test_every_published_server_has_its_machine_twin(reports) -> None:
+    """`/servers/<slug>/` promises `/api/servers/<slug>.json`: same record, and
+    the reading notes with it — a score is only honest beside its rules."""
+    for report in reports:
+        path = DIST / "api" / "servers" / f"{report['slug']}.json"
+        assert path.is_file(), f"no machine twin for {report['name']}"
+        doc = json.loads(path.read_text())
+        assert doc["server"] == report
+        assert doc["composite_published"] is False
+        assert "assessed_weight" in doc["coverage_note"]
+        assert doc["url"].endswith(f"/servers/{report['slug']}/")
+
+
+@needs_dist
+def test_the_index_finds_every_server_and_never_drops_a_weight(reports) -> None:
+    """The index is the surface most likely to be skimmed, so it is the last
+    place a score may travel without its `assessed_weight`."""
+    index = json.loads((DIST / "api" / "index.json").read_text())
+    assert index["count"] == len(index["servers"]) == len(reports)
+    assert index["composite_published"] is False
+    by_slug = {r["slug"]: r for r in reports}
+    for row in index["servers"]:
+        report = by_slug[row["slug"]]
+        assert row["name"] == report["name"]
+        assert row["slug"] == slugify(row["name"])  # the CLI computes it the same way
+        assert set(row["axes"]) == set(AXES)
+        for key, axis in row["axes"].items():
+            assert set(axis) >= {"score", "assessed_weight"}
+            assert axis["score"] == report["axes"][key]["score"]
+            assert axis["assessed_weight"] == report["axes"][key]["assessed_weight"]
+        api = row["api_url"].removeprefix("https://mcpwatchman.com/")
+        assert (DIST / api).is_file(), f"index points at a missing record: {api}"

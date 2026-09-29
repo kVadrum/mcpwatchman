@@ -31,6 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from mcpwatchman import __version__
+from mcpwatchman.slug import slugify
 from mcpwatchman.workers.crawler.registry import (
     RegistryEntry,
     SourceKind,
@@ -183,6 +184,11 @@ class ServerReport:
     scanner_version: str = __version__
     ruleset_version: str = ""
     repository_url: str = ""
+    # The published package the registry entry declares, as a source spec
+    # (`npm:@scope/name@1.0.0`, `pypi:name@1.0`) — empty when there is none and
+    # the repository itself is the source. What lets a consumer, and the CLI,
+    # find a server by the name they would install it under (`07` §3.1).
+    package: str = ""
     source_state: str = SourceState.NOT_ATTEMPTED.value
     # WHAT was unreachable — "repository", "package", or "".
     #
@@ -247,17 +253,6 @@ class ServerReport:
         payload = asdict(self)
         payload["axes"] = {k: asdict(v) for k, v in self.axes.items()}
         return payload
-
-
-def slugify(name: str) -> str:
-    """A URL-safe slug for a registry name like `io.github.owner/server`."""
-    out = []
-    for ch in name.lower():
-        out.append(ch if ch.isalnum() else "-")
-    slug = "".join(out)
-    while "--" in slug:
-        slug = slug.replace("--", "-")
-    return slug.strip("-")
 
 
 def _gap_fault(default: Fault, availability: SourceAvailability) -> Fault:
@@ -642,6 +637,10 @@ def _assemble(
         methodology_version=version,
         ruleset_version=(code.ruleset_version if code else ""),
         repository_url=entry.repository.url if entry.repository else "",
+        package=(
+            resolution.primary or ""
+            if resolution.kind in (SourceKind.NPM, SourceKind.PYPI) else ""
+        ),
         source_state=availability.state.value,
         source_subject=subject,
         source_reason=availability.reason,

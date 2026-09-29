@@ -30,6 +30,8 @@ const allAiPrefixed = scans.length > 0 && scans.every((r) => r.name.startsWith("
 // Fault`). Build output is one: a package shipping only `dist/` is code we
 // chose not to read, so it is stated here as OUR limit, derived from the data
 // so the sentence appears exactly when a published record carries it.
+// Derived, so the example link is always a page that exists.
+const exampleSlug = scans[0]?.slug ?? "";
 const buildOnly = scans.filter(
   (r) => r.axes.code_safety.score === null && r.axes.code_safety.reason.includes("only as build output"),
 ).length;
@@ -105,7 +107,10 @@ URL for either; when they exist they will be listed under Surfaces below.
 ## Surfaces
 
 - [Scanned servers](https://mcpwatchman.com/servers/): the index, with per-axis scores and coverage.
-- [JSON API](https://mcpwatchman.com/api/servers.json): the same data, machine-shaped. Prefer this over scraping HTML.
+- [One server as JSON](https://mcpwatchman.com/api/servers/${exampleSlug}.json): \`/api/servers/<slug>.json\`, the machine twin of \`/servers/<slug>/\` — one record with the reading notes. Prefer this for a single server.
+- [Index](https://mcpwatchman.com/api/index.json): every published server with its name, slug, package, repository and per-axis score and \`assessed_weight\`, no evidence. Use it to find a server by package name or repository URL.
+- [Full JSON](https://mcpwatchman.com/api/servers.json): every record with its evidence, in one multi-megabyte document. Prefer it over scraping HTML when you need everything.
+- CLI: \`mcpwatchman check <server>\` (from the PyPI package below) reads the same JSON; \`--format json\` for machines. It accepts a registry name, slug, npm or PyPI package name, or repository URL.
 - [Homepage](https://mcpwatchman.com/): what the project is, how it scores, and what it cannot see.
 
 ## Documentation
