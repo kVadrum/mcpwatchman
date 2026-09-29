@@ -676,3 +676,32 @@ def test_a_coverage_that_survives_rounding_still_scores(tree, monkeypatch) -> No
     result = sc.run_semgrep(tree, rules=RULES)
     assert result.status is sc.SemgrepStatus.OK
     assert result.assessed_weight == "0.66"
+
+
+# --- build output: whose gap is "no covered source"? -----------------------
+
+
+def test_build_output_only_is_our_gap_not_the_publishers() -> None:
+    """A package that ships only `dist/` shipped code — we declined to read it.
+
+    Attributed PUBLISHER, this published "no source files in a language the
+    ruleset covers" about 90 of 492 servers — npm packages whose
+    compiled `dist/index.js` is exactly what a user installs.
+    """
+    inv = Inventory(build_output={"javascript": 2})
+    result = sc.assess_code_safety(Path("/nonexistent"), inv)
+    assert result.status is sc.SemgrepStatus.UNAVAILABLE
+    assert result.score is None
+    assert result.fault is Fault.PROJECT
+    assert result.build_output_only is True
+    assert "build output" in result.reason
+
+
+def test_no_covered_code_anywhere_stays_the_publishers() -> None:
+    """The negative control: build output in an UNCOVERED language (or none at
+    all) changes nothing — the tree genuinely held nothing we could read."""
+    for inv in (Inventory(), Inventory(build_output={"ruby": 3})):
+        result = sc.assess_code_safety(Path("/nonexistent"), inv)
+        assert result.fault is Fault.PUBLISHER
+        assert result.build_output_only is False
+        assert "ruleset covers" in result.reason

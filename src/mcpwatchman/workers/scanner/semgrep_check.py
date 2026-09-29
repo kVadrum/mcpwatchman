@@ -174,6 +174,11 @@ class SemgrepResult:
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
     neutralised: tuple[str, ...] = ()
+    # True when the tree held covered code ONLY as build output. The runner
+    # reads it to try the declared repository instead (`04` §2: the repository
+    # supplements the package for "rules that benefit from full file context
+    # not present in a published tarball").
+    build_output_only: bool = False
 
     @property
     def assessed(self) -> bool:
@@ -487,13 +492,22 @@ def _excerpt(root: Path, rel_path: str, line: int) -> str:
     return "\n".join(lines[lo:hi])
 
 
+_COVERED_LANGUAGES = frozenset(
+    {Language.PYTHON, Language.JAVASCRIPT, Language.TYPESCRIPT, Language.GO}
+)
+
+
 def _scannable_source_files(inventory: Inventory) -> int:
     """Files the ruleset could match: source in a language we carry rules for."""
-    covered = {Language.PYTHON, Language.JAVASCRIPT, Language.TYPESCRIPT, Language.GO}
     return sum(
         1 for f in inventory.files
-        if f.language in covered and f.role in (Role.SOURCE, Role.ENTRY_POINT)
+        if f.language in _COVERED_LANGUAGES and f.role in (Role.SOURCE, Role.ENTRY_POINT)
     )
+
+
+def _covered_build_output(inventory: Inventory) -> int:
+    """Covered-language files the tree carried only under build-output dirs."""
+    return sum(inventory.build_output.get(lang.value, 0) for lang in _COVERED_LANGUAGES)
 
 
 def run_semgrep(
@@ -832,6 +846,26 @@ def assess_code_safety(
     reason, not a 100: `03` §3 scores what was examined, and nothing was.
     """
     if inventory is not None and not _scannable_source_files(inventory):
+        if built := _covered_build_output(inventory):
+            # ⚠ OURS, NOT THEIRS — and this path said "theirs" for 90 of 492
+            # published servers (measured 2026-09-29). An npm package commonly ships
+            # nothing but `dist/`: that IS the code a user installs and runs,
+            # and EXCLUDED_DIRS is what declined to read it. "No source in a
+            # covered language" was a false statement about a named third
+            # party. The runner tries the declared repository next.
+            plural = "" if built == 1 else "s"
+            return SemgrepResult(
+                status=SemgrepStatus.UNAVAILABLE,
+                reason=(
+                    f"the published package carries its code only as build "
+                    f"output ({built} file{plural} under dist/ or build/), which "
+                    "this scanner does not read as the server's own source — a "
+                    "bundle can inline its dependencies' code"
+                ),
+                explicit_fault=Fault.PROJECT,
+                methodology_version=version,
+                build_output_only=True,
+            )
         return SemgrepResult(
             status=SemgrepStatus.UNAVAILABLE,
             reason="no source files in a language the ruleset covers "

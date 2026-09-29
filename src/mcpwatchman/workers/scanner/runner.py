@@ -24,7 +24,7 @@ from __future__ import annotations
 import shutil
 import tempfile
 from collections.abc import Sequence
-from dataclasses import KW_ONLY, asdict, dataclass, field
+from dataclasses import KW_ONLY, asdict, dataclass, field, replace
 from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
 from pathlib import Path
@@ -50,8 +50,12 @@ from mcpwatchman.workers.scanner.reachability import (
     SourceState,
     from_exception,
 )
-from mcpwatchman.workers.scanner.semgrep_check import assess_code_safety
-from mcpwatchman.workers.scanner.source import SourceSpec, fetch
+from mcpwatchman.workers.scanner.semgrep_check import (
+    SemgrepResult,
+    SemgrepStatus,
+    assess_code_safety,
+)
+from mcpwatchman.workers.scanner.source import SourceSpec, SourceUnreachableError, fetch
 from mcpwatchman.workers.scanner.transparency_check import assess_transparency
 from mcpwatchman.workers.scanner.transport_check import assess_transport
 from mcpwatchman.workers.scoring.axes import AxisResult
@@ -452,7 +456,8 @@ def scan_entry(
                 availability = from_exception(exc, attributed)
 
         return _assemble(
-            entry, resolution, availability, root, scanned_at, version, ref_matched
+            entry, resolution, availability, root, scanned_at, version, ref_matched,
+            workspace=ws,
         )
     finally:
         if owned:
@@ -495,8 +500,72 @@ def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
         )
 
 
+def _code_from_supplement(
+    package_result: SemgrepResult, supplement: str, workspace: Path, version: str
+) -> tuple[SemgrepResult, str]:
+    """Code Safety from the declared repository, for a package that ships only
+    build output. Returns the result to publish and a note naming its source.
+
+    `04` §2 is the authority: the repository supplements the package "for rules
+    that benefit from full file context not present in a published tarball",
+    and a tarball holding nothing but `dist/` is the limiting case. Every other
+    axis still reads the package, which is what a user installs.
+
+    Whose gap each failure is, because the package's own result is already
+    `PROJECT` (we declined to read its build output):
+    - the repository cannot be read, or holds no covered source either — still
+      `PROJECT`, with the repository's part stated;
+    - OUR fetch or scan failed — `ENVIRONMENT`, refused at publication, because
+      this run could have scored it and did not.
+    """
+    try:
+        spec = SourceSpec.parse(supplement)
+        fetched = fetch(spec, workspace / "supplement")
+    except SourceUnreachableError:
+        return replace(
+            package_result,
+            reason=f"{package_result.reason}; the declared repository could not "
+                   "be read to score instead",
+        ), ""
+    except Exception as exc:  # noqa: BLE001 - classified: this run's accident
+        return replace(
+            package_result,
+            status=SemgrepStatus.FAILED,
+            reason=f"the declared repository could not be fetched to score "
+                   f"instead ({type(exc).__name__})",
+            explicit_fault=Fault.ENVIRONMENT,
+            build_output_only=False,
+        ), ""
+
+    tree = fetched.scan_root
+    result = assess_code_safety(tree, enumerate_tree(tree), version=version)
+    if not result.assessed and result.fault is Fault.PUBLISHER:
+        return replace(
+            package_result,
+            reason=f"{package_result.reason}; the declared repository holds no "
+                   "source in a covered language either",
+        ), ""
+    if not result.assessed:
+        return result, ""
+    note = (
+        f"scored on the declared repository at version {spec.version}, because "
+        "the published package carries its code only as build output, which is "
+        "not read as the server's own source"
+    )
+    if not fetched.ref_matched_version:
+        note = (
+            "scored on the declared repository, because the published package "
+            "carries its code only as build output, which is not read as the "
+            "server's own source; no tag matched this version, so the "
+            "repository's default branch was read and the findings describe "
+            "that code, not necessarily the release"
+        )
+    return result, note
+
+
 def _assemble(
-    entry, resolution, availability, root, scanned_at, version, ref_matched=None
+    entry, resolution, availability, root, scanned_at, version, ref_matched=None,
+    *, workspace: Path | None = None,
 ) -> ServerReport:
     # Derived from what was actually FETCHED, which is the only thing that
     # licenses a claim about it.
@@ -530,6 +599,11 @@ def _assemble(
     maintenance = assess_maintenance(forge.signals, as_of=_scan_date(scanned_at))
 
     code = assess_code_safety(root, inventory, version=version) if root else None
+    code_note = ""
+    if code is not None and code.build_output_only and resolution.supplement and workspace:
+        code, code_note = _code_from_supplement(
+            code, resolution.supplement, workspace, version
+        )
     deps = assess_dependency_health(root, inventory, version=version) if root else None
 
     axes: dict[str, AxisScore] = {
@@ -556,7 +630,7 @@ def _assemble(
             availability.reason,
             fault=_gap_fault(Fault.PUBLISHER, availability),
         ),
-        "code_safety": _code_axis(code, availability),
+        "code_safety": _code_axis(code, availability, code_note),
         "dependency_health": _deps_axis(deps, availability),
     }
 
@@ -580,7 +654,7 @@ def _assemble(
     )
 
 
-def _code_axis(result, availability) -> AxisScore:
+def _code_axis(result, availability, source_note: str = "") -> AxisScore:
     if result is None:
         # No tree to scan, so the fetch stage owns the attribution.
         return AxisScore(
@@ -612,17 +686,18 @@ def _code_axis(result, availability) -> AxisScore:
         )
         for f in shown
     )
-    reason = ""
+    reason = source_note
     if result.pruned:
         # Rendered, never silent. A reader comparing two servers deserves to
         # know that one shipped 245 files and was scored on a dozen of them.
         plural = "" if result.pruned == 1 else "s"
         verb = "was" if result.pruned == 1 else "were"
-        reason = (
+        pruned = (
             f"{result.pruned} vendored or minified path{plural} {verb} excluded "
             "before scanning; machine-generated bundles are not the server's "
             "own code"
         )
+        reason = f"{reason}; {pruned}" if reason else pruned
     if result.files_unparsed:
         note = (
             f"{result.files_unparsed} file"

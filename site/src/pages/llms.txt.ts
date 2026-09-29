@@ -26,6 +26,16 @@ const scanned = scans.length
   : "";
 const flagged = scans.filter((r) => r.registry_state !== "listed").length;
 const allAiPrefixed = scans.length > 0 && scans.every((r) => r.name.startsWith("ai."));
+// `PROJECT` faults must be disclosed in our own voice site-wide (`reachability.
+// Fault`). Build output is one: a package shipping only `dist/` is code we
+// chose not to read, so it is stated here as OUR limit, derived from the data
+// so the sentence appears exactly when a published record carries it.
+const buildOnly = scans.filter(
+  (r) => r.axes.code_safety.score === null && r.axes.code_safety.reason.includes("only as build output"),
+).length;
+const fromRepo = scans.filter((r) =>
+  r.axes.code_safety.reason.startsWith("scored on the declared repository"),
+).length;
 
 const partial = scans.filter((r) =>
   Object.values(r.axes).some(
@@ -76,7 +86,14 @@ answers 404 for a private repository as well as an absent one, so that figure
 means "we could not read it" and never "it does not exist". We do not claim the
 unreadable servers are the dangerous ones; that inference is unsupported.
 
-The analysis is static, always. Published source, manifests and lockfiles are
+${buildOnly + fromRepo ? `Build output (\`dist/\`, \`build/\`) is not read as a server's own source, because a
+bundle can inline its dependencies' code. Many npm packages ship nothing else. For
+${fromRepo} of them, Code Safety is scored on the repository the server declares
+instead, and the axis says so; for ${buildOnly} more, no readable repository was
+declared and the axis is left unassessed. That is a limit of this scanner, not
+a fact about those servers.
+
+` : ""}The analysis is static, always. Published source, manifests and lockfiles are
 read; the code is never executed and no running server is contacted. The blind
 spot is therefore whatever the source does not determine — behaviour gated on
 remote configuration, code fetched at runtime, or a deployment that differs from

@@ -21,6 +21,16 @@ EXCLUDED_DIRS = frozenset(
     {".git", "node_modules", ".venv", "venv", "vendor", "dist", "build", "__pycache__"}
 )
 
+# The subset of EXCLUDED_DIRS that is BUILD OUTPUT rather than someone else's
+# code. Still excluded from every consumer — a repository's `dist/` duplicates
+# its source, and a bundle inlines its dependencies — but a published npm
+# package can ship NOTHING ELSE, and then "no source in a covered language" is
+# a limit of ours, not a fact about the publisher. `enumerate_tree` counts what
+# sits here so `assess_code_safety` can tell those two apart.
+BUILD_OUTPUT_DIRS = frozenset({"dist", "build"})
+if not BUILD_OUTPUT_DIRS <= EXCLUDED_DIRS:  # a raise, not an assert: -O strips those
+    raise RuntimeError("BUILD_OUTPUT_DIRS must be a subset of EXCLUDED_DIRS")
+
 
 # Scanner configuration a SCANNED REPOSITORY may not supply.
 #

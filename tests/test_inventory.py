@@ -627,3 +627,72 @@ def test_an_extensionless_script_named_like_a_doc_is_not_a_doc(tmp_path) -> None
     script.write_text("#!/usr/bin/env python3\nprint('hi')\n")
     record = next(f for f in enumerate_tree(tmp_path).files if f.path == "changes")
     assert record.role is Role.SOURCE
+
+
+# --- build output: excluded, but counted -----------------------------------
+
+
+def test_build_output_is_counted_but_never_recorded(tmp_path):
+    """The shape of a published npm package that ships only compiled code.
+
+    `dist/` stays excluded — nothing in it becomes a record any check reads —
+    but the inventory must say it was there, or "no covered source" cannot be
+    told apart from "only build output we chose not to read".
+    """
+    (tmp_path / "package.json").write_text('{"main":"dist/index.js"}')
+    (tmp_path / "README.md").write_text("# x")
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "index.js").write_text("module.exports = 1")
+    (tmp_path / "dist" / "tools.js").write_text("module.exports = 2")
+    (tmp_path / "dist" / "index.d.ts").write_text("export {}")
+    (tmp_path / "dist" / "styles.css").write_text("a{}")
+
+    inv = enumerate_tree(tmp_path)
+
+    assert not any(f.path.startswith("dist/") for f in inv.files)
+    assert inv.build_output == {"javascript": 2, "typescript": 1}
+    assert inv.skipped == {}
+    assert inv.truncated is False
+
+
+def test_build_output_probe_honours_the_other_exclusions_and_symlinks(tmp_path):
+    """A `node_modules` inside `dist/` is someone else's code even to a count,
+    and a symlink out of `dist/` is refused exactly as the main walk refuses
+    one — without appearing in `skipped`, which describes recorded content."""
+    (tmp_path / "dist" / "node_modules" / "dep").mkdir(parents=True)
+    (tmp_path / "dist" / "node_modules" / "dep" / "index.js").write_text("x")
+    (tmp_path / "dist" / "escape").symlink_to("/etc")
+    (tmp_path / "dist" / "lib").mkdir()
+    (tmp_path / "dist" / "lib" / "server.js").write_text("x")
+
+    inv = enumerate_tree(tmp_path)
+
+    assert inv.build_output == {"javascript": 1}
+    assert "symlink" not in inv.skipped
+
+
+def test_build_output_probe_is_bounded_by_its_own_budget(tmp_path, monkeypatch):
+    """Bounds the WORK, and on a budget separate from MAX_FILES — a large
+    `dist/` must neither run unbounded nor push the main walk into reporting
+    `truncated` where it did not before."""
+    monkeypatch.setattr(inventory, "BUILD_OUTPUT_MAX_VISITS", 3)
+    (tmp_path / "src.py").write_text("x = 1")
+    (tmp_path / "build").mkdir()
+    for i in range(20):
+        (tmp_path / "build" / f"m{i}.js").write_text("x")
+
+    inv = enumerate_tree(tmp_path)
+
+    assert sum(inv.build_output.values()) == 3
+    assert inv.truncated is False
+    assert [f.path for f in inv.files] == ["src.py"]
+
+
+def test_a_repository_with_source_is_unchanged_by_its_build_output(tree):
+    """The records a check reads are exactly what they were before the probe."""
+    before = [f.path for f in enumerate_tree(tree).files]
+    (tree / "dist").mkdir()
+    (tree / "dist" / "bundle.js").write_text("x")
+    inv = enumerate_tree(tree)
+    assert [f.path for f in inv.files] == before
+    assert inv.build_output == {"javascript": 1}

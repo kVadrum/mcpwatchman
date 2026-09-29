@@ -27,6 +27,7 @@ avoid is a walk that wanders out of the workspace or blocks forever on a FIFO.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -35,7 +36,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
 
-from mcpwatchman.workers.excluded import EXCLUDED_DIRS
+from mcpwatchman.workers.excluded import BUILD_OUTPUT_DIRS, EXCLUDED_DIRS
 
 # `04` §3: "Files larger than 1 MB are flagged but not deeply inspected (they're
 # typically generated, vendored, or data files)." Flagged, not dropped — the size
@@ -46,6 +47,11 @@ LARGE_FILE_BYTES = 1024 * 1024
 # archive caps in `source.py` bound what lands on disk, but a git clone is not an
 # archive — nothing upstream bounds a repository's file count.
 MAX_FILES = 100_000
+# A SEPARATE budget for looking inside build-output directories, deliberately
+# not shared with MAX_FILES: the probe only has to establish whether covered
+# code is there at all, and charging it to the main cap would make a repository
+# with a large `dist/` start reporting `truncated` where it did not before.
+BUILD_OUTPUT_MAX_VISITS = 5_000
 
 # Hashing is the only per-byte work here. Files over the large-file threshold are
 # hashed to this prefix rather than in full: the hash exists to pin evidence to a
@@ -206,6 +212,12 @@ class Inventory:
     # reader, and a silent skip is indistinguishable from an empty repository.
     skipped: dict[str, int] = field(default_factory=dict)
     truncated: bool = False
+    # Files found under BUILD_OUTPUT_DIRS, counted by language and never
+    # recorded — they stay excluded from every check. What they answer is
+    # narrower: when `files` holds no covered source, was there none at all
+    # (the publisher's), or only build output we chose not to read (ours)?
+    # A lower bound once `BUILD_OUTPUT_MAX_VISITS` is spent.
+    build_output: dict[str, int] = field(default_factory=dict)
 
     def by_language(self, language: Language) -> tuple[FileRecord, ...]:
         return tuple(f for f in self.files if f.language is language)
@@ -455,18 +467,44 @@ def enumerate_tree(root: Path) -> Inventory:
     # A tree containing a symlink to `/` would have the walk enumerate the host.
     visited = 0
     stopped = False
-    stack: list[Path] = [root]
+    # (directory, inside build output). Build-output directories ride the SAME
+    # walk rather than a second one: every bounds defect this repo has had was a
+    # guard in one walker omitted from its neighbour, so there is no neighbour.
+    stack: list[tuple[Path, bool]] = [(root, False)]
+    build_visits = 0
+    build_output: dict[str, int] = {}
 
     while stack and not stopped:
-        current = stack.pop()
+        current, in_build = stack.pop()
+        if in_build and build_visits >= BUILD_OUTPUT_MAX_VISITS:
+            continue
         try:
             scanner = os.scandir(current)
         except OSError:
-            skip("unreadable")
+            if not in_build:
+                skip("unreadable")
             continue
 
         with scanner:
             for entry in scanner:
+                if in_build:
+                    # Its own budget, and nothing inside is recorded or reported
+                    # as skipped: the directory is still excluded, this only asks
+                    # what kind of thing it holds. Symlink test first, as below.
+                    if build_visits >= BUILD_OUTPUT_MAX_VISITS:
+                        break
+                    build_visits += 1
+                    if entry.is_symlink() or entry.name in EXCLUDED_DIRS:
+                        continue
+                    with contextlib.suppress(OSError):
+                        if entry.is_dir(follow_symlinks=False):
+                            stack.append((Path(entry.path), True))
+                        elif entry.is_file(follow_symlinks=False):
+                            lang = _language_of(Path(entry.path))
+                            if lang is not Language.UNKNOWN:
+                                build_output[lang.value] = build_output.get(lang.value, 0) + 1
+                    continue
+
                 if visited >= MAX_FILES:
                     truncated = True
                     stopped = True
@@ -481,10 +519,16 @@ def enumerate_tree(root: Path) -> Inventory:
                     skip("symlink")
                     continue
                 if entry.name in EXCLUDED_DIRS:
-                    continue  # not "skipped" — excluded by policy, not by failure
+                    # Not "skipped" — excluded by policy, not by failure. Build
+                    # output is still entered, but only to be counted.
+                    if entry.name in BUILD_OUTPUT_DIRS:
+                        with contextlib.suppress(OSError):
+                            if entry.is_dir(follow_symlinks=False):
+                                stack.append((path, True))
+                    continue
                 try:
                     if entry.is_dir(follow_symlinks=False):
-                        stack.append(path)
+                        stack.append((path, False))
                         continue
                     if not entry.is_file(follow_symlinks=False):
                         # FIFOs, sockets, devices. Opening one can block forever.
@@ -526,6 +570,7 @@ def enumerate_tree(root: Path) -> Inventory:
         total_bytes=total,
         skipped=skipped,
         truncated=truncated,
+        build_output=build_output,
     )
 
 
