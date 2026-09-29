@@ -8,6 +8,23 @@ records on every scan, so the newest release goes at the top.
 re-scans affected servers on the next daily crawl; a minor bump (a new rule
 category) re-scans everything.
 
+## 0.1.1 — 2026-09-29
+
+**The three JavaScript shell rules now require the receiver to be `child_process`.**
+`mcp-js-shell-exec-nonliteral`, `mcp-js-shell-exec-template-literal` and `mcp-js-tool-arg-to-shell` matched `$CP.exec(...)` with `$CP` unconstrained, so `re.exec(line)` — the ordinary `RegExp` method — was published as a critical-severity "a shell is spawned" finding.
+Found by the gold-set audits; measured on the 2026-09-29 regeneration: 273 of the 456 shown findings of `mcp-js-shell-exec-nonliteral` had a RegExp-looking receiver, across 52 servers (a lower bound — the heuristic only recognised pattern-like names).
+`db.exec(sql)` and a local function named `exec` matched too.
+
+Two halves, because neither alone reaches every binding form: semgrep's import resolution (`child_process.exec(...)`) follows a require-bound name and a named import, alias included; explicit `pattern-inside` branches catch destructured requires, namespace and default imports, and an inline `require`, each constrained to `^(node:)?child_process$`.
+`tests/fixtures/semgrep/receivers/` pins both directions with `// FIRE:` markers, and the old rules produce 9 findings on its look-alikes.
+
+**The JS and Python SSRF rules now require a request method.**
+`axios.$M(...)`, `requests.$M(...)`, `httpx.$M(...)` and the aiohttp session method matched any attribute, so `axios.create(config)`, `axios.isAxiosError(err)` and `httpx.BasicAuth(user, pw)` were published as "an outbound request is made to a URL that is not a literal".
+`$M` is now pinned to request verbs; the Go rule already named its methods and is unchanged.
+The unfixed rules produce 5 findings on the SSRF look-alikes in `receivers/`.
+
+A patch bump: rule fixes, so affected servers are re-scanned on the next run.
+
 ## 0.1.0 — 2026-09-17
 
 First shipped ruleset. 32 rules across python, javascript/typescript and go,

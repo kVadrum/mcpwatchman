@@ -9,10 +9,18 @@ rules:
     metadata:
       mcp_pattern: value-to-fetch
       cwe: "CWE-918"
+    # ⚠ THE METHOD MUST BE A REQUEST (ruleset 0.1.1). `axios.$M($URL, ...)`
+    # with `$M` free matched `axios.create(config)` and `axios.isAxiosError(err)` — constructors and predicates, not
+    # requests — found by the gold-set audits. Same family as the JS shell
+    # rules' free receiver; tests/fixtures/semgrep/receivers pins both.
     patterns:
       - pattern-either:
           - pattern: fetch($URL, ...)
-          - pattern: axios.$M($URL, ...)
+          - patterns:
+              - pattern: axios.$M($URL, ...)
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(get|post|put|patch|delete|head|options|request|postForm|putForm|patchForm)$
           - pattern: axios($URL, ...)
           - pattern: got($URL, ...)
           - pattern: request($URL, ...)

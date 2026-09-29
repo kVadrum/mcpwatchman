@@ -1,0 +1,10 @@
+const cp = require("child_process");
+const fs = require("fs");
+function a(cmd) { cp.exec(cmd); } // FIRE: mcp-js-shell-exec-nonliteral
+function b(cmd) { cp.execSync(cmd); } // FIRE: mcp-js-shell-exec-nonliteral
+function c(cmd) { cp.spawn(cmd, [], { shell: true }); } // FIRE: mcp-js-shell-exec-nonliteral
+function d(cmd) { require("child_process").exec(cmd); } // FIRE: mcp-js-shell-exec-nonliteral
+function e(dir) { cp.exec(`ls ${dir}`); } // FIRE: mcp-js-shell-exec-nonliteral, mcp-js-shell-exec-template-literal
+function f() { cp.exec("ls -la"); }
+function g(p) { return fs.readFileSync(p); }
+module.exports = { a, b, c, d, e, f, g };

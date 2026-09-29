@@ -147,6 +147,25 @@ def redact_paths(text: str) -> str:
     return _ABSOLUTE_PATH.sub("<path>", text)
 
 
+# 100.64/10 — RFC 6598 shared address space, which is what a tailnet hands
+# out, and which the workspace's pre-commit telemetry guard refuses with no
+# override. Third-party source quotes these legitimately (an SSRF test listing
+# ranges it rejects), and a published excerpt carrying one BLOCKED the data
+# commit — so an unattended nightly would have failed on a stranger's code.
+# The placeholder keeps the range legible and cannot itself match.
+# ⚠ The pattern is the GUARD'S, byte for byte, not RFC 6598's: its second octet
+# `1[0-2][0-9]` also takes 100.128–100.129, outside /10. Mirrored on purpose —
+# what must hold is "nothing the guard blocks is published", so the two move in
+# lockstep; a tighter pattern here would let the guard block a commit again.
+_CGNAT = re.compile(r"\b100\.(6[4-9]|[7-9][0-9]|1[0-2][0-9])\.[0-9]{1,3}\.[0-9]{1,3}\b")
+CGNAT_PLACEHOLDER = "100.64.x.x"
+
+
+def redact_cgnat(text: str) -> str:
+    """Replace every address the guard's 100.64/10 pattern matches with `CGNAT_PLACEHOLDER`."""
+    return _CGNAT.sub(CGNAT_PLACEHOLDER, text)
+
+
 @dataclass(frozen=True, slots=True)
 class SourceAvailability:
     """One server's source-reachability outcome, with the evidence for it."""

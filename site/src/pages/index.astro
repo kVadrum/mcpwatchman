@@ -350,13 +350,15 @@ const ledger = [
                   <a href="/api/servers.json">as one file</a>, an{" "}
                   <a href="/llms.txt">llms.txt</a> index for agents, and{" "}
                   <code>mcpwatchman check</code> to read a server from a terminal.
+                  Every server is rescanned nightly; the current data was scanned on{" "}
+                  <time datetime={lastScanned}>{lastScanned}</time>.
                 </dd>
               </div>
               <div>
                 <dt>Next</dt>
                 <dd>
-                  Scheduled rescans, so a page's date moves on its own. The
-                  current data was scanned on <time datetime={lastScanned}>{lastScanned}</time>.
+                  The gold set: about thirty servers audited by hand, which
+                  measure each rule's false-positive rate and calibrate the weights.
                 </dd>
               </div>
               <div>

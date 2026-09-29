@@ -482,21 +482,31 @@ def test_the_published_data_matches_the_current_scoring_contract(reports) -> Non
     version still agree, this passes, and the data was produced by code that no
     longer exists. Regenerate LAST, after the code is final.
     """
+    from mcpwatchman.cohort import CARRIED_STATES
     from mcpwatchman.workers.scanner.semgrep_check import rules_root, ruleset_version
     from mcpwatchman.workers.scoring.weights import CURRENT_METHODOLOGY_VERSION
 
     expected_rules = ruleset_version(rules_root())
     for report in reports:
-        if report.get("registry_state") == "delisted":
-            # ⚠ THE ONE EXEMPTION, and it is not a softening. A delisted
-            # server has no current registry entry, so "regenerate it" is not
-            # an available remedy — the alternatives are to publish the last
-            # scan taken while it was listed, labelled as exactly that, or to
-            # delete a live page. The label is the field this branch reads, and
-            # `test_cohort.py` gates the label's own honesty.
+        if report.get("registry_state") in CARRIED_STATES:
+            # ⚠ THE CARRIED STATES ARE EXEMPT, and that is not a softening.
+            # Neither can be regenerated: a delisted server has no current
+            # registry entry, and a stale one is carried precisely BECAUSE this
+            # run could not measure it. The alternatives are to publish the last
+            # scan we could take, labelled as exactly that, or to delete a live
+            # page. The label is the field this branch reads, `test_cohort.py`
+            # gates its honesty, and `cohort.systemic_staleness` bounds how many
+            # pages can be carried at once.
+            #
+            # ⚠ THIS READ `== "delisted"` ALONE until 2026-09-29, and so every
+            # ruleset or methodology bump failed here for any server kept stale
+            # that night — and one that fails on our side every night (measured:
+            # an osv-scanner exit 127) would have failed it every night, taking
+            # the nightly's publication down with it. Same set as
+            # `unpublishable_gaps` reads, from the same constant.
             assert report["registry_note"].strip(), (
-                f"{report['name']}: delisted and exempted from the contract "
-                "gate, yet says nothing about why its numbers are older"
+                f"{report['name']}: {report['registry_state']} and exempted from "
+                "the contract gate, yet says nothing about why its numbers are older"
             )
             continue
         assert report["methodology_version"] == CURRENT_METHODOLOGY_VERSION, (
@@ -935,3 +945,14 @@ def test_the_published_set_is_not_a_systemic_failure(reports) -> None:
     from mcpwatchman.cohort import systemic_staleness
 
     assert systemic_staleness(reports) is None
+
+
+def test_no_published_string_carries_a_cgnat_address(reports) -> None:
+    """The artifact half of `runner._redacted`: the committed file must never
+    hold a 100.64/10 literal, or the pre-commit telemetry guard blocks the
+    nightly's data commit on a stranger's quoted code."""
+    import re
+
+    pattern = re.compile(r"\b100\.(6[4-9]|[7-9][0-9]|1[0-2][0-9])\.[0-9]{1,3}\.[0-9]{1,3}\b")
+    hits = [r["name"] for r in reports if pattern.search(json.dumps(r))]
+    assert not hits, f"CGNAT literal in published data: {hits}"

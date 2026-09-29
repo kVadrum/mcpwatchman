@@ -9,12 +9,21 @@ rules:
     metadata:
       mcp_pattern: value-to-fetch
       cwe: "CWE-918"
+    # ⚠ THE METHOD MUST BE A REQUEST (ruleset 0.1.1). `httpx.$M($URL, ...)`
+    # with `$M` free matched `httpx.BasicAuth(user, pw)` and `httpx.Timeout(t)` — constructors and predicates, not
+    # requests — found by the gold-set audits. Same family as the JS shell
+    # rules' free receiver; tests/fixtures/semgrep/receivers pins both.
     patterns:
       - pattern-either:
-          - pattern: requests.$M($URL, ...)
-          - pattern: httpx.$M($URL, ...)
+          - patterns:
+              - pattern-either:
+                  - pattern: requests.$M($URL, ...)
+                  - pattern: httpx.$M($URL, ...)
+                  - pattern: aiohttp.ClientSession(...).$M($URL, ...)
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(get|post|put|patch|delete|head|options|request|stream)$
           - pattern: urllib.request.urlopen($URL, ...)
-          - pattern: aiohttp.ClientSession(...).$M($URL, ...)
       - pattern-not: $LIB.$M("...", ...)
       - pattern-not: urllib.request.urlopen("...", ...)
 

@@ -12,6 +12,15 @@ rules:
     metadata:
       mcp_pattern: tool-arg-to-shell
       cwe: "CWE-78"
+    # ⚠ THE RECEIVER MUST BE child_process (ruleset 0.1.1). This read
+    # `$CP.exec($CMD, ...)` with `$CP` unconstrained, so `re.exec(line)` — the
+    # ordinary RegExp method — was published as a critical "a shell is spawned"
+    # finding: the sibling rule's defect, carried here too, found by the
+    # gold-set audits. Two halves, because neither reaches every binding form:
+    # semgrep's own import resolution (the qualified patterns) follows a
+    # require-bound name and a named import, alias included; the pattern-inside
+    # branches catch destructured requires, namespace and default imports and
+    # an inline require. tests/fixtures/semgrep/receivers pins both directions.
     patterns:
       - pattern-either:
           - pattern-inside: |
@@ -21,10 +30,50 @@ rules:
           - pattern-inside: |
               $SRV.setRequestHandler(CallToolRequestSchema, async ($ARG, ...) => { ... })
       - pattern-either:
-          - pattern: $CP.exec(...)
-          - pattern: $CP.execSync(...)
-          - pattern: exec(...)
-          - pattern: execSync(...)
+          - pattern: "child_process.exec($CMD, ...)"
+          - pattern: "child_process.execSync($CMD, ...)"
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      $CP = require("$M");
+                      ...
+                  - pattern-inside: |
+                      import $CP from "$M";
+                      ...
+                  - pattern-inside: |
+                      import * as $CP from "$M";
+                      ...
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+              - pattern-either:
+                  - pattern: "$CP.exec($CMD, ...)"
+                  - pattern: "$CP.execSync($CMD, ...)"
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      { ..., $FN, ... } = require("$M");
+                      ...
+                  - pattern-inside: |
+                      import { ..., $FN, ... } from "$M";
+                      ...
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+              - metavariable-regex:
+                  metavariable: $FN
+                  regex: ^(exec|execSync)$
+              - pattern: "$FN($CMD, ...)"
+          - patterns:
+              - pattern: "require(\"$M\").exec($CMD, ...)"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+          - patterns:
+              - pattern: "require(\"$M\").execSync($CMD, ...)"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
       - pattern-not: $ANY("...", ...)
 
   - id: mcp-js-tool-returns-environment

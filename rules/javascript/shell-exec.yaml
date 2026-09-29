@@ -9,14 +9,65 @@ rules:
     metadata:
       mcp_pattern: value-to-shell
       cwe: "CWE-78"
+    # ⚠ THE RECEIVER MUST BE child_process (ruleset 0.1.1). This read
+    # `$CP.exec($CMD, ...)` with `$CP` unconstrained, so `re.exec(line)` — the
+    # ordinary RegExp method — was published as a critical "a shell is spawned"
+    # finding: ~60% of this rule's shown findings, on 52 servers, found by the
+    # gold-set audits. Two halves, because neither reaches every binding form:
+    # semgrep's own import resolution (the qualified patterns) follows a
+    # require-bound name and a named import, alias included; the pattern-inside
+    # branches catch destructured requires, namespace and default imports and
+    # an inline require. tests/fixtures/semgrep/receivers pins both directions.
     patterns:
       - pattern-either:
-          - pattern: $CP.exec($CMD, ...)
-          - pattern: $CP.execSync($CMD, ...)
-          - pattern: exec($CMD, ...)
-          - pattern: execSync($CMD, ...)
-          - pattern: "$CP.spawn($CMD, ..., {shell: true})"
-          - pattern: "$CP.spawnSync($CMD, ..., {shell: true})"
+          - pattern: "child_process.exec($CMD, ...)"
+          - pattern: "child_process.execSync($CMD, ...)"
+          - pattern: "child_process.spawn($CMD, ..., {shell: true})"
+          - pattern: "child_process.spawnSync($CMD, ..., {shell: true})"
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      $CP = require("$M");
+                      ...
+                  - pattern-inside: |
+                      import $CP from "$M";
+                      ...
+                  - pattern-inside: |
+                      import * as $CP from "$M";
+                      ...
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+              - pattern-either:
+                  - pattern: "$CP.exec($CMD, ...)"
+                  - pattern: "$CP.execSync($CMD, ...)"
+                  - pattern: "$CP.spawn($CMD, ..., {shell: true})"
+                  - pattern: "$CP.spawnSync($CMD, ..., {shell: true})"
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      { ..., $FN, ... } = require("$M");
+                      ...
+                  - pattern-inside: |
+                      import { ..., $FN, ... } from "$M";
+                      ...
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+              - metavariable-regex:
+                  metavariable: $FN
+                  regex: ^(exec|execSync)$
+              - pattern: "$FN($CMD, ...)"
+          - patterns:
+              - pattern: "require(\"$M\").exec($CMD, ...)"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+          - patterns:
+              - pattern: "require(\"$M\").execSync($CMD, ...)"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
       - pattern-not: $CP.$F("...", ...)
       - pattern-not: $F("...", ...)
 
@@ -29,8 +80,58 @@ rules:
     metadata:
       mcp_pattern: value-to-shell
       cwe: "CWE-78"
-    pattern-either:
-      - pattern: "$CP.exec(`...${$X}...`, ...)"
-      - pattern: "$CP.execSync(`...${$X}...`, ...)"
-      - pattern: "exec(`...${$X}...`, ...)"
-      - pattern: "execSync(`...${$X}...`, ...)"
+    # ⚠ THE RECEIVER MUST BE child_process (ruleset 0.1.1). This read
+    # `$CP.exec($CMD, ...)` with `$CP` unconstrained, so `re.exec(line)` — the
+    # ordinary RegExp method — was published as a critical "a shell is spawned"
+    # finding: the sibling rule's defect, and `db.exec(`SELECT ${x}`)` is this one's, found by the
+    # gold-set audits. Two halves, because neither reaches every binding form:
+    # semgrep's own import resolution (the qualified patterns) follows a
+    # require-bound name and a named import, alias included; the pattern-inside
+    # branches catch destructured requires, namespace and default imports and
+    # an inline require. tests/fixtures/semgrep/receivers pins both directions.
+    patterns:
+      - pattern-either:
+          - pattern: "child_process.exec(`...${$X}...`, ...)"
+          - pattern: "child_process.execSync(`...${$X}...`, ...)"
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      $CP = require("$M");
+                      ...
+                  - pattern-inside: |
+                      import $CP from "$M";
+                      ...
+                  - pattern-inside: |
+                      import * as $CP from "$M";
+                      ...
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+              - pattern-either:
+                  - pattern: "$CP.exec(`...${$X}...`, ...)"
+                  - pattern: "$CP.execSync(`...${$X}...`, ...)"
+          - patterns:
+              - pattern-either:
+                  - pattern-inside: |
+                      { ..., $FN, ... } = require("$M");
+                      ...
+                  - pattern-inside: |
+                      import { ..., $FN, ... } from "$M";
+                      ...
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+              - metavariable-regex:
+                  metavariable: $FN
+                  regex: ^(exec|execSync)$
+              - pattern: "$FN(`...${$X}...`, ...)"
+          - patterns:
+              - pattern: "require(\"$M\").exec(`...${$X}...`, ...)"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$
+          - patterns:
+              - pattern: "require(\"$M\").execSync(`...${$X}...`, ...)"
+              - metavariable-regex:
+                  metavariable: $M
+                  regex: ^(node:)?child_process$

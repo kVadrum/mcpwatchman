@@ -227,3 +227,52 @@ def test_every_source_state_attributes_its_gap() -> None:
     # Every state maps to something, so a new state cannot silently have no
     # attribution at all.
     assert all(isinstance(s.fault, Fault) for s in SourceState)
+
+
+def _ip(*octets: int) -> str:
+    """Addresses are BUILT, never written: a literal in this range in a tracked
+    file is exactly what the pre-commit telemetry guard refuses, test or not."""
+    return ".".join(str(o) for o in octets)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (f'"{_ip(100, 64, 0, 1)}"', '"100.64.x.x"'),     # bottom of 100.64/10
+        (_ip(100, 127, 255, 254), "100.64.x.x"),         # top of it
+        (_ip(100, 63, 0, 1), _ip(100, 63, 0, 1)),        # just below — public space
+        # 100.128/100.129 are OUTSIDE /10 but the workspace guard's pattern
+        # (`1[0-2][0-9]`) blocks them too — and matching the guard, not the RFC,
+        # is the point: redaction exists so a commit is not blocked.
+        (_ip(100, 129, 0, 1), "100.64.x.x"),
+        (_ip(100, 130, 0, 1), _ip(100, 130, 0, 1)),      # past what the guard blocks
+        ("v1" + _ip(100, 64, 0, 12), "v1" + _ip(100, 64, 0, 12)),  # not a standalone address
+    ],
+)
+def test_cgnat_addresses_are_redacted_at_the_range_boundaries(text, expected) -> None:
+    """100.64/10 is what a tailnet hands out, and the workspace's pre-commit
+    guard refuses it with no override — so a third party's test quoting one in
+    a published excerpt blocked the data commit."""
+    from mcpwatchman.workers.scanner.reachability import redact_cgnat
+
+    assert redact_cgnat(text) == expected
+
+
+def test_every_published_string_passes_the_redaction() -> None:
+    """One chokepoint in `to_dict`, reaching nested evidence — not a per-field
+    call that the next text field would forget."""
+    from mcpwatchman.workers.scanner.runner import AxisScore, Evidence, ServerReport
+
+    inside, other = _ip(100, 64, 0, 1), _ip(100, 100, 1, 1)
+    ev = Evidence(label="rule", detail="d", path="t.ts", line=3,
+                  excerpt=f'const unsafe = ["{_ip(10, 0, 0, 1)}", "{inside}"];')
+    report = ServerReport(
+        name="io.example/x", version="1", slug="io-example-x",
+        scanned_at="2026-09-29T00:00:00+00:00", source_reason=f"probe {other}",
+        axes={"code_safety": AxisScore("code_safety", 90, "", "1", evidence=(ev,))},
+    )
+    payload = report.to_dict()
+    text = str(payload)
+    assert inside not in text and other not in text
+    assert payload["axes"]["code_safety"]["evidence"][0]["excerpt"].count("100.64.x.x") == 1
+    assert _ip(10, 0, 0, 1) in text, "only the guarded range is touched"

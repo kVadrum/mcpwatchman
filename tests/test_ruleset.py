@@ -225,3 +225,34 @@ def test_confidence_is_clamped_and_the_clamp_is_recorded(scanned) -> None:
     ceiling = Confidence(confidence_ceiling())
     assert all(f.confidence is not Confidence.HIGH for f in result.findings)
     assert all(f.confidence in (Confidence.LOW, ceiling) for f in result.findings)
+
+
+@needs_semgrep
+def test_sink_rules_fire_only_on_the_real_sink(scanned) -> None:
+    """Both directions, exactly, from the `// FIRE:` markers beside the code.
+
+    The three JS shell rules read `$CP.exec(...)` with `$CP` unconstrained until
+    ruleset 0.1.1, so `re.exec(line)` — the RegExp method — was published as a
+    critical "a shell is spawned" finding on 52 servers. The old rules produce
+    9 findings on `receivers/lookalikes.ts`; these must produce none, and must
+    still reach every way a module can bind `child_process`.
+    """
+    import re as _re
+
+    target = scanned("receivers")
+    payload = _scan(target)
+    assert len(payload["paths"]["scanned"]) >= 5, "semgrep opened too few fixture files"
+    got = {
+        (r["check_id"].rsplit(".", 1)[-1], Path(r["path"]).name, r["start"]["line"])
+        for r in payload["results"]
+    }
+    expected = set()
+    for path in sorted(p for p in target.iterdir() if p.suffix in (".js", ".ts", ".py")):
+        for n, line in enumerate(path.read_text().splitlines(), 1):
+            marker = _re.search(r"(?://|#) FIRE: (.*)$", line)
+            if marker:
+                expected |= {(rule.strip(), path.name, n) for rule in marker.group(1).split(",")}
+    assert expected, "the fixture set carries no FIRE markers"
+    assert got == expected, {
+        "missing": sorted(expected - got), "unexpected": sorted(got - expected),
+    }

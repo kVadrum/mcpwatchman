@@ -50,6 +50,7 @@ from mcpwatchman.workers.scanner.reachability import (
     SourceAvailability,
     SourceState,
     from_exception,
+    redact_cgnat,
 )
 from mcpwatchman.workers.scanner.semgrep_check import (
     SemgrepResult,
@@ -252,7 +253,21 @@ class ServerReport:
             )
         payload = asdict(self)
         payload["axes"] = {k: asdict(v) for k, v in self.axes.items()}
-        return payload
+        # ONE chokepoint, default-on, over every string the report publishes —
+        # not per field, because the next text field would be the one that
+        # forgot (base.md § Canonical homes → the structural remedy).
+        return _redacted(payload)
+
+
+def _redacted(value: Any) -> Any:
+    """`reachability.redact_cgnat` applied to every string in a JSON-ready value."""
+    if isinstance(value, str):
+        return redact_cgnat(value)
+    if isinstance(value, dict):
+        return {k: _redacted(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_redacted(v) for v in value]
+    return value
 
 
 def _gap_fault(default: Fault, availability: SourceAvailability) -> Fault:
