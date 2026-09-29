@@ -498,8 +498,48 @@ def carry_forward(
     return carried
 
 
+# A handful of pages keeping an older scan is an ordinary night — a clone that
+# timed out, a scratch mount that filled — and each one is labelled and retried
+# for free. Measured: 0 kept in 492 on a quiet box, 3 in 29 under load. What is
+# NOT ordinary is most of the set: an exhausted GitHub token or a broken
+# toolchain gives every remaining server the same our-side gap, and the run used
+# to write hundreds of "the most recent scan could not measure it" notes and
+# EXIT 0 — a scheduled run that changed nothing, reported as success.
+STALE_FLOOR = 5
+STALE_MAX_SHARE_PERCENT = 10
+
+
+def systemic_staleness(reports: Iterable[dict]) -> str | None:
+    """Why this set must not be published, if too much of it kept an older scan.
+
+    ONE function, two enforcers: `ops/scan_cohort.py` calls it before writing,
+    and `tests/test_site_scans.py` calls it on the committed file — so the rule
+    cannot move in one and not the other (the pair that drifted twice in one
+    session is recorded in this repo's memory).
+
+    Per-page staleness stays absorbed, which keeps the stance that a refused gap
+    costs that page its refresh, not the run; only a share past
+    `max(STALE_FLOOR, 10%)` is treated as the run itself having failed.
+    """
+    rows = list(reports)
+    stale = sorted(r.get("name", "?") for r in rows if r.get("registry_state") == "stale")
+    limit = max(STALE_FLOOR, len(rows) * STALE_MAX_SHARE_PERCENT // 100)
+    if len(stale) <= limit:
+        return None
+    return (
+        f"{len(stale)} of {len(rows)} pages would keep an older scan, more than "
+        f"the {limit} an ordinary run absorbs. A failure of ours at that scale "
+        "is systemic — an exhausted GitHub token, a broken toolchain, a dead "
+        "network — and publishing it would print our outage on every one of "
+        "those pages. Nothing written; the published set is unchanged. "
+        f"First few: {', '.join(stale[:5])}"
+    )
+
+
 __all__ = [
     "CARRIED_STATES",
+    "STALE_FLOOR",
+    "STALE_MAX_SHARE_PERCENT",
     "FILE_NOTE",
     "atomic_write",
     "carry_forward",
@@ -512,4 +552,5 @@ __all__ = [
     "load",
     "parse",
     "save",
+    "systemic_staleness",
 ]

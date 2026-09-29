@@ -925,3 +925,13 @@ def test_the_index_finds_every_server_and_never_drops_a_weight(reports) -> None:
             assert axis["assessed_weight"] == report["axes"][key]["assessed_weight"]
         api = row["api_url"].removeprefix("https://mcpwatchman.com/")
         assert (DIST / api).is_file(), f"index points at a missing record: {api}"
+
+
+def test_the_published_set_is_not_a_systemic_failure(reports) -> None:
+    """The artifact half of `cohort.systemic_staleness` — the SAME function the
+    driver calls before writing, so the two enforcers cannot drift apart. A
+    committed file edited, merged or regenerated into mostly-stale pages is our
+    outage published on every one of them."""
+    from mcpwatchman.cohort import systemic_staleness
+
+    assert systemic_staleness(reports) is None

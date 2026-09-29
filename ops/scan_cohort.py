@@ -57,6 +57,7 @@ from mcpwatchman.cohort import (
     mark_status,
     publication_errors,
     save,
+    systemic_staleness,
     unpublishable_gaps,
 )
 from mcpwatchman.workers.crawler.registry import (
@@ -525,6 +526,17 @@ def main() -> int:
     grown: Cohort = cohort
     if growth:
         grown = cohort.extended_with((e.name for e in growth), on=today)
+
+    # Checked BEFORE the per-page gates, and with its own exit code: this is
+    # the run failing, not a page. Exit 3 lets an unattended wrapper tell a
+    # systemic outage from a refused page without parsing prose.
+    systemic = systemic_staleness(reports.values())
+    if systemic:
+        print("REFUSING TO WRITE:\n  " + systemic, file=sys.stderr)
+        if unmeasured:
+            print(f"kept previous scan ({len(unmeasured)}): {', '.join(sorted(unmeasured))}",
+                  file=sys.stderr)
+        return 3
 
     # The decision to refuse lives in `cohort.publication_errors`, which is
     # where it can be tested: every case it names is invisible once written.

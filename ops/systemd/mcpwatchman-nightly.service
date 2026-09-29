@@ -1,0 +1,22 @@
+# mcpwatchman nightly rescan — `10-operations.md` §2. Installed as a USER unit:
+#   systemctl --user link  ~/dev/projects/mcpwatchman/ops/systemd/mcpwatchman-nightly.service
+#   systemctl --user enable --now ~/dev/projects/mcpwatchman/ops/systemd/mcpwatchman-nightly.timer
+# Not a concierge rig: concierge drives Claude-rig wrappers only (a handoff in
+# STATE asks for non-rig job support so this appears in the portal).
+
+[Unit]
+Description=mcpwatchman nightly rescan of the pinned cohort
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/dev/projects/mcpwatchman
+ExecStart=%h/dev/projects/mcpwatchman/ops/nightly.sh
+# Optional: MCPWATCHMAN_GITHUB_TOKEN=… and MCPW_PUBLISH=1, mode 600. Without it
+# the job reads the token from the operator's `gh` login and does NOT deploy.
+EnvironmentFile=-%h/.config/mcpwatchman/nightly.env
+# 492 servers took 46 minutes; the budget leaves room for growth and a slow night.
+TimeoutStartSec=3h
+Nice=10
+IOSchedulingClass=idle

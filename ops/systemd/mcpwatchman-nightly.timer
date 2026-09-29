@@ -1,0 +1,11 @@
+[Unit]
+Description=mcpwatchman nightly rescan (02:00 UTC, `10-operations.md` §2)
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 UTC
+# poseidon is a home box: a night it was off runs at next boot rather than never.
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

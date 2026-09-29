@@ -225,3 +225,50 @@ def test_the_summary_names_what_it_did_not_publish(driver, capsys, tmp_path: Pat
     printed = capsys.readouterr().out
     assert "kept previous scan (1): ai.a/one" in printed
     assert "not pinned, our side failed (1): ai.c/three" in printed
+
+
+def test_a_systemic_our_side_failure_refuses_to_write_and_exits_3(
+    driver, capsys, tmp_path: Path
+) -> None:
+    """An exhausted token gives EVERY server the same our-side gap. Absorbed
+    per page, that wrote "could not measure it" on the whole set and exited 0 —
+    a scheduled run that changed nothing, reported as success."""
+    run, state = driver
+    names = [f"ai.s/n{i}" for i in range(8)]
+    state["cohort"] = Cohort(servers=tuple(_pin(n) for n in names))
+    state["entries"] = {n: RegistryEntry(name=n, version="1", is_latest=True) for n in names}
+    # Six of eight fail on our side — past max(5, 10%).
+    state["reports"] = {
+        n: _report(n, fault="environment" if i < 6 else "publisher")
+        for i, n in enumerate(names)
+    }
+    previous = [_report(n) for n in names]
+    (tmp_path / "scans.json").write_text(json.dumps(previous))
+
+    code, written = run()
+
+    assert code == 3
+    assert json.loads(written) == previous, "the published set must be left untouched"
+    err = capsys.readouterr().err
+    assert "systemic" in err and "6 of 8" in err
+
+
+def test_an_ordinary_handful_of_our_side_gaps_is_still_absorbed(
+    driver, tmp_path: Path
+) -> None:
+    """The negative control: five is the floor an ordinary run absorbs."""
+    run, state = driver
+    names = [f"ai.s/n{i}" for i in range(8)]
+    state["cohort"] = Cohort(servers=tuple(_pin(n) for n in names))
+    state["entries"] = {n: RegistryEntry(name=n, version="1", is_latest=True) for n in names}
+    state["reports"] = {
+        n: _report(n, fault="environment" if i < 5 else "publisher")
+        for i, n in enumerate(names)
+    }
+    (tmp_path / "scans.json").write_text(json.dumps([_report(n) for n in names]))
+
+    code, written = run()
+
+    assert code == 0
+    states = [r.get("registry_state") for r in json.loads(written)]
+    assert states.count("stale") == 5

@@ -549,3 +549,18 @@ def test_a_scored_axis_hiding_our_own_failure_is_refused() -> None:
     assert not unpublishable_gaps("x/y", {"name": "x/y", "axes": {"auth_posture": {
         "score": 80, "assessed_weight": "0.65", "fault": None, "reason": "",
     }}})
+
+
+@pytest.mark.parametrize(
+    ("total", "stale", "refused"),
+    [(8, 5, False), (8, 6, True), (492, 49, False), (492, 50, True), (0, 0, False)],
+)
+def test_systemic_staleness_boundary(total, stale, refused) -> None:
+    """`max(5, 10%)`, asserted at the boundary rather than the happy case."""
+    from mcpwatchman.cohort import systemic_staleness
+
+    rows = [
+        {"name": f"s{i}", "registry_state": "stale" if i < stale else "listed"}
+        for i in range(total)
+    ]
+    assert (systemic_staleness(rows) is not None) is refused
