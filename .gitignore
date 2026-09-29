@@ -67,3 +67,9 @@ RUNLOG.md
 # and the site data — are COMMITTED, so `git add -A` would stage a partial
 # write of the published record next to the real one.
 *.tmp
+
+# Gold-set DRAFTS (agent-drafted, not yet a hand audit) and PRIVATE notes
+# (Track B candidates under 08-disclosure-policy.md §3 — a finding the scanner
+# missed is owed an embargo, and a committed file is public).
+evals/gold-set/drafts/
+evals/gold-set/private/
