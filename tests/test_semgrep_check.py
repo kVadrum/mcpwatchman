@@ -321,6 +321,29 @@ def test_minification_detection(tmp_path: Path, name, body, minified) -> None:
     assert sc._is_minified(path) is minified
 
 
+def test_one_long_line_does_not_make_authored_source_a_bundle(tmp_path: Path) -> None:
+    """The shape that kept two published pages stale (2026-09-29).
+
+    A hand-written 188-line `index.ts` whose tool description is one
+    1,183-character string was pruned as minified — the server's only source
+    file — so semgrep read nothing and the zero was attributed to us.
+    """
+    lines = [f"export const t{i} = {i};" for i in range(187)]
+    lines.insert(107, '  description: "' + "Push enriched rows. " * 60 + '",')
+    path = tmp_path / "index.ts"
+    path.write_text("\n".join(lines) + "\n")
+    assert max(len(line) for line in lines) > sc.MINIFIED_LINE_CHARS
+    assert sc._is_minified(path) is False
+
+
+def test_a_bundle_behind_a_licence_header_is_still_minified(tmp_path: Path) -> None:
+    """The negative control: few long LINES, but nearly all the BYTES."""
+    header = ["/*!", " * somelib v1.2.3", " * (c) Someone", " * MIT License", " */"]
+    path = tmp_path / "vendor.js"
+    path.write_text("\n".join(header + ["!function(e){" + "var x=1;" * 600 + "}"]) + "\n")
+    assert sc._is_minified(path) is True
+
+
 def test_scanning_nothing_is_a_failure_even_when_paths_were_pruned(
     tmp_path, monkeypatch
 ) -> None:

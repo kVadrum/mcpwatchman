@@ -361,7 +361,21 @@ def _is_minified(path: Path) -> bool:
         head = path.open("rb").read(_MINIFIED_PROBE_BYTES)
     except OSError:
         return False
-    return any(len(line) > MINIFIED_LINE_CHARS for line in head.split(b"\n"))
+    # ⚠ A PROPERTY OF THE FILE, NOT OF ONE LINE. This returned True for ANY
+    # line over the threshold, so a hand-written 188-line `index.ts` holding one
+    # 1,183-character tool description was pruned as a bundle — the server's
+    # only source file — and semgrep's zero then read as OUR failure, keeping
+    # two published pages stale on every run (measured 2026-09-29). A bundle is
+    # MOSTLY long lines: most of its bytes sit in them. Byte share rather than
+    # line share on purpose — a minified file behind a multi-line licence
+    # header has few long lines but nearly all its bytes in them, and missing a
+    # bundle is the failure that scored a real server 0. The residual — a real
+    # file that is mostly one giant literal — is pruned and then refused as our
+    # gap: visible, never a false score.
+    lines = head.split(b"\n")
+    total = sum(len(line) for line in lines)
+    long_bytes = sum(len(line) for line in lines if len(line) > MINIFIED_LINE_CHARS)
+    return total > 0 and long_bytes * 2 > total
 
 
 def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
