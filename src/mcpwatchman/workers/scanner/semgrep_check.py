@@ -44,6 +44,7 @@ methodology version.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from dataclasses import dataclass
 from decimal import ROUND_DOWN, Decimal
@@ -79,6 +80,23 @@ AXIS = "code_safety"
 # `04` §4.4: "Timeout is 5 minutes per scan; OOM kill at 2 GB."
 SEMGREP_TIMEOUT_S = 300
 SEMGREP_MAX_MEMORY_MB = 2048
+
+# ⚠ semgrep-core's I/O runtime (OCaml Eio) defaults to io_uring, and io_uring
+# charges its rings to the USER's locked-memory budget — systemd's default
+# 8 MB, shared with every process that user runs. Measured 2026-09-30 on this
+# box: 13-16 idle Playwright MCP servers from open Claude sessions held 112-130
+# rings, and semgrep-core died at `io_uring_queue_init` ("Cannot allocate
+# memory") — intermittently, as sessions came and went. Every server's Code
+# Safety then fails as OUR gap, the systemic-staleness guard trips, and the
+# nightly publishes nothing. The posix backend needs no locked memory: same
+# 82 findings on 56 files, same 1.8 s, and it still scans with the limit at 0.
+# Every semgrep launch — the scanner's and the tests' — takes this environment.
+SEMGREP_ENV_OVERRIDES = {"EIO_BACKEND": "posix"}
+
+
+def semgrep_env() -> dict[str, str]:
+    """The environment to launch semgrep with: ours, plus `SEMGREP_ENV_OVERRIDES`."""
+    return {**os.environ, **SEMGREP_ENV_OVERRIDES}
 
 # Lines of context quoted with each finding (`03` §3: "~5 lines").
 EVIDENCE_CONTEXT_LINES = 2
@@ -607,7 +625,7 @@ def run_semgrep(
     # rate compounds: measured, a clean run reached six live `semgrep-core`
     # processes and a 16-in-20 failure rate by server 300. `workers.bounded`
     # carries the full measurement.
-    proc = run_bounded(cmd, timeout=timeout_s)
+    proc = run_bounded(cmd, timeout=timeout_s, env=semgrep_env())
     if proc.timed_out:
         return SemgrepResult(
             status=SemgrepStatus.FAILED,
@@ -941,6 +959,7 @@ def assess_code_safety(
 __all__ = [
     "AXIS",
     "AXIS_MAX",
+    "SEMGREP_ENV_OVERRIDES",
     "CodeFinding",
     "RulesetError",
     "SemgrepResult",
@@ -951,4 +970,5 @@ __all__ = [
     "rules_root",
     "ruleset_version",
     "run_semgrep",
+    "semgrep_env",
 ]

@@ -47,7 +47,7 @@ import contextlib
 import os
 import signal
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 
@@ -70,7 +70,8 @@ class Bounded:
 
 
 def run_bounded(
-    cmd: Sequence[str], *, timeout: float, cwd: Path | str | None = None
+    cmd: Sequence[str], *, timeout: float, cwd: Path | str | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> Bounded:
     """Run `cmd` with a deadline, ending its whole process group if it expires.
 
@@ -90,6 +91,7 @@ def run_bounded(
         stderr=subprocess.PIPE,
         text=True,
         cwd=str(cwd) if cwd is not None else None,
+        env=dict(env) if env is not None else None,
         # Half one: its own process group, so there is a group to kill.
         start_new_session=True,
     )

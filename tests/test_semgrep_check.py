@@ -10,6 +10,7 @@ broken or absent.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import types
 from pathlib import Path
@@ -767,3 +768,26 @@ def test_a_truncated_walk_asserts_neither_absence_nor_build_output_only() -> Non
         assert result.fault is Fault.PROJECT, built
         assert "walk of the source tree stopped before it finished" in result.reason
         assert result.build_output_only is False
+
+
+def test_semgrep_is_launched_on_the_posix_io_backend(tree, monkeypatch) -> None:
+    """semgrep-core's default io_uring backend charges the user's shared
+    locked-memory budget, which a box full of idle MCP servers exhausts — and
+    then every server's Code Safety fails as our gap (measured 2026-09-30).
+    The real reproduction, under a zero limit, is in `test_ruleset.py`; this
+    pins the launch itself in every CI job, semgrep installed or not."""
+    seen: dict = {}
+
+    def fake(cmd, **kw):
+        seen.update(kw.get("env") or {})
+        return types.SimpleNamespace(
+            returncode=0, stdout='{"results": [], "errors": [], "paths": {"scanned": []}}',
+            stderr="", timed_out=False,
+        )
+
+    monkeypatch.setattr(sc.shutil, "which", lambda _: "/usr/bin/semgrep")
+    monkeypatch.setattr(sc, "run_bounded", fake)
+    monkeypatch.setenv("EIO_BACKEND", "io-uring")  # an inherited setting must not win
+    sc.run_semgrep(tree, rules=RULES)
+    assert seen.get("EIO_BACKEND") == "posix"
+    assert seen.get("PATH") == os.environ["PATH"], "the rest of the environment is kept"

@@ -142,7 +142,9 @@ def _scan(target: Path) -> dict:
     for config in sc._language_configs(RULES):
         cmd += ["--config", str(config)]
     cmd.append(str(target))
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)  # noqa: S603
+    proc = subprocess.run(  # noqa: S603
+        cmd, capture_output=True, text=True, timeout=300, env=sc.semgrep_env(),
+    )
     return json.loads(proc.stdout)
 
 
@@ -160,7 +162,9 @@ def test_the_ruleset_compiles() -> None:
     cmd = ["semgrep", "--validate"]
     for config in sc._language_configs(RULES):
         cmd += ["--config", str(config)]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=300)  # noqa: S603
+    proc = subprocess.run(  # noqa: S603
+        cmd, capture_output=True, text=True, timeout=300, env=sc.semgrep_env(),
+    )
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
@@ -256,3 +260,24 @@ def test_sink_rules_fire_only_on_the_real_sink(scanned) -> None:
     assert got == expected, {
         "missing": sorted(expected - got), "unexpected": sorted(got - expected),
     }
+
+
+@needs_semgrep
+def test_the_scanner_still_scans_with_no_locked_memory_at_all(scanned) -> None:
+    """The failure this reproduces: io_uring rings are charged to the user's
+    locked-memory budget (systemd's default 8 MB, shared by every process the
+    user runs), idle Playwright MCP servers from open Claude sessions held 130
+    of them, and semgrep-core died at `io_uring_queue_init` — so every server
+    would have failed Code Safety as our gap and the nightly published nothing
+    (2026-09-30). With the limit at ZERO, the scanner must still read the tree."""
+    import resource
+
+    target = scanned("receivers")
+    soft, hard = resource.getrlimit(resource.RLIMIT_MEMLOCK)
+    resource.setrlimit(resource.RLIMIT_MEMLOCK, (0, hard))
+    try:
+        result = sc.run_semgrep(target)
+    finally:
+        resource.setrlimit(resource.RLIMIT_MEMLOCK, (soft, hard))
+    assert result.assessed, result.reason
+    assert result.findings, "scanned, but found nothing in a fixture built to fire"
