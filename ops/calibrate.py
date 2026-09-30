@@ -14,9 +14,13 @@ Three things keep the report honest (all from the Codex leg of its /qaa):
 - Labels are RECONCILED against what the scanner reports now
   (`goldset.reconcile`): a label whose finding is gone is stale, excluded from
   the rates, and blocks declaring calibration until that entry is re-audited.
-- A gap of OURS (a missing binary, an exhausted token) refuses the run with
-  exit 2 instead of reading as drift — a broken environment is not evidence
-  about the methodology.
+- A gap of OURS (a missing binary, an exhausted token, a tool over budget)
+  is never read as drift — a broken measurement is not evidence about the
+  methodology. A missing toolchain refuses the run up front; an our-side gap
+  on ONE entry skips that entry by name and blocks declaring calibration,
+  but the rest are still measured — aborting the whole run on the first one
+  let a single server that fails on our side every night (osv-scanner over
+  budget, measured 2026-09-29) block calibration for everyone.
 
 This is a scan: semgrep and osv-scanner on PATH, a GitHub token, network — and
 never beside another scan or the test suite (`CLAUDE.md`).
@@ -24,7 +28,8 @@ never beside another scan or the test suite (`CLAUDE.md`).
     PATH=.venv-workers/bin:$PATH .venv/bin/python ops/calibrate.py [--include-drafts]
 
 Exit 0: no drift and no stale labels. 1: drift or stale labels, listed.
-2: the environment is not fit to calibrate, or an entry could not be scanned.
+2: the environment is not fit to calibrate, or some entry could not be
+measured (named in the output).
 """
 
 from __future__ import annotations
@@ -103,18 +108,21 @@ def main() -> int:
 
     drifted: dict[str, list[str]] = {}
     stale_entries: list[str] = []
+    unmeasured: list[str] = []
     official: list[Label] = []
     preview: list[Label] = []
     for entry in entries:
         found = registry_entry(entry.name, entry.version)
         if found is None:
-            print(f"[missing] {entry.name}@{entry.version} is not in the registry", file=sys.stderr)
-            return 2
+            print(f"[unmeasured] {entry.name}@{entry.version} is not in the registry")
+            unmeasured.append(entry.name)
+            continue
         report = scan_entry(found).to_dict()
         ours = unpublishable_gaps(entry.name, report)
         if ours:
-            print(f"REFUSING TO CALIBRATE: {ours[0]}", file=sys.stderr)
-            return 2
+            print(f"[unmeasured] {entry.name}: our side failed — {ours[0][:140]}")
+            unmeasured.append(entry.name)
+            continue
         scores = {a: report["axes"][a]["score"] for a in AXES}
         # Computed internally and never written anywhere a surface reads.
         composite = (
@@ -147,15 +155,17 @@ def main() -> int:
         _print_tiers("PREVIEW — draft labels only, counted toward nothing:", preview)
 
     ratified_names = {e.name for e in entries if e.ratified}
-    blocking = sorted(ratified_names & (set(drifted) | set(stale_entries)))
+    blocking = sorted(ratified_names & (set(drifted) | set(stale_entries) | set(unmeasured)))
     ready = ratified >= MIN_RATIFIED_ENTRIES and not blocking
     print(
         f"\n{len(drifted)} of {len(entries)} entries drift, {len(stale_entries)} carry stale "
-        "labels. Calibration "
+        f"labels, {len(unmeasured)} could not be measured. Calibration "
         + ("may be declared." if ready else
            f"may NOT be declared: it needs >= {MIN_RATIFIED_ENTRIES} ratified entries, "
-           "none drifting or stale.")
+           "every one measured, none drifting or stale.")
     )
+    if unmeasured:
+        return 2
     return 1 if (drifted or stale_entries) else 0
 
 
