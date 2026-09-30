@@ -415,13 +415,16 @@ def test_every_theme_text_token_clears_AA_on_its_own_ground():
 
 def test_the_footer_carries_the_copyright_in_house_style():
     """`<owner> © <year>` — the workspace's footer form, not the LICENSE-file
-    form (`Copyright (c) …`), which is reserved for the licence text itself."""
+    form (`Copyright (c) …`), which is reserved for the licence text itself —
+    in its canonical spelling, a no-break space holding the name together
+    (`~/dev/docs/licensing/LICENSING.md` → *Visible footer year*). Every other
+    page's notice is held by `test_site_scans.py`."""
     source = PAGE.read_text()
-    assert "KeMeK Network &copy; {year}" in source, "footer copyright missing"
+    assert "KeMeK&nbsp;Network &copy; {year}" in source, "footer copyright missing"
     built = SITE / "dist" / "index.html"
     if not built.is_file():
         pytest.skip("site not built")
-    assert re.search(r"KeMeK Network &copy; 20\d\d", built.read_text())
+    assert re.search(r"KeMeK&nbsp;Network &copy; 20\d\d", built.read_text())
 
 
 def test_the_browser_chrome_colour_matches_the_page_ground():

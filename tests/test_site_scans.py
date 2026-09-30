@@ -990,3 +990,31 @@ def test_a_recorded_commit_is_on_the_page(reports) -> None:
     for r in pinned[:10]:
         html = (DIST / "servers" / r["slug"] / "index.html").read_text()
         assert f'title="{r["repository_commit"]}"' in html, r["slug"]
+
+
+@needs_dist
+def test_every_page_names_the_copyright_holder_correctly() -> None:
+    """The copyright notice is "KeMeK Network © <year>" — never "kVadrum ©"
+    (operator, 2026-09-30; `~/dev/docs/licensing/LICENSING.md`). The report
+    layout carried "kVadrum ©" on 493 pages while the homepage said KeMeK
+    Network: one notice per template, so the templates drifted apart unseen.
+    Every built page must carry a notice, and every notice must name the holder."""
+    # The canonical form joins the name with a no-break space (LICENSING.md →
+    # *Visible footer year*), which a page may carry as the entity or the char.
+    notice = re.compile(
+        r"((?:[A-Za-z]+(?: |&nbsp;|\u00a0))*[A-Za-z]+)\s*(?:©|&copy;)\s*\d{4}"
+    )
+    pages = sorted(DIST.rglob("*.html"))
+    assert len(pages) > 400, "the built site is missing pages"
+    wrong, missing = [], []
+    for page in pages:
+        holders = {
+            re.sub(r"&nbsp;|\u00a0", " ", m.group(1)).strip()
+            for m in notice.finditer(page.read_text())
+        }
+        if not holders:
+            missing.append(page.relative_to(DIST).as_posix())
+        elif holders != {"KeMeK Network"}:
+            wrong.append((page.relative_to(DIST).as_posix(), sorted(holders)))
+    assert not wrong, f"{len(wrong)} page(s) name another holder, e.g. {wrong[:3]}"
+    assert not missing, f"{len(missing)} page(s) carry no copyright notice, e.g. {missing[:3]}"
