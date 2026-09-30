@@ -66,13 +66,24 @@ from mcpwatchman.workers.crawler.registry import (
     RegistryUnavailableError,
     parse_page,
 )
-from mcpwatchman.workers.scanner.runner import scan_entry
+from mcpwatchman.workers.scanner.runner import SUPPLEMENT_BRANCH_TIP, scan_entry
 from mcpwatchman.workers.scoring.composite import composite_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_cohort import preflight  # noqa: E402 - the same toolchain check the cohort run uses
 
 SEARCH_MAX_PAGES = 10
+
+
+def read_at_branch_tip(report: dict) -> bool:
+    """Whether any code was read at a default branch rather than the version.
+
+    Two places say so: the top-level flag, which describes the package or
+    repository fetch, and the Code Safety reason, when that axis was scored on a
+    declared repository instead of a build-output-only package.
+    """
+    reason = report["axes"]["code_safety"].get("reason") or ""
+    return report.get("ref_matched_version") is False or SUPPLEMENT_BRANCH_TIP in reason
 
 
 def registry_entry(name: str, version: str) -> tuple[RegistryEntry | None, str]:
@@ -128,10 +139,13 @@ def main() -> int:
     if not entries:
         return 0
 
-    drifted: dict[str, list[str]] = {}
-    stale_entries: list[str] = []
-    unmeasured: list[str] = []
-    unchecked: list[str] = []
+    # Outcomes hold the ENTRY, never its name: a ratified entry and a draft of
+    # the same server can both be loaded, and keyed by name the draft's drift
+    # would block the ratified verdict it is barred from moving (Codex leg).
+    drifted: list[GoldEntry] = []
+    stale_entries: list[GoldEntry] = []
+    unmeasured: list[GoldEntry] = []
+    unchecked: list[GoldEntry] = []
     official: list[Label] = []
     preview: list[Label] = []
     for entry in entries:
@@ -140,17 +154,17 @@ def main() -> int:
         except (OSError, ValueError, RegistryUnavailableError) as exc:
             # Ours (a network or registry outage), so a skip — never drift.
             print(f"[unmeasured] {entry.name}: the registry could not be read — {exc}")
-            unmeasured.append(entry.name)
+            unmeasured.append(entry)
             continue
         if found is None:
             print(f"[unmeasured] {entry.name}@{entry.version} {why}")
-            unmeasured.append(entry.name)
+            unmeasured.append(entry)
             continue
         report = scan_entry(found, evidence_cap=None).to_dict()
         ours = unpublishable_gaps(entry.name, report)
         if ours:
             print(f"[unmeasured] {entry.name}: our side failed — {ours[0][:140]}")
-            unmeasured.append(entry.name)
+            unmeasured.append(entry)
             continue
         scores = {a: report["axes"][a]["score"] for a in AXES}
         # Computed internally and never written anywhere a surface reads.
@@ -165,11 +179,11 @@ def main() -> int:
         shown = " ".join(f"{a.split('_')[0]}={scores[a]}" for a in AXES)
         status = "drift" if drift or rec.stale else "ok"
         print(f"[{status:5}] {entry.name} ({tag}) {shown} composite={composite}")
-        if report.get("ref_matched_version") is False:
+        if read_at_branch_tip(report):
             # Labels key on (rule, path, line) at the entry's version; the
             # branch tip keeps moving, so read any drift or stale label here as
             # possibly the code's movement rather than the rules'.
-            print("          no tag matched this version: the default branch was read")
+            print("          no tag matched this version: a default branch was read")
         for line in drift:
             print(f"          {line}")
         if rec.stale:
@@ -183,20 +197,17 @@ def main() -> int:
                   + (f", {rec.evidence_omitted} more not shown (evidence cap)"
                      if rec.evidence_omitted else ""))
         if drift:
-            drifted[entry.name] = drift
+            drifted.append(entry)
         if rec.stale:
-            stale_entries.append(entry.name)
+            stale_entries.append(entry)
         if rec.unverifiable:
-            unchecked.append(entry.name)
+            unchecked.append(entry)
 
     _print_tiers("measured tiers — RATIFIED entries only (the official figures):", official)
     if args.include_drafts:
         _print_tiers("PREVIEW — draft labels only, counted toward nothing:", preview)
 
-    ratified_names = {e.name for e in entries if e.ratified}
-    blocking = sorted(ratified_names & (
-        set(drifted) | set(stale_entries) | set(unmeasured) | set(unchecked)
-    ))
+    blocking = [e for e in drifted + stale_entries + unmeasured + unchecked if e.ratified]
     ready = ratified >= MIN_RATIFIED_ENTRIES and not blocking
     print(
         f"\n{len(drifted)} of {len(entries)} entries drift, {len(stale_entries)} carry stale "

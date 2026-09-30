@@ -107,6 +107,8 @@ def test_a_default_branch_read_is_disclosed_on_the_axis(
 
     assert "default branch" in note
     assert "not necessarily the release" in note
+    # Verbatim: calibration detects a branch-tip supplement by this phrase.
+    assert runner.SUPPLEMENT_BRANCH_TIP in note
 
 
 def test_an_unreachable_repository_keeps_the_gap_ours(

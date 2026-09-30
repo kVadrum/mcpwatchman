@@ -519,6 +519,13 @@ def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
         )
 
 
+# The report's top-level `ref_matched_version` describes the PACKAGE fetch, so a
+# supplement read at a branch tip says so only in the Code Safety reason — in
+# exactly these words, which `ops/calibrate.py` reads back. One constant, so the
+# phrase cannot change in one place and not the other.
+SUPPLEMENT_BRANCH_TIP = "no tag matched this version, so the repository's default branch was read"
+
+
 def _code_from_supplement(
     package_result: SemgrepResult, supplement: str, workspace: Path, version: str
 ) -> tuple[SemgrepResult, str]:
@@ -575,9 +582,8 @@ def _code_from_supplement(
         note = (
             "scored on the declared repository, because the published package "
             "carries its code only as build output, which is not read as the "
-            "server's own source; no tag matched this version, so the "
-            "repository's default branch was read and the findings describe "
-            "that code, not necessarily the release"
+            f"server's own source; {SUPPLEMENT_BRANCH_TIP} and the findings "
+            "describe that code, not necessarily the release"
         )
     return result, note
 
