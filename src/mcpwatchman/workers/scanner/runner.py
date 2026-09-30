@@ -526,11 +526,18 @@ def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
 SUPPLEMENT_BRANCH_TIP = "no tag matched this version, so the repository's default branch was read"
 
 
+def _wants_supplement(code: SemgrepResult) -> bool:
+    """Whether the package's Code Safety gap is one the declared repository can fill."""
+    return code.build_output_only or code.build_output_unfinished
+
+
 def _code_from_supplement(
     package_result: SemgrepResult, supplement: str, workspace: Path, version: str
 ) -> tuple[SemgrepResult, str]:
     """Code Safety from the declared repository, for a package that ships only
-    build output. Returns the result to publish and a note naming its source.
+    build output — or whose build output our bounded look could not finish,
+    with no covered source outside it. Returns the result to publish and a note
+    naming its source and which of the two it was.
 
     `04` §2 is the authority: the repository supplements the package "for rules
     that benefit from full file context not present in a published tarball",
@@ -573,17 +580,20 @@ def _code_from_supplement(
         ), ""
     if not result.assessed:
         return result, ""
-    note = (
-        f"scored on the declared repository at version {spec.version}, because "
+    because = (
+        "the published package holds no source in a covered language outside "
+        "its build output, and this scanner's bounded look inside that build "
+        "output stopped before it finished"
+        if package_result.build_output_unfinished else
         "the published package carries its code only as build output, which is "
         "not read as the server's own source"
     )
+    note = f"scored on the declared repository at version {spec.version}, because {because}"
     if not fetched.ref_matched_version:
         note = (
-            "scored on the declared repository, because the published package "
-            "carries its code only as build output, which is not read as the "
-            f"server's own source; {SUPPLEMENT_BRANCH_TIP} and the findings "
-            "describe that code, not necessarily the release"
+            f"scored on the declared repository, because {because}; "
+            f"{SUPPLEMENT_BRANCH_TIP} and the findings describe that code, "
+            "not necessarily the release"
         )
     return result, note
 
@@ -626,7 +636,7 @@ def _assemble(
 
     code = assess_code_safety(root, inventory, version=version) if root else None
     code_note = ""
-    if code is not None and code.build_output_only and resolution.supplement and workspace:
+    if code is not None and _wants_supplement(code) and resolution.supplement and workspace:
         code, code_note = _code_from_supplement(
             code, resolution.supplement, workspace, version
         )

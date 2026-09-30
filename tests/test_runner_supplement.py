@@ -164,3 +164,42 @@ def test_the_source_note_leads_the_axis_reason() -> None:
     assert axis.score == 80
     assert axis.reason.startswith("scored on the declared repository")
     assert "2 vendored or minified paths were excluded" in axis.reason
+
+
+@pytest.fixture
+def unfinished_result() -> SemgrepResult:
+    result = assess_code_safety(
+        Path("/nonexistent"), Inventory(build_output={}, build_output_truncated=True)
+    )
+    assert result.build_output_unfinished and not result.build_output_only
+    assert result.fault is Fault.PROJECT
+    return result
+
+
+def test_the_repository_is_tried_for_an_unfinished_probe_too(
+    package_result, unfinished_result
+) -> None:
+    """Build output our bounded look could not finish may hold the package's
+    code, so the repository `04` §2 names as the supplement is tried for it as
+    for build-output-only packages — and for nothing else."""
+    assert runner._wants_supplement(package_result)
+    assert runner._wants_supplement(unfinished_result)
+    no_source = assess_code_safety(Path("/nonexistent"), Inventory())
+    assert no_source.fault is Fault.PUBLISHER
+    assert not runner._wants_supplement(no_source)
+
+
+def test_an_unfinished_probe_scored_on_the_repository_says_why(
+    tmp_path, monkeypatch, unfinished_result
+) -> None:
+    """The note must not say "only as build output": that asserts what the
+    unread part of the build output holds."""
+    _fake_fetch(monkeypatch, files={"src/index.ts": "export {}"})
+    _scored(monkeypatch)
+
+    result, note = runner._code_from_supplement(unfinished_result, SUPPLEMENT, tmp_path, "0.2.0")
+
+    assert result.assessed and result.score == 90
+    assert note.startswith("scored on the declared repository at version 0.1.1")
+    assert "stopped before it finished" in note
+    assert "only as build output" not in note

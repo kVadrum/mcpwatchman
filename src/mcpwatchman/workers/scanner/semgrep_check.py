@@ -179,6 +179,11 @@ class SemgrepResult:
     # supplements the package for "rules that benefit from full file context
     # not present in a published tarball").
     build_output_only: bool = False
+    # True when no covered source was found outside build output and the
+    # bounded look INSIDE it stopped before it finished. Not `build_output_only`:
+    # "only as build output" would assert what the unread part holds. The runner
+    # tries the declared repository for either, and its note says which.
+    build_output_unfinished: bool = False
 
     @property
     def assessed(self) -> bool:
@@ -909,6 +914,7 @@ def assess_code_safety(
             # Nothing covered FOUND, but the probe ran out of budget before it
             # finished — so "no covered source" would be a bounded search
             # asserting an absence about a named publisher. Ours, and said so.
+            # The runner tries the declared repository next, as for build output.
             return SemgrepResult(
                 status=SemgrepStatus.UNAVAILABLE,
                 reason=(
@@ -919,6 +925,7 @@ def assess_code_safety(
                 ),
                 explicit_fault=Fault.PROJECT,
                 methodology_version=version,
+                build_output_unfinished=True,
             )
         return SemgrepResult(
             status=SemgrepStatus.UNAVAILABLE,
