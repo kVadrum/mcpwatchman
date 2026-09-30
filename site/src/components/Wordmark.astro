@@ -1,0 +1,33 @@
+---
+/**
+ * The logo: a framed cell, solid on the left and hatched on the right.
+ *
+ * It is the site's own measurement grammar at its smallest — every meter here
+ * draws what was measured solid and what was NOT measured hatched, never as a
+ * zero — so the mark says what the product does before a word is read. One
+ * colour pair only: `--signal` fills, `--signal-ink` draws the frame and hatch,
+ * which is what keeps it visible on the lit-slate light theme, where a bare
+ * amber fill is 1.39:1 (`tokens.css`).
+ *
+ * The hatch is explicit strokes under a clip rather than the meters'
+ * `<pattern>`: at 16–30px a pattern's phase lands anywhere, and three drawn
+ * strokes stay crisp. SVG attributes cannot read CSS custom properties, so
+ * every colour arrives through a class (`site-header.css`).
+ */
+---
+
+<a class="wordmark" href="/">
+  <svg class="wordmark__mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <defs>
+      <clipPath id="wordmark-void">
+        <rect x="13.5" y="2.5" width="8" height="19"></rect>
+      </clipPath>
+    </defs>
+    <rect class="wordmark__measured" x="2.5" y="2.5" width="11" height="19"></rect>
+    <g clip-path="url(#wordmark-void)">
+      <path class="wordmark__hatch" d="M10 26 L27 9 M10 21 L27 4 M10 31 L27 14 M10 16 L27 -1"></path>
+    </g>
+    <rect class="wordmark__frame" x="1.5" y="1.5" width="21" height="21" rx="2.5"></rect>
+  </svg>
+  <span>mcpwatchman</span>
+</a>

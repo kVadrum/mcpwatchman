@@ -1,5 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The wordmark's cell — measured solid, unmeasured hatched — on the dark
+       instrument ground. Strokes are heavier than in the header so the hatch
+       survives 16px; the tile carries its own ground for light browser tabs. -->
+  <defs>
+    <clipPath id="void"><rect x="17.25" y="6.75" width="8" height="18.5"/></clipPath>
+  </defs>
   <rect width="32" height="32" rx="6" fill="#10151B"/>
-  <circle cx="16" cy="16" r="9" fill="none" stroke="#E9A63F" stroke-width="2.5"/>
-  <circle cx="16" cy="16" r="3.5" fill="#E9A63F"/>
+  <rect x="6.75" y="6.75" width="10.5" height="18.5" fill="#E9A63F"/>
+  <g clip-path="url(#void)">
+    <path d="M13 31 L31 13 M13 25 L31 7 M13 19 L31 1" stroke="#E9A63F" stroke-width="2.2" fill="none"/>
+  </g>
+  <rect x="5.5" y="5.5" width="21" height="21" rx="2.5" fill="none" stroke="#E9A63F" stroke-width="2.5"/>
 </svg>

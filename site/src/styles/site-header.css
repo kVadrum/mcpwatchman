@@ -1,0 +1,122 @@
+/* The shared header — wordmark, nav, theme control — for every page.
+ *
+ * One flex row that wraps: on a desktop the wordmark holds the left and the
+ * nav and theme control sit right; on a phone the wordmark takes its own line
+ * and the rest wraps beneath it, in whatever rows the width allows. Wrapping
+ * rather than a fixed grid because a 2× wordmark leaves no width to plan a
+ * phone layout around, and a wrap cannot overflow.
+ */
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem 1.75rem;
+}
+
+/* ── wordmark ─────────────────────────────────────────────────────────── */
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-right: auto;
+  font-family: var(--font-struct);
+  font-weight: 600;
+  /* 2× the 1.0625rem it was (operator, 2026-09-30). Tighter tracking than the
+     old +0.02em: tracking that opens a 17px word closes up at 34px. */
+  font-size: 2.125rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The mark sits a touch taller than the cap height, so it reads as a sign
+   rather than as a stray letter. */
+.wordmark__mark {
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.wordmark__measured {
+  fill: var(--signal);
+}
+
+.wordmark__hatch {
+  fill: none;
+  stroke: var(--signal-ink);
+  stroke-width: 1.6;
+}
+
+.wordmark__frame {
+  fill: none;
+  stroke: var(--signal-ink);
+  stroke-width: 2;
+}
+
+/* ── nav ──────────────────────────────────────────────────────────────── */
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.4rem;
+  font-family: var(--font-struct);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.site-nav a {
+  color: var(--ink-dim);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--signal-ink);
+}
+
+/* ── theme control ────────────────────────────────────────────────────── */
+/* A segmented switch — it looks like a control because it is one. */
+
+.theme {
+  display: flex;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.15rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.theme[hidden] {
+  display: none;
+}
+
+.theme label {
+  font-family: var(--font-struct);
+  font-size: 0.8125rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 2px;
+  cursor: pointer;
+  color: var(--ink-dim);
+}
+
+.theme label:hover {
+  color: var(--ink);
+}
+
+.theme input:checked + label {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+/* The input is visually hidden, so its focus ring is drawn on the label or a
+   keyboard user gets no indicator at all. */
+.theme input:focus-visible + label {
+  outline: 2px solid var(--signal-ink);
+  outline-offset: 1px;
+}

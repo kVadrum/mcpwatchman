@@ -233,7 +233,7 @@ def test_the_homepage_leads_with_the_published_data() -> None:
     "Not yet" entry may not name a surface that exists.
     """
     html = (DIST / "index.html").read_text()
-    nav = re.search(r'<nav class="masthead__nav"[^>]*>(.*?)</nav>', html, re.S)
+    nav = re.search(r'<nav class="site-nav"[^>]*>(.*?)</nav>', html, re.S)
     assert nav, "no masthead nav in the built homepage"
     for href in ('href="/servers/"', 'href="/api/servers.json"'):
         assert href in nav.group(1), f"masthead does not link the data: {href}"
@@ -955,3 +955,20 @@ def test_no_published_string_carries_a_cgnat_address(reports) -> None:
     from mcpwatchman.workers.scanner.reachability import _CGNAT as pattern
     hits = [r["name"] for r in reports if pattern.search(json.dumps(r))]
     assert not hits, f"CGNAT literal in published data: {hits}"
+
+
+@needs_dist
+def test_every_page_wears_the_one_shared_header(reports) -> None:
+    """The homepage and the report pages carried separate headers — a mark on
+    one and none on the other, "API" on one and "JSON" on the other — until
+    they became one component (`SiteHeader.astro`). This keeps them one."""
+    pages = [DIST / "index.html", DIST / "servers" / "index.html"] + [
+        DIST / "servers" / r["slug"] / "index.html" for r in reports[:5]
+    ]
+    for page in pages:
+        html = page.read_text()
+        assert 'class="wordmark__mark"' in html, f"{page}: no logo mark"
+        nav = re.search(r'<nav class="site-nav"[^>]*>(.*?)</nav>', html, re.S)
+        assert nav, f"{page}: not the shared nav"
+        for href in ('href="/servers/"', 'href="/api/servers.json"'):
+            assert href in nav.group(1), f"{page}: shared nav lacks {href}"

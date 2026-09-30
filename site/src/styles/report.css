@@ -69,56 +69,12 @@ a:hover {
 }
 
 /* ── chrome bar ─────────────────────────────────────────────────────────── */
+/* The band the shared header sits in (`site-header.css` owns the header). */
 
 .chrome-bar {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  padding: 1rem clamp(1rem, 4vw, 3rem);
+  padding: 1.1rem clamp(1rem, 4vw, 3rem);
   border-bottom: 1px solid var(--rule);
   background: var(--ground-lift);
-}
-
-.wordmark {
-  font-family: var(--font-struct);
-  font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: 0.01em;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.chrome-bar nav {
-  display: flex;
-  gap: 1.25rem;
-  margin-right: auto;
-  font-family: var(--font-struct);
-}
-
-.theme {
-  display: flex;
-  gap: 0.35rem;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 0.15rem;
-  margin: 0;
-}
-.theme label {
-  font-family: var(--font-struct);
-  font-size: 0.8rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 1px;
-  cursor: pointer;
-  color: var(--ink-dim);
-}
-.theme input:checked + label {
-  background: var(--panel);
-  color: var(--ink);
-}
-.theme input:focus-visible + label {
-  outline: 2px solid var(--signal);
-  outline-offset: 1px;
 }
 
 main {
