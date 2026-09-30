@@ -976,3 +976,17 @@ def test_every_page_wears_the_one_shared_header(reports) -> None:
         mark = re.search(r'<a href="/servers/"(?: aria-current="(\w+)")?>', nav.group(1))
         want = {DIST / "index.html": None, DIST / "servers" / "index.html": "page"}
         assert mark and mark.group(1) == want.get(page, "true"), f"{page}: aria-current"
+
+
+@needs_dist
+def test_a_recorded_commit_is_on_the_page(reports) -> None:
+    """The commit is what names the tree a report read after a tag moves or a
+    branch advances; the JSON carries it, so the page a person reads does too
+    (humans-and-agents parity). SKIPS, visibly, until a regeneration records
+    commits — data from before `repository_commit` existed carries none."""
+    pinned = [r for r in reports if r.get("repository_commit")]
+    if not pinned:
+        pytest.skip("no published report records repository_commit yet")
+    for r in pinned[:10]:
+        html = (DIST / "servers" / r["slug"] / "index.html").read_text()
+        assert f'title="{r["repository_commit"]}"' in html, r["slug"]

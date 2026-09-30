@@ -207,3 +207,24 @@ def test_labels_on_an_unassessed_axis_are_unverifiable_not_stale() -> None:
     assert not rec.stale and not rec.matched
     assert len(rec.unverifiable) == len(e.findings) == 1
     assert "not assessed" in rec.unverifiable_reason
+
+
+def _with_commit(value: str) -> str:
+    return entry().replace('version = "1.2.0"\n', f'version = "1.2.0"\ncommit = {value}\n', 1)
+
+
+def test_an_entry_pins_the_commit_its_audit_read() -> None:
+    """Labels and ranges describe ONE tree; a tag can move and a branch tip
+    always does. Absent is allowed — a package-sourced server reads no
+    repository — and calibration refuses a repository read without a pin."""
+    assert gs.parse(entry()).commit is None
+    full = "0123456789abcdef" * 2 + "01234567"
+    assert gs.parse(_with_commit(f'"{full}"')).commit == full
+
+
+@pytest.mark.parametrize("bad", ['"0123abc"', '"' + "A" * 40 + '"', '"-' + "0" * 39 + '"', "40"])
+def test_a_commit_pin_is_a_full_lowercase_object_name(bad: str) -> None:
+    """A prefix can resolve to a different commit tomorrow; the fetcher refuses
+    what this refuses (one rule, `mcpwatchman.workers.commits`)."""
+    with pytest.raises(gs.GoldSetError, match="full lowercase commit id"):
+        gs.parse(_with_commit(bad))

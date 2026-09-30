@@ -18,11 +18,21 @@ is public before the embargo that finding is owed.
 
 Stdlib only (`tomllib`), so the CI job without the workers extra can gate it.
 
+⚠ **`commit` is what makes an entry reproducible.** Labels key on (rule, path,
+line) and expected ranges describe one tree; a tag can be moved and a branch
+tip always is — 44% of the published cohort was read at a default branch
+(measured 2026-09-30). So an entry records the full commit of the repository
+tree its audit read, and calibration scans exactly that tree. Optional in the
+format, because a server whose source is a package reads no repository and is
+pinned by its version; `ops/calibrate.py` refuses an entry whose scan read a
+repository it does not pin.
+
 File shape — TOML front matter between `+++` lines, then free-form notes:
 
     +++
     name = "io.github.owner/server"
     version = "1.2.3"
+    commit = "<40 hex>"               # the repository tree audited; see below
     category = "filesystem"
     status = "draft"                 # or "ratified"
     audited_by = "..."
@@ -56,6 +66,8 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
 from typing import Any
+
+from mcpwatchman.workers.commits import valid_commit
 
 AXES = ("code_safety", "auth_posture", "dependency_health", "maintenance", "transparency")
 UNASSESSED = "unassessed"
@@ -106,6 +118,7 @@ class GoldEntry:
     expected_composite: tuple[int, int] | None
     expected_axes: dict[str, tuple[int, int] | None]
     findings: tuple[Label, ...] = ()
+    commit: str | None = None
     path: Path | None = field(default=None, compare=False)
 
     @property
@@ -186,6 +199,13 @@ def parse(text: str, *, source: str = "<entry>") -> GoldEntry:
             raise GoldSetError(f"{where}: `rule`, `path` and integer `line` are required")
         labels.append(Label(raw["rule"], raw["path"], raw["line"], raw["label"], raw["why"]))
 
+    commit = data.get("commit")
+    if commit is not None and not (isinstance(commit, str) and valid_commit(commit)):
+        raise GoldSetError(
+            f"{source}: commit must be a full lowercase commit id (40 or 64 hex), "
+            f"got {commit!r} — a prefix may resolve to another commit tomorrow"
+        )
+
     status = data["status"]
     ratified_by = str(data.get("ratified_by", "")).strip()
     ratified_on = _iso_date(data.get("ratified_on"), f"{source}: ratified_on", required=False)
@@ -204,6 +224,7 @@ def parse(text: str, *, source: str = "<entry>") -> GoldEntry:
         expected_composite=composite,
         expected_axes=axes,
         findings=tuple(labels),
+        commit=commit,
     )
 
 

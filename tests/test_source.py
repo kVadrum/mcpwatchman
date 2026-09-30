@@ -13,6 +13,7 @@ import subprocess
 import tarfile
 import types
 import zipfile
+from pathlib import Path
 
 import pytest
 from tests.test_registry import make_raw
@@ -29,6 +30,7 @@ from mcpwatchman.workers.scanner.source import (
     MAX_MEMBERS,
     FetchError,
     SourceSpec,
+    SourceUnreachableError,
     _safe_extract,
     _single_wrapper_dir,
     _tree_size,
@@ -1064,3 +1066,133 @@ def test_a_missing_TAG_is_still_retried_across_candidates(monkeypatch, tmp_path)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert tried == ["1.2.3", "v1.2.3"]
+
+
+def _origin_with_history(tmp_path: Path) -> tuple[Path, str, str]:
+    """A remote whose tag `1.0.0` and `main` tip hold different contents, plus
+    a subfolder — so a fetch of the wrong tree cannot pass for the right one."""
+    origin = tmp_path / "origin"
+    (origin / "pkg" / "a").mkdir(parents=True)
+    (origin / "other").mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    (origin / "pkg" / "a" / "x.js").write_text("first\n")
+    (origin / "other" / "y.js").write_text("y\n")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "first")
+    _git(origin, "tag", "1.0.0")
+    first = subprocess.run(  # noqa: S603
+        ["git", "rev-parse", "HEAD"], cwd=origin, capture_output=True, text=True,  # noqa: S607
+    ).stdout.strip()
+    (origin / "pkg" / "a" / "x.js").write_text("second\n")
+    _git(origin, "commit", "-qam", "second")
+    second = subprocess.run(  # noqa: S603
+        ["git", "rev-parse", "HEAD"], cwd=origin, capture_output=True, text=True,  # noqa: S607
+    ).stdout.strip()
+    return origin, first, second
+
+
+def _fetch_from(origin: Path, spec: SourceSpec, workspace: Path, **kw):
+    from mcpwatchman.workers.scanner import source as S
+
+    monkey = pytest.MonkeyPatch()
+    monkey.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    try:
+        return S.fetch(spec, workspace, **kw)
+    finally:
+        monkey.undo()
+
+
+def test_every_git_fetch_records_the_commit_it_read(tmp_path):
+    """A tag can be moved and a branch tip always is: the commit is the one
+    name for the tree that stays true afterwards. Real git, both ladders."""
+    origin, first, second = _origin_with_history(tmp_path)
+    tagged = _fetch_from(origin, SourceSpec(SourceKind.GITHUB, "a/r", "1.0.0"), tmp_path / "w1")
+    assert (tagged.commit, tagged.ref_matched_version) == (first, True)
+
+    tip = _fetch_from(origin, SourceSpec(SourceKind.GITHUB, "a/r", "9.9.9"), tmp_path / "w2")
+    assert (tip.commit, tip.ref_matched_version) == (second, False)
+
+
+@pytest.mark.parametrize("version,pin", [("1.0.0", "second"), ("9.9.9", "first")])
+def test_a_pinned_commit_is_the_tree_read_and_the_version_is_not_resolved(
+    tmp_path, version, pin
+):
+    """Each case pins against the tree the ladder would otherwise pick: tag
+    `1.0.0` is `first`, so pin `second`; `9.9.9` falls back to the main tip
+    (`second`), so pin the non-tip `first`. And nobody asked whether a tag
+    matched — None, not True or False."""
+    origin, first, second = _origin_with_history(tmp_path)
+    want = {"first": first, "second": second}[pin]
+    got = _fetch_from(
+        origin, SourceSpec(SourceKind.GITHUB, "a/r", version), tmp_path / "w", commit=want,
+    )
+    assert got.commit == want
+    assert (got.scan_root / "pkg" / "a" / "x.js").read_text() == f"{pin}\n"
+    assert got.ref_matched_version is None
+
+
+def test_a_pinned_subfolder_is_checked_out_sparse(tmp_path):
+    origin, first, _ = _origin_with_history(tmp_path)
+    got = _fetch_from(
+        origin, SourceSpec(SourceKind.GITHUB, "a/r", "1.0.0", "pkg/a"), tmp_path / "w",
+        commit=first,
+    )
+    assert got.scan_root == got.root / "pkg" / "a"
+    assert (got.scan_root / "x.js").read_text() == "first\n"
+    assert not (got.root / "other").exists()
+
+
+def test_a_commit_the_forge_does_not_hold_is_our_fetch_failure(tmp_path):
+    """An entry whose pinned tree is gone cannot be measured — reported as a
+    failed fetch, never scanned at some other tree, never blamed on them."""
+    origin, _, _ = _origin_with_history(tmp_path)
+    with pytest.raises(FetchError) as caught:
+        _fetch_from(
+            origin, SourceSpec(SourceKind.GITHUB, "a/r", "1.0.0"), tmp_path / "w",
+            commit="0123456789abcdef0123456789abcdef01234567",
+        )
+    assert not isinstance(caught.value, SourceUnreachableError)
+
+
+@pytest.mark.parametrize("bad", ["abc123", "-oops", "A" * 40, "0" * 39, "g" * 40, ""])
+def test_a_pin_must_be_a_full_lowercase_object_name(tmp_path, bad):
+    """It reaches git's argv, and a prefix may resolve differently tomorrow."""
+    with pytest.raises(FetchError, match="not a full commit id"):
+        _fetch_from(tmp_path, SourceSpec(SourceKind.GITHUB, "a/r", "1.0.0"), tmp_path / "w",
+                    commit=bad)
+
+
+def test_a_commit_cannot_pin_a_package(tmp_path):
+    with pytest.raises(FetchError, match="pins a repository, not a package"):
+        from mcpwatchman.workers.scanner import source as S
+
+        S.fetch(SourceSpec(SourceKind.NPM, "pkg", "1.0.0"), tmp_path / "w", commit="0" * 40)
+
+
+def test_a_pin_that_checks_out_another_commit_is_refused(tmp_path):
+    """An annotated tag's OBJECT id is 40 hex and fetchable, and checking it out
+    lands on the tagged COMMIT — exit 0, a different id. The confusion
+    `pin_gold_commits.tag_commit` exists to avoid; this is the source-layer
+    refusal if it ever happens anyway."""
+    origin, _, _ = _origin_with_history(tmp_path)
+    _git(origin, "tag", "-a", "annotated", "-m", "an annotated tag")
+    tag_object = subprocess.run(  # noqa: S603
+        ["git", "rev-parse", "annotated"], cwd=origin, capture_output=True, text=True,  # noqa: S607
+    ).stdout.strip()
+    with pytest.raises(FetchError, match="pinned"):
+        _fetch_from(origin, SourceSpec(SourceKind.GITHUB, "a/r", "1.0.0"), tmp_path / "w",
+                    commit=tag_object)
+
+
+def test_a_fetch_that_fails_after_recording_leaves_no_answer_behind(tmp_path):
+    """The side channels are keyed by checkout path; a failure after the record
+    (here the subfolder does not exist) must not leave an answer for a later
+    fetch at the same path to inherit."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin, first, _ = _origin_with_history(tmp_path)
+    with pytest.raises(FetchError):
+        _fetch_from(origin, SourceSpec(SourceKind.GITHUB, "a/r", "1.0.0", "no/such/dir"),
+                    tmp_path / "w", commit=first)
+    checkout = tmp_path / "w" / "src"
+    assert checkout not in S._GIT_COMMIT_READ and checkout not in S._GIT_REF_USED

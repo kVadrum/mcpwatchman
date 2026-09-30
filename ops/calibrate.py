@@ -1,13 +1,19 @@
 """Run the scanner against the gold set and report drift and measured rule tiers.
 
-`03` §9's calibration loop, step 1 and 2: scan every entry at its pinned
-version, compare to the hand audit's expected ranges (`09` §5: ±5 composite,
+`03` §9's calibration loop, step 1 and 2: scan every entry at the tree its
+audit read, compare to the hand audit's expected ranges (`09` §5: ±5 composite,
 ±8 per axis), and measure each rule's false-positive rate from the audit's
 labels. It REPORTS; it flips nothing. `weights.RULESET_CALIBRATED` and
 `COMPOSITE_PUBLISHED` stay deliberate edits, and `tests/test_gold_set.py`
 refuses either while fewer than `MIN_RATIFIED_ENTRIES` entries are ratified.
 
-Three things keep the report honest (all from the Codex leg of its /qaa):
+What keeps the report honest:
+- An entry is measured at its PINNED COMMIT (`GoldEntry.commit`), never at
+  whatever its version resolves to today: a tag can be moved and a branch tip
+  always is, and 44% of the published cohort was read at a default branch. A
+  scan that read a repository the entry does not pin, or read a commit other
+  than the pin, leaves the entry unmeasured — `ops/pin_gold_commits.py`
+  recovers the audited commit for an entry drafted before pins existed.
 - The official figures — measured tiers and "may be declared" — come from
   RATIFIED entries only. `--include-drafts` adds a separately labelled
   preview; a draft never moves an official number.
@@ -42,6 +48,7 @@ import argparse
 import json
 import sys
 import traceback
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -62,51 +69,58 @@ from mcpwatchman.goldset import (
 )
 from mcpwatchman.workers.crawler.registry import (
     REGISTRY_BASE_URL,
+    SERVERS_PATH,
     RegistryEntry,
     RegistryUnavailableError,
-    parse_page,
+    parse_entry,
 )
-from mcpwatchman.workers.scanner.runner import SUPPLEMENT_BRANCH_TIP, scan_entry
+from mcpwatchman.workers.scanner.runner import scan_entry
 from mcpwatchman.workers.scoring.composite import composite_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_cohort import preflight  # noqa: E402 - the same toolchain check the cohort run uses
 
-SEARCH_MAX_PAGES = 10
-
-
-def read_at_branch_tip(report: dict) -> bool:
-    """Whether any code was read at a default branch rather than the version.
-
-    Two places say so: the top-level flag, which describes the package or
-    repository fetch, and the Code Safety reason, when that axis was scored on a
-    declared repository instead of a build-output-only package.
-    """
-    reason = report["axes"]["code_safety"].get("reason") or ""
-    return report.get("ref_matched_version") is False or SUPPLEMENT_BRANCH_TIP in reason
-
 
 def registry_entry(name: str, version: str) -> tuple[RegistryEntry | None, str]:
     """The registry's record for exactly this name and version, or None and why.
 
-    Follows the search's cursors, because one page of 100 is a bounded look:
-    "not in the registry" is said only when the search ran out of results, and
-    a search stopped at our page bound says that instead.
+    The exact endpoint, not a search. A search pages through every fuzzy match
+    and took 31 s a page (measured 2026-09-30), past the read timeout — 16 of 30
+    lookups failed that way — and its miss was only as good as the pages read.
+    An exact 404 IS an absence; anything else that fails is ours, and raises.
     """
-    cursor: str | None = None
-    for _ in range(SEARCH_MAX_PAGES):
-        params = {"search": name, "limit": "100"}
-        if cursor:
-            params["cursor"] = cursor
-        url = f"{REGISTRY_BASE_URL}/v0/servers?{urllib.parse.urlencode(params)}"
-        with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310 - fixed https host
-            page, cursor = parse_page(json.load(response))
-        for found in page:
-            if found.name == name and found.version == version:
-                return found, ""
-        if not cursor:
+    url = (f"{REGISTRY_BASE_URL}{SERVERS_PATH}/{urllib.parse.quote(name, safe='')}"
+           f"/versions/{urllib.parse.quote(version, safe='')}")
+    try:
+        with urllib.request.urlopen(url, timeout=60) as response:  # noqa: S310 - fixed https host
+            return parse_entry(json.load(response)), ""
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
             return None, "is not in the registry"
-    return None, f"is not in the first {SEARCH_MAX_PAGES} pages of the registry's search results"
+        raise
+
+
+def pin_problem(entry: GoldEntry, report: dict) -> str:
+    """Why this scan is not a measurement of the tree the audit read, or "".
+
+    Labels key on (rule, path, line) and the expected ranges describe one tree,
+    so a scan of any other tree is not evidence about the rules — its drift and
+    stale labels would be the code's movement. Replaces a warning that only
+    flagged default-branch reads: an unpinned TAGGED read moves too, whenever
+    the tag does.
+    """
+    read = report.get("repository_commit")
+    if entry.commit is None:
+        if read is None:
+            # No repository commit: a package source (pinned by its version),
+            # or a repository that could not be read — an outcome the
+            # comparison then judges like any other.
+            return ""
+        return (f"the scan read a repository (today: {read}) but the entry pins no "
+                "commit, so the audited tree is unknown — run ops/pin_gold_commits.py")
+    if read != entry.commit:
+        return f"pinned {entry.commit}, but the scan read {read or 'no repository'}"
+    return ""
 
 
 def _print_tiers(title: str, labels: list[Label]) -> None:
@@ -160,10 +174,15 @@ def main() -> int:
             print(f"[unmeasured] {entry.name}@{entry.version} {why}")
             unmeasured.append(entry)
             continue
-        report = scan_entry(found, evidence_cap=None).to_dict()
+        report = scan_entry(found, evidence_cap=None, commit=entry.commit).to_dict()
         ours = unpublishable_gaps(entry.name, report)
         if ours:
             print(f"[unmeasured] {entry.name}: our side failed — {ours[0][:140]}")
+            unmeasured.append(entry)
+            continue
+        unpinned = pin_problem(entry, report)
+        if unpinned:
+            print(f"[unmeasured] {entry.name}: {unpinned}")
             unmeasured.append(entry)
             continue
         scores = {a: report["axes"][a]["score"] for a in AXES}
@@ -179,11 +198,6 @@ def main() -> int:
         shown = " ".join(f"{a.split('_')[0]}={scores[a]}" for a in AXES)
         status = "drift" if drift or rec.stale else "ok"
         print(f"[{status:5}] {entry.name} ({tag}) {shown} composite={composite}")
-        if read_at_branch_tip(report):
-            # Labels key on (rule, path, line) at the entry's version; the
-            # branch tip keeps moving, so read any drift or stale label here as
-            # possibly the code's movement rather than the rules'.
-            print("          no tag matched this version: a default branch was read")
         for line in drift:
             print(f"          {line}")
         if rec.stale:

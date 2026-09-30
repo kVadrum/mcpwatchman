@@ -46,7 +46,7 @@ def package_result() -> SemgrepResult:
 def _fake_fetch(monkeypatch, *, files: dict[str, str], ref_matched: bool | None = True):
     seen: list[Path] = []
 
-    def fetch(spec: SourceSpec, workspace: Path) -> FetchResult:
+    def fetch(spec: SourceSpec, workspace: Path, *, commit: str | None = None) -> FetchResult:
         seen.append(workspace)
         root = workspace / "src"
         for rel, body in files.items():
@@ -56,6 +56,7 @@ def _fake_fetch(monkeypatch, *, files: dict[str, str], ref_matched: bool | None 
         return FetchResult(
             spec=spec, root=root, scan_root=root, bytes_on_disk=0,
             file_count=len(files), ref_matched_version=ref_matched,
+            commit=commit or "c" * 40,
         )
 
     monkeypatch.setattr(runner, "fetch", fetch)
@@ -63,7 +64,7 @@ def _fake_fetch(monkeypatch, *, files: dict[str, str], ref_matched: bool | None 
 
 
 def _raising_fetch(monkeypatch, exc: Exception) -> None:
-    def fetch(spec, workspace):
+    def fetch(spec, workspace, *, commit=None):
         raise exc
 
     monkeypatch.setattr(runner, "fetch", fetch)
@@ -85,7 +86,7 @@ def test_the_repository_scores_the_axis_and_the_page_says_so(
     seen = _fake_fetch(monkeypatch, files={"src/index.ts": "export {}"})
     _scored(monkeypatch)
 
-    result, note = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
+    result, note, _ = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
 
     assert result.assessed and result.score == 90
     assert "declared repository at version 0.1.1" in note
@@ -103,12 +104,11 @@ def test_a_default_branch_read_is_disclosed_on_the_axis(
     _fake_fetch(monkeypatch, files={"index.ts": "export {}"}, ref_matched=False)
     _scored(monkeypatch)
 
-    _, note = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
+    _, note, _ = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
 
     assert "default branch" in note
     assert "not necessarily the release" in note
-    # Verbatim: calibration detects a branch-tip supplement by this phrase.
-    assert runner.SUPPLEMENT_BRANCH_TIP in note
+    assert "default branch was read" in note
 
 
 def test_an_unreachable_repository_keeps_the_gap_ours(
@@ -118,7 +118,7 @@ def test_an_unreachable_repository_keeps_the_gap_ours(
     being unreadable does not transfer that decision to them."""
     _raising_fetch(monkeypatch, SourceUnreachableError("404"))
 
-    result, note = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
+    result, note, _ = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
 
     assert not result.assessed
     assert result.fault is Fault.PROJECT
@@ -133,7 +133,7 @@ def test_our_own_fetch_failure_is_refused_not_published(
     it, so a pinned page keeps its last good scan instead of this one."""
     _raising_fetch(monkeypatch, FetchError("timed out"))
 
-    result, _ = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
+    result, _, _ = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
 
     assert result.fault is Fault.ENVIRONMENT
     assert not result.fault.publishable
@@ -146,7 +146,7 @@ def test_a_repository_with_no_covered_source_either_stays_ours(
     `assess_code_safety` returns before semgrep would run."""
     _fake_fetch(monkeypatch, files={"README.md": "# docs"})
 
-    result, note = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
+    result, note, _ = runner._code_from_supplement(package_result, SUPPLEMENT, tmp_path, "0.2.0")
 
     assert result.fault is Fault.PROJECT
     assert "no source in a covered language either" in result.reason
@@ -197,7 +197,7 @@ def test_an_unfinished_probe_scored_on_the_repository_says_why(
     _fake_fetch(monkeypatch, files={"src/index.ts": "export {}"})
     _scored(monkeypatch)
 
-    result, note = runner._code_from_supplement(unfinished_result, SUPPLEMENT, tmp_path, "0.2.0")
+    result, note, _ = runner._code_from_supplement(unfinished_result, SUPPLEMENT, tmp_path, "0.2.0")
 
     assert result.assessed and result.score == 90
     assert note.startswith("scored on the declared repository at version 0.1.1")

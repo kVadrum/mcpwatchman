@@ -26,6 +26,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from mcpwatchman.workers.bounded import run_bounded
+from mcpwatchman.workers.commits import valid_commit
 from mcpwatchman.workers.crawler.registry import SourceKind
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS
 
@@ -57,6 +58,10 @@ FETCH_TIMEOUT_S = 120
 # default branch) and a ref string. A dict MISS is not an answer.
 _REF_UNRECORDED = object()
 _GIT_REF_USED: dict[Path, str | None] = {}
+# The commit a git checkout actually holds, keyed the same way. A tag names a
+# commit only until someone moves it and a branch tip never stays put, so this
+# is the one identifier that says afterwards which tree was read.
+_GIT_COMMIT_READ: dict[Path, str] = {}
 
 
 class FetchError(RuntimeError):
@@ -174,6 +179,10 @@ class FetchResult:
     # fetcher, therefore asserted "this is the released version" by
     # accident rather than by measurement.
     ref_matched_version: bool | None = None
+    # The commit a git fetch checked out; None for a package, or when git did
+    # not report one. Recorded whichever way the ref was chosen — tag, default
+    # branch, or a pin — so a scan can be reproduced at exactly this tree.
+    commit: str | None = None
 
 
 # What a forge says when the thing is not there, or not ours to see. Matched on
@@ -616,15 +625,62 @@ def _git_url(spec: SourceSpec) -> str:
     return f"https://{host}/{spec.identifier}.git"
 
 
-def fetch_git(spec: SourceSpec, dest: Path) -> Path:
+def _pinned_checkout(spec: SourceSpec, url: str, dest: Path, commit: str) -> None:
+    """Exactly `commit`, shallow, instead of resolving the version to a ref.
+
+    For calibration: a gold-set entry pins the tree its audit read, because a
+    tag can be moved and a branch tip always is. `git clone` cannot take an
+    object name, so this is init + fetch-by-name + checkout — forges serve any
+    reachable commit this way (measured on GitHub 2026-09-30, a non-tip commit).
+    A commit the forge no longer holds fails here, and the caller reports the
+    entry unmeasured rather than scanning something else.
+    """
+    if not valid_commit(commit):
+        raise FetchError(f"not a full commit id: {commit!r} ({spec})")
+    dest.mkdir(parents=True)
+    _run(["git", "init", "-q", "--", str(dest)])
+    _run(["git", "remote", "add", "origin", url], cwd=dest)
+    fetch_cmd = ["git", "fetch", "--depth", "1", "--no-tags"]
+    if spec.subfolder:
+        # The same shape as the clone below: blobs on demand, and the cone set
+        # BEFORE the first checkout so only the subfolder is materialised.
+        fetch_cmd.append("--filter=blob:none")
+    _run([*fetch_cmd, "origin", commit], cwd=dest, remote=True, url=url)
+    if spec.subfolder:
+        _run(["git", "sparse-checkout", "set", "--cone", "--", spec.subfolder], cwd=dest)
+    _run(["git", "checkout", "-q", "--detach", "FETCH_HEAD"], cwd=dest)
+
+
+def _head_commit(repo: Path) -> str | None:
+    """The checked-out commit, or None when git will not say.
+
+    None rather than a raise: the tree was fetched and is scannable, and a
+    missing record is "not recorded", which the report can say honestly.
+    """
+    try:
+        proc = run_bounded(["git", "rev-parse", "HEAD"], timeout=30, cwd=repo)
+    except OSError:
+        return None
+    head = (proc.stdout or "").strip()
+    return head if proc.returncode == 0 and valid_commit(head) else None
+
+
+def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Path:
     """Shallow, optionally sparse clone (`04` §2).
 
     `--depth 1 --no-tags` because static analysis needs the tree, not the
     history; maintenance signals come from the forge API instead. Sparse
     checkout when the server lives in a monorepo subdirectory — one repository
     in the registry holds dozens of servers.
+
+    With `commit`, that exact tree is fetched and the version is not resolved
+    at all — so `ref_matched_version` stays unrecorded (None), which is true:
+    nobody asked whether a tag matches.
     """
     url = _git_url(spec)
+    if commit is not None:
+        _pinned_checkout(spec, url, dest, commit)
+        return _finish_checkout(spec, dest, commit=commit)
 
     # ⚠ THE REF MUST BE REQUESTED EXPLICITLY. `--single-branch` alone clones the
     # remote's default branch and SILENTLY IGNORES the version — so a scan of
@@ -716,6 +772,15 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
             ["git", "sparse-checkout", "set", "--cone", "--", spec.subfolder],
             cwd=dest,
         )
+    return _finish_checkout(spec, dest, resolved_ref=resolved_ref)
+
+
+def _finish_checkout(
+    spec: SourceSpec, dest: Path, *, resolved_ref: str | None = None,
+    commit: str | None = None,
+) -> Path:
+    """The tail every git checkout shares — resolved or pinned — so a bound
+    added here reaches both (`CLAUDE.md`: a bound on one path is owed to all)."""
     # Reclaim packfile space immediately; a job's 5 GB scratch is shared with
     # semgrep's own working set.
     _run(["git", "gc", "--prune=now", "--quiet"], cwd=dest, timeout=60)
@@ -732,7 +797,17 @@ def fetch_git(spec: SourceSpec, dest: Path) -> Path:
         raise FetchError(
             f"checkout is {cloned} bytes, over the {MAX_UNPACKED_BYTES} cap: {spec}"
         )
-    _GIT_REF_USED[dest] = resolved_ref
+    head = _head_commit(dest)
+    if commit is not None:
+        # A pin that did not take is not a scan of the pinned tree, whatever
+        # else it is — refuse rather than report a commit nobody read.
+        if head != commit:
+            raise FetchError(f"pinned {commit}, but the checkout is at {head} ({spec})")
+    else:
+        # Only the resolving path answers "did a tag match"; a pin never asked.
+        _GIT_REF_USED[dest] = resolved_ref
+    if head is not None:
+        _GIT_COMMIT_READ[dest] = head
     return _confine(dest / spec.subfolder, dest) if spec.subfolder else dest
 
 
@@ -843,33 +918,43 @@ def _ref_matched(checkout: Path) -> bool | None:
     return used is not None
 
 
-def fetch(spec: SourceSpec, workspace: Path) -> FetchResult:
+def fetch(spec: SourceSpec, workspace: Path, *, commit: str | None = None) -> FetchResult:
     """Obtain `spec` into `workspace` and report what to scan.
 
     `workspace` is the job's scratch directory and this function owns everything
     under it. The caller is responsible for creating and destroying it — see
-    `scan_workspace`.
+    `scan_workspace`. `commit` pins a repository to one tree; a package is
+    already pinned by its version, so a commit there is a caller's mistake.
     """
     workspace.mkdir(parents=True, exist_ok=True)
     checkout = workspace / "src"
     staging = workspace / "dl"
     staging.mkdir(exist_ok=True)
 
-    if spec.kind in (SourceKind.GITHUB, SourceKind.GITLAB):
-        scan_root = fetch_git(spec, checkout)
-    elif spec.kind is SourceKind.NPM:
-        scan_root = fetch_npm(spec, checkout, staging)
-    elif spec.kind is SourceKind.PYPI:
-        scan_root = fetch_pypi(spec, checkout, staging)
-    else:
-        # OCI is resolved by the crawler but deferred to v0.3 (`04` §2); anything
-        # else means the crawler learned a kind this module has not.
-        raise FetchError(f"no fetcher for {spec.kind.value} (spec: {spec})")
+    try:
+        if spec.kind in (SourceKind.GITHUB, SourceKind.GITLAB):
+            scan_root = fetch_git(spec, checkout, commit=commit)
+        elif commit is not None:
+            raise FetchError(f"a commit pins a repository, not a package: {spec}")
+        elif spec.kind is SourceKind.NPM:
+            scan_root = fetch_npm(spec, checkout, staging)
+        elif spec.kind is SourceKind.PYPI:
+            scan_root = fetch_pypi(spec, checkout, staging)
+        else:
+            # OCI is resolved by the crawler but deferred to v0.3 (`04` §2);
+            # anything else means the crawler learned a kind this module has not.
+            raise FetchError(f"no fetcher for {spec.kind.value} (spec: {spec})")
 
-    shutil.rmtree(staging, ignore_errors=True)
-    if not scan_root.is_dir():
-        raise FetchError(f"fetch produced no directory at {scan_root}: {spec}")
-    size, count = _tree_size(scan_root)
+        shutil.rmtree(staging, ignore_errors=True)
+        if not scan_root.is_dir():
+            raise FetchError(f"fetch produced no directory at {scan_root}: {spec}")
+        size, count = _tree_size(scan_root)
+    except BaseException:
+        # A fetch that fails after recording must not leave its answers behind
+        # for a later checkout at the same path to inherit.
+        _GIT_REF_USED.pop(checkout, None)
+        _GIT_COMMIT_READ.pop(checkout, None)
+        raise
     return FetchResult(
         spec=spec,
         root=checkout,
@@ -877,6 +962,7 @@ def fetch(spec: SourceSpec, workspace: Path) -> FetchResult:
         bytes_on_disk=size,
         file_count=count,
         ref_matched_version=_ref_matched(checkout),
+        commit=_GIT_COMMIT_READ.pop(checkout, None),
     )
 
 

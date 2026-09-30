@@ -213,6 +213,13 @@ class ServerReport:
     # on a path that never established it. The page hides the field when true;
     # the JSON API, a primary surface, serves it verbatim.
     ref_matched_version: bool | None = None
+    # The commit of the repository tree this report read: the source itself
+    # when it is a repository, or the declared repository Code Safety was
+    # scored on for a build-output-only package — at most one repository is
+    # read per report, so one field is unambiguous. None: no repository was
+    # read, or the report predates the field. A tag can move and a branch tip
+    # always does; this is what makes a scan reproducible at the tree it read.
+    repository_commit: str | None = None
     # What the REGISTRY said about this server when this report was published,
     # which is a different question from whether its source could be read.
     #
@@ -419,8 +426,14 @@ def scan_entry(
     *,
     version: str = CURRENT_METHODOLOGY_VERSION,
     evidence_cap: int | None = MAX_EVIDENCE_PER_AXIS,
+    commit: str | None = None,
 ) -> ServerReport:
     """Scan one registry entry end to end and return its publishable report.
+
+    `commit` pins the repository read to one tree — the primary source when it
+    is a repository, else the declared repository Code Safety falls back to —
+    instead of resolving the version (calibration: a gold entry pins what its
+    audit read). The report's `repository_commit` says what was actually read.
 
     `evidence_cap=None` keeps every Code Safety finding as evidence. The cap is
     a page-size decision; calibration needs the whole list, because a label
@@ -440,6 +453,10 @@ def scan_entry(
     # be handed None only if the invariant were ever broken.
     ws = workspace if workspace is not None else Path(tempfile.mkdtemp(prefix="mcpw-scan-"))
     ref_matched: bool | None = None
+    repo_commit: str | None = None
+    # A pin reaches the supplement only when the primary is a package: it names
+    # ONE repository tree, and a repository primary is that tree.
+    supplement_pin = commit
     owned = workspace is None
 
     availability = SourceAvailability(SourceState.NOT_ATTEMPTED, repo_url)
@@ -453,8 +470,13 @@ def scan_entry(
         else:
             try:
                 spec = SourceSpec.parse(resolution.primary)
-                fetched = fetch(spec, ws)
+                if spec.kind in (SourceKind.GITHUB, SourceKind.GITLAB):
+                    fetched = fetch(spec, ws, commit=commit)
+                    supplement_pin = None
+                else:
+                    fetched = fetch(spec, ws)
                 root = fetched.scan_root
+                repo_commit = fetched.commit
                 # `fetch_git` falls back to the default branch when neither
                 # version tag resolves, and says so in `ref_matched_version`.
                 # Dropping that published a score for BRANCH-TIP code under the
@@ -477,6 +499,7 @@ def scan_entry(
         return _assemble(
             entry, resolution, availability, root, scanned_at, version, ref_matched,
             workspace=ws, evidence_cap=evidence_cap,
+            repository_commit=repo_commit, supplement_pin=supplement_pin,
         )
     finally:
         if owned:
@@ -519,25 +542,20 @@ def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
         )
 
 
-# The report's top-level `ref_matched_version` describes the PACKAGE fetch, so a
-# supplement read at a branch tip says so only in the Code Safety reason — in
-# exactly these words, which `ops/calibrate.py` reads back. One constant, so the
-# phrase cannot change in one place and not the other.
-SUPPLEMENT_BRANCH_TIP = "no tag matched this version, so the repository's default branch was read"
-
-
 def _wants_supplement(code: SemgrepResult) -> bool:
     """Whether the package's Code Safety gap is one the declared repository can fill."""
     return code.build_output_only or code.build_output_unfinished
 
 
 def _code_from_supplement(
-    package_result: SemgrepResult, supplement: str, workspace: Path, version: str
-) -> tuple[SemgrepResult, str]:
+    package_result: SemgrepResult, supplement: str, workspace: Path, version: str,
+    *, commit: str | None = None,
+) -> tuple[SemgrepResult, str, str | None]:
     """Code Safety from the declared repository, for a package that ships only
     build output — or whose build output our bounded look could not finish,
-    with no covered source outside it. Returns the result to publish and a note
-    naming its source and which of the two it was.
+    with no covered source outside it. Returns the result to publish, a note
+    naming its source and which of the two it was, and the commit read (None
+    when no tree was). `commit` pins that tree instead of resolving the version.
 
     `04` §2 is the authority: the repository supplements the package "for rules
     that benefit from full file context not present in a published tarball",
@@ -553,13 +571,13 @@ def _code_from_supplement(
     """
     try:
         spec = SourceSpec.parse(supplement)
-        fetched = fetch(spec, workspace / "supplement")
+        fetched = fetch(spec, workspace / "supplement", commit=commit)
     except SourceUnreachableError:
         return replace(
             package_result,
             reason=f"{package_result.reason}; the declared repository could not "
                    "be read to score instead",
-        ), ""
+        ), "", None
     except Exception as exc:  # noqa: BLE001 - classified: this run's accident
         return replace(
             package_result,
@@ -568,7 +586,7 @@ def _code_from_supplement(
                    f"instead ({type(exc).__name__})",
             explicit_fault=Fault.ENVIRONMENT,
             build_output_only=False,
-        ), ""
+        ), "", None
 
     tree = fetched.scan_root
     result = assess_code_safety(tree, enumerate_tree(tree), version=version)
@@ -577,9 +595,9 @@ def _code_from_supplement(
             package_result,
             reason=f"{package_result.reason}; the declared repository holds no "
                    "source in a covered language either",
-        ), ""
+        ), "", fetched.commit
     if not result.assessed:
-        return result, ""
+        return result, "", fetched.commit
     because = (
         "the published package holds no source in a covered language outside "
         "its build output, and this scanner's bounded look inside that build "
@@ -589,19 +607,27 @@ def _code_from_supplement(
         "not read as the server's own source"
     )
     note = f"scored on the declared repository at version {spec.version}, because {because}"
-    if not fetched.ref_matched_version:
+    if commit is not None:
+        # Pinned: the version was never resolved, so "at version" would be false.
+        note = f"scored on the declared repository at commit {commit}, because {because}"
+    elif fetched.ref_matched_version is not True:
+        # None is "nobody checked", never "a tag matched" — the branch-tip
+        # wording is the one that claims nothing it did not establish.
         note = (
             f"scored on the declared repository, because {because}; "
-            f"{SUPPLEMENT_BRANCH_TIP} and the findings describe that code, "
+            "no tag matched this version, so the repository's default branch "
+            "was read and the findings describe that code, "
             "not necessarily the release"
         )
-    return result, note
+    return result, note, fetched.commit
 
 
 def _assemble(
     entry, resolution, availability, root, scanned_at, version, ref_matched=None,
     *, workspace: Path | None = None,
     evidence_cap: int | None = MAX_EVIDENCE_PER_AXIS,
+    repository_commit: str | None = None,
+    supplement_pin: str | None = None,
 ) -> ServerReport:
     # Derived from what was actually FETCHED, which is the only thing that
     # licenses a claim about it.
@@ -637,9 +663,10 @@ def _assemble(
     code = assess_code_safety(root, inventory, version=version) if root else None
     code_note = ""
     if code is not None and _wants_supplement(code) and resolution.supplement and workspace:
-        code, code_note = _code_from_supplement(
-            code, resolution.supplement, workspace, version
+        code, code_note, read = _code_from_supplement(
+            code, resolution.supplement, workspace, version, commit=supplement_pin
         )
+        repository_commit = read or repository_commit
     deps = assess_dependency_health(root, inventory, version=version) if root else None
 
     axes: dict[str, AxisScore] = {
@@ -688,6 +715,7 @@ def _assemble(
         transport=transport.declared.value if transport.declared else "",
         transport_mismatch=bool(transport.mismatch),
         ref_matched_version=ref_matched,
+        repository_commit=repository_commit,
         files_scanned=(code.files_scanned if code else 0),
         files_pruned=(code.pruned if code else 0),
         axes={k: axes[k] for k in AXES},

@@ -70,6 +70,9 @@ const sourceNote =
       {report.repository_url && (
         <li>source <a href={report.repository_url} rel="nofollow noopener">{report.repository_url.replace(/^https?:\/\//, "")}</a></li>
       )}
+      {report.repository_commit && (
+        <li>commit <b title={report.repository_commit}>{report.repository_commit.slice(0, 12)}</b></li>
+      )}
       {report.transport && <li>transport <b>{report.transport}</b></li>}
       {report.files_scanned > 0 && <li>files read <b>{report.files_scanned}</b></li>}
       <li>methodology <b>{report.methodology_version}</b></li>
