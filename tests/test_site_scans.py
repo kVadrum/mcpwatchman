@@ -972,3 +972,7 @@ def test_every_page_wears_the_one_shared_header(reports) -> None:
         assert nav, f"{page}: not the shared nav"
         for href in ('href="/servers/"', 'href="/api/servers.json"'):
             assert href in nav.group(1), f"{page}: shared nav lacks {href}"
+        # "page" only where the link points; a report is inside the section.
+        mark = re.search(r'<a href="/servers/"(?: aria-current="(\w+)")?>', nav.group(1))
+        want = {DIST / "index.html": None, DIST / "servers" / "index.html": "page"}
+        assert mark and mark.group(1) == want.get(page, "true"), f"{page}: aria-current"

@@ -86,6 +86,16 @@ def test_a_long_list_is_capped_and_the_count_is_published() -> None:
     assert axis.score == 40
 
 
+def test_an_uncapped_axis_keeps_every_finding() -> None:
+    """Calibration reconciles labels against the whole list: against the
+    published 50, a labelled finding past the cap read as gone."""
+    findings = [_code(Severity.MEDIUM, Confidence.HIGH, i) for i in range(400)]
+    axis = _code_axis(_CodeResult(findings), READABLE, evidence_cap=None)
+    assert len(axis.evidence) == 400
+    assert axis.evidence_omitted == 0
+    assert axis.score == 40
+
+
 def test_the_survivors_are_the_worst_ones() -> None:
     """A cap that kept whichever findings semgrep emitted first would drop a
     critical to publish fifty informationals, on the axis a reader reads for

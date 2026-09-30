@@ -11,18 +11,18 @@
 import "../styles/site-header.css";
 import Wordmark from "./Wordmark.astro";
 
-interface Props {
-  /** Marks the nav entry for the section being read, for sighted and AT users. */
-  current?: "servers";
-}
-
-const { current } = Astro.props;
+// Marks the Servers entry, for sighted and AT users, from the URL rather than a
+// prop: "page" only on the index the link points at, "true" (inside that
+// section) on a server's report — "page" there would announce the wrong page.
+const path = Astro.url.pathname.replace(/\/+$/, "");
+const serversCurrent =
+  path === "/servers" ? "page" : path.startsWith("/servers/") ? "true" : undefined;
 ---
 
 <header class="site-header">
   <Wordmark />
   <nav class="site-nav" aria-label="Site">
-    <a href="/servers/" aria-current={current === "servers" ? "page" : undefined}>Servers</a>
+    <a href="/servers/" aria-current={serversCurrent}>Servers</a>
     <a href="/api/servers.json">API</a>
     <a href="https://github.com/kVadrum/mcpwatchman">Source</a>
     <a href="https://pypi.org/project/mcpwatchman/">PyPI</a>

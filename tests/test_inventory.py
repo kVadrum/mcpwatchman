@@ -706,6 +706,36 @@ def test_an_exhausted_probe_says_so_even_when_it_found_nothing(tmp_path, monkeyp
     assert inv.build_output_truncated is True
 
 
+def test_an_unreadable_build_directory_leaves_the_probe_unfinished(tmp_path):
+    """Unread is unknown, not empty."""
+    locked = tmp_path / "dist" / "locked"
+    locked.mkdir(parents=True)
+    (locked / "index.js").write_text("x")
+    locked.chmod(0)
+    try:
+        inv = enumerate_tree(tmp_path)
+    finally:
+        locked.chmod(0o755)
+    assert inv.build_output == {}
+    assert inv.build_output_truncated is True
+
+
+def test_a_main_walk_cut_short_leaves_the_probe_unfinished(tmp_path, monkeypatch):
+    """Whether `dist/` was queued or never reached depends on listing order;
+    either way MAX_FILES stopped the walk before the probe could finish."""
+    monkeypatch.setattr(inventory, "MAX_FILES", 1)
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "a.js").write_text("x")
+    (tmp_path / "zz.txt").write_text("x")
+    (tmp_path / "zz2.txt").write_text("x")
+
+    inv = enumerate_tree(tmp_path)
+
+    assert inv.truncated is True
+    assert inv.build_output == {}
+    assert inv.build_output_truncated is True
+
+
 def test_a_finished_probe_is_not_marked_truncated(tree):
     (tree / "dist").mkdir()
     (tree / "dist" / "a.js").write_text("x")

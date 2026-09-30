@@ -165,6 +165,7 @@ def test_the_calibration_gate_fires(monkeypatch) -> None:
 
 def _report(*findings: tuple[str, str, int], omitted: int = 0) -> dict:
     return {"axes": {"code_safety": {
+        "score": 80,
         "evidence": [{"label": f"{r} (critical/medium)", "path": p, "line": n}
                      for r, p, n in findings],
         "evidence_omitted": omitted,
@@ -179,15 +180,30 @@ def test_labels_reconcile_against_what_the_scanner_reports_now() -> None:
     same = gs.reconcile(e, _report(("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 33)))
     assert len(same.matched) == 1 and not same.stale and not same.unlabeled
 
-    moved = gs.reconcile(
-        e, _report(("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 40)), 
-    )
-    assert not moved.matched and len(moved.stale) == 1
+    moved = gs.reconcile(e, _report(("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 40)))
+    assert not moved.matched and len(moved.stale) == 1 and not moved.unverifiable
     assert moved.unlabeled == (("mcp-js-ssrf-nonliteral-url", "src/fetch.ts", 40),)
 
 
-def test_rates_come_only_from_reconciled_labels() -> None:
+def test_a_label_missing_from_a_capped_list_is_unverifiable_not_stale() -> None:
+    """The published evidence keeps the worst 50 findings. A labelled finding
+    that fell past the cap is still reported by the scanner, so calling it
+    stale would be a bounded look asserting an absence (CLAUDE.md)."""
     e = gs.parse(entry())
-    rec = gs.reconcile(e, _report(omitted=12))
-    assert gs.fp_rates(rec.matched) == {}
-    assert rec.evidence_omitted == 12
+    rec = gs.reconcile(e, _report(("mcp-js-ssrf-nonliteral-url", "src/other.ts", 1), omitted=12))
+    assert not rec.stale and not rec.matched
+    assert [f.path for f in rec.unverifiable] == ["src/fetch.ts"]
+    assert "capped" in rec.unverifiable_reason
+
+
+def test_labels_on_an_unassessed_axis_are_unverifiable_not_stale() -> None:
+    """Code Safety not assessed means nothing was looked for, so no label's
+    finding can be said to be gone."""
+    e = gs.parse(entry())
+    report = {"axes": {"code_safety": {
+        "score": None, "reason": "no source files", "evidence": [], "evidence_omitted": 0,
+    }}}
+    rec = gs.reconcile(e, report)
+    assert not rec.stale and not rec.matched
+    assert len(rec.unverifiable) == len(e.findings) == 1
+    assert "not assessed" in rec.unverifiable_reason

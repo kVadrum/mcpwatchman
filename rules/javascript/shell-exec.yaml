@@ -16,8 +16,12 @@ rules:
     # gold-set audits. Two halves, because neither reaches every binding form:
     # semgrep's own import resolution (the qualified patterns) follows a
     # require-bound name and a named import, alias included; the pattern-inside
-    # branches catch destructured requires, namespace and default imports and
-    # an inline require. tests/fixtures/semgrep/receivers pins both directions.
+    # branches catch destructured requires, namespace and default imports, an
+    # inline require, and dynamic `import()` — awaited or `.then`-bound — which
+    # the free `$CP` had matched and the first cut of 0.1.1 dropped (a critical
+    # false negative per form). The binding block is the same in all three
+    # shell rules (this file and mcp-specific.yaml): change them together.
+    # tests/fixtures/semgrep/receivers pins both directions.
     patterns:
       - pattern-either:
           - pattern: "child_process.exec($CMD, ...)"
@@ -35,6 +39,11 @@ rules:
                   - pattern-inside: |
                       import * as $CP from "$M";
                       ...
+                  - pattern-inside: |
+                      $CP = await import("$M");
+                      ...
+                  - pattern-inside: import("$M").then(($CP) => $BODY)
+                  - pattern-inside: import("$M").then(function ($CP) { ... })
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$
@@ -51,6 +60,10 @@ rules:
                   - pattern-inside: |
                       import { ..., $FN, ... } from "$M";
                       ...
+                  - pattern-inside: |
+                      { ..., $FN, ... } = await import("$M");
+                      ...
+                  - pattern-inside: import("$M").then(({ ..., $FN, ... }) => $BODY)
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$
@@ -58,22 +71,17 @@ rules:
                   metavariable: $FN
                   regex: ^(exec|execSync)$
               - pattern: "$FN($CMD, ...)"
-          - patterns:
-              - pattern: "require(\"$M\").exec($CMD, ...)"
-              - metavariable-regex:
-                  metavariable: $M
-                  regex: ^(node:)?child_process$
-          - patterns:
-              - pattern: "require(\"$M\").execSync($CMD, ...)"
-              - metavariable-regex:
-                  metavariable: $M
-                  regex: ^(node:)?child_process$
-          # Inline spawn with a shell — the old free `$CP` matched an inline
-          # require receiver, and the first cut of 0.1.1 dropped it (Codex leg).
+          # Inline receivers: a require or an awaited import used in place.
           - patterns:
               - pattern-either:
+                  - pattern: "require(\"$M\").exec($CMD, ...)"
+                  - pattern: "require(\"$M\").execSync($CMD, ...)"
                   - pattern: "require(\"$M\").spawn($CMD, ..., {shell: true})"
                   - pattern: "require(\"$M\").spawnSync($CMD, ..., {shell: true})"
+                  - pattern: "(await import(\"$M\")).exec($CMD, ...)"
+                  - pattern: "(await import(\"$M\")).execSync($CMD, ...)"
+                  - pattern: "(await import(\"$M\")).spawn($CMD, ..., {shell: true})"
+                  - pattern: "(await import(\"$M\")).spawnSync($CMD, ..., {shell: true})"
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$
@@ -96,8 +104,10 @@ rules:
     # gold-set audits. Two halves, because neither reaches every binding form:
     # semgrep's own import resolution (the qualified patterns) follows a
     # require-bound name and a named import, alias included; the pattern-inside
-    # branches catch destructured requires, namespace and default imports and
-    # an inline require. tests/fixtures/semgrep/receivers pins both directions.
+    # branches catch destructured requires, namespace and default imports, an
+    # inline require, and dynamic `import()` — the same binding block as the
+    # rule above, changed with it. tests/fixtures/semgrep/receivers pins both
+    # directions.
     patterns:
       - pattern-either:
           - pattern: "child_process.exec(`...${$X}...`, ...)"
@@ -113,6 +123,11 @@ rules:
                   - pattern-inside: |
                       import * as $CP from "$M";
                       ...
+                  - pattern-inside: |
+                      $CP = await import("$M");
+                      ...
+                  - pattern-inside: import("$M").then(($CP) => $BODY)
+                  - pattern-inside: import("$M").then(function ($CP) { ... })
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$
@@ -127,6 +142,10 @@ rules:
                   - pattern-inside: |
                       import { ..., $FN, ... } from "$M";
                       ...
+                  - pattern-inside: |
+                      { ..., $FN, ... } = await import("$M");
+                      ...
+                  - pattern-inside: import("$M").then(({ ..., $FN, ... }) => $BODY)
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$
@@ -135,12 +154,11 @@ rules:
                   regex: ^(exec|execSync)$
               - pattern: "$FN(`...${$X}...`, ...)"
           - patterns:
-              - pattern: "require(\"$M\").exec(`...${$X}...`, ...)"
-              - metavariable-regex:
-                  metavariable: $M
-                  regex: ^(node:)?child_process$
-          - patterns:
-              - pattern: "require(\"$M\").execSync(`...${$X}...`, ...)"
+              - pattern-either:
+                  - pattern: "require(\"$M\").exec(`...${$X}...`, ...)"
+                  - pattern: "require(\"$M\").execSync(`...${$X}...`, ...)"
+                  - pattern: "(await import(\"$M\")).exec(`...${$X}...`, ...)"
+                  - pattern: "(await import(\"$M\")).execSync(`...${$X}...`, ...)"
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$

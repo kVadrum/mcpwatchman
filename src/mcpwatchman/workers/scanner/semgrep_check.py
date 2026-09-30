@@ -870,6 +870,21 @@ def assess_code_safety(
     reason, not a 100: `03` §3 scores what was examined, and nothing was.
     """
     if inventory is not None and not _scannable_source_files(inventory):
+        if inventory.truncated:
+            # The same claim one level up, checked FIRST: the main walk stopped
+            # at MAX_FILES, so "none among what we read" is not "none" — and
+            # neither is "only as build output" below (CLAUDE.md: a bound added
+            # to one path is owed to its neighbours).
+            return SemgrepResult(
+                status=SemgrepStatus.UNAVAILABLE,
+                reason=(
+                    "no source in a covered language was found, and this "
+                    "scanner's bounded walk of the source tree stopped before "
+                    "it finished — so whether covered code is there is unknown"
+                ),
+                explicit_fault=Fault.PROJECT,
+                methodology_version=version,
+            )
         if built := _covered_build_output(inventory):
             # ⚠ OURS, NOT THEIRS — and this path said "theirs" for 90 of 492
             # published servers (measured 2026-09-29). An npm package commonly ships

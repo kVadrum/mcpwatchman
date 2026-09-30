@@ -756,3 +756,14 @@ def test_an_exhausted_build_output_probe_never_blames_the_publisher() -> None:
     assert result.fault is Fault.PROJECT
     assert "stopped before it finished" in result.reason
     assert result.build_output_only is False
+
+
+def test_a_truncated_walk_asserts_neither_absence_nor_build_output_only() -> None:
+    """The main walk stopped at MAX_FILES: "no covered source" and "code only
+    as build output" are both claims about what the unread part holds."""
+    for built in ({}, {"javascript": 4}):
+        inv = Inventory(truncated=True, build_output=built)
+        result = sc.assess_code_safety(Path("/nonexistent"), inv)
+        assert result.fault is Fault.PROJECT, built
+        assert "walk of the source tree stopped before it finished" in result.reason
+        assert result.build_output_only is False

@@ -14,6 +14,9 @@ Three things keep the report honest (all from the Codex leg of its /qaa):
 - Labels are RECONCILED against what the scanner reports now
   (`goldset.reconcile`): a label whose finding is gone is stale, excluded from
   the rates, and blocks declaring calibration until that entry is re-audited.
+  The scan keeps every finding (`evidence_cap=None`) — against the published
+  50, a label past the cap read as stale — and a label that still cannot be
+  checked (Code Safety unassessed) is unverifiable, never stale.
 - A gap of OURS (a missing binary, an exhausted token, a tool over budget)
   is never read as drift — a broken measurement is not evidence about the
   methodology. A missing toolchain refuses the run up front; an our-side gap
@@ -28,8 +31,9 @@ never beside another scan or the test suite (`CLAUDE.md`).
     PATH=.venv-workers/bin:$PATH .venv/bin/python ops/calibrate.py [--include-drafts]
 
 Exit 0: no drift and no stale labels. 1: drift or stale labels, listed.
-2: the environment is not fit to calibrate, or some entry could not be
-measured (named in the output).
+2: the environment is not fit to calibrate, some entry or label could not be
+measured (named in the output), or the run itself crashed — never 1, which
+would read our failure as drift.
 """
 
 from __future__ import annotations
@@ -37,6 +41,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import traceback
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -55,25 +60,42 @@ from mcpwatchman.goldset import (
     measured_tier,
     reconcile,
 )
-from mcpwatchman.workers.crawler.registry import REGISTRY_BASE_URL, parse_entry
+from mcpwatchman.workers.crawler.registry import (
+    REGISTRY_BASE_URL,
+    RegistryEntry,
+    RegistryUnavailableError,
+    parse_page,
+)
 from mcpwatchman.workers.scanner.runner import scan_entry
 from mcpwatchman.workers.scoring.composite import composite_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scan_cohort import preflight  # noqa: E402 - the same toolchain check the cohort run uses
 
+SEARCH_MAX_PAGES = 10
 
-def registry_entry(name: str, version: str):
-    """The registry's record for exactly this name and version, or None."""
-    query = urllib.parse.quote(name)
-    url = f"{REGISTRY_BASE_URL}/v0/servers?search={query}&limit=100"
-    with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310 - fixed https host
-        data = json.load(response)
-    for item in data.get("servers", []):
-        raw = item.get("server", item)
-        if raw.get("name") == name and raw.get("version") == version:
-            return parse_entry(item)
-    return None
+
+def registry_entry(name: str, version: str) -> tuple[RegistryEntry | None, str]:
+    """The registry's record for exactly this name and version, or None and why.
+
+    Follows the search's cursors, because one page of 100 is a bounded look:
+    "not in the registry" is said only when the search ran out of results, and
+    a search stopped at our page bound says that instead.
+    """
+    cursor: str | None = None
+    for _ in range(SEARCH_MAX_PAGES):
+        params = {"search": name, "limit": "100"}
+        if cursor:
+            params["cursor"] = cursor
+        url = f"{REGISTRY_BASE_URL}/v0/servers?{urllib.parse.urlencode(params)}"
+        with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310 - fixed https host
+            page, cursor = parse_page(json.load(response))
+        for found in page:
+            if found.name == name and found.version == version:
+                return found, ""
+        if not cursor:
+            return None, "is not in the registry"
+    return None, f"is not in the first {SEARCH_MAX_PAGES} pages of the registry's search results"
 
 
 def _print_tiers(title: str, labels: list[Label]) -> None:
@@ -109,15 +131,22 @@ def main() -> int:
     drifted: dict[str, list[str]] = {}
     stale_entries: list[str] = []
     unmeasured: list[str] = []
+    unchecked: list[str] = []
     official: list[Label] = []
     preview: list[Label] = []
     for entry in entries:
-        found = registry_entry(entry.name, entry.version)
-        if found is None:
-            print(f"[unmeasured] {entry.name}@{entry.version} is not in the registry")
+        try:
+            found, why = registry_entry(entry.name, entry.version)
+        except (OSError, ValueError, RegistryUnavailableError) as exc:
+            # Ours (a network or registry outage), so a skip — never drift.
+            print(f"[unmeasured] {entry.name}: the registry could not be read — {exc}")
             unmeasured.append(entry.name)
             continue
-        report = scan_entry(found).to_dict()
+        if found is None:
+            print(f"[unmeasured] {entry.name}@{entry.version} {why}")
+            unmeasured.append(entry.name)
+            continue
+        report = scan_entry(found, evidence_cap=None).to_dict()
         ours = unpublishable_gaps(entry.name, report)
         if ours:
             print(f"[unmeasured] {entry.name}: our side failed — {ours[0][:140]}")
@@ -136,11 +165,19 @@ def main() -> int:
         shown = " ".join(f"{a.split('_')[0]}={scores[a]}" for a in AXES)
         status = "drift" if drift or rec.stale else "ok"
         print(f"[{status:5}] {entry.name} ({tag}) {shown} composite={composite}")
+        if report.get("ref_matched_version") is False:
+            # Labels key on (rule, path, line) at the entry's version; the
+            # branch tip keeps moving, so read any drift or stale label here as
+            # possibly the code's movement rather than the rules'.
+            print("          no tag matched this version: the default branch was read")
         for line in drift:
             print(f"          {line}")
         if rec.stale:
             print(f"          {len(rec.stale)} stale label(s): the scanner no longer reports "
                   "those findings — re-audit this entry")
+        if rec.unverifiable:
+            print(f"          {len(rec.unverifiable)} label(s) could not be checked: "
+                  f"{rec.unverifiable_reason}")
         if rec.unlabeled or rec.evidence_omitted:
             print(f"          {len(rec.unlabeled)} current finding(s) unlabelled"
                   + (f", {rec.evidence_omitted} more not shown (evidence cap)"
@@ -149,25 +186,35 @@ def main() -> int:
             drifted[entry.name] = drift
         if rec.stale:
             stale_entries.append(entry.name)
+        if rec.unverifiable:
+            unchecked.append(entry.name)
 
     _print_tiers("measured tiers — RATIFIED entries only (the official figures):", official)
     if args.include_drafts:
         _print_tiers("PREVIEW — draft labels only, counted toward nothing:", preview)
 
     ratified_names = {e.name for e in entries if e.ratified}
-    blocking = sorted(ratified_names & (set(drifted) | set(stale_entries) | set(unmeasured)))
+    blocking = sorted(ratified_names & (
+        set(drifted) | set(stale_entries) | set(unmeasured) | set(unchecked)
+    ))
     ready = ratified >= MIN_RATIFIED_ENTRIES and not blocking
     print(
         f"\n{len(drifted)} of {len(entries)} entries drift, {len(stale_entries)} carry stale "
-        f"labels, {len(unmeasured)} could not be measured. Calibration "
+        f"labels, {len(unmeasured)} could not be measured, {len(unchecked)} have labels "
+        "that could not be checked. Calibration "
         + ("may be declared." if ready else
            f"may NOT be declared: it needs >= {MIN_RATIFIED_ENTRIES} ratified entries, "
-           "every one measured, none drifting or stale.")
+           "every one measured with every label checked, none drifting or stale.")
     )
-    if unmeasured:
+    if unmeasured or unchecked:
         return 2
     return 1 if (drifted or stale_entries) else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception:  # noqa: BLE001 - printed in full; only the exit code is chosen
+        # An uncaught exception exits 1, and 1 means drift. A crash is ours.
+        traceback.print_exc()
+        sys.exit(2)

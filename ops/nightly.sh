@@ -17,9 +17,11 @@
 # failure rate (`CLAUDE.md`). The lock below serialises nightly runs only; a
 # manual scan started during one is on whoever started it.
 #
-# Exit status: 0 published (or committed, when not publishing); non-zero means
-# nothing was deployed. scan_cohort.py's own codes pass through — 2 a refused
-# page set, 3 a systemic our-side failure — and 10+ are this wrapper's.
+# Exit status: 0 published — or, when not publishing, committed or nothing to
+# commit. 11 a quiet skip: nothing committed or deployed because origin/main has
+# not caught up with dev (the unit counts it a success). Any other non-zero
+# means nothing was deployed: scan_cohort.py's own codes pass through — 2 a
+# refused page set, 3 a systemic our-side failure — and 10+ are this wrapper's.
 
 set -euo pipefail
 umask 077
@@ -119,16 +121,23 @@ log "running the publication gates"
 
 # The scoring CONTRACT each ref publishes under: ruleset version (the first
 # release heading of the rules changelog) and methodology version.
+# Fails rather than printing an empty field: a parse that stopped matching (an
+# annotation on the constant, a moved file) is not a version, and an empty one
+# on one side reads as "the contracts differ" — a quiet skip every night.
 contract() {
   local rules method
   rules=$(git -C "$REPO" show "$1:rules/_meta/changelog.md" | sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' | head -1)
   method=$(git -C "$REPO" show "$1:src/mcpwatchman/workers/scoring/weights.py" \
     | sed -n 's/^CURRENT_METHODOLOGY_VERSION = "\(.*\)"/\1/p')
+  [[ -n "$rules" && -n "$method" ]] || return 1
   printf 'ruleset %s, methodology %s' "$rules" "$method"
 }
-MAIN_CONTRACT="$(contract "$MAIN_SHA")"
-DEV_CONTRACT="$(contract "$DEV_SHA")"
+MAIN_CONTRACT="$(contract "$MAIN_SHA")" || die 20 "could not read main's scoring contract"
+DEV_CONTRACT="$(contract "$DEV_SHA")" || die 20 "could not read dev's scoring contract"
 
+# committed | unchanged | contract — what happened to the data, so every log
+# line below reports what was DONE rather than what was attempted.
+DATA=contract
 if [[ "$MAIN_CONTRACT" != "$DEV_CONTRACT" ]]; then
   # dev moved to a newer ruleset or methodology and has not been synced. Its
   # contract gate requires every row to carry dev's versions, so committing
@@ -136,17 +145,18 @@ if [[ "$MAIN_CONTRACT" != "$DEV_CONTRACT" ]]; then
   # regenerated under the newer contract. Publish main's consistent pair;
   # leave dev's data alone until the sync brings the contracts back together.
   log "NOT committing to dev: main scores under $MAIN_CONTRACT, dev under $DEV_CONTRACT"
-  COMMITTED=0
 else
-COMMITTED=1
 log "committing the data to dev"
 git -C "$REPO" worktree add -q --detach "$WORK/dev" "$DEV_SHA"
 cp "$MAIN/site/src/data/scans.json" "$WORK/dev/site/src/data/scans.json"
+# The subshell reports its outcome by exit code: 0 committed, 30 nothing to
+# commit, 31 dev's contract moved during the run; anything else is a fault.
+rc=0
 (
   cd "$WORK/dev"
   if git diff --quiet; then
     log "data unchanged — nothing to commit"
-    exit 0
+    exit 30
   fi
   summary="$(PYTHONPATH="$MAIN/src" "$PY" - <<'EOF'
 import json
@@ -180,22 +190,34 @@ EOF
     # The contract was compared against the dev we STARTED from. A ruleset or
     # methodology change landing mid-run would otherwise be rebased over and
     # pushed under — main-scored rows in a dev whose gates reject them (Codex
-    # leg, 2026-09-29).
-    if [[ "$(contract origin/dev)" != "$MAIN_CONTRACT" ]]; then
+    # leg, 2026-09-29). It is the same ordinary between-syncs state the check
+    # above handles quietly, so it ends the same way, not as a fault.
+    moved="$(contract origin/dev)" || { log "could not read dev's scoring contract"; exit 20; }
+    if [[ "$moved" != "$MAIN_CONTRACT" ]]; then
       log "dev's scoring contract changed during the run — not committing"
-      exit 14
+      exit 31
     fi
     git rebase -q origin/dev || { git rebase --abort; exit 15; }
   done
   exit 15
-) || die $? "could not commit the data to dev"
+) || rc=$?
+case "$rc" in
+  0)  DATA=committed ;;
+  30) DATA=unchanged ;;
+  31) DATA=contract ;;
+  *)  die "$rc" "could not commit the data to dev" ;;
+esac
 fi
 
 if [[ "$PUBLISH" != "1" ]]; then
-  if [[ "$COMMITTED" == "1" ]]; then
-    log "committed to dev; MCPW_PUBLISH is not 1, so not deployed (the next sync publishes it)"
-    exit 0
-  fi
+  case "$DATA" in
+    committed)
+      log "committed to dev; MCPW_PUBLISH is not 1, so not deployed (the next sync publishes it)"
+      exit 0 ;;
+    unchanged)
+      log "nothing to commit; MCPW_PUBLISH is not 1, so not deployed"
+      exit 0 ;;
+  esac
   # Neither committed nor deployed. The contract mismatch behind it is the
   # ordinary between-syncs state, so this is the same quiet "waiting for a
   # sync" as a main without the guard — never a success that claims a commit.

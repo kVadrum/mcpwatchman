@@ -9,4 +9,6 @@ function d3(cmd) { require("node:child_process").spawnSync(cmd, [], { shell: tru
 function e(dir) { cp.exec(`ls ${dir}`); } // FIRE: mcp-js-shell-exec-nonliteral, mcp-js-shell-exec-template-literal
 function f() { cp.exec("ls -la"); }
 function g(p) { return fs.readFileSync(p); }
-module.exports = { a, b, c, d, d2, d3, e, f, g };
+function h(cmd) { require("cross-spawn").spawn(cmd, [], { shell: true }); }
+function i(cmd) { require("child_process").spawn(cmd, { shell: true }); } // FIRE: mcp-js-shell-exec-nonliteral
+module.exports = { a, b, c, d, d2, d3, e, f, g, h, i };

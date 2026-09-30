@@ -265,6 +265,13 @@ class Reconciliation:
     # so an unlabelled finding is a coverage fact, not an error.
     unlabeled: tuple[tuple[str, str, int], ...]
     evidence_omitted: int
+    # Labels that could be neither matched nor called stale, and why. A label
+    # missing from a CAPPED evidence list may have fallen past the cap, and one
+    # on an axis that went unassessed was never looked for — a bounded or absent
+    # look may not assert an absence (CLAUDE.md). Excluded from the rates, like
+    # a stale label, but the remedy is a complete scan, not a re-audit.
+    unverifiable: tuple[Label, ...] = ()
+    unverifiable_reason: str = ""
 
 
 def reconcile(entry: GoldEntry, report: Mapping[str, Any]) -> Reconciliation:
@@ -273,17 +280,30 @@ def reconcile(entry: GoldEntry, report: Mapping[str, Any]) -> Reconciliation:
     Identity is `(rule, path, line)` — a label is about ONE finding, and a
     label that no longer has its finding is evidence about a rule that no
     longer exists in that form (Codex leg, 2026-09-29: rates were computed from
-    labels regardless of what the scanner now reports).
+    labels regardless of what the scanner now reports). Only a COMPLETE list of
+    current findings can say a finding is gone: pass a report scanned with
+    `evidence_cap=None`, or the unmatched labels come back unverifiable.
     """
     axis = report["axes"]["code_safety"]
+    omitted = int(axis.get("evidence_omitted", 0) or 0)
+    if axis.get("score") is None:
+        return Reconciliation(
+            (), (), (), omitted, entry.findings,
+            f"Code Safety was not assessed ({axis.get('reason') or 'no reason given'})",
+        )
     current = {
         (e["label"].split(" (", 1)[0], e["path"], e["line"]) for e in axis.get("evidence", [])
     }
     matched = tuple(f for f in entry.findings if (f.rule, f.path, f.line) in current)
-    stale = tuple(f for f in entry.findings if (f.rule, f.path, f.line) not in current)
+    missing = tuple(f for f in entry.findings if (f.rule, f.path, f.line) not in current)
     labelled = {(f.rule, f.path, f.line) for f in entry.findings}
     unlabeled = tuple(sorted(current - labelled))
-    return Reconciliation(matched, stale, unlabeled, int(axis.get("evidence_omitted", 0) or 0))
+    if omitted and missing:
+        return Reconciliation(
+            matched, (), unlabeled, omitted, missing,
+            f"the evidence list was capped ({omitted} findings not shown)",
+        )
+    return Reconciliation(matched, missing, unlabeled, omitted)
 
 
 def fp_rates(labels: Iterable[Label]) -> dict[str, tuple[int, int]]:

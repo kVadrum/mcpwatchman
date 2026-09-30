@@ -487,7 +487,10 @@ def enumerate_tree(root: Path) -> Inventory:
         try:
             scanner = os.scandir(current)
         except OSError:
-            if not in_build:
+            if in_build:
+                # Unread is unknown, not empty — the same claim as a spent budget.
+                build_truncated = True
+            else:
                 skip("unreadable")
             continue
 
@@ -560,6 +563,11 @@ def enumerate_tree(root: Path) -> Inventory:
                         oversized=oversized,
                     )
                 )
+
+    # A main walk stopped at its cap leaves the probe unfinished as well: build
+    # directories may be queued, or not yet reached at all.
+    if stopped:
+        build_truncated = True
 
     # Sort by path COMPONENTS, which is how the original `sorted(rglob(...))`
     # ordered records — a plain string sort differs, because "/" (0x2f) sorts

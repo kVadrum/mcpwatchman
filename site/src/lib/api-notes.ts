@@ -35,7 +35,7 @@ export const notes = {
     (maintenanceScored === 0
       ? "the Maintenance axis reads commit history from the hosting forge and that retrieval is not built, and "
       : "the Maintenance axis queries the GitHub API and does not query other forges, its popularity sub-check needs a registry-wide distribution that is not computed, and ") +
-    "a package that ships its code only as build output (`dist/`, `build/`) with no readable repository declared — build output is not read as the server's own source, because a bundle can inline its dependencies' code — and " +
+    "a package that ships its code only as build output (`dist/`, `build/`) with no readable repository declared — build output is not read as the server's own source, because a bundle can inline its dependencies' code — a walk of a very large tree, or of its build output, that stopped at our bound before it finished, so what the unread part holds is not claimed either way, and " +
     "the methodology defines no band for a vulnerability with no CVSS. Those are the only two values you will see here: a gap caused by our own run — a scanner binary missing, a clone that timed out — is refused at publication rather than printed as the reason a server went unscored, so it never reaches this API.",
   cohort_note:
     "The set of servers here is pinned and append-only: a server that has a page keeps it, its URL does not change, and the set only grows. It is not a random sample of the registry — the servers published first were drawn from the registry's alphabetical head — so do not read it as representative, and never read a server's absence as a judgement. It means we have not published that server.",

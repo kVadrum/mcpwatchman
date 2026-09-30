@@ -357,8 +357,10 @@ _SEVERITY_RANK = {level: rank for rank, level in enumerate(Severity)}
 _CONFIDENCE_RANK = {level: rank for rank, level in enumerate(Confidence)}
 
 
-def _worst_first(findings: Sequence[Any], tiebreak) -> tuple[list[Any], int]:
-    """The worst `MAX_EVIDENCE_PER_AXIS` findings, and how many were left out.
+def _worst_first(
+    findings: Sequence[Any], tiebreak, cap: int | None = MAX_EVIDENCE_PER_AXIS
+) -> tuple[list[Any], int]:
+    """The worst `cap` findings (all of them for None), and how many were left out.
 
     ⚠ **SEVERITY IS THE ONLY KEY SHARED HERE. The deduction TABLE is not, and
     must not be.** `03` §3 keys on (severity, confidence) and `03` §6 on
@@ -376,7 +378,9 @@ def _worst_first(findings: Sequence[Any], tiebreak) -> tuple[list[Any], int]:
         findings,
         key=lambda f: (_SEVERITY_RANK.get(f.severity, len(_SEVERITY_RANK)), tiebreak(f)),
     )
-    return ordered[:MAX_EVIDENCE_PER_AXIS], max(len(ordered) - MAX_EVIDENCE_PER_AXIS, 0)
+    if cap is None:
+        return ordered, 0
+    return ordered[:cap], max(len(ordered) - cap, 0)
 
 
 _BARE_ARTEFACTS = frozenset(
@@ -414,8 +418,13 @@ def scan_entry(
     workspace: Path | None = None,
     *,
     version: str = CURRENT_METHODOLOGY_VERSION,
+    evidence_cap: int | None = MAX_EVIDENCE_PER_AXIS,
 ) -> ServerReport:
     """Scan one registry entry end to end and return its publishable report.
+
+    `evidence_cap=None` keeps every Code Safety finding as evidence. The cap is
+    a page-size decision; calibration needs the whole list, because a label
+    whose finding merely fell past the cap is not a label whose finding is gone.
 
     Never raises for a server's own defects. A repository that cannot be read is
     an OUTCOME — `reachability` decides whose fault it was — and the report says
@@ -467,7 +476,7 @@ def scan_entry(
 
         return _assemble(
             entry, resolution, availability, root, scanned_at, version, ref_matched,
-            workspace=ws,
+            workspace=ws, evidence_cap=evidence_cap,
         )
     finally:
         if owned:
@@ -576,6 +585,7 @@ def _code_from_supplement(
 def _assemble(
     entry, resolution, availability, root, scanned_at, version, ref_matched=None,
     *, workspace: Path | None = None,
+    evidence_cap: int | None = MAX_EVIDENCE_PER_AXIS,
 ) -> ServerReport:
     # Derived from what was actually FETCHED, which is the only thing that
     # licenses a claim about it.
@@ -640,7 +650,7 @@ def _assemble(
             availability.reason,
             fault=_gap_fault(Fault.PUBLISHER, availability),
         ),
-        "code_safety": _code_axis(code, availability, code_note),
+        "code_safety": _code_axis(code, availability, code_note, evidence_cap),
         "dependency_health": _deps_axis(deps, availability),
     }
 
@@ -668,7 +678,10 @@ def _assemble(
     )
 
 
-def _code_axis(result, availability, source_note: str = "") -> AxisScore:
+def _code_axis(
+    result, availability, source_note: str = "",
+    evidence_cap: int | None = MAX_EVIDENCE_PER_AXIS,
+) -> AxisScore:
     if result is None:
         # No tree to scan, so the fetch stage owns the attribution.
         return AxisScore(
@@ -689,6 +702,7 @@ def _code_axis(result, availability, source_note: str = "") -> AxisScore:
     shown, omitted = _worst_first(
         result.findings,
         lambda f: _CONFIDENCE_RANK.get(f.confidence, len(_CONFIDENCE_RANK)),
+        evidence_cap,
     )
     evidence = tuple(
         Evidence(
