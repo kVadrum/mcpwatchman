@@ -46,32 +46,33 @@ def _published_score() -> int:
 def _ledger_findings() -> list[Finding]:
     """Rebuild the example's findings from the labels the page actually shows.
 
-    Reads the rendered `detail` strings rather than the numbers, deliberately:
-    the defect was a label disagreeing with its own arithmetic, so a test that
-    trusted the numbers would have agreed with the bug.
+    Reads the printed `severity` and `confidence` fields rather than the
+    numbers, deliberately: the defect was a label disagreeing with its own
+    arithmetic, so a test that trusted the numbers would have agreed with the
+    bug. That these fields are what a reader sees is held by
+    `test_the_built_page_prints_the_labels_the_engine_was_given`.
     """
-    rows = re.findall(r'detail:\s*"([^"]*)"', PAGE.read_text())
-    findings = []
-    for detail in rows:
-        low = detail.lower()
-        sev = next(
-            (s for s in Severity if s.value in low and s is not Severity.INFORMATIONAL),
-            None,
-        )
-        if sev is None:
-            continue  # not a finding row (the opening/total rows carry no severity)
-        conf = next((c for c in Confidence if c.value in low.split("·")[1]), None) \
-            if "·" in low else None
-        if conf is None:
-            continue
-        findings.append(Finding(sev, conf))
-    return findings
+    rows = re.findall(r'severity:\s*"(\w+)",\s*confidence:\s*"(\w+)"', PAGE.read_text())
+    return [Finding(Severity(sev), Confidence(conf)) for sev, conf in rows]
 
 
 def test_the_page_parses_into_findings_at_all():
     """Guards the two tests below from passing vacuously if the page's shape
     changes and the regex silently matches nothing."""
     assert len(_ledger_findings()) == 2
+
+
+def test_the_built_page_prints_the_labels_the_engine_was_given():
+    """The fields above are data; this checks they reach the reader as text.
+    Without it the engine could agree with labels the page no longer prints."""
+    built = SITE / "dist" / "index.html"
+    if not built.is_file():
+        pytest.skip("site not built")
+    text = re.sub(r"\s+", " ", built.read_text())
+    for finding in _ledger_findings():
+        printed = f"{finding.severity.value.capitalize()}, {finding.confidence.value} confidence."
+        assert text.count(printed) >= 1, f"the page does not print {printed!r}"
+    assert text.count(", high confidence.") == len(_ledger_findings())
 
 
 def test_published_example_matches_the_shipped_engine():
@@ -275,7 +276,7 @@ THEME_TOKENS = (
     "--ground", "--ground-lift", "--panel", "--rule",
     "--ink", "--ink-dim", "--ink-faint",
     "--signal", "--signal-ink", "--signal-hover", "--signal-on", "--deduct",
-    "--paper", "--paper-ink", "--paper-dim", "--paper-rule",
+    "--paper", "--paper-ink", "--paper-dim", "--paper-rule", "--paper-deduct",
 )
 
 
@@ -405,8 +406,10 @@ def test_every_theme_text_token_clears_AA_on_its_own_ground():
         for name in ("--ink", "--ink-dim", "--ink-faint", "--signal-ink", "--deduct"):
             ratio = contrast(token[name], ground)
             assert ratio >= 4.5, f"{selector} {name} is {ratio:.2f}:1 on {ground}"
-        # The evidence document carries its own ink on its own paper.
-        for name in ("--paper-ink", "--paper-dim"):
+        # The evidence document carries its own ink on its own paper. The
+        # deduction red is here because `--deduct` was only ever measured
+        # against the ground, and printed on paper it was 3.17:1.
+        for name in ("--paper-ink", "--paper-dim", "--paper-deduct"):
             ratio = contrast(token[name], token["--paper"])
             assert ratio >= 4.5, f"{selector} {name} is {ratio:.2f}:1 on paper"
         # Text on the amber CTA chip.

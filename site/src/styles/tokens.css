@@ -46,6 +46,11 @@
   --paper-ink: #131920;
   --paper-dim: #5a6673;
   --paper-rule: #d2d7dc;
+  /* A subtraction printed ON the paper. The paper is light in both themes, so
+     this is the deep red in both: `--deduct` is calibrated for the dark ground
+     and falls to 3.17:1 on this paper, which is where the homepage's worked
+     example printed its deductions until this token existed. */
+  --paper-deduct: #9c3517;
 
   /* Unassessed coverage. Absence, not a value — see `--void` usage. */
   --void: #27323f;
@@ -97,6 +102,7 @@
     --paper-ink: #131920;
     --paper-dim: #5a6673;
     --paper-rule: #dfe3e7;
+    --paper-deduct: #9c3517;
 
     --void: #aeb8c3;
     --void-ink: #4e5968;
@@ -122,6 +128,7 @@
   --paper-ink: #131920;
   --paper-dim: #5a6673;
   --paper-rule: #dfe3e7;
+  --paper-deduct: #9c3517;
 
   --void: #aeb8c3;
   --void-ink: #4e5968;
