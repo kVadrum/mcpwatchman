@@ -69,10 +69,12 @@ const axes = [
 // Coverage bar geometry. SVG, because the CSP blocks `style="width:…"`.
 const CW = 120;
 
-// The worked example. `severity` and `confidence` are printed beside each
-// deduction, and `tests/test_site_example.py` rebuilds the findings from exactly
-// those two fields and checks the shipped engine agrees with the published 48.
+// The worked example. `tests/test_site_example.py` reads these rows and checks
+// each against the shipped engine: `base` is its deduction for the printed
+// severity and confidence, `factor` its stacking for the row's place in its
+// severity, and PUBLISHED what the engine scores the findings.
 const START = 100;
+const PUBLISHED = 48;
 const findings = [
   { label: "shell exec in a tool handler", severity: "critical", confidence: "high", base: 30, factor: 1, note: "First of its severity: the full 30." },
   // critical/HIGH, not medium. The deduction shown is 30 × 0.75; a Critical/Medium
@@ -206,19 +208,19 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
           <figure class="example" aria-labelledby="example-caption">
             <div class="example__doc">
               <p class="example__head">
-                <span class="example__axis">Code Safety</span>
+                <span class="example__axis">Code Safety</span>{" "}
                 <span class="example__meta">worked example</span>
               </p>
               <ol class="tally">
                 <li class="tally__row">
-                  <span class="tally__label">starting score</span>
-                  <span class="tally__value">{START}</span>
+                  <span class="tally__label">starting score</span>{" "}
+                  <span class="tally__value">{START}</span>{" "}
                   <span class="tally__detail">Every axis opens at 100.</span>
                 </li>
                 {steps.map((s) => (
                   <li class="tally__row tally__row--deduct">
-                    <span class="tally__label">{s.label}</span>
-                    <span class="tally__value">{minus(s.deduction)}</span>
+                    <span class="tally__label">{s.label}</span>{" "}
+                    <span class="tally__value">{minus(s.deduction)}</span>{" "}
                     <span class="tally__detail">
                       {s.severity[0].toUpperCase() + s.severity.slice(1)}, {s.confidence} confidence.{" "}
                       {s.note}
@@ -233,17 +235,17 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
             <div class="readout">
               <p class="readout__line">
                 <span class="readout__label">
-                  Axis score
+                  Axis score{" "}
                   <span class="readout__raw">from {raw}, rounded half up</span>
-                </span>
-                <span class="final" data-count-to="48">48</span>
+                </span>{" "}
+                <span class="final" data-count-to={PUBLISHED}>{PUBLISHED}</span>
               </p>
               <svg
                 class="readout__meter"
                 width="100%"
                 height="34"
                 role="img"
-                aria-label={`Code Safety: ${raw} of 100 kept after ${minus(lost)} in deductions, published as 48`}
+                aria-label={`Code Safety: ${raw} of 100 kept after ${minus(lost)} in deductions, published as ${PUBLISHED}`}
                 data-start={START}
                 data-steps={steps.map((s) => s.from).join(" ")}
               >
@@ -254,9 +256,11 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
                   <line class="m-split" x1={`${s.from + s.deduction}%`} y1="0" x2={`${s.from + s.deduction}%`} y2="12" />
                 ))}
                 <rect class="m-scored" x="0" y="0.5" width={`${raw}%`} height="11" />
-                <text class="m-kept-label" x="0" y="30">{raw} kept</text>
+                <text class="m-kept-label" x="0" y="30">{raw} kept</text>{" "}
                 {steps.map((s) => (
-                  <text class="m-lost-label" x={`${s.from + s.deduction / 2}%`} y="30" text-anchor="middle">{minus(s.deduction)}</text>
+                  <>
+                    <text class="m-lost-label" x={`${s.from + s.deduction / 2}%`} y="30" text-anchor="middle">{minus(s.deduction)}</text>{" "}
+                  </>
                 ))}
               </svg>
             </div>
@@ -692,14 +696,19 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
         fill: var(--deduct);
       }
 
-      /* Set only by ledger.js, so with no script every label is visible. */
+      /* Set only by ledger.js, so with no script every label is visible.
+         A transition runs on the value of the state being ENTERED, so hiding
+         is instant and only the reveal fades — otherwise the labels linger
+         for a beat over a bar that has just refilled to 100. */
       .m-kept-label,
       .m-lost-label {
         transition: opacity 180ms ease-out;
       }
 
-      .is-pending {
+      .m-kept-label.is-pending,
+      .m-lost-label.is-pending {
         opacity: 0;
+        transition: none;
       }
 
       .example__caption {

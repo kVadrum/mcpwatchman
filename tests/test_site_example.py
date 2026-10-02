@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import pathlib
 import re
+from dataclasses import dataclass
 from datetime import UTC
+from decimal import Decimal
 
 import pytest
 
@@ -28,6 +30,9 @@ from mcpwatchman.workers.scoring.composite import (
     Finding,
     Severity,
     axis_score,
+    deduction_for,
+    round_half_up,
+    stacked_deduction,
 )
 
 PAGE = pathlib.Path(__file__).resolve().parents[1] / "site/src/pages/index.astro"
@@ -37,48 +42,141 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@dataclass(frozen=True)
+class _Row:
+    label: str
+    finding: Finding
+    base: Decimal
+    factor: Decimal
+
+
 def _published_score() -> int:
-    m = re.search(r'data-count-to="(\d+)"', PAGE.read_text())
-    assert m, "no data-count-to on the page — the ledger's shape changed"
+    m = re.search(r"const PUBLISHED = (\d+);", PAGE.read_text())
+    assert m, "no PUBLISHED constant on the page — the example's shape changed"
     return int(m.group(1))
 
 
-def _ledger_findings() -> list[Finding]:
-    """Rebuild the example's findings from the labels the page actually shows.
+def _ledger_rows() -> list[_Row]:
+    """The example's deduction rows, as typed in the page's frontmatter.
 
-    Reads the printed `severity` and `confidence` fields rather than the
-    numbers, deliberately: the defect was a label disagreeing with its own
-    arithmetic, so a test that trusted the numbers would have agreed with the
-    bug. That these fields are what a reader sees is held by
-    `test_the_built_page_prints_the_labels_the_engine_was_given`.
+    `severity` and `confidence` are what the page prints; `base` and `factor`
+    are what every number a reader sees is computed from. Each is checked
+    against the engine below, because the defect this file exists for was a
+    label disagreeing with its own arithmetic — and a test that trusted either
+    half alone would have agreed with the bug.
     """
-    rows = re.findall(r'severity:\s*"(\w+)",\s*confidence:\s*"(\w+)"', PAGE.read_text())
-    return [Finding(Severity(sev), Confidence(conf)) for sev, conf in rows]
+    rows = re.findall(
+        r'\{\s*label:\s*"([^"]*)",\s*severity:\s*"(\w+)",\s*confidence:\s*"(\w+)",'
+        r"\s*base:\s*([\d.]+),\s*factor:\s*([\d.]+)",
+        PAGE.read_text(),
+    )
+    return [
+        _Row(label, Finding(Severity(sev), Confidence(conf)), Decimal(base), Decimal(factor))
+        for label, sev, conf, base, factor in rows
+    ]
 
 
-def test_the_page_parses_into_findings_at_all():
-    """Guards the two tests below from passing vacuously if the page's shape
-    changes and the regex silently matches nothing."""
-    assert len(_ledger_findings()) == 2
+def _ledger_findings() -> list[Finding]:
+    return [row.finding for row in _ledger_rows()]
 
 
-def test_the_built_page_prints_the_labels_the_engine_was_given():
-    """The fields above are data; this checks they reach the reader as text.
-    Without it the engine could agree with labels the page no longer prints."""
+def _built_page() -> str:
     built = SITE / "dist" / "index.html"
     if not built.is_file():
         pytest.skip("site not built")
-    text = re.sub(r"\s+", " ", built.read_text())
-    for finding in _ledger_findings():
-        printed = f"{finding.severity.value.capitalize()}, {finding.confidence.value} confidence."
-        assert text.count(printed) >= 1, f"the page does not print {printed!r}"
-    assert text.count(", high confidence.") == len(_ledger_findings())
+    return built.read_text()
+
+
+def test_the_page_parses_into_findings_at_all():
+    """Guards every test below from passing vacuously if the page's shape
+    changes and the regex silently matches nothing."""
+    assert len(_ledger_rows()) == 2
 
 
 def test_published_example_matches_the_shipped_engine():
     """The number on the public page must be the number the engine computes
     from the labels printed beside it."""
     assert axis_score(_ledger_findings()) == _published_score()
+
+
+def test_each_row_deducts_what_the_engine_charges_for_it():
+    """A row's figure must be the engine's price for the labels beside it.
+
+    The engine check above reads only the labels, so a row could print
+    "Critical, high confidence" over −15.0 and a meter at 55 while the page
+    still claimed 48 — and pass. Each row is priced instead: its `base` is the
+    table's deduction for its labels, and `base × factor` is the MARGINAL
+    stacked deduction the engine charges for it after the earlier findings of
+    its severity.
+    """
+    earlier: dict[Severity, list[Decimal]] = {}
+    for row in _ledger_rows():
+        severity, confidence = row.finding.severity, row.finding.confidence
+        assert row.base == deduction_for(severity, confidence), (
+            f"{row.label}: base {row.base}, but the table charges "
+            f"{deduction_for(severity, confidence)} for {severity}/{confidence}"
+        )
+        before = earlier.setdefault(severity, [])
+        # The engine stacks largest first; a page listing a smaller finding
+        # ahead of a larger one would narrate an order the engine never uses.
+        assert all(row.base <= b for b in before), (
+            f"{row.label}: listed after a smaller {severity} finding"
+        )
+        marginal = stacked_deduction([[*before, row.base]]) - stacked_deduction([before])
+        assert row.base * row.factor == marginal, (
+            f"{row.label}: deducts {row.base * row.factor}, the engine charges {marginal}"
+        )
+        before.append(row.base)
+
+
+def test_the_page_arithmetic_rounds_to_the_published_score():
+    """The rows drive the meter and "from 47.5"; PUBLISHED drives the big
+    number. They are separate values on the page, so they are tied here."""
+    total = sum((row.base * row.factor for row in _ledger_rows()), Decimal(0))
+    assert round_half_up(Decimal(100) - total) == _published_score()
+
+
+def test_the_built_page_prints_each_row_as_the_engine_priced_it():
+    """The frontmatter is data; this checks it reaches the reader as text, row
+    by row and in order. Counting a label across the whole page is not enough:
+    both rows carry the same label, so one occurrence satisfied it."""
+    html = _built_page()
+    printed = re.findall(
+        r'<li class="tally__row tally__row--deduct"[^>]*>(.*?)</li>', html, re.S
+    )
+    rows = _ledger_rows()
+    assert len(printed) == len(rows), "one printed deduction row per finding"
+    for row, li in zip(rows, printed, strict=True):
+        value = re.search(r'<span class="tally__value"[^>]*>([^<]*)</span>', li)
+        detail = re.search(r'<span class="tally__detail"[^>]*>(.*?)</span>', li, re.S)
+        assert value and detail, f"{row.label}: row lost its value or detail"
+        assert value.group(1) == f"\u2212{row.base * row.factor:.1f}"
+        labels = (
+            f"{row.finding.severity.value.capitalize()}, "
+            f"{row.finding.confidence.value} confidence."
+        )
+        assert re.sub(r"\s+", " ", detail.group(1)).strip().startswith(labels)
+
+    published = _published_score()
+    assert re.search(
+        rf'<span class="final" data-count-to="{published}"[^>]*>{published}</span>', html
+    ), "the big number and its count-down target must both be PUBLISHED"
+    assert f"published as {published}" in html, "the meter's label must agree"
+
+
+def test_the_figure_reads_as_separate_words_without_css():
+    """Astro drops a line break that touches an element, so adjacent runs glue
+    together ("starting score100Every", "half up48") for anything reading the
+    text without CSS — an agent stripping tags included. Every boundary
+    between two inline runs in the figure must carry whitespace. Block
+    boundaries (`</p><ol>`, `</li><li>`) are not checked: they join the same
+    way across the whole page, and any HTML-aware reader separates them."""
+    html = _built_page()
+    figure = html[html.index('<figure class="example"') : html.index("</figure>")]
+    glued = re.findall(
+        r"\S{0,12}</(?:span|text)><(?:span|text)\b|[^\s>]{1,12}<(?:span|text)\b", figure
+    )
+    assert not glued, f"text runs glued together: {glued}"
 
 
 def test_mislabelling_the_confidence_would_change_the_answer():

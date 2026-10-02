@@ -34,6 +34,10 @@ if (final && meter && kept && !reduce.matches) {
     final.textContent = String(Math.round(value));
   };
 
+  // An example with no deductions, or a step that is not a number, has
+  // nothing to animate: leave the authored final state alone.
+  const animatable = stops.length > 0 && stops.every(Number.isFinite);
+
   const observer = new IntersectionObserver(
     (entries) => {
       if (!entries.some((e) => e.isIntersecting)) return;
@@ -64,5 +68,5 @@ if (final && meter && kept && !reduce.matches) {
     },
     { threshold: 0.6 },
   );
-  observer.observe(meter);
+  if (animatable) observer.observe(meter);
 }
