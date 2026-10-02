@@ -84,7 +84,9 @@ const findings = [
   { label: "SSRF, no host allowlist", severity: "critical", confidence: "high", base: 30, factor: 0.75, note: "Second of its severity: 75% of 30." },
 ];
 // Each step is the slice of the 0–100 axis it removes, drawn on the readout
-// meter. Every value here is an exact binary fraction.
+// meter. Plain floats are exact here only because every value is a binary
+// fraction (30, 0.75, 22.5); the engine's 0.10 stacking step is not, and an
+// example reaching it would print float noise in "from {raw}".
 let balance = START;
 const steps = findings.map((f) => {
   const deduction = f.base * f.factor;
