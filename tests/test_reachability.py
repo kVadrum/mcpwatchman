@@ -272,3 +272,18 @@ def test_every_published_string_passes_the_redaction() -> None:
     assert inside not in text and other not in text
     assert payload["axes"]["code_safety"]["evidence"][0]["excerpt"].count("100.64.x.x") == 1
     assert _ip(10, 0, 0, 1) in text, "only the guarded range is touched"
+
+
+def test_no_published_string_carries_a_lone_surrogate() -> None:
+    """A non-UTF-8 file name arrives surrogate-escaped; `json` writes it as
+    `\\udcXX`, and the site build rejects that escape — one such name failed
+    every page's build (measured 2026-10-07). The chokepoint replaces it."""
+    import json
+
+    from mcpwatchman.workers.scanner.runner import _redacted
+
+    published = _redacted({"evidence": [{"path": "src/a\udcffb.py"}],
+                           "ok": "emoji \U0001F600 stays"})
+    assert published["evidence"][0]["path"] == "src/a�b.py"
+    assert published["ok"] == "emoji \U0001F600 stays"
+    assert "\\udcff" not in json.dumps(published)

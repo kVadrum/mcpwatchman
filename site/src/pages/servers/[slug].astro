@@ -26,6 +26,10 @@ const withEvidence = AXES.filter((a) => report.axes[a.key].evidence.length > 0);
 // The high-severity feed links here. First use wins: two hits of one rule on
 // one line would otherwise give two elements the same id.
 const usedAnchors = new Set<string>();
+// A disclosure row (`finding: ""`) is not a finding, so it is not counted as
+// one; data from before the field carries none, and every row there is one.
+const findingsShown = (axis: string) =>
+  report.axes[axis].evidence.filter((e: { finding?: string }) => e.finding !== "").length;
 const anchorOnce = (axis: string, item: object) => {
   const id = findingAnchor(axis, item);
   if (!id || usedAnchors.has(id)) return undefined;
@@ -168,8 +172,8 @@ const sourceNote =
             <h3>{axis.label}</h3>
             {(report.axes[axis.key].evidence_omitted ?? 0) > 0 && (
               <p class="capped">
-                Showing the {report.axes[axis.key].evidence.length} most severe
-                of {report.axes[axis.key].evidence.length + report.axes[axis.key].evidence_omitted}
+                Showing the {findingsShown(axis.key)} most severe
+                of {findingsShown(axis.key) + report.axes[axis.key].evidence_omitted}
                 {" "}findings on this axis. The score was computed over all of
                 them — findings beyond the fourth of a severity still deduct at
                 a tenth of their weight — so the remainder is omitted from this

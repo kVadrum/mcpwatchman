@@ -21,6 +21,7 @@ server and collapsing them is the failure this whole codebase is shaped against.
 
 from __future__ import annotations
 
+import re
 import shutil
 import tempfile
 from collections.abc import Sequence
@@ -278,10 +279,20 @@ class ServerReport:
         return _redacted(payload)
 
 
+# A Python str holds a non-BMP character as ONE code point, so any surrogate in
+# one is lone — a non-UTF-8 file name decoded with `surrogateescape`. `json`
+# writes it as `\udcXX`, and the site's build REJECTS that escape ("lone leading
+# surrogate in hex escape"): one such name in a scanned repository failed the
+# whole site build, every page, every night (measured 2026-10-07). Replaced
+# with U+FFFD here, at the one chokepoint every published string passes.
+_LONE_SURROGATE = re.compile("[\ud800-\udfff]")
+
+
 def _redacted(value: Any) -> Any:
-    """`reachability.redact_cgnat` applied to every string in a JSON-ready value."""
+    """`reachability.redact_cgnat` applied to every string in a JSON-ready value,
+    with lone surrogates replaced (`_LONE_SURROGATE`)."""
     if isinstance(value, str):
-        return redact_cgnat(value)
+        return redact_cgnat(_LONE_SURROGATE.sub("\ufffd", value))
     if isinstance(value, dict):
         return {k: _redacted(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
@@ -848,12 +859,15 @@ def _deps_axis(result, availability) -> AxisScore:
     # This is the same table `CLAUDE.md` forbids sharing with `03` §3, which is
     # why it is applied HERE as this caller's own tiebreak rather than inside
     # `_worst_first`.
+    # One slot is reserved for the disclosure row below, so the list stays
+    # within the cap and every other row is a finding (Codex leg, 2026-10-07).
     shown, omitted = _worst_first(
         result.findings,
         lambda f: (
             0 if f.direct is True else (1 if f.direct is False else 2),
             -f.cvss if f.cvss is not None else 1,
         ),
+        MAX_EVIDENCE_PER_AXIS - (1 if result.unattributed_findings else 0),
     )
     evidence = tuple(
         Evidence(
@@ -983,13 +997,20 @@ def _deps_axis(result, availability) -> AxisScore:
     # declining to invent a band, disclosed in our own voice — never a
     # property of this server.
     faults = set() if weight in ("1", "1.00") else {Fault.PROJECT.value}
-    # An ecosystem whose requirements pin nothing was never measured, so the
-    # axis covers only the ecosystems a lockfile did (`OsvResult.
-    # unmeasured_ecosystems`). Theirs when the requirements pin nothing; ours
-    # when a file was too large for us to read.
-    if result.unmeasured_ecosystems:
-        measured = len(result.measured_ecosystems)
-        share = dec(measured) / dec(measured + len(result.unmeasured_ecosystems))
+    # ⚠ A SCORE IS ONLY AS WIDE AS WHAT WAS MEASURED, counted by FILE.
+    # Withholding resolved versions turned `ai.emberverse/emberverse`'s
+    # fabricated 0 into a 100 at `assessed_weight` 1 — its npm lockfile
+    # measured, its Python requirements never. Coverage by ECOSYSTEM was the
+    # first fix and still over-claimed whenever a pinned requirements file sat
+    # beside a loose one (Codex leg, 2026-10-07), so each requirements file
+    # that pins nothing is a unit the score did not measure. That understates
+    # coverage when the loose file repeats a lockfile, which is the direction a
+    # coverage claim is allowed to err in. Theirs when the requirements pin
+    # nothing; ours when a file was too large for us to read.
+    unmeasured_files = result.loose_requirements + result.unreadable_requirements
+    if unmeasured_files:
+        measured = len(result.lockfiles)
+        share = dec(measured) / dec(measured + len(unmeasured_files))
         narrowed = (Decimal(weight) * share).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
         if narrowed == 0:
             # Same floor as the unscored-findings branch above: below 1% is
@@ -1005,12 +1026,13 @@ def _deps_axis(result, availability) -> AxisScore:
             faults.add(Fault.PUBLISHER.value)
         if result.unreadable_requirements:
             faults.add(Fault.PROJECT.value)
-        names = ", ".join(result.unmeasured_ecosystems)
-        files = (result.loose_requirements + result.unreadable_requirements)[:3]
+        n = len(unmeasured_files)
         note = (
-            f"{names} dependencies were not measured: {', '.join(files)} "
-            "pin no exact version (or could not be read whole), and only "
-            "lockfiles for " + ", ".join(result.measured_ecosystems) + " were"
+            f"the dependencies in {n} requirements file{'' if n == 1 else 's'} "
+            f"({', '.join(unmeasured_files[:3])}) were not measured — "
+            f"{'it pins' if n == 1 else 'they pin'} no exact version, or could "
+            f"not be read whole — so the score covers the {measured} "
+            f"lockfile{'' if measured == 1 else 's'} that were"
         )
         reason = f"{reason}; {note}" if reason else note
     return AxisScore(

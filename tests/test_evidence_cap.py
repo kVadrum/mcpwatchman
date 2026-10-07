@@ -43,15 +43,14 @@ class _DepsResult:
     score = 0
     unscored_findings = 0
 
-    def __init__(self, findings, unattributed=0, loose=(), *, measured=("npm",),
-                 unmeasured=(), unreadable=()) -> None:
+    def __init__(self, findings, unattributed=0, loose=(), *,
+                 lockfiles=("package-lock.json",), unreadable=()) -> None:
         self.findings = findings
         self.unattributed_findings = unattributed
         self.loose_requirements = loose
         self.withheld_from = loose if unattributed else ()
         self.unreadable_requirements = unreadable
-        self.measured_ecosystems = measured
-        self.unmeasured_ecosystems = unmeasured
+        self.lockfiles = lockfiles
 
 
 def _code(severity: Severity, confidence: Confidence, n: int) -> CodeFinding:
@@ -217,7 +216,10 @@ def test_withheld_resolved_versions_lead_the_page_however_many_findings() -> Non
     assert first.label == "unpinned requirements"
     assert "12 vulnerabilities" in first.detail
     assert first.path == "requirements_local_models.txt"
-    assert len(axis.evidence) == MAX_EVIDENCE_PER_AXIS + 1
+    # A slot is reserved for the row, so the list stays within the cap and the
+    # page's "N most severe of M" counts findings only (Codex leg).
+    assert len(axis.evidence) == MAX_EVIDENCE_PER_AXIS
+    assert axis.evidence_omitted == 80 - (MAX_EVIDENCE_PER_AXIS - 1)
 
 
 def test_no_disclosure_row_when_nothing_was_withheld() -> None:
@@ -248,14 +250,26 @@ def test_an_unmeasured_ecosystem_narrows_the_coverage_it_claims() -> None:
     """`ai.emberverse/emberverse`: withholding resolved Python versions turned
     a fabricated 0 into a 100 at `assessed_weight` 1 — npm measured, Python
     never. The axis now covers half, and names whose gap the rest is."""
-    result = _DepsResult([], unattributed=79, loose=("ember6/dna/requirements.txt",),
-                         measured=("npm",), unmeasured=("PyPI",))
+    result = _DepsResult([], unattributed=79,
+                         loose=("ember6/dna/requirements.txt", "requirements_local_models.txt"))
     result.score = 100
     axis = _deps_axis(result, READABLE)
     assert axis.score == 100
+    assert axis.assessed_weight == "0.33"  # one lockfile of three files, rounded down
+    assert axis.unmeasured_faults == ("publisher",)
+    assert "2 requirements files" in axis.reason
+
+
+def test_a_loose_file_beside_a_pinned_one_still_narrows_coverage() -> None:
+    """Coverage by ECOSYSTEM read PyPI as measured once any PyPI lock existed,
+    so a loose nested requirements file's withheld findings left the axis at
+    `assessed_weight` 1 (Codex leg, 2026-10-07)."""
+    result = _DepsResult([], unattributed=3, loose=("tools/requirements.txt",),
+                         lockfiles=("requirements.txt",))
+    result.score = 100
+    axis = _deps_axis(result, READABLE)
     assert axis.assessed_weight == "0.5"
     assert axis.unmeasured_faults == ("publisher",)
-    assert "PyPI dependencies were not measured" in axis.reason
 
 
 def test_a_finding_listed_but_not_scored_does_not_claim_to_deduct() -> None:

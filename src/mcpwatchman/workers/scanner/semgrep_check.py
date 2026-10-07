@@ -802,8 +802,23 @@ def run_semgrep(
     # bad file was deliberately absent from `paths.scanned`, codifying the
     # assumption instead of testing it. Positive-controlled: one `.ts` file
     # with a syntax error appears in both lists.
-    total = scanned
-    parsed = max(0, scanned - len(unparsed))
+    # Test code is not graded (`CodeFinding.in_test`), so it is not in the
+    # coverage claim either: a fixture semgrep could not parse lowered the
+    # served code's `assessed_weight`, and a tree dominated by unparseable tests
+    # could fail the axis outright (Codex leg, 2026-10-07).
+    def _rel(raw: str) -> str | None:
+        candidate = Path(raw) if Path(raw).is_absolute() else root / raw
+        try:
+            return str(candidate.resolve().relative_to(root.resolve()))
+        except ValueError:
+            return None
+
+    scanned_tests = sum(
+        1 for p in payload.get("paths", {}).get("scanned", []) if _rel(p) in test_paths
+    )
+    unparsed = {p for p in unparsed if _rel(p) not in test_paths}
+    total = max(0, scanned - scanned_tests)
+    parsed = max(0, total - len(unparsed))
     # ⚠ ROUND DOWN. 1276 of 1277 files parsed quantizes to "1.00" under
     # half-up, publishing an incomplete scan as fully measured — and the site
     # tests `Number(w) < 1`, so "1.00" reads as complete and the server drops

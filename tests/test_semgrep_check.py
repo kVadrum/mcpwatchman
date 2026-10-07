@@ -188,6 +188,19 @@ def test_a_finding_in_test_code_is_listed_but_not_deducted(tree, monkeypatch) ->
     assert result.score == 80  # one critical/medium: -20, the test finding nothing
 
 
+def test_a_test_file_semgrep_cannot_parse_is_not_a_coverage_gap(tree, monkeypatch) -> None:
+    """Test code is not graded, so an unparseable fixture must not lower the
+    served code's coverage (Codex leg, 2026-10-07)."""
+    (tree / "tests").mkdir()
+    (tree / "tests" / "test_x.py").write_text("def (:\n")
+    payload = json.loads(_payload([], scanned=("server.py", "tests/test_x.py")))
+    payload["errors"] = [{"type": "Syntax error", "path": "tests/test_x.py"}]
+    _fake_run(monkeypatch, json.dumps(payload))
+    result = sc.run_semgrep(tree, rules=RULES, inventory=enumerate_tree(tree))
+    assert result.status is sc.SemgrepStatus.OK
+    assert result.assessed_weight == "1"
+
+
 def test_confidence_is_clamped_and_says_so(tree, monkeypatch) -> None:
     """A clamp that did not render would be indistinguishable from a low rule."""
     _fake_run(monkeypatch, _payload([_result("mcp-python-pickle-loads", line=5)]))

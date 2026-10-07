@@ -738,6 +738,8 @@ def test_a_registration_in_a_loop_is_not_a_count_of_one(tmp_path: Path, body: st
     # The header two statements up (the review agent's missed case).
     ("for (const t of TOOLS) {\n  const s = build(t);\n"
      "  server.registerTool(t.name, s);\n}\n", True),
+    # A braceless header governs the next statement alone (Codex leg).
+    ("for (const t of TOOLS)\n  server.registerTool(t.name, t.def);\n", True),
     # A comment ending in a colon opens no block (the false hit).
     ("# Tools for working with files in the workspace:\n@mcp.tool()\ndef read(): ...\n", False),
 ])

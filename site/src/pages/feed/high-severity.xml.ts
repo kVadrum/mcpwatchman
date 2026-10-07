@@ -103,8 +103,11 @@ const entryXml = ({ report, axis, item }: (typeof entries)[number]) => {
   const href = anchor ? `${page}#${anchor}` : page;
   const where = item.path ? `${item.path}${(item.line ?? 0) > 0 ? `:${item.line}` : ""}` : "";
   const axisLabel = AXIS_LABEL[axis] ?? axis;
+  // Stripped BEFORE encoding: a lone surrogate (a non-UTF-8 file name,
+  // surrogate-escaped on the Python side) makes encodeURIComponent THROW, which
+  // failed the build before `esc` could strip it (Codex leg, 2026-10-07).
   const id = `tag:mcpwatchman.com,2026:${encodeURIComponent(
-    `${report.slug}/${axis}/${item.finding}/${item.path ?? ""}`,
+    `${report.slug}/${axis}/${item.finding}/${item.path ?? ""}`.replace(XML_INVALID, ""),
   )}`;
   const html =
     `<p>${esc(item.detail || item.label)}</p>` +

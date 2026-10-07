@@ -174,10 +174,6 @@ class OsvResult:
     # Requirements files too large to read whole (`MANIFEST_MAX_BYTES`): their
     # pins could not be checked, which is OUR bound, never the publisher's.
     unreadable_requirements: tuple[str, ...] = ()
-    # Ecosystems a lockfile measured, and ones whose dependencies were present
-    # but never resolved from a pin — the axis covers only the first.
-    measured_ecosystems: tuple[str, ...] = ()
-    unmeasured_ecosystems: tuple[str, ...] = ()
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
 
@@ -313,17 +309,6 @@ _EXACT_PIN_RE = re.compile(
 def _canonical(name: str) -> str:
     """PEP 503 normalisation, so `Pillow` in a file matches osv's `pillow`."""
     return re.sub(r"[-_.]+", "-", name).lower()
-
-
-# Which ecosystem each lockfile measures. LOCKSTEP with `inventory._LOCKFILES`
-# (`tests/test_osv_check.py` holds the two together): a lockfile missing here
-# would measure an ecosystem the coverage claim never counted.
-LOCKFILE_ECOSYSTEM: dict[str, str] = {
-    "package-lock.json": "npm", "pnpm-lock.yaml": "npm", "yarn.lock": "npm",
-    "bun.lock": "npm", "bun.lockb": "npm",
-    "poetry.lock": "PyPI", "uv.lock": "PyPI", "requirements.txt": "PyPI",
-    "Cargo.lock": "crates.io", "go.sum": "Go", "Gemfile.lock": "RubyGems",
-}
 
 
 def requirement_pins(text: str) -> tuple[frozenset[str], bool]:
@@ -674,18 +659,6 @@ def run_osv(
                 )
 
     findings.sort(key=lambda f: (f.package, f.osv_id))
-    # ⚠ A SCORE IS ONLY AS WIDE AS WHAT WAS MEASURED. Withholding resolved
-    # versions turned `ai.emberverse/emberverse`'s fabricated 0 into a 100 at
-    # `assessed_weight` 1 — its npm lockfile measured, its Python requirements
-    # never — so the ecosystems a requirements file declared without pins are
-    # named, and the runner prices the axis as covering only the rest.
-    measured = {
-        LOCKFILE_ECOSYSTEM[n]
-        for n in (p.rsplit("/", 1)[-1] for p in lockfiles) if n in LOCKFILE_ECOSYSTEM
-    }
-    unmeasured = (
-        {"PyPI"} - measured if (loose_seen or unreadable_seen) else set()
-    )
     # Counts BOTH undetermined cells: no CVSS, and unknown directness.
     unscored = sum(1 for f in findings if not f.scored)
     return OsvResult(
@@ -700,8 +673,6 @@ def run_osv(
         unattributed_findings=unattributed,
         withheld_from=tuple(sorted(withheld)),
         unreadable_requirements=tuple(sorted(unreadable_seen)),
-        measured_ecosystems=tuple(sorted(measured)),
-        unmeasured_ecosystems=tuple(sorted(unmeasured)),
         methodology_version=version,
     )
 

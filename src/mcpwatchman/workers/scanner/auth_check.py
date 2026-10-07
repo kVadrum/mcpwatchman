@@ -522,7 +522,9 @@ def _registers_in_a_loop(source: str) -> bool:
                 seen += 1
                 if _indent(line) >= own:
                     continue
-                if text.endswith((":", "{", "(", "=>")) and _LOOP_HEADER_RE.search(text):
+                # `)` too: a braceless `for (…)` / `while (…)` governs the next
+                # statement alone (Codex leg, 2026-10-07).
+                if text.endswith((":", "{", "(", ")", "=>")) and _LOOP_HEADER_RE.search(text):
                     return True
                 break  # the nearest shallower line opens the enclosing block
     return False

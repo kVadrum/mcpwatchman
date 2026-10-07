@@ -61,8 +61,16 @@ def _first_seen_by_key(report: dict[str, Any]) -> dict[tuple[str, str, str], str
 def _comparable(previous: dict[str, Any], current: dict[str, Any], axis: str) -> bool:
     """Whether a finding missing from `previous` on `axis` is evidence it is new."""
     before = (previous.get("axes") or {}).get(axis) or {}
-    if before.get("score") is None or before.get("evidence_omitted", 0):
+    if before.get("score") is None:
         return False
+    if before.get("evidence_omitted", 0):
+        # Code Safety lists every DEDUCTING finding before any test-code one
+        # (`deducts: false`), so a shown test finding proves nothing the feed
+        # carries was hidden — only test code was. Without this, a server with
+        # one real finding and a hundred in its tests could never announce one.
+        shown = before.get("evidence") or ()
+        if not (axis == "code_safety" and any(e.get("deducts") is False for e in shown)):
+            return False
     keys = ("scanner_version", "ruleset_version") if axis == "code_safety" else ("scanner_version",)
     return all(previous.get(k) == current.get(k) for k in keys)
 

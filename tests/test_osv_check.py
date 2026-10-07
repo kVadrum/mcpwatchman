@@ -344,14 +344,6 @@ def test_what_counts_as_a_pin(text, pinned, every) -> None:
     assert oc.requirement_pins(text) == (frozenset(pinned), every)
 
 
-def test_every_lockfile_the_inventory_knows_names_its_ecosystem() -> None:
-    """Both enforcers or neither: a lockfile the inventory classifies but the
-    coverage map lacks would measure an ecosystem the claim never counted."""
-    from mcpwatchman.workers.scanner.inventory import _LOCKFILES
-
-    assert set(oc.LOCKFILE_ECOSYSTEM) == set(_LOCKFILES)
-
-
 @pytest.mark.parametrize("text", [
     # Written on Windows: the continuation is `\\\r\n`, not `\\\n`.
     "jinja2==3.1.4 \\\r\n    --hash=sha256:abc\r\nflask==2.0\r\n",

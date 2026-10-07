@@ -129,3 +129,13 @@ def test_two_hits_of_one_rule_in_one_file_are_one_feed_entry() -> None:
     report = _report(_finding("r", line=1, first_seen="2026-10-09"),
                      _finding("r", line=9, first_seen="2026-10-09"))
     assert len(feed_items([report])) == 1
+
+
+def test_a_cap_filled_only_by_test_code_still_compares() -> None:
+    """Code Safety lists deducting findings first, so a shown `deducts: false`
+    row proves nothing feed-eligible was hidden (Codex leg, 2026-10-07)."""
+    test_row = dict(_finding("t", path="tests/x.ts"), deducts=False)
+    previous = _report(_finding("real"), test_row, tracked="2026-10-08", omitted=99)
+    stamped = stamp_first_seen(previous, _report(_finding("real"), _finding("new")),
+                               "2026-10-09")
+    assert [i["first_seen"] for i in _items(stamped)] == [None, "2026-10-09"]
