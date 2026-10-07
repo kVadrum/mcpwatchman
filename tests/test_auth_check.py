@@ -34,6 +34,16 @@ def _remote_entry(*, headers=(), url="https://a.example/mcp") -> RegistryEntry:
     )
 
 
+def _http_package_entry() -> RegistryEntry:
+    # A network server the USER runs, shipped as a package: the code we read is
+    # the code that serves the endpoint, so absent auth in it is the 30 band.
+    return RegistryEntry(
+        name="io.github.x/y", version="1.0.0",
+        packages=(Package(registry_type="npm", identifier="x", version="1",
+                          transport="streamable-http"),),
+    )
+
+
 def _stdio_entry() -> RegistryEntry:
     return RegistryEntry(
         name="io.github.x/y", version="1.0.0",
@@ -109,14 +119,65 @@ def _tree(tmp_path: Path, **files: str) -> Path:
 
 
 def test_source_with_no_auth_anywhere_is_the_thirty_band(tmp_path: Path) -> None:
-    # With source, absence IS establishable — this is the one path to 30.
+    # With the source of a package that SERVES the endpoint, absence is
+    # establishable — this is the one path to 30.
     root = _tree(tmp_path, **{
         "server.py": "from fastapi import FastAPI\napp = FastAPI()\n"
                      "@app.get('/x')\ndef x(): return {}\n"})
-    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    axis = _assess(_http_package_entry(), root, scan_for_secrets=False)
     model = _sub(axis, "authentication_model")
     assert model.score == 30
     assert "source we fetched" in model.evidence[0]
+
+
+def test_a_hosted_remote_is_not_accused_by_its_repository(tmp_path: Path) -> None:
+    """142 published pages carried the 30 band from a repository's silence.
+
+    A remote-only entry's repository is the publisher's claim about a hosted
+    service — a launcher, an SDK, an archived stub — and a hosted endpoint is
+    routinely authenticated in front of its code. No auth in the tree does not
+    establish an endpoint that answers anyone, so the sub-check abstains with
+    the same reason as the no-source case.
+    """
+    root = _tree(tmp_path, **{
+        "server.py": "from fastapi import FastAPI\napp = FastAPI()\n"
+                     "@app.get('/x')\ndef x(): return {}\n"})
+    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+                 "authentication_model")
+    assert model.score is None
+    assert "hosted remote" in model.reason
+    assert "not an absent one" in model.reason
+    assert model.fault == Fault.PUBLISHER.value
+
+
+def test_a_declared_optional_header_survives_a_tree_with_no_auth(tmp_path: Path) -> None:
+    """Reading a repository LOWERED the score: 60 without source, 30 with it.
+
+    `io.prisma/mcp` declares an `Authorization` header on both remotes (the
+    registry's copy drops `isRequired`), and its archived repository holds an
+    11-line launcher for a different server. The declaration is authentication
+    the registry states; a tree that shows none cannot take it below 60.
+    """
+    root = _tree(tmp_path, **{"index.js": "spawn(process.env.CLI_PATH, ['mcp'])\n"})
+    entry = _remote_entry(headers=[
+        Header(name="Authorization", is_required=False, is_secret=True)])
+    model = _sub(_assess(entry, root, scan_for_secrets=False), "authentication_model")
+    assert model.score == 60
+    assert "Authorization" in model.evidence[0]
+
+
+def test_a_stdio_package_does_not_make_its_remote_readable(tmp_path: Path) -> None:
+    # The network transport comes from the remote alone; the package we read
+    # is the stdio server, not the code behind the hosted endpoint.
+    root = _tree(tmp_path, **{"server.py": "print('hi')\n"})
+    entry = RegistryEntry(
+        name="io.github.x/y", version="1.0.0",
+        packages=(Package(registry_type="npm", identifier="x", version="1",
+                          transport="stdio"),),
+        remotes=(Remote(type="streamable-http", url="https://a.example/mcp"),),
+    )
+    model = _sub(_assess(entry, root, scan_for_secrets=False), "authentication_model")
+    assert model.score is None
 
 
 def test_enforced_and_documented_auth_reaches_a_hundred(tmp_path: Path) -> None:
@@ -178,6 +239,36 @@ def test_committed_secret_drops_the_subcheck_to_zero(tmp_path: Path) -> None:
     handling = _sub(axis, "secret_handling")
     assert handling.score == 0
     assert handling.evidence == ("AWS Access Key at app.py:4",)
+
+
+@pytest.mark.parametrize("kind", sorted(ac.HEURISTIC_SECRET_KINDS))
+def test_a_credential_shaped_string_is_not_a_committed_credential(
+    tmp_path: Path, kind: str
+) -> None:
+    """168 of 179 published zeros rested on these plugins alone (2026-10-07):
+    `"MYSQL_PASSWORD": "change-me"` in a README, `secret := range secrets`,
+    content digests. `03` §4's 0 asserts a credential; a shape does not, and
+    telling them apart is a human's job — so unassessed, and the gap is ours."""
+    root = _tree(tmp_path, **{"server.py": "import os\n"})
+    hits = [SecretFinding(path="README.md", line=i, kind=kind) for i in range(12)]
+    handling = _sub(_assess(_stdio_entry(), root, secrets=hits), "secret_handling")
+    assert handling.score is None
+    assert handling.fault == Fault.PROJECT.value
+    assert "do not establish" in handling.evidence[0]
+    assert f"{kind} at README.md:0" in handling.evidence
+    assert "…and 2 more" in handling.evidence
+
+
+def test_one_provider_format_among_heuristics_still_drops_to_zero(tmp_path: Path) -> None:
+    # The established finding leads the evidence, ahead of any number of
+    # keyword hits that would otherwise fill the ten shown.
+    root = _tree(tmp_path, **{"server.py": "import os\n"})
+    hits = [SecretFinding(path="docs/a.md", line=i, kind="Secret Keyword") for i in range(20)]
+    hits.append(SecretFinding(path="config.py", line=7, kind="AWS Access Key"))
+    handling = _sub(_assess(_stdio_entry(), root, secrets=hits), "secret_handling")
+    assert handling.score == 0
+    assert handling.evidence[0] == "AWS Access Key at config.py:7"
+    assert handling.evidence == ("AWS Access Key at config.py:7", "…and 20 more")
 
 
 def test_secret_evidence_never_carries_the_credential(tmp_path: Path) -> None:
@@ -288,6 +379,24 @@ def test_real_detect_secrets_finds_a_planted_credential(tmp_path: Path) -> None:
     assert {"AWS Access Key", "Private Key"} <= kinds
 
 
+def test_a_relative_PATH_entry_still_finds_the_scanner_from_the_scan_root(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The documented calibration recipe is `PATH=.venv-workers/bin:$PATH`.
+    The scan runs with cwd = the scan root, where that relative entry names
+    nothing, so the lookup must happen in OUR cwd before the child starts."""
+    bindir = tmp_path / "venv" / "bin"
+    bindir.mkdir(parents=True)
+    tool = bindir / "detect-secrets"
+    tool.write_text('#!/bin/sh\necho \'{"results": {"seen": []}}\'\n')
+    tool.chmod(0o755)
+    scan_root = tmp_path / "scratch"
+    scan_root.mkdir()
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", "venv/bin")
+    assert "seen" in auth_check._default_runner(["detect-secrets", "scan"], scan_root)
+
+
 # --- direction: a credential SENT is not a credential CHECKED --------------
 #
 # ⚠ Found by this repo's own /qa, 2026-09-15. The first cut matched the bare
@@ -314,7 +423,7 @@ def test_real_detect_secrets_finds_a_planted_credential(tmp_path: Path) -> None:
 )
 def test_sending_a_credential_is_not_reading_one(tmp_path: Path, source_text: str) -> None:
     root = _tree(tmp_path, **{"server.py": source_text + "\n"})
-    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    axis = _assess(_http_package_entry(), root, scan_for_secrets=False)
     model = _sub(axis, "authentication_model")
     assert model.score == 30, f"{source_text!r} should not read as client auth"
 
@@ -355,7 +464,7 @@ def test_a_go_server_with_no_auth_at_all_does_not_score_a_hundred(tmp_path: Path
                    'func main() { http.Handle("/", http.HandlerFunc(h)) }\n',
         "README.md": "# srv\n\n## Authors\n\nSomeone\n" + "x" * 600,
     })
-    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    axis = _assess(_http_package_entry(), root, scan_for_secrets=False)
     assert _sub(axis, "authentication_model").score == 30
 
 
@@ -366,7 +475,7 @@ def test_fastapi_dependency_injection_is_not_authentication(tmp_path: Path) -> N
                   "@app.get('/x')\ndef x(db=Depends(get_db), page=Depends(paginate)): ...\n",
         "README.md": "# srv\n\n## Authors\n\nSomeone\n" + "x" * 600,
     })
-    axis = _assess(_remote_entry(), root, scan_for_secrets=False)
+    axis = _assess(_http_package_entry(), root, scan_for_secrets=False)
     assert _sub(axis, "authentication_model").score == 30
 
 
@@ -425,7 +534,7 @@ def test_an_outbound_oauth_token_call_is_not_inbound_authentication(
         "README.md": "# srv\nUses OAuth2 to authenticate to the upstream API.\n"
                      + "x" * 600,
     })
-    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+    model = _sub(_assess(_http_package_entry(), root, scan_for_secrets=False),
                  "authentication_model")
     assert model.score == 30
 
@@ -559,7 +668,7 @@ def test_ordinary_apis_are_not_inbound_token_verification(tmp_path: Path, line) 
         "server.py": f"import db\ndef handler(req):\n    {line}\n    return 1\n",
         "README.md": "# srv\nSend an API key in the Authorization header.\n" + "x" * 600,
     })
-    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+    model = _sub(_assess(_http_package_entry(), root, scan_for_secrets=False),
                  "authentication_model")
     assert model.score == 30, model.evidence
 
@@ -609,6 +718,35 @@ def test_destructuring_only_non_credential_vars_is_still_clean(tmp_path: Path) -
     assert _sub(_assess(_remote_entry(), root, secrets=[]), "secret_handling").score == 100
 
 
+@pytest.mark.parametrize("body", [
+    # `io.github.gulmezeren2-byte/ihalent`, verbatim shape: seven tools, one site.
+    "TOOLS = [a, b, c, d, e, f, g]\nfor fn in TOOLS: server.tool()(fn)\n",
+    "for fn in TOOLS:\n    server.tool(fn.__name__)(fn)\n",
+    "TOOLS.forEach((t) => server.tool(t.name, t.schema, t.run));\n",
+    "for (const t of TOOLS) {\n  server.registerTool(t.name, t.def, t.run);\n}\n",
+])
+def test_a_registration_in_a_loop_is_not_a_count_of_one(tmp_path: Path, body: str) -> None:
+    root = _tree(tmp_path, **{"server.py": body})
+    gran = _sub(_assess(_stdio_entry(), root, scan_for_secrets=False),
+                "authorization_granularity")
+    assert gran.score is None, gran.evidence
+    assert "inside a loop" in gran.reason
+    assert gran.fault == Fault.PROJECT.value
+
+
+def test_a_loop_INSIDE_a_handler_does_not_unscore_named_tools(tmp_path: Path) -> None:
+    # The loop belongs to tool "a"'s body; tool "b" opens on a line of its own.
+    root = _tree(tmp_path, **{"server.ts": (
+        'server.tool("a", async () => {\n'
+        "  for (const x of xs) { total += x; }\n"
+        "});\n"
+        'server.tool("b", async () => 1);\n'
+    )})
+    gran = _sub(_assess(_stdio_entry(), root, scan_for_secrets=False),
+                "authorization_granularity")
+    assert gran.score == 100, gran.reason
+
+
 def test_resources_and_prompts_are_not_counted_as_tools(tmp_path: Path) -> None:
     """MCP declares resources and prompts with the SAME `name`/`description`
     shape as tools, so an unscoped object scan counted four resources beside
@@ -652,7 +790,7 @@ def test_a_well_known_url_is_not_inbound_enforcement(tmp_path: Path, line) -> No
         "server.py": f"import httpx\ndef upstream():\n    return {line}\n",
         "README.md": "# srv\nUses OAuth2 against the upstream API.\n" + "x" * 600,
     })
-    model = _sub(_assess(_remote_entry(), root, scan_for_secrets=False),
+    model = _sub(_assess(_http_package_entry(), root, scan_for_secrets=False),
                  "authentication_model")
     assert model.score == 30, model.evidence
 

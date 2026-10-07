@@ -265,6 +265,101 @@ def test_no_lockfile_is_unassessed_not_a_hundred(tmp_path: Path, monkeypatch) ->
     assert "no lockfile" in result.reason
 
 
+# --- a requirements file is a lockfile only when it pins ------------------
+
+
+def test_an_unpinned_requirements_txt_is_not_a_lockfile(tmp_path: Path, monkeypatch) -> None:
+    """glovebox-mcp published a vacuous 100 from a `requirements.txt` naming
+    four packages with no version — osv-scanner drops a bare name and exits 0
+    with no results, which read as a clean scan."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    (tmp_path / "requirements.txt").write_text("mcp[cli]\nmss\nPillow>=9\n")
+    result = oc.run_osv(tmp_path, _inventory(("requirements.txt", Role.LOCKFILE)))
+    assert result.status is oc.OsvStatus.UNAVAILABLE
+    assert result.score is None
+    assert result.fault is Fault.PUBLISHER
+    assert "no lockfile" in result.reason
+    assert "requirements.txt does not pin every requirement" in result.reason
+
+
+def test_a_fully_pinned_requirements_txt_is_still_a_lockfile(tree, inv, monkeypatch) -> None:
+    _fake_run(monkeypatch, _payload(tree, [{"ids": ["PYSEC-1"], "aliases": [],
+                                            "max_severity": "9.8"}]), returncode=1)
+    result = oc.run_osv(tree, inv)
+    assert result.status is oc.OsvStatus.OK
+    assert result.lockfiles == ("requirements.txt",)
+    assert len(result.findings) == 1
+    assert result.unattributed_findings == 0
+
+
+def test_a_version_osv_resolved_from_a_range_is_not_attributed(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """emberverse published 0 from ~80 vulnerabilities at versions nobody
+    pinned: osv-scanner 2.6.0 reads `pillow>=9` as pillow 9.5.0 and resolves a
+    transitive closure under the same file. The pinned line keeps its finding;
+    the resolved ones are withheld and counted. The file is one our inventory
+    never classifies — osv-scanner extracts every `*.txt` as requirements."""
+    (tmp_path / "package-lock.json").write_text("{}")
+    (tmp_path / "requirements_local_models.txt").write_text(
+        "requests==2.19.1\npillow>=9\n")
+    inv = _inventory(("package-lock.json", Role.LOCKFILE))
+    src = str(tmp_path / "requirements_local_models.txt")
+    payload = json.dumps({"results": [
+        {"source": {"path": src, "type": "lockfile"}, "packages": [
+            {"package": {"name": "pillow", "version": "9.5.0", "ecosystem": "PyPI"},
+             "vulnerabilities": [], "groups": [
+                 {"ids": ["PYSEC-A"], "aliases": [], "max_severity": "9.3"},
+                 {"ids": ["PYSEC-B"], "aliases": [], "max_severity": "8.8"}]},
+            {"package": {"name": "Requests", "version": "2.19.1", "ecosystem": "PyPI"},
+             "vulnerabilities": [], "groups": [
+                 {"ids": ["PYSEC-C"], "aliases": [], "max_severity": "7.5"}]}]},
+        {"source": {"path": src, "type": "unknown"}, "packages": [
+            {"package": {"name": "urllib3", "version": "1.23", "ecosystem": "PyPI"},
+             "vulnerabilities": [], "groups": [
+                 {"ids": ["PYSEC-D"], "aliases": [], "max_severity": "9.8"}]}]},
+    ]})
+    _fake_run(monkeypatch, payload, returncode=1)
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.OK
+    assert [f.osv_id for f in result.findings] == ["PYSEC-C"]
+    assert result.unattributed_findings == 3
+    assert result.loose_requirements == ("requirements_local_models.txt",)
+
+
+@pytest.mark.parametrize("text, pinned, every", [
+    ("jinja2==2.10\n", {"jinja2"}, True),
+    # `pip-compile --generate-hashes`: the hash is a continuation, not a line.
+    ("Jinja2[i18n]==3.1.4 \\\n    --hash=sha256:abc\n-i https://x\n", {"jinja2"}, True),
+    ('x==1.0 ; python_version<"3.9"\n', {"x"}, True),
+    ("jinja2\n", set(), False),
+    ("x>=1\n", set(), False),
+    ("x==1.*\n", set(), False),
+    ("-e .\n", set(), False),
+    ("x @ https://a/b.whl\n", set(), False),
+    ("-r base.txt\n", set(), False),
+    ("", set(), False),
+])
+def test_what_counts_as_a_pin(text, pinned, every) -> None:
+    assert oc.requirement_pins(text) == (frozenset(pinned), every)
+
+
+@needs_osv
+def test_the_real_scanner_resolves_a_range_we_then_withhold(tmp_path: Path) -> None:
+    """The measurement the rule rests on, kept live: if a future osv-scanner
+    stops resolving ranges, this goes red rather than the rule going stale."""
+    (tmp_path / "requirements.txt").write_text("jinja2==2.10\npillow>=9\n")
+    # A partly-pinned requirements.txt is not a lockfile, so give it one.
+    (tmp_path / "package-lock.json").write_text(
+        '{"name":"x","lockfileVersion":3,"packages":{"":{"name":"x"}}}')
+    inv = _inventory(("requirements.txt", Role.LOCKFILE),
+                     ("package-lock.json", Role.LOCKFILE))
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.OK, result.reason
+    assert {f.package for f in result.findings} == {"jinja2"}
+    assert result.unattributed_findings > 0, "osv-scanner no longer resolves a range"
+
+
 def test_groups_are_counted_once_however_many_aliases_they_have(
     tree, inv, monkeypatch
 ) -> None:
@@ -307,6 +402,38 @@ def test_the_fixed_version_is_recovered_from_the_affected_ranges(
     groups = [{"ids": ["PYSEC-1"], "aliases": [], "max_severity": "8.6"}]
     _fake_run(monkeypatch, _payload(tree, groups, vulns=vulns), returncode=1)
     assert oc.run_osv(tree, inv).findings[0].fixed_version == "2.10.1"
+
+
+_TWO_BRANCHES = {"id": "GHSA-1", "affected": [
+    {"package": {"name": "next", "ecosystem": "npm"}, "ranges": [
+        {"type": "GIT", "events": [{"introduced": "0"},
+                                   {"fixed": "a" * 40}]},
+        {"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "15.5.24"},
+                                      {"introduced": "16.0.0-canary.0"},
+                                      {"fixed": "16.3.1"}]},
+    ]},
+    {"package": {"name": "other-pkg", "ecosystem": "npm"}, "ranges": [
+        {"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "16.3.0"}]}]},
+]}
+
+
+@pytest.mark.parametrize("installed, expected", [
+    # The gold-set case: next 16.3.0 was shown "fixed in 15.5.24".
+    ("16.3.0", "16.3.1"),
+    ("15.2.0", "15.5.24"),
+    # Past every listed fix on its line: no known fix, never another line's.
+    ("17.0.0", ""),
+    # Unreadable version and more than one fix: say nothing rather than guess.
+    ("unknown", ""),
+])
+def test_the_fix_is_the_installed_versions_own_branch(installed, expected) -> None:
+    assert oc._fixed_version(_TWO_BRANCHES, "next", installed) == expected
+
+
+def test_a_git_range_never_supplies_a_commit_hash_as_a_version() -> None:
+    vuln = {"affected": [{"package": {"name": "p"}, "ranges": [
+        {"type": "GIT", "events": [{"introduced": "0"}, {"fixed": "b" * 40}]}]}]}
+    assert oc._fixed_version(vuln, "p", "1.0.0") == ""
 
 
 def test_lockfile_paths_are_made_relative(tree, inv, monkeypatch) -> None:

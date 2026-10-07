@@ -12,6 +12,7 @@ from mcpwatchman.workers.scanner.license_check import (
     assess_license,
     identify_license,
     license_facts,
+    score_license,
 )
 
 MIT_TEXT = (
@@ -106,6 +107,26 @@ def test_no_source_abstains(tmp_path: Path) -> None:
 
 
 # ── where the facts come from ───────────────────────────────────────────────
+
+def test_a_notice_file_does_not_outrank_the_license_beside_it(tmp_path: Path) -> None:
+    """`NOTICE` (6 chars) beat `LICENSE` (7) on path length at the same depth,
+    so a tagged LICENSE was graded as an unmatched NOTICE: 70 instead of 100
+    (`app.evlek/mcp-server`, `ai.cotal/cotal`, `io.github.servosity/...`)."""
+    root = _tree(tmp_path, **{
+        "LICENSE": "SPDX-License-Identifier: MIT\n\nMIT License\n",
+        "NOTICE": "This product includes software developed by Someone.\n",
+        "package.json": json.dumps({"name": "x", "license": "MIT"}),
+    })
+    facts = _facts(root)
+    assert facts.file_path == "LICENSE"
+    assert score_license(facts).score == 100
+
+
+def test_a_root_notice_still_beats_a_nested_license(tmp_path: Path) -> None:
+    # Root-most first: the ordering fix only breaks ties at the same depth.
+    root = _tree(tmp_path, **{"NOTICE": "notice\n", "sub__LICENSE": "MIT License\n"})
+    assert _facts(root).file_path == "NOTICE"
+
 
 def test_vendored_license_does_not_decide_the_repository(tmp_path: Path) -> None:
     # A bundled dependency's LICENSE describes somebody else's terms.

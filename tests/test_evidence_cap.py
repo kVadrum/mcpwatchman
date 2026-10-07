@@ -43,8 +43,10 @@ class _DepsResult:
     score = 0
     unscored_findings = 0
 
-    def __init__(self, findings) -> None:
+    def __init__(self, findings, unattributed=0, loose=()) -> None:
         self.findings = findings
+        self.unattributed_findings = unattributed
+        self.loose_requirements = loose
 
 
 def _code(severity: Severity, confidence: Confidence, n: int) -> CodeFinding:
@@ -197,3 +199,23 @@ def test_directness_outranks_cvss_because_03_6s_table_does() -> None:
     assert "OSV-100" in labels[2], labels[:3]  # transitive 9.9 only then
     # The 10.0 with unknown directness must not lead the page.
     assert "OSV-3" not in labels[0]
+
+
+def test_withheld_resolved_versions_lead_the_page_however_many_findings() -> None:
+    """A score that left vulnerabilities out says so FIRST, above the cap."""
+    findings = [_dep(Severity.HIGH, Decimal("7.5"), i, direct=True) for i in range(80)]
+    axis = _deps_axis(
+        _DepsResult(findings, unattributed=12, loose=("requirements_local_models.txt",)),
+        READABLE,
+    )
+    first = axis.evidence[0]
+    assert first.label == "unpinned requirements"
+    assert "12 vulnerabilities" in first.detail
+    assert first.path == "requirements_local_models.txt"
+    assert len(axis.evidence) == MAX_EVIDENCE_PER_AXIS + 1
+
+
+def test_no_disclosure_row_when_nothing_was_withheld() -> None:
+    axis = _deps_axis(_DepsResult([_dep(Severity.HIGH, Decimal("7.5"), 1, direct=True)]),
+                      READABLE)
+    assert all(e.label != "unpinned requirements" for e in axis.evidence)

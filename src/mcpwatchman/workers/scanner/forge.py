@@ -87,7 +87,7 @@ CACHE_TTL_SECONDS = 24 * 60 * 60
 # 24 hours a tag-only repository silently lost every tag and abstained. A
 # schema stamp turns that into a cache miss, which is a refetch rather than a
 # wrong page.
-CACHE_SCHEMA = 2
+CACHE_SCHEMA = 3  # 3: issues carry `authorAssociation` (`_filed_by_the_project`)
 
 # Server-side page size for commit history. `03` §5's bus factor needs authors
 # over 12 months, which on a busy repository is thousands of commits; this
@@ -289,6 +289,7 @@ query($owner:String!, $name:String!, $since:GitTimestamp!, $commits:Int!,
       totalCount
       nodes {
         createdAt
+        authorAssociation
         author { login }
         comments(first:$comments) {
           nodes { createdAt authorAssociation author { login } }
@@ -555,6 +556,23 @@ def _first_response_days(issue: dict, as_of_dt: datetime) -> float | None:
     return max(waited, 0.0)
 
 
+def _filed_by_the_project(issue: dict) -> bool:
+    """Whether the project filed this issue itself — a maintainer or a bot.
+
+    ⚠ `03` §5 asks *"if I file an issue tomorrow, will anyone read it?"*, and a
+    maintainer's tracking issue or a bot's weekly "upstream changes need
+    review" notice is nobody waiting to be read. Censored like a stranger's
+    unanswered report, they dragged an active project's median toward the 0
+    band (`ai.dinglebear/soma`, gold-set draft). A cached payload from before
+    the field existed carries no association, and stays in — the old reading.
+    """
+    if issue.get("authorAssociation") in MAINTAINER_ASSOCIATIONS:
+        return True
+    author = issue.get("author")
+    login = author.get("login") if isinstance(author, dict) else None
+    return isinstance(login, str) and bool(_BOT_LOGIN.search(login.strip()))
+
+
 def _issue_medians(
     payload: dict, as_of_dt: datetime
 ) -> tuple[float | None, int | None, float | None, bool]:
@@ -595,6 +613,8 @@ def _issue_medians(
     recent: list[float] = []
     every: list[float] = []
     for issue in issues:
+        if _filed_by_the_project(issue):
+            continue
         days = _first_response_days(issue, as_of_dt)
         if days is None:
             continue

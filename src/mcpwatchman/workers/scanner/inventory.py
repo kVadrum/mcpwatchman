@@ -145,16 +145,21 @@ _LOCKFILES = frozenset(
         "requirements.txt",
     }
 )
-# ⚠ LOCKSTEP with `transparency_check._find`, which searches Role.DOCS for
-# ("changelog", "changes", "history", "news"). Those last three reached DOCS
-# only when the file happened to be `.md` — so a Python project shipping
+# ⚠ `transparency_check._find` searches Role.DOCS for `CHANGELOG_PREFIXES`
+# (below, now the one home for those names). "changes", "history" and "news"
+# reached DOCS only when the file happened to be `.md` — so a Python project shipping
 # `CHANGES.rst` scored changelog 0 with the evidence "no CHANGELOG in the
 # fetched source", a false negative worth 15% of Transparency. Same shape as the
 # `EXCLUDED_DIRS` split `CLAUDE.md` records: one rule, two enforcers, and when
 # they disagreed the disagreement was silent.
+# `03` §7: "CHANGELOG.md or release notes". `transparency_check` imports this
+# rather than restating it, so the two enforcers cannot drift apart again.
+CHANGELOG_PREFIXES = (
+    "changelog", "changes", "history", "news",
+    "release-notes", "release_notes", "releasenotes",
+)
 _DOC_PREFIXES = (
-    "readme", "changelog", "changes", "history", "news",
-    "contributing", "security", "codeowners",
+    "readme", *CHANGELOG_PREFIXES, "contributing", "security", "codeowners",
 )
 
 # ⚠ **A DOC PREFIX ONLY COUNTS ON A DOC-SHAPED FILE**, and this guard is the

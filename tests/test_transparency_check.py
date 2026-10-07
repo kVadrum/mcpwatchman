@@ -288,7 +288,12 @@ def test_configuration_headings_match_regardless_of_case(
     assert "configuration documented" in score_readme(_facts(root)).evidence[0]
 
 
-@pytest.mark.parametrize("name", ["CHANGES.rst", "HISTORY.rst", "NEWS.txt", "CHANGELOG.md"])
+@pytest.mark.parametrize("name", [
+    "CHANGES.rst", "HISTORY.rst", "NEWS.txt", "CHANGELOG.md",
+    # `03` §7: "CHANGELOG.md or release notes" — the gold-set audit of
+    # `ai.dinglebear/soma` found a RELEASE_NOTES.md scored as no changelog.
+    "RELEASE_NOTES.md", "release-notes.md", "ReleaseNotes.rst",
+])
 def test_changelog_is_found_whatever_its_extension(tmp_path: Path, name: str) -> None:
     # ⚠ `_find` searched for changes/history/news but `inventory._DOC_PREFIXES`
     # only routed those to Role.DOCS when the file was `.md`, so a Python project

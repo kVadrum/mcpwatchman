@@ -847,6 +847,24 @@ def _deps_axis(result, availability) -> AxisScore:
         )
         for f in shown
     )
+    # First, so no evidence cap can hide it: what the score left out and why.
+    if result.unattributed_findings:
+        n = result.unattributed_findings
+        evidence = (
+            Evidence(
+                label="unpinned requirements",
+                detail=(
+                    f"{n} vulnerabilit{'y' if n == 1 else 'ies'} osv-scanner "
+                    "reported at versions it resolved from requirements that "
+                    "name no exact version "
+                    f"({', '.join(result.loose_requirements[:3])}) "
+                    f"{'is' if n == 1 else 'are'} not attributed — nobody "
+                    "pinned those versions, so they say nothing about what "
+                    "this server ships"
+                ),
+                path=result.loose_requirements[0] if result.loose_requirements else "",
+            ),
+        ) + evidence
     # ⚠ `assessed_weight` was hardcoded "1" here, which is the one field the
     # whole product promises not to overstate. A vulnerability excluded from
     # the arithmetic for want of a CVSS is precisely the "of what we could

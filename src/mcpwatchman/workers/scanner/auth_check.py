@@ -455,6 +455,38 @@ def _count_tools(source: str) -> int:
         len(_TOOL_OBJECT_RE.findall(region)) for region in _tools_array_regions(source)
     )
     return max(len(named), sites, objects)
+# ⚠ **A REGISTRATION SITE IN A LOOP IS A LOWER BOUND, NOT A COUNT** — the same
+# class as `ListToolsRequestSchema`, one statement earlier. `for fn in TOOLS:
+# server.tool()(fn)` registers seven tools from one site, and the counter
+# published "1 tool registration(s) detected — at or below the threshold" and
+# scored 100 for a multi-tool surface it never saw
+# (`io.github.gulmezeren2-byte/ihalent`). A loop header on the same line, or
+# opening the block on the line before, is enough to stop asserting `<= 3`.
+_LOOP_HEADER_RE = re.compile(
+    r"\bfor\b[^\n]*\b(?:in|of)\b|\bfor\s*\(|\.(?:forEach|map)\s*\(|\bwhile\b"
+)
+_REGISTRATION_SITE_RES = (_TOOL_CALL_RE, *_TOOL_DECORATOR_RES)
+# Bound on the sites examined, because the walk reads attacker-controlled source.
+MAX_REGISTRATION_SITES = 200
+
+
+def _registers_in_a_loop(source: str) -> bool:
+    """Whether any tool registration site sits inside a loop."""
+    examined = 0
+    for pattern in _REGISTRATION_SITE_RES:
+        for match in pattern.finditer(source):
+            examined += 1
+            if examined > MAX_REGISTRATION_SITES:
+                return False
+            line_start = source.rfind("\n", 0, match.start()) + 1
+            if _LOOP_HEADER_RE.search(source, line_start, match.start()):
+                return True
+            previous = source[:line_start].rstrip().rsplit("\n", 1)[-1].rstrip()
+            if previous.endswith((":", "{", "(", "=>")) and _LOOP_HEADER_RE.search(previous):
+                return True
+    return False
+
+
 # Per-tool conditional access: a permission test inside the handler.
 _CONDITIONAL_ACCESS_TOKENS = (
     "if not authorized", "if (!authorized", "has_permission", "hasPermission",
@@ -556,8 +588,19 @@ def scan_secrets(
 
 
 def _default_runner(argv: Sequence[str], cwd: Path) -> str:
+    # ⚠ RESOLVED HERE, IN OUR OWN CWD, before the child starts in the scan root.
+    # A bare `detect-secrets` is looked up on PATH from the CHILD's cwd, so a
+    # relative entry — the documented `PATH=.venv-workers/bin:$PATH` calibration
+    # recipe — found nothing from inside the scratch tree: `OSError`, `None`,
+    # and every entry's secret handling silently unassessed. Measured
+    # 2026-10-07: the planted-credential control failed in 0.04s that way and
+    # passed with an absolute PATH. `shutil.which` matched the parent's view,
+    # so the availability check upstream could not see it.
+    found = shutil.which(argv[0])
+    if found is None:
+        raise FileNotFoundError(argv[0])
     result = subprocess.run(  # noqa: S603 — argv list, never a shell string
-        list(argv),
+        [str(Path(found).resolve()), *argv[1:]],
         cwd=cwd,
         capture_output=True,
         text=True,
@@ -605,6 +648,23 @@ def _declared_credentials(entry: RegistryEntry) -> tuple[bool, bool, tuple[str, 
     )
     required = bool(entry.remotes) and not unprotected
     return bool(headers), required, unprotected
+
+
+_NETWORK_TRANSPORTS = frozenset(t.value for t in Transport if t.is_network)
+
+
+def _serves_network_from_a_package(entry: RegistryEntry) -> bool:
+    """Whether a PACKAGE declares a network transport — code the user runs.
+
+    Then the network server is code we can read, and absent auth in it is
+    `03` §4's 30 band. A network transport declared only by `remotes` is a
+    hosted deployment we never see (`_authentication_model`).
+    """
+    return any(
+        (p.transport or "").strip().lower() in _NETWORK_TRANSPORTS
+        for p in entry.packages
+    )
+
 
 
 def _authentication_model(
@@ -729,6 +789,40 @@ def _authentication_model(
                       "middleware or rejection path was found — `03` §4's "
                       "\"present but optional or trivially bypassable\" band",),
         )
+    # ⚠ A declared credential header is authentication the REGISTRY states, so
+    # source that shows none cannot take the band below what the declaration
+    # alone earns. Without this, reading a repository LOWERED the score: the
+    # same entry scored 60 with no source and 30 with a tree holding no auth
+    # code — `io.prisma/mcp`, whose archived repository is not its server.
+    if declared:
+        return SubCheck(
+            name, 60,
+            evidence=(f"registry declares credential header(s) "
+                      f"{', '.join(header_names)} that are not required on "
+                      "every declared endpoint, and the source we fetched "
+                      "shows no enforcement — `03` §4's \"authentication "
+                      "present but optional\" band",)
+                     + bypassable,
+        )
+    # ⚠ **The 30 band is about the code that SERVES the network endpoint.**
+    # When only a hosted remote declares one, the repository is the publisher's
+    # claim about that service, not the service — often a launcher, an SDK or
+    # an archived stub (gold-set drafts: `io.prisma/mcp`, `ai.gondola/gondola`,
+    # `ai.paperlantern/code`) — and a hosted endpoint is routinely
+    # authenticated in front of its code, by a gateway or the platform. No auth
+    # in that tree does not establish an endpoint that answers anyone, which
+    # `03` §4's 30 band asserts; only connecting would (`04` §9).
+    if not _serves_network_from_a_package(entry):
+        return SubCheck(
+            name, None,
+            reason="no authentication appears in the source we fetched, but "
+                   "this server's network endpoint is a hosted remote, whose "
+                   "authentication can be enforced in front of its code — and "
+                   "no credential header is declared. An undeclared header is "
+                   "not an absent one, so `03` §4's \"no authentication\" "
+                   "band is not established.",
+            fault=Fault.PUBLISHER.value,
+        )
     return SubCheck(
         name, 30,
         evidence=("network transport, and no authentication middleware, "
@@ -736,6 +830,18 @@ def _authentication_model(
                   "appears anywhere in the source we fetched — `03` §4's "
                   "\"no authentication; HTTP transport\" band",),
     )
+
+
+# `detect-secrets` plugins that match a credential's SHAPE rather than a
+# provider's credential FORMAT — see `_secret_handling`. A provider detector
+# (AWS, GitHub, Twilio, a PEM private key) names a format specific enough to
+# stand as a finding; these do not.
+HEURISTIC_SECRET_KINDS = frozenset({
+    "Secret Keyword",
+    "Base64 High Entropy String",
+    "Hex High Entropy String",
+    "Basic Auth Credentials",
+})
 
 
 # The two ways the credential scan does not happen. They are BOTH ours, so both
@@ -775,11 +881,37 @@ def _secret_handling(
     if secrets:
         # Path, line and type only — never the credential, which `detect-secrets`
         # does not return in the first place and this must not reintroduce.
-        located = tuple(f"{f.kind} at {f.path}:{f.line}" for f in secrets[:10])
+        established = [f for f in secrets if f.kind not in HEURISTIC_SECRET_KINDS]
+        shown = established or secrets
+        located = tuple(f"{f.kind} at {f.path}:{f.line}" for f in shown[:10])
+        if len(secrets) > len(located):
+            located += (f"…and {len(secrets) - len(located)} more",)
+        if established:
+            return SubCheck(name, 0, evidence=located)
+        # ⚠ **A CREDENTIAL'S SHAPE IS NOT A CREDENTIAL.** `03` §4's 0 asserts a
+        # committed credential, and these plugins flag what one LOOKS like:
+        # `"MYSQL_PASSWORD": "change-me"` in a README, `secret := range
+        # secrets`, SHA-256 content digests, `user:password@localhost`. They
+        # zeroed this sub-check on 168 of 179 published pages that carried it
+        # (2026-10-07), and twelve gold-set drafts found no credential among
+        # those they read. One draft did find real key material inside 239
+        # entropy hits, so the hits are not dismissed either: telling them
+        # apart is a human's job, and the honest result is unassessed — OURS,
+        # since it is the precision of our tool that stops here.
+        kinds = ", ".join(sorted({f.kind for f in secrets}))
         return SubCheck(
-            name, 0, evidence=located + (
-                (f"…and {len(secrets) - 10} more",) if len(secrets) > 10 else ()
-            ),
+            name, None,
+            evidence=(
+                f"detect-secrets matched {len(secrets)} credential-shaped "
+                f"string(s), every one from a keyword or entropy heuristic "
+                f"({kinds}). Those flag placeholders, variable names and "
+                "content hashes as readily as credentials, so they do not "
+                "establish the committed credential `03` §4's 0 asserts, and "
+                "this sub-check is not scored",
+            ) + located,
+            reason="detect-secrets matched only keyword or entropy heuristics, "
+                   "which do not establish a committed credential",
+            fault=Fault.PROJECT.value,
         )
     if source is None:
         return SubCheck(
@@ -864,6 +996,15 @@ def _authorization_granularity(
                    + (" A tool-list handler IS present, so the tools are built "
                       "in a shape this counter could not enumerate."
                       if seen_handler else ""),
+            fault=Fault.PROJECT.value,
+        )
+    if tools <= GRANULARITY_TOOL_THRESHOLD and _registers_in_a_loop(source):
+        return SubCheck(
+            name, None,
+            reason=f"{tools} tool registration site(s) detected, but tools are "
+                   "registered inside a loop, so that is a lower bound on how "
+                   "many the server exposes and `03` §4's threshold of "
+                   f"{GRANULARITY_TOOL_THRESHOLD} cannot be applied",
             fault=Fault.PROJECT.value,
         )
     if tools <= GRANULARITY_TOOL_THRESHOLD:

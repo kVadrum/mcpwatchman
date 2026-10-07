@@ -265,7 +265,19 @@ def _license_record(inventory: Inventory):
     candidates = [f for f in inventory.by_role(Role.LICENSE)]
     if not candidates:
         return None
-    return min(candidates, key=lambda f: (f.path.count("/"), len(f.path)))
+    # ⚠ A NOTICE file is an attribution, not a grant — and on path length alone
+    # `NOTICE` (6) beat `LICENSE` (7) beside it, so a repository shipping both
+    # was graded on the one that names no licence ("text not matched"): 70 at
+    # best, and 30 points lost from a tagged LICENSE that would have scored 100
+    # (`app.evlek/mcp-server`, `ai.cotal/cotal`). Root-most still wins first.
+    return min(
+        candidates,
+        key=lambda f: (
+            f.path.count("/"),
+            f.path.rsplit("/", 1)[-1].lower().startswith("notice"),
+            len(f.path),
+        ),
+    )
 
 
 def _manifest_license(root: Path, inventory: Inventory) -> tuple[str | None, str | None]:

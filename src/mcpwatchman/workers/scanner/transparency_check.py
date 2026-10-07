@@ -37,7 +37,12 @@ from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
 
-from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
+from mcpwatchman.workers.scanner.inventory import (
+    CHANGELOG_PREFIXES,
+    Inventory,
+    Role,
+    read_text,
+)
 from mcpwatchman.workers.scanner.license_check import assess_license
 from mcpwatchman.workers.scanner.reachability import Fault, SourceAvailability
 from mcpwatchman.workers.scoring.axes import AxisResult, SubCheck, score_axis
@@ -225,7 +230,7 @@ def documentation_facts(root: Path, inventory: Inventory) -> DocumentationFacts:
     return DocumentationFacts(
         readme_path=readme_path,
         readme=read_text(root, readme_path) if readme_path else "",
-        changelog_path=_find(inventory, "changelog", "changes", "history", "news"),
+        changelog_path=_find(inventory, *CHANGELOG_PREFIXES),
         security_path=_find(inventory, "security"),
         manifest_text=read_text(root, manifest.path) if manifest else "",
     )

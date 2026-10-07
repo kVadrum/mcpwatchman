@@ -316,6 +316,31 @@ def test_answering_your_own_issue_is_not_answering_anyone() -> None:
     assert _signals(payload).median_first_response_days == pytest.approx(40.0)
 
 
+@pytest.mark.parametrize("filed_by", [
+    {"authorAssociation": "OWNER", "author": {"login": "amy"}},
+    {"authorAssociation": "MEMBER", "author": {"login": "bea"}},
+    {"authorAssociation": "NONE", "author": {"login": "github-actions"}},
+    {"authorAssociation": "NONE", "author": {"login": "renovate[bot]"}},
+])
+def test_an_issue_the_project_filed_itself_is_nobody_waiting(filed_by: dict) -> None:
+    """`ai.dinglebear/soma`: maintainer tracking issues and a bot's weekly
+    notices, none commented, censored as unanswered — an active project scored
+    toward `03` §5's 0 band. A stranger's issue beside them still counts."""
+    payload = _payload(issues={"totalCount": 4, "nodes": [
+        {"createdAt": _iso(d), **filed_by, "comments": {"nodes": []}}
+        for d in (100, 90, 80)
+    ] + [_issue(30, [_comment(28)])]})
+    signals = _signals(payload)
+    assert signals.median_first_response_days == pytest.approx(2.0)
+    assert signals.issues_sampled == 1
+
+
+def test_a_cached_payload_without_associations_keeps_the_old_reading() -> None:
+    # No `authorAssociation` on the issue: not knowably the project's, so in.
+    payload = _payload(issues={"totalCount": 1, "nodes": [_issue(50, [])]})
+    assert _signals(payload).median_first_response_days == pytest.approx(50.0)
+
+
 def test_an_unanswered_issue_is_censored_not_dropped() -> None:
     """⚠ `03` §5's bottom band IS the unanswered case.
 

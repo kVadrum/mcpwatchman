@@ -47,6 +47,7 @@ everything.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tomllib
 from dataclasses import dataclass
@@ -157,6 +158,11 @@ class OsvResult:
     lockfiles: tuple[str, ...] = ()
     unscored_findings: int = 0
     neutralised: tuple[str, ...] = ()
+    # Requirements files that do not pin every requirement to one exact
+    # version, and how many vulnerabilities osv-scanner reported at versions it
+    # RESOLVED from them rather than read — withheld, and the page says so.
+    loose_requirements: tuple[str, ...] = ()
+    unattributed_findings: int = 0
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
 
@@ -270,6 +276,56 @@ def _requirements_names(text: str) -> set[str]:
         if line.strip():
             names.add(line.strip().lower())
     return names
+
+
+# ⚠ **A REQUIREMENTS FILE IS A LOCKFILE ONLY WHEN IT PINS.** osv-scanner
+# 2.6.0 reads every `*.txt` it extracts as pip requirements and does two things
+# with a line that names no exact version, both measured 2026-10-07: a bare
+# name is dropped ("Filtered 1 local/unscannable package") and the scan exits 0
+# with no results, and a range is RESOLVED — `pillow>=9` came back as pillow
+# 9.5.0 with 19 vulnerability groups, plus a transitive closure under the same
+# file. The first published a vacuous 100 for a server whose `requirements.txt`
+# pins nothing (`io.github.segentic-lab/glovebox-mcp`); the second published 0
+# from ~80 vulnerabilities at versions nobody pinned (`ai.emberverse/
+# emberverse`). Neither is a fact about what the publisher ships, so a version
+# the publisher did not pin is never attributed to them.
+_EXACT_PIN_RE = re.compile(
+    r"^(?P<name>[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)\s*(?:\[[^\]]*\])?"
+    r"\s*==\s*[^\s*,;<>!=~]+$"
+)
+
+
+def _canonical(name: str) -> str:
+    """PEP 503 normalisation, so `Pillow` in a file matches osv's `pillow`."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def requirement_pins(text: str) -> tuple[frozenset[str], bool]:
+    """(names pinned to one exact version, whether EVERY requirement is).
+
+    `--hash` continuations are joined first, so `pip-compile
+    --generate-hashes` output reads as the lock it is. An editable install
+    (`-e`) names a tree, not a version, so it unpins the file; other option
+    lines (`-r`, `-i`, `--index-url`) are not requirements. A file with no
+    requirement at all pins nothing.
+    """
+    pinned: set[str] = set()
+    every, seen = True, 0
+    for raw in text.replace("\\\n", " ").splitlines():
+        line = re.sub(r"(?:^|\s)#.*", "", raw).strip()
+        if not line:
+            continue
+        if line.startswith("-"):
+            if line.startswith(("-e", "--editable")):
+                seen, every = seen + 1, False
+            continue
+        seen += 1
+        match = _EXACT_PIN_RE.match(line.split(";", 1)[0].split(" --", 1)[0].strip())
+        if match:
+            pinned.add(_canonical(match["name"]))
+        else:
+            every = False
+    return frozenset(pinned), every and seen > 0
 
 
 # Which OSV ecosystem each manifest lets us recover a DIRECT set for. The
@@ -397,9 +453,19 @@ def run_osv(
             methodology_version=version,
         )
 
-    lockfiles = tuple(
-        sorted(f.path for f in inventory.files if f.role is Role.LOCKFILE)
-    ) if inventory is not None else ()
+    pins: dict[str, tuple[frozenset[str], bool]] = {}
+
+    def pins_of(rel: str) -> tuple[frozenset[str], bool]:
+        # An unreadable (over-cap) file pins nothing we could read.
+        if rel not in pins:
+            pins[rel] = requirement_pins(read_manifest(root, rel))
+        return pins[rel]
+
+    candidates = sorted(
+        f.path for f in inventory.files if f.role is Role.LOCKFILE
+    ) if inventory is not None else []
+    loose = tuple(p for p in candidates if p.endswith(".txt") and not pins_of(p)[1])
+    lockfiles = tuple(p for p in candidates if p not in loose)
     if inventory is not None and not lockfiles:
         # `04` §5's lockfile-generation fallback is NOT implemented: it would
         # mean running npm/pip against an untrusted manifest, which `04` §7
@@ -408,8 +474,16 @@ def run_osv(
         # with empty stdout, so there is nothing to parse either.
         return OsvResult(
             status=OsvStatus.UNAVAILABLE,
-            reason="no lockfile in the fetched source; dependency versions are "
-                   "unresolved, so no vulnerability can be attributed",
+            reason=(
+                "no lockfile in the fetched source; dependency versions are "
+                "unresolved, so no vulnerability can be attributed"
+                if not loose else
+                f"no lockfile in the fetched source: {', '.join(loose[:3])} "
+                "does not pin every requirement to one exact version, so "
+                "dependency versions are unresolved and no vulnerability can "
+                "be attributed"
+            ),
+            loose_requirements=loose,
             # THEIRS — the absence is a property of what they
             # published. Our decision not to GENERATE one is a
             # safety stance (`04` §7 forbids running a package
@@ -473,13 +547,26 @@ def run_osv(
     direct = direct_dependencies(root, inventory) if inventory is not None else set()
     known = parsed_ecosystems(inventory) if inventory is not None else set()
     findings: list[DependencyFinding] = []
+    unattributed = 0
+    loose_seen: set[str] = set(loose)
     for result in payload.get("results", []):
         source = result.get("source", {}) or {}
         path = source.get("path", "")
-        rel = str(Path(path).relative_to(root)) if Path(path).is_relative_to(root) else path
+        inside = Path(path).is_relative_to(root)
+        rel = str(Path(path).relative_to(root)) if inside else path
+        # Every `.txt` osv-scanner extracts is pip requirements, including
+        # names our inventory never classifies (`requirements_local_models.txt`).
+        pinned, every = (
+            pins_of(rel) if inside else (frozenset(), False)
+        ) if rel.endswith(".txt") else (frozenset(), True)
+        if not every:
+            loose_seen.add(rel)
         for package in result.get("packages", []):
             info = package.get("package", {}) or {}
             name = info.get("name", "")
+            if not every and _canonical(name) not in pinned:
+                unattributed += len(package.get("groups", []))
+                continue
             by_id = {v.get("id"): v for v in package.get("vulnerabilities", [])}
             # One GROUP is one distinct vulnerability; its aliases each appear
             # separately in `vulnerabilities`. See the module docstring.
@@ -504,7 +591,9 @@ def run_osv(
                         direct=(name.lower() in direct)
                         if info.get("ecosystem") in known else None,
                         lockfile=rel,
-                        fixed_version=_fixed_version(vuln),
+                        fixed_version=_fixed_version(
+                            vuln, name, info.get("version", "")
+                        ),
                         cve_id=next((a for a in aliases if a.startswith("CVE-")), ""),
                         aliases=aliases,
                     )
@@ -521,6 +610,8 @@ def run_osv(
         lockfiles=lockfiles,
         unscored_findings=unscored,
         neutralised=neutralised,
+        loose_requirements=tuple(sorted(loose_seen)),
+        unattributed_findings=unattributed,
         methodology_version=version,
     )
 
@@ -553,14 +644,57 @@ def _as_decimal(value: object) -> Decimal | None:
         return None
 
 
-def _fixed_version(vuln: dict) -> str:
-    """First `fixed` event in the vulnerability's affected ranges, if any."""
+def _version_key(version: str) -> tuple[int, ...] | None:
+    """A comparable key from a version's leading numbers, or None.
+
+    Deliberately coarse — four numeric fields, pre-release tags ignored — since
+    it only has to place a version between a range's `introduced` and `fixed`
+    events, and a version it cannot read at all yields no fix rather than a
+    guessed one.
+    """
+    numbers = [int(n) for n in re.findall(r"\d+", version)[:4]]
+    return tuple(numbers + [0] * (4 - len(numbers))) if numbers else None
+
+
+def _fixed_version(vuln: dict, package: str = "", version: str = "") -> str:
+    """The fix on the installed version's own branch, or "" when none is known.
+
+    ⚠ **The first `fixed` event was another branch's fix.** OSV lists one range
+    per maintained line, so a vulnerability fixed in 15.5.24 and 16.3.1 reads
+    "fixed in 15.5.24" first — and 335 of 2,404 published "fixed in" versions
+    were at or below the version already installed (2026-10-07; `undici`
+    8.5.0 "fixed in 6.28.1"), telling a reader the fix was already applied.
+    Four were git commit hashes, from `GIT` ranges. So: this package's
+    non-git ranges only, the one whose `introduced`…`fixed` span holds the
+    installed version, and nothing at all rather than a guess.
+    """
+    spans: list[tuple[str, str]] = []
     for affected in vuln.get("affected", []) or []:
+        name = ((affected.get("package") or {}).get("name") or "")
+        if package and name and name.lower() != package.lower():
+            continue
         for rng in affected.get("ranges", []) or []:
+            if (rng.get("type") or "").upper() == "GIT":
+                continue
+            introduced = "0"
             for event in rng.get("events", []) or []:
-                if "fixed" in event:
-                    return str(event["fixed"])
-    return ""
+                if "introduced" in event:
+                    introduced = str(event["introduced"])
+                elif "fixed" in event:
+                    spans.append((introduced, str(event["fixed"])))
+    if not spans:
+        return ""
+    installed = _version_key(version)
+    if installed is None:
+        fixes = {fixed for _, fixed in spans}
+        return fixes.pop() if len(fixes) == 1 else ""
+    containing: list[tuple[tuple[int, ...], str]] = []
+    for introduced, fixed in spans:
+        lo = _version_key(introduced) or (0, 0, 0, 0)
+        hi = _version_key(fixed)
+        if hi is not None and lo <= installed < hi:
+            containing.append((hi, fixed))
+    return min(containing)[1] if containing else ""
 
 
 def assess_dependency_health(
