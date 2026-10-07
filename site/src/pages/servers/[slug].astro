@@ -3,6 +3,7 @@ import Report from "../../layouts/Report.astro";
 import AxisMeter from "../../components/AxisMeter.astro";
 import VoidHatch from "../../components/VoidHatch.astro";
 import scans from "../../data/scans.json";
+import { findingAnchor } from "../../lib/findings";
 
 const AXES = [
   { key: "code_safety", label: "Code Safety", weight: 30 },
@@ -22,6 +23,15 @@ export function getStaticPaths() {
 const { report } = Astro.props;
 const scored = AXES.filter((a) => report.axes[a.key].score !== null);
 const withEvidence = AXES.filter((a) => report.axes[a.key].evidence.length > 0);
+// The high-severity feed links here. First use wins: two hits of one rule on
+// one line would otherwise give two elements the same id.
+const usedAnchors = new Set<string>();
+const anchorOnce = (axis: string, item: object) => {
+  const id = findingAnchor(axis, item);
+  if (!id || usedAnchors.has(id)) return undefined;
+  usedAnchors.add(id);
+  return id;
+};
 // ⚠ GITHUB ONLY. `08` §5.2 also names `appeals@mcpwatchman.com`, and
 // mcpwatchman.com has NO MX RECORD — mail to it is not delivered anywhere.
 // Publishing that address would hand a maintainer a channel that swallows
@@ -168,7 +178,7 @@ const sourceNote =
             )}
             <ul class="findings">
               {report.axes[axis.key].evidence.map((item) => (
-                <li class="finding">
+                <li class="finding" id={anchorOnce(axis.key, item)}>
                   {item.path ? (
                     <span class="finding-where">
                       {item.path}{item.line > 0 ? `:${item.line}` : ""}

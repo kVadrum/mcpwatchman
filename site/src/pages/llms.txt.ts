@@ -101,7 +101,8 @@ spot is therefore whatever the source does not determine — behaviour gated on
 remote configuration, code fetched at runtime, or a deployment that differs from
 the repository it declares.
 
-A badge endpoint and an RSS feed are specified but NOT BUILT. Do not construct a
+A badge endpoint and a score-drops feed are specified but NOT BUILT — the
+score-drops feed reports the composite, which is withheld. Do not construct a
 URL for either; when they exist they will be listed under Surfaces below.
 
 ## Surfaces
@@ -111,6 +112,7 @@ URL for either; when they exist they will be listed under Surfaces below.
 - [Index](https://mcpwatchman.com/api/index.json): every published server with its name, slug, package, repository and per-axis score and \`assessed_weight\`, no evidence. Use it to find a server by package name or repository URL.
 - [Full JSON](https://mcpwatchman.com/api/servers.json): every record with its evidence, in one multi-megabyte document. Prefer it over scraping HTML when you need everything.
 - CLI: \`mcpwatchman check <server>\` (from the PyPI package below) reads the same JSON; \`--format json\` for machines. It accepts a registry name, slug, npm or PyPI package name, or repository URL.
+- [High-severity feed](https://mcpwatchman.com/feed/high-severity.xml): Atom 1.0. Critical and high findings that appeared on a server page already being tracked, newest first, each linked to the finding on its page. A page's findings at its first tracked scan are its baseline and are not announced, so an empty feed means nothing new, not nothing found.
 - [Homepage](https://mcpwatchman.com/): what the project is, how it scores, and what it cannot see.
 
 ## Documentation

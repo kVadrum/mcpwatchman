@@ -1018,3 +1018,61 @@ def test_every_page_names_the_copyright_holder_correctly() -> None:
             wrong.append((page.relative_to(DIST).as_posix(), sorted(holders)))
     assert not wrong, f"{len(wrong)} page(s) name another holder, e.g. {wrong[:3]}"
     assert not missing, f"{len(missing)} page(s) carry no copyright notice, e.g. {missing[:3]}"
+
+
+# ── the high-severity feed (`06` §4) ────────────────────────────────────────
+
+ATOM = "{http://www.w3.org/2005/Atom}"
+FEED = DIST / "feed" / "high-severity.xml"
+
+
+@needs_dist
+def test_the_feed_is_atom_and_carries_exactly_the_dated_high_findings(reports) -> None:
+    """The site endpoint and `mcpwatchman.feed.feed_items` are two
+    implementations of one judgement — which findings are news — so the built
+    feed is compared with the Python twin entry for entry, in order."""
+    import xml.etree.ElementTree as ET
+
+    from mcpwatchman.feed import feed_items
+
+    root = ET.fromstring(FEED.read_bytes())  # noqa: S314 — our own build output
+    assert root.tag == f"{ATOM}feed"
+    for required in ("id", "title", "updated", "author"):
+        assert root.find(f"{ATOM}{required}") is not None, required
+    entries = root.findall(f"{ATOM}entry")
+    expected = feed_items(reports)[:100]
+    assert len(entries) == len(expected)
+    for entry, (report, _axis, item) in zip(entries, expected, strict=True):
+        assert report["name"] in entry.findtext(f"{ATOM}title", "")
+        assert entry.findtext(f"{ATOM}updated", "").startswith(item["first_seen"])
+        assert item["severity"] in ("critical", "high")
+
+
+@needs_dist
+def test_every_feed_link_lands_on_its_finding(reports) -> None:
+    """A fragment that matches no id lands at the top of the page and reports
+    nothing — the anchor is computed once (`site/src/lib/findings.ts`), and this
+    is what notices the day the page stops rendering it."""
+    import xml.etree.ElementTree as ET
+
+    entries = ET.fromstring(  # noqa: S314 — our own build output
+        FEED.read_bytes()
+    ).findall(f"{ATOM}entry")
+    if not entries:
+        pytest.skip("no finding has appeared on a tracked page yet — the feed is empty")
+    for entry in entries:
+        href = entry.find(f"{ATOM}link").get("href")
+        page, _, fragment = href.removeprefix("https://mcpwatchman.com/").partition("#")
+        assert fragment, href
+        html = (DIST / page / "index.html").read_text()
+        assert f'id="{fragment}"' in html, href
+
+
+@needs_dist
+def test_the_feed_is_discoverable_where_people_and_agents_look() -> None:
+    llms = (DIST / "llms.txt").read_text()
+    assert "https://mcpwatchman.com/feed/high-severity.xml" in llms
+    for page in ("index.html", "servers/index.html"):
+        html = (DIST / page).read_text()
+        assert 'type="application/atom+xml"' in html, page
+        assert 'href="/feed/high-severity.xml"' in html, page

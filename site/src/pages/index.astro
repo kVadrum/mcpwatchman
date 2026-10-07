@@ -128,6 +128,7 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
       deferred by spec, and deferred is precisely what this must not be. */}
     <script is:inline src="/theme.js"></script>
     <link rel="canonical" href="https://mcpwatchman.com/" />
+    <link rel="alternate" type="application/atom+xml" title="mcpwatchman — new high-severity findings" href="/feed/high-severity.xml" />
     <meta property="og:title" content="mcpwatchman" />
     <meta property="og:description" content="Independent security audit for Model Context Protocol servers. Every point subtracted for a reason you can read." />
     <meta property="og:type" content="website" />
@@ -366,8 +367,10 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
                   <a href="/servers/">{scans.length} server pages</a>, every deduction
                   linked to its file and line. The same data as JSON, per server or{" "}
                   <a href="/api/servers.json">as one file</a>, an{" "}
-                  <a href="/llms.txt">llms.txt</a> index for agents, and{" "}
-                  <code>mcpwatchman check</code> to read a server from a terminal.
+                  <a href="/llms.txt">llms.txt</a> index for agents, an{" "}
+                  <a href="/feed/high-severity.xml">Atom feed</a> of new critical and
+                  high findings, and <code>mcpwatchman check</code> to read a server
+                  from a terminal.
                   Every server is rescanned nightly; the current data was scanned on{" "}
                   <time datetime={lastScanned}>{lastScanned}</time>.
                 </dd>
@@ -382,8 +385,8 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
               <div>
                 <dt>Not yet</dt>
                 <dd>
-                  The weighted composite, withheld until calibrated. The badge,
-                  the RSS feed.
+                  The weighted composite, withheld until calibrated, and the
+                  feed of its drops. The badge.
                 </dd>
               </div>
             </dl>

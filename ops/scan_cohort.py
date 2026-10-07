@@ -60,6 +60,7 @@ from mcpwatchman.cohort import (
     systemic_staleness,
     unpublishable_gaps,
 )
+from mcpwatchman.feed import stamp_first_seen
 from mcpwatchman.workers.crawler.registry import (
     RegistryEntry,
     current_entries,
@@ -553,7 +554,12 @@ def main() -> int:
     # next run, which then scans it — or a page with no pin, which is exactly
     # the mechanism that lost 100 URLs. Only the first is recoverable, so it
     # is the one a failure must produce.
-    ordered = [reports[pin.name] for pin in grown.servers]
+    # Stamped last, against the report each page REPLACES — the only place a
+    # static site can learn which findings are new (`mcpwatchman.feed`).
+    ordered = [
+        stamp_first_seen(previous.get(pin.name), reports[pin.name], today)
+        for pin in grown.servers
+    ]
     if growth:
         save(args.cohort, grown)
         print(f"cohort grown to {len(grown)} — commit {args.cohort.name}")

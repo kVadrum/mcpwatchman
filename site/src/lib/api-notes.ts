@@ -23,6 +23,11 @@ const legacyAxes = scans.flatMap((r) =>
 // note was written.
 const maintenanceScored = scans.filter((r) => r.axes.maintenance?.score !== null).length;
 
+// Counted too: which pages are tracked decides what a null `first_seen` can mean.
+const trackedPages = scans.filter(
+  (r) => (r as { findings_tracked_since?: string }).findings_tracked_since,
+).length;
+
 export const notes = {
   generator: "mcpwatchman",
   composite_published: false,
@@ -53,6 +58,11 @@ export const notes = {
     "On an axis that DOES carry a score, `unmeasured_faults` lists whose gap the unmeasured remainder is — the sub-checks that could not be evaluated and were renormalised out before the score was computed. Where present it is empty only when the axis was measured in full, and otherwise names the gap even when that gap is ordinary: `publisher` for a repository we could not read is the common case, not an exception. It never contains a gap caused by our own run — a partly-measured axis whose missing part is our fault is refused at publication exactly as a wholly unmeasured one is, so a scored axis here is never hiding a broken scanner. Read it together with `assessed_weight`, which says how much of the axis the score covers.",
   evidence_omitted_note:
     "`evidence` on a findings-scored axis is capped at the 50 most severe. `evidence_omitted` is how many further findings that axis produced and this response does not list; 0 means the list is complete. ⚠ The score was computed over ALL of them: `03`'s stacking ladder diminishes to a tenth of a finding's weight and never to zero, so the omitted findings are missing from the trail, not from the arithmetic. Do not reconstruct an axis score from `evidence` alone and do not read a capped list as the full finding set — one published server carries 4,155 vulnerable dependencies.",
+  first_seen_note:
+    (trackedPages
+      ? ""
+      : "No page in this response is tracked yet, so every `first_seen` below is null or absent. ") +
+    "A finding — an `evidence` item whose `finding` is set (a rule id, or `package:OSV-id`) — carries `severity` and `first_seen`. `first_seen` is the date it first appeared on a page that was already being tracked (the page's `findings_tracked_since`). null means it was there when tracking began — the page's baseline — NOT that it is old, recent or unknown in any other sense; a missing key means the report predates the field. A finding stays the same finding while its axis, rule or vulnerability, and file are, so a moved line keeps its date. `/feed/high-severity.xml` carries the dated critical and high findings.",
   coverage_note:
     "`assessed_weight` is the share of an axis that could actually be measured. A score of 80 at an assessed_weight of 0.25 is 80 of a quarter of the axis, and must not be rendered as 80.",};
 

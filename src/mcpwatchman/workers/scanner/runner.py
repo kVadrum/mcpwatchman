@@ -86,6 +86,16 @@ class Evidence:
     line: int = 0
     excerpt: str = ""
     url: str = ""
+    # Structured for a FINDING (a rule hit or a vulnerability), empty for a
+    # sub-check's prose: the rule id or OSV id, and the finding's own severity.
+    # `label` carries both too, but as display text — and a feed that parsed
+    # its own labels would break silently the day the wording changed.
+    finding: str = ""
+    severity: str = ""
+    # When this finding first appeared on a page already being tracked, stamped
+    # at publication (`mcpwatchman.feed.stamp_first_seen`). `None` means it was
+    # there when tracking began — not that it is new. What the Atom feed reads.
+    first_seen: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -755,6 +765,8 @@ def _code_axis(
             path=f.path,
             line=f.line,
             excerpt=f.excerpt,
+            finding=f.rule_id,
+            severity=str(f.severity),
         )
         for f in shown
     )
@@ -844,6 +856,8 @@ def _deps_axis(result, availability) -> AxisScore:
             ),
             path=f.lockfile,
             url=f"https://osv.dev/vulnerability/{f.osv_id}" if f.osv_id else "",
+            finding=f"{f.package}:{f.osv_id}",
+            severity=str(f.severity) if f.severity is not None else "",
         )
         for f in shown
     )
