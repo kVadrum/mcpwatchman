@@ -878,6 +878,9 @@ def _deps_axis(result, availability) -> AxisScore:
             url=f"https://osv.dev/vulnerability/{f.osv_id}" if f.osv_id else "",
             finding=f"{f.package}:{f.osv_id}",
             severity=str(f.severity) if f.severity is not None else "",
+            # Listed but not scored (no CVSS, or directness unknown) says so,
+            # or the JSON — and the feed — would present it as a deduction.
+            deducts=f.scored,
         )
         for f in shown
     )
@@ -889,14 +892,13 @@ def _deps_axis(result, availability) -> AxisScore:
                 label="unpinned requirements",
                 detail=(
                     f"{n} vulnerabilit{'y' if n == 1 else 'ies'} osv-scanner "
-                    "reported at versions it resolved from requirements that "
-                    "name no exact version "
-                    f"({', '.join(result.loose_requirements[:3])}) "
+                    "reported at versions it resolved rather than read from "
+                    f"a pin ({', '.join(result.withheld_from[:3])}) "
                     f"{'is' if n == 1 else 'are'} not attributed — nobody "
                     "pinned those versions, so they say nothing about what "
                     "this server ships"
                 ),
-                path=result.loose_requirements[0] if result.loose_requirements else "",
+                path=next((p for p in result.withheld_from if "/" in p or "." in p), ""),
             ),
         ) + evidence
     # ⚠ `assessed_weight` was hardcoded "1" here, which is the one field the
@@ -975,16 +977,45 @@ def _deps_axis(result, availability) -> AxisScore:
                 evidence_omitted=omitted, evidence=evidence,
             )
         weight = _fmt(coverage)
+    # PROJECT, for the same reason the all-unscored branch above is: the
+    # findings that could not be placed were dropped because `03` §6 bands
+    # on a CVSS and defines nothing for its absence. Our methodology
+    # declining to invent a band, disclosed in our own voice — never a
+    # property of this server.
+    faults = set() if weight in ("1", "1.00") else {Fault.PROJECT.value}
+    # An ecosystem whose requirements pin nothing was never measured, so the
+    # axis covers only the ecosystems a lockfile did (`OsvResult.
+    # unmeasured_ecosystems`). Theirs when the requirements pin nothing; ours
+    # when a file was too large for us to read.
+    if result.unmeasured_ecosystems:
+        measured = len(result.measured_ecosystems)
+        share = dec(measured) / dec(measured + len(result.unmeasured_ecosystems))
+        narrowed = (Decimal(weight) * share).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        if narrowed == 0:
+            # Same floor as the unscored-findings branch above: below 1% is
+            # not a measurement.
+            return AxisScore(
+                "dependency_health", None,
+                "under 1% of this server's dependencies could be measured",
+                "0", fault=Fault.PROJECT.value,
+                evidence_omitted=omitted, evidence=evidence,
+            )
+        weight = _fmt(narrowed)
+        if result.loose_requirements:
+            faults.add(Fault.PUBLISHER.value)
+        if result.unreadable_requirements:
+            faults.add(Fault.PROJECT.value)
+        names = ", ".join(result.unmeasured_ecosystems)
+        files = (result.loose_requirements + result.unreadable_requirements)[:3]
+        note = (
+            f"{names} dependencies were not measured: {', '.join(files)} "
+            "pin no exact version (or could not be read whole), and only "
+            "lockfiles for " + ", ".join(result.measured_ecosystems) + " were"
+        )
+        reason = f"{reason}; {note}" if reason else note
     return AxisScore(
         "dependency_health", result.score, reason, weight,
-        # PROJECT, for the same reason the all-unscored branch above is: the
-        # findings that could not be placed were dropped because `03` §6 bands
-        # on a CVSS and defines nothing for its absence. Our methodology
-        # declining to invent a band, disclosed in our own voice — never a
-        # property of this server.
-        unmeasured_faults=(
-            () if weight in ("1", "1.00") else (Fault.PROJECT.value,)
-        ),
+        unmeasured_faults=tuple(sorted(faults)),
         evidence_omitted=omitted,
         evidence=evidence,
     )

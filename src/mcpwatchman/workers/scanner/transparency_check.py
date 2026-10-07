@@ -211,17 +211,18 @@ class DocumentationFacts:
     nested_security: str | None = None
 
 
-def _find(inventory: Inventory, *prefixes: str) -> str | None:
+def _find(inventory: Inventory, *prefixes: str, nested_ok: bool = False) -> str | None:
     """Root-most documentation file whose name starts with any prefix.
 
     Root-most deliberately: a vendored dependency ships its own README and
     SECURITY.md, and grading the server on somebody else's documentation would
     reward it for a file it did not write.
     """
+    projects = frozenset() if nested_ok else inventory.sub_projects()
     matches = [
         f for f in inventory.by_role(Role.DOCS)
         if f.path.rsplit("/", 1)[-1].lower().startswith(prefixes)
-        and inventory.nested_project_of(f.path) is None
+        and inventory.nested_project_of(f.path, projects) is None
     ]
     if not matches:
         return None
@@ -231,17 +232,22 @@ def _find(inventory: Inventory, *prefixes: str) -> str | None:
 def _find_nested(inventory: Inventory, *prefixes: str) -> str | None:
     """The root-most match that sits inside a nested sub-project — what `_find`
     refuses, kept so the abstention can name it."""
+    projects = inventory.sub_projects()
     matches = sorted(
         (f.path for f in inventory.by_role(Role.DOCS)
          if f.path.rsplit("/", 1)[-1].lower().startswith(prefixes)
-         and inventory.nested_project_of(f.path) is not None),
+         and inventory.nested_project_of(f.path, projects) is not None),
         key=lambda p: (p.count("/"), len(p)),
     )
     return matches[0] if matches else None
 
 
 def documentation_facts(root: Path, inventory: Inventory) -> DocumentationFacts:
-    readme_path = _find(inventory, "readme")
+    # ⚠ NESTED READMEs STILL COUNT. The nested-sub-project ruling covers the
+    # licence, changelog and security policy; applied to the README through
+    # this shared lookup it published "no README in the fetched source" — a
+    # false 0 — for a server whose README sits in its own package directory.
+    readme_path = _find(inventory, "readme", nested_ok=True)
     manifest = inventory.mcp_manifest
     return DocumentationFacts(
         readme_path=readme_path,

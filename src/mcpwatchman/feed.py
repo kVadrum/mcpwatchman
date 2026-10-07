@@ -17,6 +17,15 @@ did not carry.
 A finding is the same finding while its axis, its rule or vulnerability, and its
 file are — the line is left out, because an unrelated edit above it would
 otherwise announce it as new.
+
+⚠ **"Absent from the previous report" is evidence of "new" only where that
+report could have shown it** (`_comparable`). An axis whose evidence list was
+capped hid findings it still scored — on a server showing 50 of 4,659 a fixed
+critical lets a hidden one surface, announced as new on the day the server got
+safer. An axis that was not scored showed nothing. And a scanner or ruleset
+release changes what is found, not what the server did. In each case a
+finding the previous report did not show keeps its known date or becomes
+baseline; it is never dated today.
 """
 
 from __future__ import annotations
@@ -49,6 +58,15 @@ def _first_seen_by_key(report: dict[str, Any]) -> dict[tuple[str, str, str], str
     return seen
 
 
+def _comparable(previous: dict[str, Any], current: dict[str, Any], axis: str) -> bool:
+    """Whether a finding missing from `previous` on `axis` is evidence it is new."""
+    before = (previous.get("axes") or {}).get(axis) or {}
+    if before.get("score") is None or before.get("evidence_omitted", 0):
+        return False
+    keys = ("scanner_version", "ruleset_version") if axis == "code_safety" else ("scanner_version",)
+    return all(previous.get(k) == current.get(k) for k in keys)
+
+
 def stamp_first_seen(
     previous: dict[str, Any] | None, current: dict[str, Any], today: str
 ) -> dict[str, Any]:
@@ -63,16 +81,15 @@ def stamp_first_seen(
     before = _first_seen_by_key(previous) if previous is not None and tracked else {}
 
     for axis, score in (stamped.get("axes") or {}).items():
+        comparable = tracked and previous is not None and _comparable(previous, current, axis)
         for item in score.get("evidence") or ():
             key = _key(axis, item)
             if key is None:
                 continue
-            if not tracked:
-                item["first_seen"] = None
-            elif key in before:
+            if key in before:
                 item["first_seen"] = before[key]
             else:
-                item["first_seen"] = today
+                item["first_seen"] = today if comparable else None
     return stamped
 
 
@@ -82,13 +99,19 @@ def feed_items(reports: Iterable[dict[str, Any]]) -> list[tuple[dict, str, dict]
     The Python twin of the site's feed endpoint, which the build gate compares
     the built feed against.
     """
-    items = [
-        (report, axis, item)
-        for report in reports
-        for axis, score in (report.get("axes") or {}).items()
-        for item in score.get("evidence") or ()
-        if item.get("first_seen") and item.get("severity") in FEED_SEVERITIES
-        and item.get("deducts", True)
-    ]
+    items = []
+    seen: set[tuple[str, str, str, str]] = set()
+    for report in reports:
+        for axis, score in (report.get("axes") or {}).items():
+            for item in score.get("evidence") or ():
+                if not (item.get("first_seen") and item.get("severity") in FEED_SEVERITIES
+                        and item.get("deducts", True)):
+                    continue
+                # One entry per finding key: two hits of a rule in one file
+                # share an Atom id, and a reader would keep one anyway.
+                key = (report["slug"], axis, str(item["finding"]), str(item.get("path", "")))
+                if key not in seen:
+                    seen.add(key)
+                    items.append((report, axis, item))
     items.sort(key=lambda t: (t[2]["first_seen"], t[0]["slug"]), reverse=True)
     return items

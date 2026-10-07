@@ -24,10 +24,14 @@ def _prose(label: str = "transport_security") -> dict:
             "excerpt": "", "url": "", "finding": "", "severity": "", "first_seen": None}
 
 
-def _report(*findings: dict, tracked: str | None = None, slug: str = "s") -> dict:
-    report = {"name": slug, "slug": slug, "axes": {
-        "code_safety": {"evidence": list(findings)},
-        "auth_posture": {"evidence": [_prose()]},
+def _report(*findings: dict, tracked: str | None = None, slug: str = "s",
+            omitted: int = 0, score: int | None = 50, scanner: str = "0.38.1",
+            ruleset: str = "0.1.1") -> dict:
+    report = {"name": slug, "slug": slug, "scanner_version": scanner,
+              "ruleset_version": ruleset, "axes": {
+        "code_safety": {"evidence": list(findings), "score": score,
+                        "evidence_omitted": omitted},
+        "auth_posture": {"evidence": [_prose()], "score": 80, "evidence_omitted": 0},
     }}
     if tracked:
         report[TRACKED_SINCE] = tracked
@@ -95,3 +99,33 @@ def test_the_feed_takes_dated_high_and_critical_findings_newest_first() -> None:
     assert [(r["slug"], i["finding"]) for r, _, i in feed_items(reports)] == [
         ("b", "new"), ("a", "old"),
     ]
+
+
+def test_a_finding_the_cap_hid_last_night_is_not_news() -> None:
+    """On a server showing 50 of 4,659, fixing a shown critical lets a hidden
+    one surface — announced as new on the day the server got safer."""
+    previous = _report(_finding("shown"), tracked="2026-10-08", omitted=4609)
+    stamped = stamp_first_seen(previous, _report(_finding("shown"), _finding("was-hidden")),
+                               "2026-10-09")
+    assert [i["first_seen"] for i in _items(stamped)] == [None, None]
+
+
+def test_an_unscored_axis_last_night_showed_nothing_to_compare() -> None:
+    previous = _report(tracked="2026-10-08", score=None)
+    stamped = stamp_first_seen(previous, _report(_finding("r1")), "2026-10-09")
+    assert _items(stamped)[0]["first_seen"] is None
+
+
+def test_a_scanner_or_ruleset_release_is_not_the_server_changing() -> None:
+    previous = _report(_finding("old", first_seen="2026-10-05"), tracked="2026-10-01")
+    for change in ({"scanner": "0.39.0"}, {"ruleset": "0.2.0"}):
+        stamped = stamp_first_seen(previous, _report(_finding("old"), _finding("new-rule"),
+                                                     **change), "2026-10-09")
+        # The known date survives; the newly detected finding is baseline.
+        assert [i["first_seen"] for i in _items(stamped)] == ["2026-10-05", None]
+
+
+def test_two_hits_of_one_rule_in_one_file_are_one_feed_entry() -> None:
+    report = _report(_finding("r", line=1, first_seen="2026-10-09"),
+                     _finding("r", line=9, first_seen="2026-10-09"))
+    assert len(feed_items([report])) == 1

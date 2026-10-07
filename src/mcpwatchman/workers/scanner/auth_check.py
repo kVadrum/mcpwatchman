@@ -61,7 +61,11 @@ GRANULARITY_TOOL_THRESHOLD = 3
 # Bound on the content sweep, same reasoning as `transport_check.MAX_FILES_READ`.
 MAX_FILES_READ = 40
 
-SECRET_SCAN_TIMEOUT = 120
+# Inside `04` §7's per-scan budget (15 min; semgrep 5, osv-scanner 3, the
+# rest shared). 120 s sat 4 s above a measured 116 s run on a ~2,950-file tree
+# (`ai.emberverse/emberverse`, 2026-10-07), so machine load alone decided
+# whether that page published.
+SECRET_SCAN_TIMEOUT = 300
 
 # ⚠ **"No source" and "source we could not read" are different facts**, and
 # collapsing them is how an unassessable became a finding. `_source_text`
@@ -462,16 +466,37 @@ def _count_tools(source: str) -> int:
 # scored 100 for a multi-tool surface it never saw
 # (`io.github.gulmezeren2-byte/ihalent`). A loop header on the same line, or
 # opening the block on the line before, is enough to stop asserting `<= 3`.
+# ⚠ BOUNDED TWICE, because this runs on attacker-controlled source: the
+# quantifier between `for` and `in`/`of` is capped, and every search runs on a
+# window of at most LOOP_WINDOW characters. The first cut used `[^\n]*` over
+# the whole line and sliced `source[:line_start]` per site: a line of repeated
+# `for ` backtracked quadratically (1.7 s at 32 KB, measured; minutes at the
+# 512 KB read cap) — the "caps bound the WORK" rule in `CLAUDE.md`.
 _LOOP_HEADER_RE = re.compile(
-    r"\bfor\b[^\n]*\b(?:in|of)\b|\bfor\s*\(|\.(?:forEach|map)\s*\(|\bwhile\b"
+    r"\bfor\b[^\n]{0,160}?\b(?:in|of)\b|\bfor\s*\(|\.(?:forEach|map)\s*\(|\bwhile\b"
 )
 _REGISTRATION_SITE_RES = (_TOOL_CALL_RE, *_TOOL_DECORATOR_RES)
 # Bound on the sites examined, because the walk reads attacker-controlled source.
 MAX_REGISTRATION_SITES = 200
+LOOP_WINDOW = 240
+# How far up a loop header may sit: a block body of a few statements.
+LOOP_LOOKBACK_LINES = 4
+_COMMENT_PREFIXES = ("#", "//", "/*", "*")
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip())
 
 
 def _registers_in_a_loop(source: str) -> bool:
-    """Whether any tool registration site sits inside a loop."""
+    """Whether any tool registration site sits inside a loop.
+
+    Same line as the call, or a block-opening loop header up to
+    LOOP_LOOKBACK_LINES lines above it at SHALLOWER indentation — so a loop
+    inside the previous tool's handler, which closes at the call's own
+    indentation, does not count. Comment lines are skipped: "# Tools for
+    working with files in the workspace:" opens no block.
+    """
     examined = 0
     for pattern in _REGISTRATION_SITE_RES:
         for match in pattern.finditer(source):
@@ -479,11 +504,27 @@ def _registers_in_a_loop(source: str) -> bool:
             if examined > MAX_REGISTRATION_SITES:
                 return False
             line_start = source.rfind("\n", 0, match.start()) + 1
-            if _LOOP_HEADER_RE.search(source, line_start, match.start()):
+            head = source[max(line_start, match.start() - LOOP_WINDOW):match.start()]
+            if _LOOP_HEADER_RE.search(head):
                 return True
-            previous = source[:line_start].rstrip().rsplit("\n", 1)[-1].rstrip()
-            if previous.endswith((":", "{", "(", "=>")) and _LOOP_HEADER_RE.search(previous):
-                return True
+            own = _indent(source[line_start:match.start()] + "x")
+            end, seen, visited = line_start - 1, 0, 0
+            while end > 0 and seen < LOOP_LOOKBACK_LINES and visited < 4 * LOOP_LOOKBACK_LINES:
+                visited += 1  # blank and comment lines are bounded too
+                lo = max(0, end - 4096)
+                newline = source.rfind("\n", lo, end)
+                start = newline + 1 if newline >= 0 else lo
+                line = source[start:min(end, start + LOOP_WINDOW)]
+                end = start - 1
+                text = line.strip()
+                if not text or text.startswith(_COMMENT_PREFIXES):
+                    continue
+                seen += 1
+                if _indent(line) >= own:
+                    continue
+                if text.endswith((":", "{", "(", "=>")) and _LOOP_HEADER_RE.search(text):
+                    return True
+                break  # the nearest shallower line opens the enclosing block
     return False
 
 
@@ -885,7 +926,9 @@ def _secret_handling(
         shown = established or secrets
         located = tuple(f"{f.kind} at {f.path}:{f.line}" for f in shown[:10])
         if len(secrets) > len(located):
-            located += (f"…and {len(secrets) - len(located)} more",)
+            # "matches", not more credentials: after an established finding
+            # the remainder may be keyword or entropy hits.
+            located += (f"…and {len(secrets) - len(located)} more matches",)
         if established:
             return SubCheck(name, 0, evidence=located)
         # ⚠ **A CREDENTIAL'S SHAPE IS NOT A CREDENTIAL.** `03` §4's 0 asserts a

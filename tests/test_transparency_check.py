@@ -454,3 +454,30 @@ def test_a_root_file_still_wins_over_a_nested_one(tmp_path: Path) -> None:
         "pkg__package.json": "{}", "pkg__CHANGELOG.md": "## 0.1\n",
     })
     assert _sub(_axis(root), "changelog").evidence == ("CHANGELOG.md present",)
+
+
+def test_a_readme_in_a_sub_project_still_counts(tmp_path: Path) -> None:
+    """The ruling covers licence, changelog and security; a README found only
+    in the server's own package directory scored 0 "no README" for one commit."""
+    root = _tree(tmp_path, **{
+        "package.json": '{"name": "mono"}',
+        "packages__server__package.json": '{"name": "server"}',
+        "packages__server__README.md": "## Install\n```\nnpm i\n```\n" + "x" * 600,
+    })
+    assert _sub(_axis(root), "readme_quality").score not in (None, 0)
+
+
+def test_a_documentation_lookup_is_linear_in_the_file_count(tmp_path: Path) -> None:
+    import time
+
+    from mcpwatchman.workers.scanner.inventory import FileRecord, Inventory, Language, Role
+    from mcpwatchman.workers.scanner.transparency_check import _find
+
+    files = tuple(FileRecord(path=f"d{i}/changelog-{i}.md", language=Language.MARKDOWN,
+                             role=Role.DOCS, size_bytes=1, sha256="0")
+                  for i in range(20_000))
+    files += (FileRecord(path="package.json", language=Language.JSON,
+                         role=Role.PACKAGE_MANIFEST, size_bytes=1, sha256="0"),)
+    started = time.monotonic()
+    _find(Inventory(files=files), "changelog")
+    assert time.monotonic() - started < 1.0  # was 11.7 s

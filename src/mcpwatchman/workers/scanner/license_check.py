@@ -266,9 +266,10 @@ def _license_record(inventory: Inventory):
     dependency as the server's own license. One inside a nested sub-project is
     never chosen (`Inventory.nested_project_of`; see `license_facts`).
     """
+    projects = inventory.sub_projects()
     candidates = [
         f for f in inventory.by_role(Role.LICENSE)
-        if inventory.nested_project_of(f.path) is None
+        if inventory.nested_project_of(f.path, projects) is None
     ]
     if not candidates:
         return None

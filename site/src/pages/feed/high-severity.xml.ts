@@ -38,14 +38,26 @@ type Item = FindingLike & {
   deducts?: boolean;
 };
 
+// ⚠ Paths and messages come from scanned repositories, and a file name may
+// legally hold a control character XML 1.0 forbids. One such entry would make
+// the whole feed unparseable — and the nightly's gate refuses to deploy on
+// that, every night it stays in the top 100. Stripped, not escaped: XML has
+// no escape for them.
+const XML_INVALID =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
 const esc = (s: string) =>
   s
+    .replace(XML_INVALID, "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
 
+// One entry per finding key, first occurrence kept — the same rule as
+// `feed_items`, so the build gate can compare the two entry for entry.
+const seenKeys = new Set<string>();
 const entries = scans
   .flatMap((report) =>
     Object.entries(report.axes).flatMap(([axis, score]) =>
@@ -54,6 +66,12 @@ const entries = scans
           (item) =>
             item.first_seen && SEVERITIES.has(item.severity ?? "") && item.deducts !== false,
         )
+        .filter((item) => {
+          const key = JSON.stringify([report.slug, axis, item.finding, item.path ?? ""]);
+          if (seenKeys.has(key)) return false;
+          seenKeys.add(key);
+          return true;
+        })
         .map((item) => ({ report, axis, item })),
     ),
   )

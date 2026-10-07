@@ -575,8 +575,9 @@ def _filed_by_the_project(issue: dict) -> bool:
 
 def _issue_medians(
     payload: dict, as_of_dt: datetime
-) -> tuple[float | None, int | None, float | None, bool]:
-    """`03` §5's medians: (last 6 months, sample size, lifetime, sample complete).
+) -> tuple[float | None, int | None, float | None, bool, int]:
+    """`03` §5's medians: (last 6 months, sample size, lifetime, sample complete,
+    issues the project filed itself and so left out — `_filed_by_the_project`).
 
     ⚠ **The fourth element is not bookkeeping — it decides WHOSE gap an
     abstention is.** `score_issue_responsiveness` must fall back to the
@@ -612,8 +613,10 @@ def _issue_medians(
 
     recent: list[float] = []
     every: list[float] = []
+    own = 0
     for issue in issues:
         if _filed_by_the_project(issue):
+            own += 1
             continue
         days = _first_response_days(issue, as_of_dt)
         if days is None:
@@ -627,7 +630,7 @@ def _issue_medians(
     median_recent = statistics.median(recent) if recent else None
     complete = isinstance(total, int) and total <= len(issues)
     lifetime = statistics.median(every) if (complete and every) else None
-    return median_recent, sampled, lifetime, complete
+    return median_recent, sampled, lifetime, complete, own
 
 
 def signals_from_payload(
@@ -670,7 +673,7 @@ def signals_from_payload(
         ref_total <= len(_nodes(payload, "refs", "nodes"))
         if isinstance(ref_total, int) else False
     )
-    median_recent, sampled, lifetime, issues_complete = _issue_medians(payload, as_of_dt)
+    median_recent, sampled, lifetime, issues_complete, own = _issue_medians(payload, as_of_dt)
 
     return MaintenanceSignals(
         last_commit=last_commit_dt.date() if last_commit_dt else None,
@@ -680,6 +683,7 @@ def signals_from_payload(
         issues_sampled=sampled,
         lifetime_first_response_days=lifetime,
         issue_history_complete=issues_complete,
+        issues_filed_by_project=own,
         authors_12mo=authors,
         contributors_12mo=contributors,
         # Not computable per server — see the module docstring.

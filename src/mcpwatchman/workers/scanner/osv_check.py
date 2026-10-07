@@ -57,7 +57,12 @@ from pathlib import Path
 
 from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
-from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_manifest
+from mcpwatchman.workers.scanner.inventory import (
+    MANIFEST_MAX_BYTES,
+    Inventory,
+    Role,
+    read_manifest,
+)
 from mcpwatchman.workers.scanner.reachability import Fault, redact_paths
 from mcpwatchman.workers.scoring.composite import (
     AXIS_MAX,
@@ -163,6 +168,16 @@ class OsvResult:
     # RESOLVED from them rather than read — withheld, and the page says so.
     loose_requirements: tuple[str, ...] = ()
     unattributed_findings: int = 0
+    # The files the withheld findings came from (a subset of the two lists
+    # here), so the page points at one that actually contributed.
+    withheld_from: tuple[str, ...] = ()
+    # Requirements files too large to read whole (`MANIFEST_MAX_BYTES`): their
+    # pins could not be checked, which is OUR bound, never the publisher's.
+    unreadable_requirements: tuple[str, ...] = ()
+    # Ecosystems a lockfile measured, and ones whose dependencies were present
+    # but never resolved from a pin — the axis covers only the first.
+    measured_ecosystems: tuple[str, ...] = ()
+    unmeasured_ecosystems: tuple[str, ...] = ()
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
 
@@ -300,6 +315,17 @@ def _canonical(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
+# Which ecosystem each lockfile measures. LOCKSTEP with `inventory._LOCKFILES`
+# (`tests/test_osv_check.py` holds the two together): a lockfile missing here
+# would measure an ecosystem the coverage claim never counted.
+LOCKFILE_ECOSYSTEM: dict[str, str] = {
+    "package-lock.json": "npm", "pnpm-lock.yaml": "npm", "yarn.lock": "npm",
+    "bun.lock": "npm", "bun.lockb": "npm",
+    "poetry.lock": "PyPI", "uv.lock": "PyPI", "requirements.txt": "PyPI",
+    "Cargo.lock": "crates.io", "go.sum": "Go", "Gemfile.lock": "RubyGems",
+}
+
+
 def requirement_pins(text: str) -> tuple[frozenset[str], bool]:
     """(names pinned to one exact version, whether EVERY requirement is).
 
@@ -311,6 +337,10 @@ def requirement_pins(text: str) -> tuple[frozenset[str], bool]:
     """
     pinned: set[str] = set()
     every, seen = True, 0
+    # CRLF and a BOM are ordinary in a requirements file written on Windows;
+    # unnormalised, a `\\\r\n` continuation never joined and a BOM glued itself
+    # to the first name, so a fully pinned lock read as pinning nothing.
+    text = text.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
     for raw in text.replace("\\\n", " ").splitlines():
         line = re.sub(r"(?:^|\s)#.*", "", raw).strip()
         if not line:
@@ -453,19 +483,44 @@ def run_osv(
             methodology_version=version,
         )
 
-    pins: dict[str, tuple[frozenset[str], bool]] = {}
+    pins: dict[str, tuple[frozenset[str], bool] | None] = {}
+    sizes = {f.path: f.size_bytes for f in inventory.files} if inventory is not None else {}
 
-    def pins_of(rel: str) -> tuple[frozenset[str], bool]:
-        # An unreadable (over-cap) file pins nothing we could read.
+    def pins_of(rel: str) -> tuple[frozenset[str], bool] | None:
+        """The file's pins, or None when it could not be READ whole.
+
+        `read_manifest` returns "" for an empty file and for one over our
+        bound alike; only the first is a fact about the publisher.
+        """
         if rel not in pins:
-            pins[rel] = requirement_pins(read_manifest(root, rel))
+            text = read_manifest(root, rel)
+            # From the inventory's recorded size, never a `stat()` of the tree,
+            # which would follow a planted symlink.
+            unread = not text and sizes.get(rel, 0) > MANIFEST_MAX_BYTES
+            pins[rel] = None if unread else requirement_pins(text)
         return pins[rel]
 
     candidates = sorted(
         f.path for f in inventory.files if f.role is Role.LOCKFILE
     ) if inventory is not None else []
-    loose = tuple(p for p in candidates if p.endswith(".txt") and not pins_of(p)[1])
-    lockfiles = tuple(p for p in candidates if p not in loose)
+    txt = {p: pins_of(p) for p in candidates if p.endswith(".txt")}
+    unreadable = tuple(p for p, got in txt.items() if got is None)
+    loose = tuple(p for p, got in txt.items() if got is not None and not got[1])
+    lockfiles = tuple(p for p in candidates if p not in loose and p not in unreadable)
+    if inventory is not None and not lockfiles and unreadable:
+        return OsvResult(
+            status=OsvStatus.UNAVAILABLE,
+            reason=(f"{', '.join(unreadable[:3])} is larger than the "
+                    f"{MANIFEST_MAX_BYTES // (1024 * 1024)} MB this scanner reads "
+                    "whole, so whether it pins its dependencies could not be "
+                    "checked and no vulnerability can be attributed"),
+            unreadable_requirements=unreadable,
+            loose_requirements=loose,
+            # OURS: the bound is a limit of this scanner, disclosed site-wide.
+            explicit_fault=Fault.PROJECT,
+            transitive_coverage=False,
+            methodology_version=version,
+        )
     if inventory is not None and not lockfiles:
         # `04` §5's lockfile-generation fallback is NOT implemented: it would
         # mean running npm/pip against an untrusted manifest, which `04` §7
@@ -549,23 +604,42 @@ def run_osv(
     findings: list[DependencyFinding] = []
     unattributed = 0
     loose_seen: set[str] = set(loose)
+    unreadable_seen: set[str] = set(unreadable)
+    withheld: set[str] = set()
     for result in payload.get("results", []):
         source = result.get("source", {}) or {}
         path = source.get("path", "")
         inside = Path(path).is_relative_to(root)
-        rel = str(Path(path).relative_to(root)) if inside else path
+        # Never a scratch path on a page: a source outside the root is named
+        # by what it is, not where our worker put it.
+        rel = str(Path(path).relative_to(root)) if inside else "a file outside the scan root"
         # Every `.txt` osv-scanner extracts is pip requirements, including
         # names our inventory never classifies (`requirements_local_models.txt`).
-        pinned, every = (
-            pins_of(rel) if inside else (frozenset(), False)
-        ) if rel.endswith(".txt") else (frozenset(), True)
-        if not every:
-            loose_seen.add(rel)
+        # ⚠ ONLY WHAT THE FILE PINS IS ATTRIBUTED — every package, every time.
+        # The first cut filtered only files that were not fully pinned, so a
+        # lone `requests==2.19.1` attributed the `urllib3 1.23` osv-scanner
+        # resolved under it while `requests==2.19.1` + `pillow>=9` withheld the
+        # same package: one fact, opposite treatment, decided by an unrelated
+        # line. A `pip-compile` lock pins every transitive, so nothing real is
+        # lost.
+        is_req = path.endswith(".txt")
+        pinned: frozenset[str] = frozenset()
+        if is_req:
+            got = pins_of(rel) if inside else None
+            if got is None:
+                if inside:
+                    unreadable_seen.add(rel)
+            else:
+                pinned = got[0]
+                if not got[1]:
+                    loose_seen.add(rel)
         for package in result.get("packages", []):
             info = package.get("package", {}) or {}
             name = info.get("name", "")
-            if not every and _canonical(name) not in pinned:
+            if is_req and _canonical(name) not in pinned:
                 unattributed += len(package.get("groups", []))
+                if package.get("groups"):
+                    withheld.add(rel)
                 continue
             by_id = {v.get("id"): v for v in package.get("vulnerabilities", [])}
             # One GROUP is one distinct vulnerability; its aliases each appear
@@ -600,6 +674,18 @@ def run_osv(
                 )
 
     findings.sort(key=lambda f: (f.package, f.osv_id))
+    # ⚠ A SCORE IS ONLY AS WIDE AS WHAT WAS MEASURED. Withholding resolved
+    # versions turned `ai.emberverse/emberverse`'s fabricated 0 into a 100 at
+    # `assessed_weight` 1 — its npm lockfile measured, its Python requirements
+    # never — so the ecosystems a requirements file declared without pins are
+    # named, and the runner prices the axis as covering only the rest.
+    measured = {
+        LOCKFILE_ECOSYSTEM[n]
+        for n in (p.rsplit("/", 1)[-1] for p in lockfiles) if n in LOCKFILE_ECOSYSTEM
+    }
+    unmeasured = (
+        {"PyPI"} - measured if (loose_seen or unreadable_seen) else set()
+    )
     # Counts BOTH undetermined cells: no CVSS, and unknown directness.
     unscored = sum(1 for f in findings if not f.scored)
     return OsvResult(
@@ -612,6 +698,10 @@ def run_osv(
         neutralised=neutralised,
         loose_requirements=tuple(sorted(loose_seen)),
         unattributed_findings=unattributed,
+        withheld_from=tuple(sorted(withheld)),
+        unreadable_requirements=tuple(sorted(unreadable_seen)),
+        measured_ecosystems=tuple(sorted(measured)),
+        unmeasured_ecosystems=tuple(sorted(unmeasured)),
         methodology_version=version,
     )
 
@@ -652,7 +742,8 @@ def _version_key(version: str) -> tuple[int, ...] | None:
     events, and a version it cannot read at all yields no fix rather than a
     guessed one.
     """
-    numbers = [int(n) for n in re.findall(r"\d+", version)[:4]]
+    release = re.match(r"\D*(\d+(?:\.\d+)*)", version)
+    numbers = [int(n) for n in release.group(1).split(".")[:4]] if release else []
     return tuple(numbers + [0] * (4 - len(numbers))) if numbers else None
 
 

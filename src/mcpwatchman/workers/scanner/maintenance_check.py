@@ -95,6 +95,10 @@ class MaintenanceSignals:
     # rather than costing a publisher a false one, matching `fault`'s default
     # one field down.
     issue_history_complete: bool = False
+    # Issues in the sample the project filed itself (maintainers, bots), left
+    # out of the medians — so an abstention can say they exist rather than
+    # "this repository has no issues" about one full of tracking issues.
+    issues_filed_by_project: int = 0
     # Distinct authors with >= BUS_FACTOR_MIN_COMMITS commits in 12 months.
     authors_12mo: int | None = None
     # Distinct authors with ANY commit in 12 months. Separates "one person
@@ -301,6 +305,8 @@ def score_issue_responsiveness(signals: MaintenanceSignals) -> SubCheck:
         # back on a sample of one discards a median that was computed. Measured
         # on a payload of 500 issues with one this month: score None, fault
         # `publisher`, and a sentence contradicted by `issues_sampled`.
+        own = signals.issues_filed_by_project
+        from_outside = " from outside the project" if own else ""
         if (
             signals.retrieved
             and not signals.issue_history_complete
@@ -309,13 +315,22 @@ def score_issue_responsiveness(signals: MaintenanceSignals) -> SubCheck:
         ):
             return SubCheck(
                 name, None,
-                reason=f"only {sampled} issue(s) fall inside `03` §5's 6-month "
+                reason=f"only {sampled} issue(s){from_outside} fall inside `03` §5's 6-month "
                        f"window, which is under §5's floor of {ISSUE_SAMPLE_MIN}, "
                        "and §5's lifetime-median fallback needs this "
                        "repository's whole issue history — more of it than "
                        "`04` §7's bounded fetch reads. A limit of ours, not a "
                        "finding about the server.",
                 fault=Fault.PROJECT.value,
+            )
+        if signals.retrieved and own:
+            return SubCheck(
+                name, None,
+                reason=f"every issue read was filed by the project itself ({own} "
+                       "by its maintainers or bots), so none is someone outside "
+                       "waiting for an answer, and `03` §5's question — will "
+                       "anyone read an issue I file? — has nothing to measure.",
+                fault=signals.fault,
             )
         return SubCheck(
             name, None,

@@ -256,7 +256,7 @@ def test_a_credential_shaped_string_is_not_a_committed_credential(
     assert handling.fault == Fault.PROJECT.value
     assert "do not establish" in handling.evidence[0]
     assert f"{kind} at README.md:0" in handling.evidence
-    assert "…and 2 more" in handling.evidence
+    assert "…and 2 more matches" in handling.evidence
 
 
 def test_one_provider_format_among_heuristics_still_drops_to_zero(tmp_path: Path) -> None:
@@ -268,7 +268,7 @@ def test_one_provider_format_among_heuristics_still_drops_to_zero(tmp_path: Path
     handling = _sub(_assess(_stdio_entry(), root, secrets=hits), "secret_handling")
     assert handling.score == 0
     assert handling.evidence[0] == "AWS Access Key at config.py:7"
-    assert handling.evidence == ("AWS Access Key at config.py:7", "…and 20 more")
+    assert handling.evidence == ("AWS Access Key at config.py:7", "…and 20 more matches")
 
 
 def test_secret_evidence_never_carries_the_credential(tmp_path: Path) -> None:
@@ -732,6 +732,27 @@ def test_a_registration_in_a_loop_is_not_a_count_of_one(tmp_path: Path, body: st
     assert gran.score is None, gran.evidence
     assert "inside a loop" in gran.reason
     assert gran.fault == Fault.PROJECT.value
+
+
+@pytest.mark.parametrize("body, in_loop", [
+    # The header two statements up (the review agent's missed case).
+    ("for (const t of TOOLS) {\n  const s = build(t);\n"
+     "  server.registerTool(t.name, s);\n}\n", True),
+    # A comment ending in a colon opens no block (the false hit).
+    ("# Tools for working with files in the workspace:\n@mcp.tool()\ndef read(): ...\n", False),
+])
+def test_the_loop_lookback(tmp_path: Path, body: str, in_loop: bool) -> None:
+    assert ac._registers_in_a_loop(body) is in_loop
+
+
+def test_the_loop_check_is_bounded_on_hostile_source() -> None:
+    """A line of repeated `for ` backtracked quadratically: 1.7 s at 32 KB."""
+    import time
+
+    source = "for " * 64_000 + 'server.tool("a")\n'  # 256 KB on one line
+    started = time.monotonic()
+    ac._registers_in_a_loop(source)
+    assert time.monotonic() - started < 1.0
 
 
 def test_a_loop_INSIDE_a_handler_does_not_unscore_named_tools(tmp_path: Path) -> None:

@@ -43,10 +43,15 @@ class _DepsResult:
     score = 0
     unscored_findings = 0
 
-    def __init__(self, findings, unattributed=0, loose=()) -> None:
+    def __init__(self, findings, unattributed=0, loose=(), *, measured=("npm",),
+                 unmeasured=(), unreadable=()) -> None:
         self.findings = findings
         self.unattributed_findings = unattributed
         self.loose_requirements = loose
+        self.withheld_from = loose if unattributed else ()
+        self.unreadable_requirements = unreadable
+        self.measured_ecosystems = measured
+        self.unmeasured_ecosystems = unmeasured
 
 
 def _code(severity: Severity, confidence: Confidence, n: int) -> CodeFinding:
@@ -237,3 +242,27 @@ def test_findings_that_deduct_lead_and_test_code_says_it_does_not() -> None:
     small = _code_axis(_CodeResult(tests[:1] + served[:2]), READABLE)
     assert [e.deducts for e in small.evidence] == [True, True, False]
     assert small.evidence[-1].detail.startswith("Test code — listed, not deducted")
+
+
+def test_an_unmeasured_ecosystem_narrows_the_coverage_it_claims() -> None:
+    """`ai.emberverse/emberverse`: withholding resolved Python versions turned
+    a fabricated 0 into a 100 at `assessed_weight` 1 — npm measured, Python
+    never. The axis now covers half, and names whose gap the rest is."""
+    result = _DepsResult([], unattributed=79, loose=("ember6/dna/requirements.txt",),
+                         measured=("npm",), unmeasured=("PyPI",))
+    result.score = 100
+    axis = _deps_axis(result, READABLE)
+    assert axis.score == 100
+    assert axis.assessed_weight == "0.5"
+    assert axis.unmeasured_faults == ("publisher",)
+    assert "PyPI dependencies were not measured" in axis.reason
+
+
+def test_a_finding_listed_but_not_scored_does_not_claim_to_deduct() -> None:
+    findings = [_dep(Severity.HIGH, Decimal("7.5"), 1, direct=True),
+                _dep(Severity.HIGH, Decimal("7.5"), 2, direct=None)]
+    result = _DepsResult(findings)
+    result.unscored_findings = 1
+    axis = _deps_axis(result, READABLE)
+    assert {e.label.split(" ")[0]: e.deducts for e in axis.evidence} == {
+        "pkg1": True, "pkg2": False}

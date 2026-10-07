@@ -344,6 +344,63 @@ def test_what_counts_as_a_pin(text, pinned, every) -> None:
     assert oc.requirement_pins(text) == (frozenset(pinned), every)
 
 
+def test_every_lockfile_the_inventory_knows_names_its_ecosystem() -> None:
+    """Both enforcers or neither: a lockfile the inventory classifies but the
+    coverage map lacks would measure an ecosystem the claim never counted."""
+    from mcpwatchman.workers.scanner.inventory import _LOCKFILES
+
+    assert set(oc.LOCKFILE_ECOSYSTEM) == set(_LOCKFILES)
+
+
+@pytest.mark.parametrize("text", [
+    # Written on Windows: the continuation is `\\\r\n`, not `\\\n`.
+    "jinja2==3.1.4 \\\r\n    --hash=sha256:abc\r\nflask==2.0\r\n",
+    "\ufeffjinja2==3.1.4\nflask==2.0\n",  # a BOM glued to the first name
+])
+def test_a_windows_written_lock_is_still_a_lock(text) -> None:
+    assert oc.requirement_pins(text) == (frozenset({"jinja2", "flask"}), True)
+
+
+def test_a_lock_too_large_to_read_is_our_gap_not_the_publishers(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """`read_manifest` returns "" over its bound, which read as "pins nothing"
+    and billed OUR limit to the publisher with a false reason."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    (tmp_path / "requirements.txt").write_text("x==1\n")
+    inv = Inventory(files=(FileRecord(
+        path="requirements.txt", language=Language.UNKNOWN, role=Role.LOCKFILE,
+        size_bytes=oc.MANIFEST_MAX_BYTES + 1, sha256="0"),))
+    monkeypatch.setattr(oc, "read_manifest", lambda *_: "")
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.UNAVAILABLE
+    assert result.fault is Fault.PROJECT
+    assert "larger than the 1 MB" in result.reason
+    assert "does not pin" not in result.reason
+
+
+def test_a_source_outside_the_root_never_names_a_scratch_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    (tmp_path / "package-lock.json").write_text("{}")
+    outside = str(tmp_path.parent / "elsewhere" / "requirements.txt")
+    payload = json.dumps({"results": [{
+        "source": {"path": outside, "type": "lockfile"},
+        "packages": [{"package": {"name": "p", "version": "1", "ecosystem": "PyPI"},
+                      "vulnerabilities": [], "groups": [
+                          {"ids": ["X"], "aliases": [], "max_severity": "9"}]}]}]})
+    _fake_run(monkeypatch, payload, returncode=1)
+    result = oc.run_osv(tmp_path, _inventory(("package-lock.json", Role.LOCKFILE)))
+    assert result.unattributed_findings == 1
+    assert not any(str(tmp_path.parent) in p
+                   for p in result.withheld_from + result.loose_requirements)
+
+
+def test_a_pre_release_sorts_with_its_release_not_above_it() -> None:
+    assert oc._version_key("1.0.0-rc1") == oc._version_key("1.0.0") == (1, 0, 0, 0)
+    assert oc._version_key("v2.3") == (2, 3, 0, 0)
+
+
 @needs_osv
 def test_the_real_scanner_resolves_a_range_we_then_withhold(tmp_path: Path) -> None:
     """The measurement the rule rests on, kept live: if a future osv-scanner
@@ -459,18 +516,15 @@ def test_the_real_scanner_finds_known_vulnerable_dependencies(tmp_path: Path) ->
     assert result.status is oc.OsvStatus.OK, result.reason
     assert result.findings, "osv-scanner reported nothing for known-bad versions"
 
-    packages = {f.package for f in result.findings}
-    assert {"jinja2", "requests"} <= packages
-
     # osv-scanner 2.6.0 resolves the transitive closure itself, so `requests`
-    # pulls in urllib3 and idna. That is what makes the direct-vs-transitive
-    # split in `03` §6 testable against real data rather than only against a
-    # fake: the two named in requirements.txt are direct and the rest are not.
-    direct = {f.package for f in result.findings if f.direct}
-    transitive = {f.package for f in result.findings if not f.direct}
-    assert direct == {"jinja2", "requests"}
-    assert transitive, "no transitive dependencies resolved; the split is untested"
-    assert not (direct & transitive)
+    # pulls in urllib3 and idna — at versions it CHOSE, which this file never
+    # pinned. Only what the file pins is attributed (`run_osv`); the resolved
+    # ones are withheld and counted, which this asserts against the real binary
+    # so the day osv-scanner stops resolving, the rule's premise is re-checked.
+    assert {f.package for f in result.findings} == {"jinja2", "requests"}
+    assert all(f.direct for f in result.findings)
+    assert result.unattributed_findings > 0, "no transitive closure resolved"
+    assert result.withheld_from == ("requirements.txt",)
 
     assert any(f.severity is Severity.HIGH for f in result.findings)
     assert all(f.scored for f in result.findings)

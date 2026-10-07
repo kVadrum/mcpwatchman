@@ -698,3 +698,19 @@ def test_a_bounded_tag_page_cannot_assert_that_no_version_tag_exists() -> None:
     )
     assert theirs.fault == Fault.PUBLISHER.value
     assert "neither releases nor version tags" in theirs.reason
+
+
+def test_a_tracker_only_the_project_files_into_is_not_called_empty() -> None:
+    """Excluding project-filed issues left a Renovate-only tracker reading
+    "this repository has no issues" — false, and attributed to the publisher."""
+    bot = {"authorAssociation": "NONE", "author": {"login": "renovate[bot]"},
+           "comments": {"nodes": []}}
+    payload = _payload(issues={"totalCount": 2, "nodes": [
+        {"createdAt": _iso(10), **bot}, {"createdAt": _iso(400), **bot}]})
+    signals = _signals(payload)
+    assert signals.issues_filed_by_project == 2
+    sub = next(s for s in assess_maintenance(signals, as_of=AS_OF).subchecks
+               if s.name == "issue_responsiveness")
+    assert sub.score is None
+    assert "filed by the project itself (2" in sub.reason
+    assert "has no issues" not in sub.reason
