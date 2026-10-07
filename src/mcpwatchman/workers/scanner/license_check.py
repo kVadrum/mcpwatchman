@@ -110,6 +110,9 @@ class LicenseFacts:
     manifest_path: str | None = None
     # Identified from the text, when there was no tag to read.
     identified: str | None = None
+    # A LICENSE that exists only inside a nested sub-project
+    # (`Inventory.nested_project_of`): not this server's, not proof of none.
+    nested_only: str | None = None
 
     @property
     def declared(self) -> str | None:
@@ -260,9 +263,13 @@ def _license_record(inventory: Inventory):
 
     A vendored dependency's LICENSE sits several directories down and describes
     somebody else's terms; grading the server on it would report a bundled MIT
-    dependency as the server's own license.
+    dependency as the server's own license. One inside a nested sub-project is
+    never chosen (`Inventory.nested_project_of`; see `license_facts`).
     """
-    candidates = [f for f in inventory.by_role(Role.LICENSE)]
+    candidates = [
+        f for f in inventory.by_role(Role.LICENSE)
+        if inventory.nested_project_of(f.path) is None
+    ]
     if not candidates:
         return None
     # ⚠ A NOTICE file is an attribution, not a grant — and on path length alone
@@ -369,7 +376,15 @@ def license_facts(root: Path, inventory: Inventory) -> LicenseFacts:
     manifest_spdx, manifest_path = _manifest_license(root, inventory)
 
     if record is None:
-        return LicenseFacts(spdx_in_manifest=manifest_spdx, manifest_path=manifest_path)
+        nested = sorted(
+            (f.path for f in inventory.by_role(Role.LICENSE)),
+            key=lambda p: (p.count("/"), len(p)),
+        )
+        return LicenseFacts(
+            spdx_in_manifest=manifest_spdx,
+            manifest_path=manifest_path,
+            nested_only=nested[0] if nested else None,
+        )
 
     text = read_text(root, record.path)
     tag = _SPDX_TAG.search(text[:LICENSE_SNIFF_BYTES])
@@ -394,6 +409,15 @@ def score_license(facts: LicenseFacts) -> SubCheck:
     """
     name = "license"
 
+    if facts.file_path is None and facts.nested_only:
+        return SubCheck(
+            name, None,
+            reason=(f"the only licence file is {facts.nested_only}, inside a "
+                    "nested sub-project with its own package manifest — it "
+                    "describes that project, and whether it also covers this "
+                    "server cannot be told from the tree"),
+            fault=Fault.PROJECT.value,
+        )
     if facts.file_path is None:
         if facts.spdx_in_manifest:
             return SubCheck(

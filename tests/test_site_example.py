@@ -182,16 +182,27 @@ def test_the_figure_reads_as_separate_words_without_css():
 def test_mislabelling_the_confidence_would_change_the_answer():
     """Proves the test above is not vacuous — the exact defect that shipped.
 
-    Had the second finding really been critical/medium as it was labelled, the
-    axis would be 55, not 48. So the assertion discriminates rather than holding
-    for any labelling.
+    On 2026-09-14 one row was labelled critical/medium while carrying a
+    critical/high deduction. Every mixed or high labelling of these two rows
+    prices differently from the published medium/medium 65, so the assertion
+    discriminates rather than holding for any labelling.
     """
-    as_labelled_wrongly = [
-        Finding(Severity.CRITICAL, Confidence.HIGH),
-        Finding(Severity.CRITICAL, Confidence.MEDIUM),
-    ]
-    assert axis_score(as_labelled_wrongly) == 55
-    assert axis_score(as_labelled_wrongly) != _published_score()
+    for labelling, expected in (
+        ((Confidence.HIGH, Confidence.MEDIUM), 55),
+        ((Confidence.HIGH, Confidence.HIGH), 48),
+    ):
+        wrong = [Finding(Severity.CRITICAL, c) for c in labelling]
+        assert axis_score(wrong) == expected
+        assert axis_score(wrong) != _published_score()
+
+
+def test_the_example_claims_no_confidence_the_ruleset_has_not_earned():
+    """No rule may claim `high` until the gold set is ratified, so the example
+    a reader learns from must not show one either (operator ruling 2026-10-07)."""
+    from mcpwatchman.workers.scoring.weights import ruleset_calibrated
+
+    if not ruleset_calibrated():
+        assert all(f.confidence is not Confidence.HIGH for f in _ledger_findings())
 
 
 # --- agent-readable surfaces (operator ruling 2026-09-14) ----------------

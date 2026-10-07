@@ -47,7 +47,7 @@ const partial = scans.filter((r) =>
 
 const body = `# mcpwatchman
 
-> Independent, continuous security and quality audit of the servers listed in the official Model Context Protocol (MCP) registry. Free and MIT-licensed. Not affiliated with Anthropic or with the registry.
+> Independent, continuous security and quality audit of the servers listed in the official Model Context Protocol (MCP) registry. Free; code MIT, the site's text CC BY 4.0. Not affiliated with Anthropic or with the registry.
 
 mcpwatchman reads what an MCP server publishes and reports what it found, not
 only what it concluded. Each of five axes is scored 0-100 independently: Code
@@ -99,7 +99,8 @@ a fact about those servers.
 read; the code is never executed and no running server is contacted. The blind
 spot is therefore whatever the source does not determine — behaviour gated on
 remote configuration, code fetched at runtime, or a deployment that differs from
-the repository it declares.
+the repository it declares. Bus factor counts commit identities, so an AI agent
+committing under its own identity counts as an author like a person does.
 
 A badge endpoint and a score-drops feed are specified but NOT BUILT — the
 score-drops feed reports the composite, which is withheld. Do not construct a
@@ -123,7 +124,7 @@ URL for either; when they exist they will be listed under Surfaces below.
 
 ## Source and packages
 
-- [Repository](https://github.com/kVadrum/mcpwatchman): MIT. The semgrep ruleset, the scoring engine and the methodology are all public.
+- [Repository](https://github.com/kVadrum/mcpwatchman): code and scan data MIT, the site's prose CC BY 4.0 (quoted excerpts of scanned servers' source remain their authors'). The semgrep ruleset, the scoring engine and the methodology are all public.
 - [PyPI package](https://pypi.org/project/mcpwatchman/): \`pip install mcpwatchman\`. Python 3.12+.
 - [npm package](https://www.npmjs.com/package/mcpwatchman): a pointer. \`npx mcpwatchman\` prints where the real tool is and exits; there is no npm distribution of the scanner itself.
 

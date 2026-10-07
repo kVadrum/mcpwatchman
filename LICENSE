@@ -1,4 +1,38 @@
-MIT License
+This repository is dual-licensed.
+
+  * Source code is licensed under the MIT License (below).
+  * The website's prose is licensed under the Creative Commons Attribution
+    4.0 International License (CC BY 4.0):
+    https://creativecommons.org/licenses/by/4.0/legalcode
+  * Trademarks (the project's name and mark) are NOT licensed. See the
+    "Trademarks" note at the end of this file.
+
+What is code, what is content
+-----------------------------
+
+Code (MIT):
+  * src/, ops/, tests/, rules/ (the semgrep ruleset), evals/ tooling,
+    docker/, .github/, and the build configuration
+  * the website's source: site/src/ components, layouts, styles and
+    scripts, site/public/ scripts, and the code of every page and endpoint
+  * the published scan data (site/src/data/, the JSON API at
+    https://mcpwatchman.com/api/) — EXCEPT the excerpts it quotes from
+    scanned servers' source, which remain their authors' and are quoted
+    for analysis; no licence to them is granted here
+  * README.md and the other repository documentation
+
+Content (CC BY 4.0):
+  * the prose of the website at https://mcpwatchman.com — the text of
+    its pages (site/src/pages/), including the explanation of the
+    methodology, and the prose of /llms.txt
+
+Trademarks (NOT licensed):
+  * the "mcpwatchman" name, and the mark drawn in
+    site/src/components/Wordmark.astro and site/public/favicon.svg
+
+================================================================
+MIT License (applies to the code)
+================================================================
 
 Copyright (c) 2026 KeMeK Network
 
@@ -19,3 +53,30 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================
+Creative Commons Attribution 4.0 International (applies to content)
+================================================================
+
+Copyright (c) 2026 KeMeK Network. Content licensed under CC BY 4.0.
+
+You are free to share (copy, redistribute) and adapt (remix, transform, build
+upon) the content for any purpose, including commercially, provided you give
+appropriate credit, link to the license, and indicate if changes were made.
+You may do so in any reasonable manner, but not in any way that suggests the
+licensor endorses you or your use.
+
+Full legal text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Suggested attribution:
+  "mcpwatchman by KeMeK Network — https://mcpwatchman.com
+   licensed under CC BY 4.0."
+
+================================================================
+Trademarks (NOT licensed)
+================================================================
+
+The "mcpwatchman" name and its mark are trademarks of KeMeK Network. They
+are not covered by either of the licenses above. No rights to use the name
+or mark are granted by this repository. Independent forks must replace the
+brand name and mark with their own.

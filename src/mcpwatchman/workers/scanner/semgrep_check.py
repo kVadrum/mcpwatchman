@@ -154,6 +154,12 @@ class CodeFinding:
     # comparing two scans deserves to know the ceiling moved, not just the
     # number. See `weights.confidence_ceiling`.
     declared_confidence: Confidence | None = None
+    # In a file the inventory classifies as TEST code. Listed with its
+    # evidence, never deducted: `03` §3 grades the code a user runs, and the
+    # inventory separated tests for exactly that reason — but until 2026-10-07
+    # nothing on the scoring path read the separation, so 70 of 1,099 published
+    # findings (2026-09-29) deducted from test fixtures (operator ruling).
+    in_test: bool = False
 
     @property
     def clamped(self) -> bool:
@@ -735,6 +741,9 @@ def run_semgrep(
 
     ceiling = Confidence(confidence_ceiling(version))
     order = [Confidence.LOW, Confidence.MEDIUM, Confidence.HIGH]
+    test_paths = frozenset(
+        f.path for f in inventory.files if f.role is Role.TEST
+    ) if inventory is not None else frozenset()
     findings: list[CodeFinding] = []
     for result in payload.get("results", []):
         rule_id = result.get("check_id", "").rsplit(".", 1)[-1]
@@ -780,6 +789,7 @@ def run_semgrep(
                 mcp_pattern=str(meta.get("mcp_pattern", "")),
                 cwe=str(meta.get("cwe", "")),
                 declared_confidence=declared if effective is not declared else None,
+                in_test=rel in test_paths,
             )
         )
 
@@ -868,7 +878,7 @@ def run_semgrep(
     return SemgrepResult(
         status=SemgrepStatus.OK,
         findings=tuple(findings),
-        score=axis_score(f.to_scoring() for f in findings),
+        score=axis_score(f.to_scoring() for f in findings if not f.in_test),
         files_scanned=scanned,
         ruleset_version=ruleset_version(rules),
         methodology_version=version,

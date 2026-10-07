@@ -23,6 +23,7 @@ from mcpwatchman.workers.scanner.inventory import (
     Inventory,
     Language,
     Role,
+    enumerate_tree,
 )
 from mcpwatchman.workers.scanner.reachability import Fault
 from mcpwatchman.workers.scanner.semgrep_check import _prune_unscannable
@@ -170,6 +171,21 @@ def test_findings_are_scored_through_the_code_safety_table(tree, monkeypatch) ->
     assert [f.severity for f in result.findings] == [Severity.CRITICAL] * 2
     assert [f.confidence for f in result.findings] == [Confidence.MEDIUM] * 2
     assert result.score == 65
+
+
+def test_a_finding_in_test_code_is_listed_but_not_deducted(tree, monkeypatch) -> None:
+    """`03` §3 grades the code a user runs; the inventory separates tests for
+    exactly that reason, and until 2026-10-07 the score never read it (70 of
+    1,099 published findings deducted from test paths). Operator ruling."""
+    (tree / "tests").mkdir()
+    (tree / "tests" / "test_server.py").write_text("import pickle\n")
+    _fake_run(monkeypatch, _payload([
+        _result("mcp-python-pickle-loads", line=5),
+        _result("mcp-python-tool-arg-to-shell", path="tests/test_server.py", line=1),
+    ], scanned=("server.py", "tests/test_server.py")))
+    result = sc.run_semgrep(tree, rules=RULES, inventory=enumerate_tree(tree))
+    assert [f.in_test for f in result.findings] == [False, True]
+    assert result.score == 80  # one critical/medium: -20, the test finding nothing
 
 
 def test_confidence_is_clamped_and_says_so(tree, monkeypatch) -> None:

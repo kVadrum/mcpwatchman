@@ -219,3 +219,21 @@ def test_no_disclosure_row_when_nothing_was_withheld() -> None:
     axis = _deps_axis(_DepsResult([_dep(Severity.HIGH, Decimal("7.5"), 1, direct=True)]),
                       READABLE)
     assert all(e.label != "unpinned requirements" for e in axis.evidence)
+
+
+def test_findings_that_deduct_lead_and_test_code_says_it_does_not() -> None:
+    from dataclasses import replace
+
+    served = [_code(Severity.MEDIUM, Confidence.MEDIUM, i) for i in range(60)]
+    tests = [replace(_code(Severity.CRITICAL, Confidence.MEDIUM, 100 + i), in_test=True)
+             for i in range(5)]
+    result = _CodeResult(tests + served)
+    result.score = 0
+    axis = _code_axis(result, READABLE)
+    assert len(axis.evidence) == MAX_EVIDENCE_PER_AXIS
+    assert all(e.deducts for e in axis.evidence)  # the cap filled with served code
+    assert "5 findings in test code are listed but not deducted" in axis.reason
+
+    small = _code_axis(_CodeResult(tests[:1] + served[:2]), READABLE)
+    assert [e.deducts for e in small.evidence] == [True, True, False]
+    assert small.evidence[-1].detail.startswith("Test code — listed, not deducted")

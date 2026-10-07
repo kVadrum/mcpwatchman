@@ -35,6 +35,7 @@ type Item = FindingLike & {
   detail: string;
   severity?: string;
   first_seen?: string | null;
+  deducts?: boolean;
 };
 
 const esc = (s: string) =>
@@ -49,7 +50,10 @@ const entries = scans
   .flatMap((report) =>
     Object.entries(report.axes).flatMap(([axis, score]) =>
       (score.evidence as Item[])
-        .filter((item) => item.first_seen && SEVERITIES.has(item.severity ?? ""))
+        .filter(
+          (item) =>
+            item.first_seen && SEVERITIES.has(item.severity ?? "") && item.deducts !== false,
+        )
         .map((item) => ({ report, axis, item })),
     ),
   )

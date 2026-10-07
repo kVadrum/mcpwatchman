@@ -206,6 +206,9 @@ class DocumentationFacts:
     changelog_path: str | None = None
     security_path: str | None = None
     manifest_text: str = ""
+    # Found ONLY inside a nested sub-project (`Inventory.nested_project_of`).
+    nested_changelog: str | None = None
+    nested_security: str | None = None
 
 
 def _find(inventory: Inventory, *prefixes: str) -> str | None:
@@ -218,10 +221,23 @@ def _find(inventory: Inventory, *prefixes: str) -> str | None:
     matches = [
         f for f in inventory.by_role(Role.DOCS)
         if f.path.rsplit("/", 1)[-1].lower().startswith(prefixes)
+        and inventory.nested_project_of(f.path) is None
     ]
     if not matches:
         return None
     return min(matches, key=lambda f: (f.path.count("/"), len(f.path))).path
+
+
+def _find_nested(inventory: Inventory, *prefixes: str) -> str | None:
+    """The root-most match that sits inside a nested sub-project — what `_find`
+    refuses, kept so the abstention can name it."""
+    matches = sorted(
+        (f.path for f in inventory.by_role(Role.DOCS)
+         if f.path.rsplit("/", 1)[-1].lower().startswith(prefixes)
+         and inventory.nested_project_of(f.path) is not None),
+        key=lambda p: (p.count("/"), len(p)),
+    )
+    return matches[0] if matches else None
 
 
 def documentation_facts(root: Path, inventory: Inventory) -> DocumentationFacts:
@@ -233,6 +249,18 @@ def documentation_facts(root: Path, inventory: Inventory) -> DocumentationFacts:
         changelog_path=_find(inventory, *CHANGELOG_PREFIXES),
         security_path=_find(inventory, "security"),
         manifest_text=read_text(root, manifest.path) if manifest else "",
+        nested_changelog=_find_nested(inventory, *CHANGELOG_PREFIXES),
+        nested_security=_find_nested(inventory, "security"),
+    )
+
+
+def _nested_only(name: str, what: str, path: str) -> SubCheck:
+    return SubCheck(
+        name, None,
+        reason=(f"the only {what} is {path}, inside a nested sub-project with "
+                "its own package manifest — it describes that project, and "
+                "whether it also covers this server cannot be told from the tree"),
+        fault=Fault.PROJECT.value,
     )
 
 
@@ -319,6 +347,8 @@ def score_changelog(facts: DocumentationFacts) -> SubCheck:
     name = "changelog"
     if facts.changelog_path:
         return SubCheck(name, 100, evidence=(f"{facts.changelog_path} present",))
+    if facts.nested_changelog:
+        return _nested_only(name, "changelog", facts.nested_changelog)
     return SubCheck(
         name, 0,
         evidence=("no CHANGELOG in the fetched source. `03` §7's partial credit "
@@ -339,6 +369,8 @@ def score_security_contact(facts: DocumentationFacts) -> SubCheck:
             evidence=(f"no SECURITY.md, but {facts.readme_path} documents a "
                       "disclosure route — `03` §7 accepts either",),
         )
+    if facts.nested_security:
+        return _nested_only(name, "security policy", facts.nested_security)
     return SubCheck(
         name, 0,
         evidence=("no SECURITY.md and no disclosure contact in the README, so a "

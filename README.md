@@ -207,7 +207,13 @@ We hold ourselves to the same disclosure terms we apply to everyone else, with n
 
 ## License
 
-[MIT](./LICENSE).
+This repository is dual-licensed:
+
+- **Code** — the scanner, the scoring engine, the semgrep ruleset, the CLI, the website's source and the published scan data — [MIT](./LICENSE).
+  Excerpts the scan data quotes from scanned servers' source remain their authors'.
+- **The website's prose** — the text of [mcpwatchman.com](https://mcpwatchman.com), the methodology explanation included — [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- **Trademarks** — the "mcpwatchman" name and mark are not licensed; see below.
+
 KeMeK Network © 2026.
 
 ### Trademarks

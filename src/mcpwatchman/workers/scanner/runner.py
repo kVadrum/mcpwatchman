@@ -96,6 +96,8 @@ class Evidence:
     # at publication (`mcpwatchman.feed.stamp_first_seen`). `None` means it was
     # there when tracking began — not that it is new. What the Atom feed reads.
     first_seen: str | None = None
+    # False for a finding listed but not scored — test code (`CodeFinding.in_test`).
+    deducts: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -753,24 +755,42 @@ def _code_axis(
     # (`03` §3) — a high-confidence critical belongs above a medium-confidence
     # one. `Confidence` declares HIGH first, so its rank orders correctly for
     # free; `.value` would sort alphabetically and put "high" after "medium".
-    shown, omitted = _worst_first(
-        result.findings,
-        lambda f: _CONFIDENCE_RANK.get(f.confidence, len(_CONFIDENCE_RANK)),
-        evidence_cap,
-    )
+    def by_confidence(f):
+        return _CONFIDENCE_RANK.get(f.confidence, len(_CONFIDENCE_RANK))
+
+    # Findings that DEDUCT lead; test-code findings, which deduct nothing, take
+    # whatever room the cap leaves — the cheapest thing on the page to omit.
+    served = [f for f in result.findings if not f.in_test]
+    tests = [f for f in result.findings if f.in_test]
+    shown, omitted = _worst_first(served, by_confidence, evidence_cap)
+    room = None if evidence_cap is None else max(evidence_cap - len(shown), 0)
+    shown_tests, omitted_tests = _worst_first(tests, by_confidence, room)
+    shown, omitted = shown + shown_tests, omitted + omitted_tests
     evidence = tuple(
         Evidence(
             label=f"{f.rule_id} ({f.severity}/{f.confidence})",
-            detail=f.message,
+            detail=(
+                ("Test code — listed, not deducted: `03` §3 grades the code a "
+                 "user runs. " if f.in_test else "")
+                + f.message
+            ),
             path=f.path,
             line=f.line,
             excerpt=f.excerpt,
             finding=f.rule_id,
             severity=str(f.severity),
+            deducts=not f.in_test,
         )
         for f in shown
     )
     reason = source_note
+    if tests:
+        n = len(tests)
+        note = (
+            f"{n} finding{'' if n == 1 else 's'} in test code "
+            f"{'is' if n == 1 else 'are'} listed but not deducted"
+        )
+        reason = f"{reason}; {note}" if reason else note
     if result.pruned:
         # Rendered, never silent. A reader comparing two servers deserves to
         # know that one shipped 245 files and was scored on a dozen of them.

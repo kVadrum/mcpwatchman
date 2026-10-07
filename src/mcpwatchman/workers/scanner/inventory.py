@@ -234,6 +234,32 @@ class Inventory:
     def by_role(self, role: Role) -> tuple[FileRecord, ...]:
         return tuple(f for f in self.files if f.role is role)
 
+    def nested_project_of(self, path: str) -> str | None:
+        """The nested sub-project directory `path` sits in, or None.
+
+        ⚠ **A sub-project's LICENSE, CHANGELOG or SECURITY.md describes that
+        sub-project.** When the scan root is itself a project (it holds a
+        package manifest), a directory below it holding its OWN manifest is a
+        different project — a vendored server in a monorepo, a side package in
+        a research tree — and grading the server on its files credited Klavis
+        with a vendored server's changelog and emberverse with a side package's
+        licence (gold-set drafts, 2026-09-29). A root WITHOUT a manifest is not
+        a project, so nothing below it is "nested": the server may simply live
+        in a subdirectory. And the reverse is real too — a Cargo workspace's
+        member crates ARE the server — so a caller that finds such a file only
+        abstains; it neither credits nor zeroes (operator ruling 2026-10-07).
+        """
+        manifests = [f.path for f in self.files if f.role is Role.PACKAGE_MANIFEST]
+        if not any("/" not in m for m in manifests):
+            return None
+        projects = {m.rsplit("/", 1)[0] for m in manifests if "/" in m}
+        parts = path.split("/")[:-1]
+        for depth in range(1, len(parts) + 1):
+            candidate = "/".join(parts[:depth])
+            if candidate in projects:
+                return candidate
+        return None
+
     @property
     def scannable(self) -> tuple[FileRecord, ...]:
         """Files a static-analysis rule should actually read.

@@ -88,6 +88,7 @@ def feed_items(reports: Iterable[dict[str, Any]]) -> list[tuple[dict, str, dict]
         for axis, score in (report.get("axes") or {}).items()
         for item in score.get("evidence") or ()
         if item.get("first_seen") and item.get("severity") in FEED_SEVERITIES
+        and item.get("deducts", True)
     ]
     items.sort(key=lambda t: (t[2]["first_seen"], t[0]["slug"]), reverse=True)
     return items

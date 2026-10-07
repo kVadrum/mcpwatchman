@@ -481,3 +481,17 @@ def test_the_same_operator_still_matches_regardless_of_order(tmp_path: Path) -> 
     )
     assert _facts(root).relation == "exact"
     assert _assess(root).score == 100
+
+
+def test_a_licence_only_inside_a_nested_sub_project_abstains(tmp_path: Path) -> None:
+    """`ai.emberverse/emberverse` scored 70 on a side package's LICENSE with
+    none at the repository root. Not the server's, not proof of none."""
+    root = _tree(tmp_path, **{
+        "package.json": json.dumps({"name": "x"}),
+        "anchor__launch__pyproject.toml": "[project]\nname = 'anchor'\n",
+        "anchor__launch__LICENSE": MIT_TEXT,
+    })
+    sub = score_license(_facts(root))
+    assert sub.score is None
+    assert "anchor/launch/LICENSE" in sub.reason
+    assert sub.fault == "project"

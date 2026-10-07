@@ -74,18 +74,20 @@ const CW = 120;
 // severity and confidence, `factor` its stacking for the row's place in its
 // severity, and PUBLISHED what the engine scores the findings.
 const START = 100;
-const PUBLISHED = 48;
+const PUBLISHED = 65;
+// MEDIUM confidence, because that is what a real page prints today: no rule may
+// claim `high` until the gold set is ratified (`weights.ruleset_calibrated()`),
+// so an example at critical/high taught a reading no report could show
+// (operator ruling 2026-10-07; it was 48 at high/high). The label and the base
+// move together — critical/medium is -20 — and `tests/test_site_example.py`
+// prices both rows with the engine, so one without the other fails there.
 const findings = [
-  { label: "shell exec in a tool handler", severity: "critical", confidence: "high", base: 30, factor: 1, note: "First of its severity: the full 30." },
-  // critical/HIGH, not medium. The deduction shown is 30 × 0.75; a Critical/Medium
-  // is -20, so labelling it medium would make the published example score 55 while
-  // the page claims 48 — a worked example contradicting our own shipped engine, on
-  // the one page whose entire argument is that our numbers can be checked.
-  { label: "SSRF, no host allowlist", severity: "critical", confidence: "high", base: 30, factor: 0.75, note: "Second of its severity: 75% of 30." },
+  { label: "shell exec in a tool handler", severity: "critical", confidence: "medium", base: 20, factor: 1, note: "First of its severity: the full 20." },
+  { label: "SSRF, no host allowlist", severity: "critical", confidence: "medium", base: 20, factor: 0.75, note: "Second of its severity: 75% of 20." },
 ];
 // Each step is the slice of the 0–100 axis it removes, drawn on the readout
 // meter. Plain floats are exact here only because every value is a binary
-// fraction (30, 0.75, 22.5); the engine's 0.10 stacking step is not, and an
+// fraction (20, 0.75, 15); the engine's 0.10 stacking step is not, and an
 // example reaching it would print float noise in "from {raw}".
 let balance = START;
 const steps = findings.map((f) => {
@@ -239,7 +241,9 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
               <p class="readout__line">
                 <span class="readout__label">
                   Axis score{" "}
-                  <span class="readout__raw">from {raw}, rounded half up</span>
+                  {!Number.isInteger(raw) && (
+                    <span class="readout__raw">from {raw}, rounded half up</span>
+                  )}
                 </span>{" "}
                 <span class="final" data-count-to={PUBLISHED}>{PUBLISHED}</span>
               </p>
@@ -405,8 +409,8 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
 
       <footer class="colophon">
         <p>
-          <span class="colophon__brand">mcpwatchman</span> — an independent audit, free
-          and MIT-licensed, run by <a href="https://github.com/kVadrum">kVadrum</a>.
+          <span class="colophon__brand">mcpwatchman</span> — an independent audit, free,
+          code MIT and text CC&nbsp;BY&nbsp;4.0, run by <a href="https://github.com/kVadrum">kVadrum</a>.
         </p>
         <p class="colophon__fine">
           Not affiliated with Anthropic or the official MCP registry. We overlay trust

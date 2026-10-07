@@ -414,3 +414,43 @@ def test_a_clause_boundary_landing_ON_the_match_is_not_a_negation(text, expected
     lands on the boundary case. Written from the reproduction this time.
     """
     assert documents_disclosure_route(text) is expected
+
+
+# ── a nested sub-project's files are not the server's (ruling 2026-10-07) ────
+
+_ROOT_PROJECT = {"package.json": '{"name": "server"}', "README.md": "x" * 600}
+
+
+def test_a_vendored_servers_changelog_and_policy_are_not_this_servers(tmp_path: Path) -> None:
+    """`ai.klavis/strata` scored changelog and security contact 100 on a
+    vendored third-party server's files. Neither credit nor a 0: abstain."""
+    root = _tree(tmp_path, **_ROOT_PROJECT, **{
+        "mcp_servers__ctx7__package.json": '{"name": "ctx7"}',
+        "mcp_servers__ctx7__CHANGELOG.md": "## 1.0\n",
+        "mcp_servers__ctx7__SECURITY.md": "Report to someone else.\n",
+    })
+    axis = _axis(root)
+    for name, path in (("changelog", "mcp_servers/ctx7/CHANGELOG.md"),
+                       ("security_contact", "mcp_servers/ctx7/SECURITY.md")):
+        sub = _sub(axis, name)
+        assert sub.score is None, name
+        assert path in sub.reason
+        assert sub.fault == "project"
+
+
+@pytest.mark.parametrize("files", [
+    # A directory with no manifest of its own is the root project's.
+    {**_ROOT_PROJECT, "docs__CHANGELOG.md": "## 1.0\n"},
+    # A root with no manifest is not a project, so nothing below it is nested.
+    {"README.md": "x" * 600, "server__package.json": "{}", "server__CHANGELOG.md": "## 1\n"},
+])
+def test_only_a_sub_project_below_a_root_project_is_excluded(tmp_path: Path, files) -> None:
+    assert _sub(_axis(_tree(tmp_path, **files)), "changelog").score == 100
+
+
+def test_a_root_file_still_wins_over_a_nested_one(tmp_path: Path) -> None:
+    root = _tree(tmp_path, **_ROOT_PROJECT, **{
+        "CHANGELOG.md": "## 2.0\n",
+        "pkg__package.json": "{}", "pkg__CHANGELOG.md": "## 0.1\n",
+    })
+    assert _sub(_axis(root), "changelog").evidence == ("CHANGELOG.md present",)
