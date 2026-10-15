@@ -292,7 +292,7 @@ def test_no_published_field_carries_a_local_filesystem_path(reports) -> None:
     Tier C — strip them on a public surface — and every byte of this file is
     served to the internet.
 
-    ⚠ The first version grepped for `/home/kv` and `/tmp/claude` and reported
+    ⚠ The first version grepped for `/home/<user>` and `/tmp/claude` and reported
     clean, because the leaking prefix was `/tmp/mcpw-scan-`. A pattern that
     cannot express its target returns a zero it did not earn.
 
