@@ -212,13 +212,12 @@ This repository is dual-licensed:
 - **Code** — the scanner, the scoring engine, the semgrep ruleset, the CLI, the website's source and the published scan data — [MIT](./LICENSE).
   Excerpts the scan data quotes from scanned servers' source remain their authors'.
 - **The website's prose** — the text of [mcpwatchman.com](https://mcpwatchman.com), the methodology explanation included — [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- **Trademarks** — the "mcpwatchman" name and mark are not licensed; see below.
+- **Names and marks** — the "mcpwatchman" name and mark are not licensed; see below.
 
 KeMeK Network © 2026.
 
-### Trademarks
+### Names and marks
 
-The "mcpwatchman" name is a trademark of KeMeK Network.
-It is not covered by the code or content licenses.
-No rights to use the name are granted by this repository.
-Independent forks must replace the brand name with their own.
+The "mcpwatchman" name and mark are not covered by the code or content licenses.
+KeMeK Network reserves all rights in them.
+Independent forks must replace the name and mark with their own.

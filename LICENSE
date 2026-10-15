@@ -4,8 +4,8 @@ This repository is dual-licensed.
   * The website's prose is licensed under the Creative Commons Attribution
     4.0 International License (CC BY 4.0):
     https://creativecommons.org/licenses/by/4.0/legalcode
-  * Trademarks (the project's name and mark) are NOT licensed. See the
-    "Trademarks" note at the end of this file.
+  * Names and marks (the project's name and mark) are NOT licensed. See
+    the "Names and marks" note at the end of this file.
 
 What is code, what is content
 -----------------------------
@@ -26,7 +26,7 @@ Content (CC BY 4.0):
     its pages (site/src/pages/), including the explanation of the
     methodology, and the prose of /llms.txt
 
-Trademarks (NOT licensed):
+Names and marks (NOT licensed):
   * the "mcpwatchman" name, and the mark drawn in
     site/src/components/Wordmark.astro and site/public/favicon.svg
 
@@ -73,10 +73,9 @@ Suggested attribution:
    licensed under CC BY 4.0."
 
 ================================================================
-Trademarks (NOT licensed)
+Names and marks (NOT licensed)
 ================================================================
 
-The "mcpwatchman" name and its mark are trademarks of KeMeK Network. They
-are not covered by either of the licenses above. No rights to use the name
-or mark are granted by this repository. Independent forks must replace the
-brand name and mark with their own.
+The "mcpwatchman" name and its mark are not covered by either of the
+licenses above. KeMeK Network reserves all rights in them. Independent
+forks must replace the name and mark with their own.
