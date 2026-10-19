@@ -228,3 +228,72 @@ def test_a_main_without_the_staleness_guard_waits_for_a_sync(world: World) -> No
     assert rc == 11, out
     assert "predates cohort.systemic_staleness" in out
     assert world.dev_log() == ["seed"]
+
+
+# ── Each stage gets only the credentials it uses ────────────────────────────
+#
+# The build and the deploy run third-party npm code and the scan reads
+# attacker-controlled repositories, so a credential a stage does not need is
+# one it can leak for nothing. Pinned by what each stage's process actually
+# received, not by reading the script.
+
+
+def _recording(world: World, name: str, extra: str = "") -> Path:
+    """Replace a stubbed binary with one that records its environment — every
+    call APPENDED, so a credential reaching any one invocation (`npm ci` as well
+    as `npm run build`) is caught, not just whichever ran last."""
+    record = world.root / f"{name}.env"
+    stub = world.root / "bin" / name
+    stub.write_text(f'#!/bin/sh\nenv >> "{record}"\n{extra}exit 0\n')
+    stub.chmod(0o755)
+    return record
+
+
+def test_only_the_scan_sees_the_github_token_and_nothing_sees_it_twice(world: World) -> None:
+    npm = _recording(world, "npm")
+    npx = _recording(world, "npx", f'echo "$@" > "{world.root}/deployed"\n')
+    scan_seen = world.root / "scan.env"
+    # The scan stub is main's committed file; record before it runs.
+    world.commit_to("main", "ops/scan_cohort.py",
+                    f"import os\nopen({str(scan_seen)!r}, 'w').write('\\n'.join(os.environ))\n"
+                    + SCAN_STUB)
+    rc, out = world.run(MCPW_PUBLISH="1", CLOUDFLARE_API_TOKEN="cf-sentinel",
+                        DBUS_SESSION_BUS_ADDRESS="unix:path=/nonexistent")
+    assert rc == 0, out
+    assert world.deployed
+    built, deployed = npm.read_text(), npx.read_text()
+    assert "MCPWATCHMAN_GITHUB_TOKEN" not in built and "MCPWATCHMAN_GITHUB_TOKEN" not in deployed
+    assert "DBUS_SESSION_BUS_ADDRESS" not in built and "DBUS_SESSION_BUS_ADDRESS" not in deployed
+    assert "cf-sentinel" not in built, "the build has no use for the Cloudflare credential"
+    assert "cf-sentinel" in deployed, "the deploy does"
+    assert "WRANGLER_SEND_METRICS=false" in deployed
+    scanned = scan_seen.read_text().splitlines()
+    assert "MCPWATCHMAN_GITHUB_TOKEN" in scanned, "Maintenance needs it"
+    assert "CLOUDFLARE_API_TOKEN" not in scanned
+
+
+def test_a_lockfile_wrangler_is_deployed_rather_than_npx(world: World) -> None:
+    """`npm ci` installing wrangler from the lockfile is what pins its transitive
+    dependencies; once it is there, the npx fallback must not run."""
+    fake = f'#!/bin/sh\\necho locked > "{world.root}/locked"\\n'
+    _recording(world, "npm", "mkdir -p node_modules/.bin\n"
+               f"printf '{fake}' > node_modules/.bin/wrangler\n"
+               "chmod +x node_modules/.bin/wrangler\n")
+    rc, out = world.run(MCPW_PUBLISH="1")
+    assert rc == 0, out
+    assert (world.root / "locked").exists()
+    assert not world.deployed, "npx ran although the lockfile's wrangler was installed"
+
+
+def test_without_a_lockfile_wrangler_the_pinned_npx_still_deploys(world: World) -> None:
+    rc, out = world.run(MCPW_PUBLISH="1")
+    assert rc == 0, out
+    assert world.deployed
+    assert "transitive dependencies unpinned" in out
+
+
+def test_a_deploy_key_with_a_non_github_origin_is_a_fault_not_a_push(world: World) -> None:
+    rc, out = world.run(MCPW_DEPLOY_KEY=str(world.root / "no-such-key"))
+    assert rc == 21, out
+    assert "not a github.com https URL" in out
+    assert not world.dev_log()[0].startswith("data"), "pushed through the fallback anyway"

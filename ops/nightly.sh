@@ -31,14 +31,42 @@ STAMP="$(date -u +%Y-%m-%d)"
 WORK="$REPO/scratch/nightly/$STAMP-$$"
 PY="$REPO/.venv/bin/python"
 PUBLISH="${MCPW_PUBLISH:-0}"
-# PINNED: the newest wrangler this box has deployed with (npx cache, 2026-09-29).
-# The manual recipe is a bare `npx wrangler deploy`, which fetches whatever is
-# latest — acceptable with a human watching, not in a timer. Run from site/, so
-# its .npmrc (`ignore-scripts=true`) governs the install.
+# The deploy runs the wrangler that `npm ci` installed from site/package-lock.json,
+# where every transitive dependency is pinned with an integrity hash: `npx
+# wrangler@X` pins only the top package and resolves the rest fresh on a cold
+# cache, inside the process holding the Cloudflare login. The npx form remains
+# only for a `main` whose lockfile predates wrangler, and is pinned to the
+# version the lockfile now carries.
 WRANGLER="wrangler@4.134.0"
 
 log() { printf '[nightly %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 die() { log "FAILED: $2"; exit "$1"; }
+
+# Each stage gets only the credentials it uses. The build and the deploy run
+# third-party npm code, and the scan reads attacker-controlled repositories, so
+# a token one of them does not need is a token that leaks for nothing. The
+# session bus goes too: it reaches the keyring holding the operator's `gh` login
+# (removing the variable deters, it does not confine — that is the unit's job).
+NO_GITHUB=(-u MCPWATCHMAN_GITHUB_TOKEN -u GITHUB_TOKEN -u GH_TOKEN -u DBUS_SESSION_BUS_ADDRESS)
+NO_DEPLOY=(-u CLOUDFLARE_API_TOKEN -u CLOUDFLARE_ACCOUNT_ID -u MCPW_DEPLOY_KEY)
+
+# The data push. With MCPW_DEPLOY_KEY (a write deploy key for this repository
+# alone) it goes over SSH with that key; without it, through the operator's git
+# credential helper — whatever `gh` holds, which is every repository they can
+# write. Only the deploy key lets a tag ruleset stop this process creating a
+# release tag, because a deploy key is not the operator.
+push_dev() {
+  if [[ -z "${MCPW_DEPLOY_KEY:-}" ]]; then
+    git push -q origin HEAD:dev
+    return
+  fi
+  local url
+  url="$(git remote get-url origin)"
+  [[ "$url" == https://github.com/* ]] \
+    || { log "MCPW_DEPLOY_KEY is set but origin is not a github.com https URL: $url"; return 21; }
+  GIT_SSH_COMMAND="ssh -i $(printf '%q' "$MCPW_DEPLOY_KEY") -o IdentitiesOnly=yes -o BatchMode=yes" \
+    git push -q "git@github.com:${url#https://github.com/}" HEAD:dev
+}
 
 cleanup() {
   git -C "$REPO" worktree remove --force "$WORK/main" 2>/dev/null || true
@@ -73,6 +101,7 @@ done
 # the operator's `gh` login — into the environment only, never argv, never
 # printed. Without one every server takes an our-side gap on Maintenance.
 if [[ -z "${MCPWATCHMAN_GITHUB_TOKEN:-}" && -z "${GITHUB_TOKEN:-}" ]]; then
+  log "no MCPWATCHMAN_GITHUB_TOKEN in the environment: using the operator's gh login, far broader than the public-read token this run needs"
   MCPWATCHMAN_GITHUB_TOKEN="$(gh auth token 2>/dev/null || true)"
   export MCPWATCHMAN_GITHUB_TOKEN
 fi
@@ -102,7 +131,7 @@ log "code at main ${MAIN_SHA:0:9}, data from dev ${DEV_SHA:0:9}"
 
 log "scanning the pinned cohort"
 set +e
-PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
+env "${NO_DEPLOY[@]}" PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
   "$PY" "$MAIN/ops/scan_cohort.py" \
   --out "$MAIN/site/src/data/scans.json" --cohort "$MAIN/ops/cohort.json"
 rc=$?
@@ -110,12 +139,13 @@ set -e
 [[ $rc -eq 0 ]] || die "$rc" "scan_cohort.py exited $rc — nothing committed or deployed"
 
 log "building the site"
-( cd "$MAIN/site" && npm ci --no-audit --no-fund --loglevel=error && npm run build --silent ) \
+( cd "$MAIN/site" && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" npm ci --no-audit --no-fund --loglevel=error \
+    && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" npm run build --silent ) \
   || die 12 "site build failed"
 
 # The same artifact gates CI runs, against the site about to be published.
 log "running the publication gates"
-( cd "$MAIN" && PYTHONPATH="$MAIN/src" "$PY" -m pytest -q -p no:cacheprovider \
+( cd "$MAIN" && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" PYTHONPATH="$MAIN/src" "$PY" -m pytest -q -p no:cacheprovider \
     tests/test_site_scans.py tests/test_site_example.py tests/test_cohort.py ) \
   || die 13 "publication gates failed on the new data"
 
@@ -179,7 +209,8 @@ EOF
     || exit 17
   [[ "$(git rev-parse HEAD)" != "$DEV_SHA" ]] || exit 17
   for attempt in 1 2; do
-    git push -q origin HEAD:dev && exit 0
+    push_dev && exit 0
+    [[ $? -eq 21 ]] && exit 21  # misconfigured push credential: a fault, not a race
     # dev moved during the run. Rebase only if nobody else touched the data:
     # two writers of the published record is a conflict to surface, not merge.
     git fetch -q origin dev || exit 15
@@ -226,5 +257,12 @@ if [[ "$PUBLISH" != "1" ]]; then
 fi
 
 log "deploying"
-( cd "$MAIN/site" && npx --yes "$WRANGLER" deploy ) || die 16 "wrangler deploy failed"
+if [[ -x "$MAIN/site/node_modules/.bin/wrangler" ]]; then
+  deploy=("$MAIN/site/node_modules/.bin/wrangler" deploy)
+else
+  log "main's site lockfile carries no wrangler: deploying with npx $WRANGLER (transitive dependencies unpinned)"
+  deploy=(npx --yes "$WRANGLER" deploy)
+fi
+( cd "$MAIN/site" && env "${NO_GITHUB[@]}" -u MCPW_DEPLOY_KEY WRANGLER_SEND_METRICS=false "${deploy[@]}" ) \
+  || die 16 "wrangler deploy failed"
 log "published"

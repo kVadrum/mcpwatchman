@@ -18,5 +18,8 @@
     "astro": "^7.3.2"
   },
   "private": true,
-  "description": "Public site for mcpwatchman \u2014 static Astro, deployed to Cloudflare Pages."
+  "description": "Public site for mcpwatchman — static Astro, deployed to Cloudflare Pages.",
+  "devDependencies": {
+    "wrangler": "4.134.0"
+  }
 }
