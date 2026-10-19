@@ -39,6 +39,18 @@ the failure rate unchanged.
 The remedy is the standard one and it has two halves, both required:
 `start_new_session=True` puts the child in its own process group, and killing
 that GROUP on timeout reaches the grandchildren. Either half alone leaks.
+
+⚠ **EVERY CHILD STARTED HERE READS ATTACKER-CONTROLLED INPUT, SO NONE OF THEM
+GETS OUR ENVIRONMENT OR OUR GIT CONFIGURATION.** `git` resolving a repository
+URL from public registry metadata used to inherit the operator's global config,
+including a `gh` credential helper: a registry entry naming a private repository
+the operator could read was cloned with the operator's token, and its source
+would have been published (measured 2026-10-19 — a scanner-shaped `git
+ls-remote` read a private repository; with the helper disabled it was refused).
+The scanners inherited the same environment, tokens included. So the child
+environment is an ALLOWLIST (`untrusted_env`) applied here by default — one
+chokepoint, so a new call site cannot forget it — and a caller's `env` is
+layered over it, never substituted for it.
 """
 
 from __future__ import annotations
@@ -49,6 +61,44 @@ import signal
 import subprocess
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+
+# What a child may inherit. An allowlist rather than a denylist of secret-shaped
+# names, because a denylist fails open on the next credential someone names
+# differently (`SEMGREP_APP_TOKEN`, `NPM_CONFIG__AUTH`, a D-Bus session address
+# that reaches the keyring). What is here is what the tools were measured to
+# need: PATH to find themselves, HOME for semgrep's settings and osv-scanner's
+# cache, locale, a temp dir, CA bundles and proxies for the network calls.
+_INHERITED = frozenset({
+    "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TZ", "TMPDIR",
+    "SSL_CERT_FILE", "SSL_CERT_DIR", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
+    "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "ALL_PROXY",
+    "http_proxy", "https_proxy", "no_proxy", "all_proxy",
+    "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
+    "PYTHONIOENCODING", "PYTHONUTF8",
+})
+_INHERITED_PREFIXES = ("LC_",)
+
+# git reads ~/.gitconfig (credential helpers, hooksPath, url rewrites) and
+# /etc/gitconfig unless told not to; repository-level config is still read,
+# which is what a local test remote relies on. No prompt: a child with no TTY
+# that wants a password must fail, not hang until the timeout.
+GIT_ISOLATION = {
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_TERMINAL_PROMPT": "0",
+}
+
+
+def untrusted_env(extra: Mapping[str, str] | None = None) -> dict[str, str]:
+    """The environment for a child that reads attacker-controlled input."""
+    env = {
+        k: v for k, v in os.environ.items()
+        if k in _INHERITED or k.startswith(_INHERITED_PREFIXES)
+    }
+    env.update(GIT_ISOLATION)
+    if extra:
+        env.update(extra)
+    return env
 
 
 class Bounded:
@@ -83,6 +133,9 @@ def run_bounded(
     `semgrep-core` is the process holding the cores, it is not the process
     Python is waiting on, and a polite signal to a wrapper that has already
     been killed reaches nothing.
+
+    `env` holds EXTRA variables, layered over `untrusted_env()` — never a
+    replacement for it (module docstring).
     """
     proc = subprocess.Popen(  # noqa: S603 - argv form, no shell; callers build
         # `cmd` from a fixed binary name and paths they own.
@@ -91,7 +144,7 @@ def run_bounded(
         stderr=subprocess.PIPE,
         text=True,
         cwd=str(cwd) if cwd is not None else None,
-        env=dict(env) if env is not None else None,
+        env=untrusted_env(env),
         # Half one: its own process group, so there is a group to kill.
         start_new_session=True,
     )
@@ -141,4 +194,4 @@ def _kill_group(proc: subprocess.Popen) -> None:
             proc.kill()
 
 
-__all__ = ["Bounded", "run_bounded"]
+__all__ = ["GIT_ISOLATION", "Bounded", "run_bounded", "untrusted_env"]

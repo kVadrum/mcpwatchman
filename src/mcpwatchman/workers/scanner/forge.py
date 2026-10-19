@@ -87,7 +87,7 @@ CACHE_TTL_SECONDS = 24 * 60 * 60
 # 24 hours a tag-only repository silently lost every tag and abstained. A
 # schema stamp turns that into a cache miss, which is a refetch rather than a
 # wrong page.
-CACHE_SCHEMA = 3  # 3: issues carry `authorAssociation` (`_filed_by_the_project`)
+CACHE_SCHEMA = 4  # 4: repository carries `isPrivate` (`_fetch_repository`)
 
 # Server-side page size for commit history. `03` §5's bus factor needs authors
 # over 12 months, which on a busy repository is thousands of commits; this
@@ -256,6 +256,7 @@ _QUERY = """
 query($owner:String!, $name:String!, $since:GitTimestamp!, $commits:Int!,
       $after:String, $issues:Int!, $comments:Int!, $releases:Int!, $tags:Int!) {
   repository(owner:$owner, name:$name) {
+    isPrivate
     defaultBranchRef {
       target {
         ... on Commit {
@@ -924,6 +925,19 @@ def _fetch_repository(client: Any, ref: RepoRef, token: str, as_of: date) -> dic
     }
     repository = _post(client, _QUERY, variables, token)
 
+    # ⚠ A PRIVATE REPOSITORY IS UNREADABLE, WHATEVER OUR TOKEN CAN SEE. The token
+    # is the operator's, and registry metadata — which the publisher writes —
+    # may name any repository at all; scoring a private one publishes facts
+    # about it that no anonymous reader could obtain. So it is treated exactly as
+    # an unreadable repository, with the same wording, so a page cannot reveal
+    # that it exists. Fail closed: only an explicit `false` is public. Raised
+    # before any further page is read and before anything is cached.
+    if repository.get("isPrivate") is not False:
+        raise ForgeUnreachableError(
+            "this server's declared repository could not be read through the "
+            "GitHub API, so `03` §5's maintenance signals were not retrieved"
+        )
+
     history = _nodes(repository, "defaultBranchRef", "target", "history", "nodes")
     hist_obj = _dict(repository, "defaultBranchRef", "target", "history")
     raw_total = hist_obj.get("totalCount")
@@ -1023,6 +1037,15 @@ def fetch_signals(
         _write_cache(cache_dir, ref, wrapper, now)
 
     repository = wrapper.get("repository")
+    if isinstance(repository, dict) and repository.get("isPrivate") is not False:
+        # Unreachable from a fresh fetch, which refuses before caching — so this
+        # is a cache written by something else, and it is not trusted.
+        return ForgeOutcome(
+            MaintenanceSignals(fault=Fault.ENVIRONMENT.value),
+            Fault.ENVIRONMENT,
+            "the cached forge payload for this repository does not state that it "
+            "is public, so it was not used",
+        )
     if not isinstance(repository, dict):
         return ForgeOutcome(
             MaintenanceSignals(fault=Fault.ENVIRONMENT.value),

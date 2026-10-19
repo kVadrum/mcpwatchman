@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import shutil
 import signal
 import subprocess
 import time
@@ -158,3 +159,115 @@ def test_cancellation_kills_the_grandchild_too(tmp_path) -> None:
     with contextlib.suppress(ProcessLookupError):
         os.kill(gc_pid, signal.SIGKILL)
     pytest.fail("the grandchild outlived a cancelled run_bounded — the orphan is back")
+
+
+# ── The child environment: an allowlist, never ours ─────────────────────────
+#
+# Every child started through `run_bounded` reads attacker-controlled input
+# (a fetched repository, a published archive), so it must not inherit the
+# operator's tokens, D-Bus session (which reaches the keyring) or git
+# configuration (which carried a `gh` credential helper: measured 2026-10-19, a
+# scanner-shaped `git ls-remote` read a private repository through it).
+
+
+def _child_env(**kwargs) -> dict[str, str]:
+    out = run_bounded(["env", "-0"], timeout=10, **kwargs).stdout
+    return dict(item.split("=", 1) for item in out.split("\0") if "=" in item)
+
+
+def test_a_child_never_inherits_credentials_or_the_session_bus(monkeypatch) -> None:
+    for name in ("MCPWATCHMAN_GITHUB_TOKEN", "GITHUB_TOKEN", "GH_TOKEN",
+                 "CLOUDFLARE_API_TOKEN", "SEMGREP_APP_TOKEN", "DBUS_SESSION_BUS_ADDRESS"):
+        monkeypatch.setenv(name, "sentinel-must-not-reach-the-child")
+    env = _child_env()
+    assert "sentinel-must-not-reach-the-child" not in env.values()
+    assert env.get("PATH") == os.environ["PATH"], "the tools still have to find themselves"
+    assert env.get("GIT_CONFIG_GLOBAL") == os.devnull
+    assert env.get("GIT_CONFIG_NOSYSTEM") == "1"
+    assert env.get("GIT_TERMINAL_PROMPT") == "0"
+
+
+def test_a_callers_extra_env_reaches_the_child() -> None:
+    env = _child_env(env={"EIO_BACKEND": "posix"})
+    assert env.get("EIO_BACKEND") == "posix"
+    assert env.get("GIT_CONFIG_GLOBAL") == os.devnull, "extras are layered, not substituted"
+
+
+def test_semgreps_environment_carries_no_credentials(monkeypatch) -> None:
+    """The one caller that passes `env=`, and the reason layering matters: it
+    used to build `{**os.environ, ...}`, which no chokepoint can scrub once a
+    caller hands it over. Every semgrep launch — scanner and tests — uses it."""
+    from mcpwatchman.workers.scanner.semgrep_check import semgrep_env
+
+    monkeypatch.setenv("GITHUB_TOKEN", "sentinel-must-not-reach-the-child")
+    env = semgrep_env()
+    assert "sentinel-must-not-reach-the-child" not in env.values()
+    assert env.get("EIO_BACKEND") == "posix"
+
+
+GIT = shutil.which("git") or "git"
+
+
+def _git(repo, *args: str) -> None:
+    subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [GIT, *args], cwd=repo, check=True, capture_output=True,
+        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+             "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.invalid",
+             "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.invalid"},
+    )
+
+
+def test_git_children_ignore_the_operators_global_config(tmp_path, monkeypatch) -> None:
+    """The real mechanism, end to end: a ~/.gitconfig carrying a credential
+    helper and a hooks directory, as the operator's does. A post-checkout hook
+    is the observable stand-in for the helper — both live in the same global
+    file that `GIT_CONFIG_GLOBAL` replaces — and the helper itself is asked for
+    directly. The negative control runs plain `subprocess` against the same
+    fixture and must see both, or this test proves nothing."""
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    (origin / "f.txt").write_text("x\n")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "c")
+
+    hooks = tmp_path / "hooks"
+    hooks.mkdir()
+    marker = tmp_path / "hook-ran"
+    hook = hooks / "post-checkout"
+    hook.write_text(f"#!/bin/sh\ntouch {marker}\n")
+    hook.chmod(0o755)
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".gitconfig").write_text(
+        f"[core]\n\thooksPath = {hooks}\n"
+        "[credential \"https://github.com\"]\n\thelper = !echo password=leaked\n"
+    )
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("GIT_CONFIG_GLOBAL", raising=False)
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+
+    # Negative control: an ordinary child DOES read that config.
+    subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [GIT, "clone", "-q", "--", str(origin), str(tmp_path / "control")],
+        check=True, capture_output=True,
+    )
+    assert marker.exists(), "fixture is inert: the hook never ran under plain subprocess"
+    plain = subprocess.run(  # noqa: S603 - argument list, never a shell string
+        [GIT, "config", "--get", "credential.https://github.com.helper"],
+        capture_output=True, text=True, cwd=tmp_path,
+    )
+    assert "leaked" in plain.stdout
+    marker.unlink()
+
+    # Under test.
+    cloned = run_bounded(
+        ["git", "clone", "-q", "--", str(origin), str(tmp_path / "scanned")], timeout=60,
+    )
+    assert cloned.returncode == 0, cloned.stderr
+    assert not marker.exists(), "the operator's hooks ran on a scanned checkout"
+    helper = run_bounded(
+        ["git", "config", "--get", "credential.https://github.com.helper"],
+        timeout=10, cwd=tmp_path,
+    )
+    assert helper.returncode != 0 and "leaked" not in helper.stdout

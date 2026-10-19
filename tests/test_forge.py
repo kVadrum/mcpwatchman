@@ -51,6 +51,7 @@ def _iso(days_ago: float) -> str:
 def _payload(**over) -> dict:
     """A minimal well-formed repository payload, overridable per test."""
     base: dict = {
+        "isPrivate": False,
         "defaultBranchRef": {
             "target": {
                 "committedDate": _iso(5),
@@ -714,3 +715,63 @@ def test_a_tracker_only_the_project_files_into_is_not_called_empty() -> None:
     assert sub.score is None
     assert "filed by the project itself (2" in sub.reason
     assert "has no issues" not in sub.reason
+
+
+# ── A private repository is unreadable, whatever the token can see ──────────
+#
+# The token is the operator's and the repository URL is the publisher's to
+# write, so a private repository readable by that token must never be scored:
+# the page would publish facts no anonymous reader could obtain. Measured
+# 2026-10-19: nothing in the registry prevents an entry naming any repository.
+
+
+def _not_found_reason(tmp_path: Path) -> str:
+    return fetch_signals(
+        "https://github.com/acme/gone", token="t", cache_dir=tmp_path / "nf", as_of=AS_OF,
+        client=_Client(_Response(200, {"data": {"repository": None}})),
+    ).reason
+
+
+@pytest.mark.parametrize("flag", [True, None, "false"], ids=["private", "absent", "string"])
+def test_a_repository_not_stated_public_is_never_scored(tmp_path: Path, flag) -> None:
+    payload = _payload(isPrivate=flag)
+    if flag is None:
+        del payload["isPrivate"]
+    client = _Client(_Response(200, {"data": {"repository": payload}}))
+    outcome = fetch_signals(
+        "https://github.com/acme/secret", token="t", cache_dir=tmp_path, as_of=AS_OF,
+        client=client,
+    )
+    assert outcome.fault is Fault.PUBLISHER
+    assert outcome.signals.retrieved is False
+    # Worded exactly as an absent repository, so the page cannot reveal one exists.
+    assert outcome.reason == _not_found_reason(tmp_path)
+    # Refused before caching: a second scan asks again rather than reusing it.
+    fetch_signals("https://github.com/acme/secret", token="t", cache_dir=tmp_path,
+                  as_of=AS_OF, client=client)
+    assert client.calls == 2
+
+
+def test_a_public_repository_still_scores(tmp_path: Path) -> None:
+    """The positive control for the refusal above: same fixture, `false`."""
+    outcome = fetch_signals(
+        "https://github.com/acme/srv", token="t", cache_dir=tmp_path, as_of=AS_OF,
+        client=_Client(_Response(200, {"data": {"repository": _payload()}})),
+    )
+    assert outcome.signals.retrieved is True
+
+
+def test_a_cached_payload_that_does_not_say_public_is_not_used(tmp_path: Path) -> None:
+    ref = RepoRef("github.com", "acme", "secret")
+    path = _cache_path(tmp_path, ref)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "schema": CACHE_SCHEMA, "fetched_at": 1_000_000.0,
+        "payload": {"repository": _payload(isPrivate=True), "fetched": 1, "total": 1},
+    }))
+    outcome = fetch_signals(
+        "https://github.com/acme/secret", token="t", cache_dir=tmp_path, as_of=AS_OF,
+        now=1_000_001.0, client=_Client(_Response(500, {})),
+    )
+    assert outcome.signals.retrieved is False
+    assert outcome.fault is not Fault.PUBLISHER, "a cache we did not trust is our gap"

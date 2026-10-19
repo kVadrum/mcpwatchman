@@ -44,7 +44,6 @@ methodology version.
 from __future__ import annotations
 
 import json
-import os
 import shutil
 from dataclasses import dataclass
 from decimal import ROUND_DOWN, Decimal
@@ -53,7 +52,7 @@ from pathlib import Path
 
 import yaml
 
-from mcpwatchman.workers.bounded import run_bounded
+from mcpwatchman.workers.bounded import run_bounded, untrusted_env
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS, HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import (
     Inventory,
@@ -95,8 +94,9 @@ SEMGREP_ENV_OVERRIDES = {"EIO_BACKEND": "posix"}
 
 
 def semgrep_env() -> dict[str, str]:
-    """The environment to launch semgrep with: ours, plus `SEMGREP_ENV_OVERRIDES`."""
-    return {**os.environ, **SEMGREP_ENV_OVERRIDES}
+    """The environment to launch semgrep with: the scrubbed child environment
+    every scanner gets (`bounded.untrusted_env`), plus `SEMGREP_ENV_OVERRIDES`."""
+    return untrusted_env(SEMGREP_ENV_OVERRIDES)
 
 # Lines of context quoted with each finding (`03` §3: "~5 lines").
 EVIDENCE_CONTEXT_LINES = 2

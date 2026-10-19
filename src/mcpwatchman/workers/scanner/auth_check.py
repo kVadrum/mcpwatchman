@@ -39,6 +39,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.crawler.registry import RegistryEntry
 from mcpwatchman.workers.scanner.inventory import Inventory, Role, read_text
 from mcpwatchman.workers.scanner.reachability import Fault
@@ -642,14 +643,15 @@ def _default_runner(argv: Sequence[str], cwd: Path) -> str:
     found = shutil.which(argv[0])
     if found is None:
         raise FileNotFoundError(argv[0])
-    result = subprocess.run(  # noqa: S603 — argv list, never a shell string
-        [str(Path(found).resolve()), *argv[1:]],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        timeout=SECRET_SCAN_TIMEOUT,
-        check=False,
+    # `run_bounded`, like the other two scanners: detect-secrets scans through a
+    # multiprocessing pool, which the stdlib timeout orphaned, and the child
+    # gets the scrubbed environment rather than our tokens.
+    result = run_bounded(
+        [str(Path(found).resolve()), *argv[1:]], timeout=SECRET_SCAN_TIMEOUT, cwd=cwd,
     )
+    if result.timed_out:
+        # The caller's contract: a timeout is a scan that did not run.
+        raise subprocess.TimeoutExpired(argv[0], SECRET_SCAN_TIMEOUT)
     return result.stdout
 
 
