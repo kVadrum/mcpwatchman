@@ -340,3 +340,12 @@ def test_a_scratch_path_we_do_not_own_is_never_used(world: World) -> None:
     assert "not a directory we own" in out
     env = json.loads(seen.read_text())
     assert env.get("TMPDIR") != str(world.root / "scan-tmp")
+
+
+def test_the_npx_fallback_pins_the_lockfiles_wrangler() -> None:
+    """Two declarations of one version: the fallback exists for a `main` whose
+    lockfile predates wrangler, and is meant to deploy the same release the
+    lockfile would. Moving one and not the other is silent until a deploy."""
+    declared = json.loads((SCRIPT.parent.parent / "site" / "package.json").read_text())
+    locked = declared["devDependencies"]["wrangler"]
+    assert f'WRANGLER="wrangler@{locked}"' in SCRIPT.read_text()
