@@ -26,3 +26,37 @@ TimeoutStartSec=3h
 SuccessExitStatus=11
 Nice=10
 IOSchedulingClass=idle
+
+# Hardening: only what a USER unit can enforce on this box, each one measured
+# to bite (2026-10-19 — setuid chmod, a personality change and an AF_PACKET
+# socket each refused inside, allowed outside) and the whole pipeline measured
+# to work beneath them: the full suite with the scanner binaries, anonymous git
+# over HTTPS, osv-scanner against its API, npm, the site build, a wrangler
+# dry-run and `gh` reaching its keyring.
+#
+# A child that tries to raise privilege (setuid, file capabilities), plant a
+# setuid file, change execution domain, create a namespace, take realtime
+# scheduling, or open a non-network socket family is refused. None of it
+# confines what the job can READ: the operator's home, keyring and logins stay
+# reachable, so this narrows a compromise rather than containing one.
+NoNewPrivileges=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+KeyringMode=private
+#
+# ⚠ DELIBERATELY ABSENT: PrivateTmp, ProtectHome, ProtectSystem, ReadWritePaths,
+# InaccessiblePaths and the rest of the mount-namespace family. A user unit
+# needs a user namespace to mount anything, AppArmor's unprivileged_userns
+# profile denies it CAP_SYS_ADMIN there, and systemd 259 then SKIPS the
+# directive and starts the unit anyway — measured: ProtectHome=read-only still
+# wrote to $HOME, InaccessiblePaths= still read ~/.ssh, PrivateTmp shared the
+# host /tmp. Written here they would read as confinement and confine nothing.
+# They need a system unit (User=kv), which is an operator change.
+# Also absent: MemoryMax (the scan host runs without memory caps by the
+# operator's ruling), MemoryDenyWriteExecute (V8's JIT, in node and workerd) and a
+# SystemCallFilter (unmeasured against semgrep-core and workerd).
+#
+# A linked user unit is re-read only on `systemctl --user daemon-reload`.

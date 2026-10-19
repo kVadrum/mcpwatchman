@@ -349,3 +349,30 @@ def test_the_npx_fallback_pins_the_lockfiles_wrangler() -> None:
     declared = json.loads((SCRIPT.parent.parent / "site" / "package.json").read_text())
     locked = declared["devDependencies"]["wrangler"]
     assert f'WRANGLER="wrangler@{locked}"' in SCRIPT.read_text()
+
+
+UNIT = SCRIPT.parent / "systemd" / "mcpwatchman-nightly.service"
+
+# Directives a USER unit can only honour by mounting inside a user namespace,
+# which AppArmor's unprivileged_userns profile denies on Ubuntu 24.04+; systemd
+# then skips them and starts the unit anyway (measured 2026-10-19, systemd 259).
+_SILENT_IN_A_USER_UNIT = (
+    "PrivateTmp", "PrivateDevices", "PrivateMounts", "ProtectHome", "ProtectSystem",
+    "ProtectKernelTunables", "ProtectKernelModules", "ProtectKernelLogs",
+    "ProtectControlGroups", "ProtectProc", "ProcSubset", "ReadWritePaths",
+    "ReadOnlyPaths", "InaccessiblePaths", "TemporaryFileSystem", "BindPaths",
+    "BindReadOnlyPaths",
+)
+
+
+def test_the_unit_claims_no_confinement_it_does_not_get() -> None:
+    """A hardening line that is silently skipped reads as confinement in every
+    review and confines nothing. If this unit ever becomes a system unit
+    (User=kv), these directives start working and this test should go."""
+    keys = {
+        line.split("=", 1)[0].strip()
+        for line in UNIT.read_text().splitlines()
+        if "=" in line and not line.lstrip().startswith("#")
+    }
+    assert keys & set(_SILENT_IN_A_USER_UNIT) == set()
+    assert {"NoNewPrivileges", "RestrictNamespaces", "RestrictSUIDSGID"} <= keys
