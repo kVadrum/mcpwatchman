@@ -148,7 +148,9 @@ def world(tmp_path: Path) -> World:
     seed = tmp_path / "seed"
     seed.mkdir()
     w.git("init", "-q")
-    for rel, body in {**FILES, "ops/nightly.sh": SCRIPT.read_text()}.items():
+    real = {"ops/nightly.sh": SCRIPT.read_text(),
+            "ops/visibility_gate.py": (SCRIPT.parent / "visibility_gate.py").read_text()}
+    for rel, body in {**FILES, **real}.items():
         (seed / rel).parent.mkdir(parents=True, exist_ok=True)
         (seed / rel).write_text(body)
     w.git("add", "-A")
@@ -429,3 +431,23 @@ def test_the_scans_git_never_reads_the_operators_git_config(world: World) -> Non
     assert env["GIT_CONFIG_NOSYSTEM"] == "1"
     assert env["GIT_TERMINAL_PROMPT"] == "0"
     assert world.dev_log()[0].startswith("data"), "the push lost its credential"
+
+
+def test_a_visibility_refusal_stops_the_run_before_anything_leaves(world: World) -> None:
+    """The gate is the only thing standing between main's forge lookup (which
+    reads with the operator's token) and a public page, so its refusal must
+    stop the build, the commit and the deploy — not log and carry on."""
+    (world.root / "repo" / "ops" / "visibility_gate.py").write_text(
+        "import sys\nprint('refused for the test')\nsys.exit(1)\n")
+    rc, out = world.run(MCPW_PUBLISH="1")
+    assert rc == 22, out
+    assert "visibility gate refused" in out
+    assert not world.deployed
+    assert not world.dev_log()[0].startswith("data"), "committed despite the refusal"
+
+
+def test_the_real_gate_passes_a_run_with_nothing_to_ask(world: World) -> None:
+    rc, out = world.run()
+    assert rc == 0, out
+    assert "visibility gate: 0 repositories asked anonymously" in out
+    assert "0 refused" in out

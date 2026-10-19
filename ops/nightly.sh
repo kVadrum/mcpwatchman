@@ -174,6 +174,19 @@ rc=$?
 set -e
 [[ $rc -eq 0 ]] || die "$rc" "scan_cohort.py exited $rc — nothing committed or deployed"
 
+# Maintenance is read with whatever GitHub token this run holds — the
+# operator's own login until a public-read token is configured — and main's
+# scanner does not yet ask whether a repository is public. So before anything
+# leaves the box, every repository scored tonight must answer anonymously
+# (ops/visibility_gate.py, which only refuses and never edits a row).
+log "checking that every repository scored this run is publicly readable"
+git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$WORK/scans.before.json"
+# It keeps the GitHub token: a repository the public cannot read is asked about
+# with it, because "private" and "deleted" fail the same anonymous probe.
+env "${NO_DEPLOY[@]}" -u GH_TOKEN -u DBUS_SESSION_BUS_ADDRESS "$PY" "$REPO/ops/visibility_gate.py" \
+    --before "$WORK/scans.before.json" --after "$MAIN/site/src/data/scans.json" \
+  || die 22 "the visibility gate refused this run — nothing committed or deployed"
+
 log "building the site"
 ( cd "$MAIN/site" && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" npm ci --no-audit --no-fund --loglevel=error \
     && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" npm run build --silent ) \
