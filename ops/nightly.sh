@@ -71,7 +71,11 @@ push_dev() {
   url="$(git remote get-url origin)"
   [[ "$url" == https://github.com/* ]] \
     || { log "MCPW_DEPLOY_KEY is set but origin is not a github.com https URL: $url"; return 21; }
-  GIT_SSH_COMMAND="ssh -i $(printf '%q' "$MCPW_DEPLOY_KEY") -o IdentitiesOnly=yes -o BatchMode=yes" \
+  # GitHub's published host keys, pinned in the repo: BatchMode cannot answer a
+  # first-use prompt, and trusting whatever answers on first use is the thing
+  # a pinned key exists to avoid.
+  GIT_SSH_COMMAND="ssh -i $(printf '%q' "$MCPW_DEPLOY_KEY") -o IdentitiesOnly=yes -o BatchMode=yes \
+-o StrictHostKeyChecking=yes -o UserKnownHostsFile=$(printf '%q' "$REPO/ops/github_known_hosts")" \
     git push -q "git@github.com:${url#https://github.com/}" HEAD:dev
 }
 

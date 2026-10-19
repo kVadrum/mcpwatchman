@@ -376,3 +376,38 @@ def test_the_unit_claims_no_confinement_it_does_not_get() -> None:
     }
     assert keys & set(_SILENT_IN_A_USER_UNIT) == set()
     assert {"NoNewPrivileges", "RestrictNamespaces", "RestrictSUIDSGID"} <= keys
+
+
+# Published at docs.github.com, "GitHub's SSH key fingerprints" (checked
+# 2026-10-19 against that page and https://api.github.com/meta).
+_GITHUB_FINGERPRINTS = {
+    "SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU",  # ed25519
+    "SHA256:p2QAMXNIC1TJYWeIOttrVc98/R1BUFWu3/LiyKgUfQM",  # ecdsa
+    "SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s",  # rsa
+}
+
+
+def test_the_pinned_host_keys_are_githubs_published_ones() -> None:
+    """The deploy-key push trusts exactly this file, so a key in it that is
+    not GitHub's would be a host the nightly pushes to without asking."""
+    import base64
+    import hashlib
+
+    pinned = set()
+    for line in (SCRIPT.parent / "github_known_hosts").read_text().splitlines():
+        if line.strip() and not line.startswith("#"):
+            host, _kind, blob = line.split()[:3]
+            assert host == "github.com"
+            digest = hashlib.sha256(base64.b64decode(blob)).digest()
+            pinned.add("SHA256:" + base64.b64encode(digest).decode().rstrip("="))
+    assert pinned == _GITHUB_FINGERPRINTS
+
+
+def test_the_deploy_key_push_verifies_the_host_against_the_pinned_keys() -> None:
+    """Static, because the push needs a real github.com: with `BatchMode` an
+    unknown host fails, and without the pin the only fix is trust-on-first-use
+    (measured 2026-10-19: this file → `Permission denied (publickey)`, i.e.
+    host verified; an empty one → `Host key verification failed`)."""
+    script = SCRIPT.read_text()
+    assert "-o StrictHostKeyChecking=yes" in script
+    assert '-o UserKnownHostsFile=$(printf \'%q\' "$REPO/ops/github_known_hosts")' in script
