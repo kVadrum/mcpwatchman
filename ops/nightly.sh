@@ -50,6 +50,13 @@ die() { log "FAILED: $2"; exit "$1"; }
 NO_GITHUB=(-u MCPWATCHMAN_GITHUB_TOKEN -u GITHUB_TOKEN -u GH_TOKEN -u DBUS_SESSION_BUS_ADDRESS)
 NO_DEPLOY=(-u CLOUDFLARE_API_TOKEN -u CLOUDFLARE_ACCOUNT_ID -u MCPW_DEPLOY_KEY)
 
+# Where the scan unpacks third-party trees: TMPDIR, which every mkdtemp in the
+# scanner and every scanner binary honours. Not /tmp — on this box a tmpfs, so
+# a hostile tree is written into RAM on a machine with no memory cap — and not
+# $WORK, under ~/dev, whose ZFS snapshots would keep attacker-supplied files
+# for months. /var/tmp is disk, unsnapshotted, and swept by systemd-tmpfiles.
+SCAN_TMP="${MCPW_SCAN_TMP:-/var/tmp/mcpwatchman-$(id -u)}"
+
 # The data push. With MCPW_DEPLOY_KEY (a write deploy key for this repository
 # alone) it goes over SSH with that key; without it, through the operator's git
 # credential helper — whatever `gh` holds, which is every repository they can
@@ -73,6 +80,10 @@ cleanup() {
   git -C "$REPO" worktree remove --force "$WORK/dev" 2>/dev/null || true
   git -C "$REPO" worktree prune
   rm -rf "$WORK"
+  # A scan killed mid-fetch (the unit's timeout) leaves its workspace behind.
+  # Ours alone: the directory is checked to be our own, and the lock is held.
+  [[ -n "${SCAN_TMP_OK:-}" ]] && rm -rf "$SCAN_TMP"/mcpw-scan-* 2>/dev/null
+  true
 }
 
 mkdir -p "$REPO/scratch/nightly"
@@ -96,6 +107,18 @@ fi
 for tool in git npm npx; do
   command -v "$tool" >/dev/null 2>&1 || die 18 "$tool is not on PATH — nothing was scanned"
 done
+
+# /var/tmp is world-writable, so the directory must be ours and not a link
+# planted by someone else. If it is not, the scan keeps the default TMPDIR —
+# the old behaviour, which survives — and says so.
+mkdir -p -m 700 "$SCAN_TMP" 2>/dev/null || true
+if [[ -d "$SCAN_TMP" && ! -L "$SCAN_TMP" && -O "$SCAN_TMP" ]] && chmod 700 "$SCAN_TMP"; then
+  SCAN_TMP_OK=1
+  SCAN_ENV=(TMPDIR="$SCAN_TMP")
+else
+  log "scan scratch $SCAN_TMP is not a directory we own: scanning under the default TMPDIR"
+  SCAN_ENV=()
+fi
 
 # The token is read from the environment (the unit's EnvironmentFile), else from
 # the operator's `gh` login — into the environment only, never argv, never
@@ -131,7 +154,7 @@ log "code at main ${MAIN_SHA:0:9}, data from dev ${DEV_SHA:0:9}"
 
 log "scanning the pinned cohort"
 set +e
-env "${NO_DEPLOY[@]}" PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
+env "${NO_DEPLOY[@]}" "${SCAN_ENV[@]}" PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
   "$PY" "$MAIN/ops/scan_cohort.py" \
   --out "$MAIN/site/src/data/scans.json" --cohort "$MAIN/ops/cohort.json"
 rc=$?

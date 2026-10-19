@@ -10,8 +10,10 @@ scanner standing in for the 46-minute cohort run (`FAKE_SCAN` shapes it).
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -134,6 +136,8 @@ def world(tmp_path: Path) -> World:
         "GIT_CONFIG_NOSYSTEM": "1",
         "MCPWATCHMAN_GITHUB_TOKEN": "unused-by-the-stub",
         "FAKE_ORIGIN": str(tmp_path / "origin.git"),
+        # Never the real /var/tmp from a test.
+        "MCPW_SCAN_TMP": str(tmp_path / "scan-tmp"),
     }
     w = World(tmp_path, env)
 
@@ -297,3 +301,42 @@ def test_a_deploy_key_with_a_non_github_origin_is_a_fault_not_a_push(world: Worl
     assert rc == 21, out
     assert "not a github.com https URL" in out
     assert not world.dev_log()[0].startswith("data"), "pushed through the fallback anyway"
+
+
+def _record_scan_env(world: World) -> Path:
+    """Commit a scan stub to main that records its environment as JSON."""
+    seen = world.root / "scan.env"
+    record = f"open({str(seen)!r}, 'w').write(json.dumps(dict(os.environ)))\n"
+    world.commit_to("main", "ops/scan_cohort.py", "import json, os\n" + record + SCAN_STUB)
+    return seen
+
+
+def test_the_scan_unpacks_on_disk_in_a_directory_only_we_can_read(world: World) -> None:
+    """The default temp dir is a tmpfs here, so a hostile tree unpacked there
+    is unpacked into RAM on a box with no memory cap; mkdtemp follows TMPDIR."""
+    scan_tmp = world.root / "scan-tmp"
+    scan_tmp.mkdir(mode=0o755)
+    stale = scan_tmp / "mcpw-scan-left-by-a-killed-run"
+    stale.mkdir()
+    seen = _record_scan_env(world)
+    rc, out = world.run()
+    assert rc == 0, out
+    env = json.loads(seen.read_text())
+    assert env["TMPDIR"] == str(scan_tmp)
+    assert stat.S_IMODE(scan_tmp.stat().st_mode) == 0o700
+    assert not stale.exists(), "a killed run's workspace outlived the next run"
+
+
+def test_a_scratch_path_we_do_not_own_is_never_used(world: World) -> None:
+    """The disk temp dir is world-writable: a link planted at our path must not
+    steer where the scan writes. The run survives on the default TMPDIR and
+    says so."""
+    elsewhere = world.root / "planted"
+    elsewhere.mkdir()
+    (world.root / "scan-tmp").symlink_to(elsewhere)
+    seen = _record_scan_env(world)
+    rc, out = world.run()
+    assert rc == 0, out
+    assert "not a directory we own" in out
+    env = json.loads(seen.read_text())
+    assert env.get("TMPDIR") != str(world.root / "scan-tmp")
