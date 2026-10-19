@@ -157,8 +157,17 @@ done
 log "code at main ${MAIN_SHA:0:9}, data from dev ${DEV_SHA:0:9}"
 
 log "scanning the pinned cohort"
+# The scan's git never sees the operator's git config. That config carries a
+# `gh` credential helper, and the scan clones URLs that third parties put in
+# public registry entries — so a pinned publisher naming a private repository
+# the operator can read had it cloned with the operator's login and its code,
+# paths and dependencies published (measured 2026-10-19). Set HERE as well as
+# in the scanner (bounded.GIT_ISOLATION, v0.38.4) because the scanner that runs
+# is `main`'s, and this wrapper is live the moment it is saved. The data push
+# below keeps the operator's config: it is ours, to our own repository.
+SCAN_GIT=(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_TERMINAL_PROMPT=0)
 set +e
-env "${NO_DEPLOY[@]}" "${SCAN_ENV[@]}" PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
+env "${NO_DEPLOY[@]}" "${SCAN_ENV[@]}" "${SCAN_GIT[@]}" PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
   "$PY" "$MAIN/ops/scan_cohort.py" \
   --out "$MAIN/site/src/data/scans.json" --cohort "$MAIN/ops/cohort.json"
 rc=$?

@@ -49,7 +49,10 @@ if move:
     path, body = (("rules/_meta/changelog.md", "## 0.1.2 — moved\\n")
                   if move == "contract" else ("README.md", "moved\\n"))
     open(os.path.join(d, path), "w").write(body)
-    run("git", "commit", "-qam", f"concurrent: {move}")
+    # Another session, with its own identity: the scan it runs inside reads
+    # no git config, by design.
+    run("git", "-c", "user.name=t", "-c", "user.email=t@example.invalid",
+        "commit", "-qam", f"concurrent: {move}")
     run("git", "push", "-q", "origin", "dev")
 sys.exit(0)
 '''
@@ -411,3 +414,18 @@ def test_the_deploy_key_push_verifies_the_host_against_the_pinned_keys() -> None
     script = SCRIPT.read_text()
     assert "-o StrictHostKeyChecking=yes" in script
     assert '-o UserKnownHostsFile=$(printf \'%q\' "$REPO/ops/github_known_hosts")' in script
+
+
+def test_the_scans_git_never_reads_the_operators_git_config(world: World) -> None:
+    """The operator's config carries a `gh` credential helper, and the scan
+    clones URLs third parties put in public registry entries. The scanner that
+    runs is main's, so the wrapper must cut it off too — and only for the scan:
+    the data push still needs the operator's credential."""
+    seen = _record_scan_env(world)
+    rc, out = world.run()
+    assert rc == 0, out
+    env = json.loads(seen.read_text())
+    assert env["GIT_CONFIG_GLOBAL"] == os.devnull
+    assert env["GIT_CONFIG_NOSYSTEM"] == "1"
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
+    assert world.dev_log()[0].startswith("data"), "the push lost its credential"
