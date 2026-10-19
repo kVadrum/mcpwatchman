@@ -270,6 +270,8 @@ def test_git_clone_requests_the_version_as_a_ref(monkeypatch, tmp_path):
 
     seen: list[list[str]] = []
     monkeypatch.setattr(S, "_run", lambda cmd, **kw: seen.append(cmd))
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     clone = seen[0]
     assert "--branch" in clone
@@ -288,6 +290,8 @@ def test_git_clone_falls_back_to_a_v_prefixed_tag(monkeypatch, tmp_path):
             raise FetchError("no such ref")
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     tried = [c[c.index("--branch") + 1] for c in seen if "--branch" in c]
     assert tried == ["1.2.3", "v1.2.3"]
@@ -309,6 +313,8 @@ def test_no_matching_tag_falls_back_to_default_branch_and_SAYS_SO(monkeypatch, t
             raise FetchError("no such ref")
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9"), tmp_path)
     assert S._GIT_REF_USED[tmp_path] is None
 
@@ -432,6 +438,8 @@ def test_git_commands_terminate_options_before_positionals(monkeypatch, tmp_path
 
     seen: list[list[str]] = []
     monkeypatch.setattr(S, "_run", lambda cmd, **kw: seen.append(cmd))
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.0.0", "src/x"), tmp_path)
     clone = seen[0]
     assert "--" in clone and clone.index("--") < clone.index(str(tmp_path))
@@ -596,6 +604,8 @@ def test_a_branch_named_like_the_version_is_not_reported_as_a_tag(monkeypatch, t
         return None
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert S._GIT_REF_USED[tmp_path] is None  # fell back, correctly
@@ -612,6 +622,8 @@ def test_a_real_tag_detaches_head_and_IS_reported(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert S._GIT_REF_USED[tmp_path] == "1.2.3"
@@ -628,6 +640,8 @@ def test_an_oversized_checkout_is_refused(monkeypatch, tmp_path):
         return None
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     monkeypatch.setattr(S, "_measure_all", lambda p: S.MAX_UNPACKED_BYTES + 1)
     with pytest.raises(FetchError, match="over the"):
         S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
@@ -733,28 +747,59 @@ def test_zip_member_cap_fires_BEFORE_zipfile_parses_the_directory(tmp_path, monk
     monkeypatch.setattr(S.zipfile, "ZipFile", explode)
 
     spec = SourceSpec(SourceKind.PYPI, "pkg", "1.0.0")
-    with pytest.raises(FetchError, match="declares 60 members"):
+    with pytest.raises(FetchError, match="may hold 60 members"):
         S._safe_extract(archive, tmp_path / "out", spec)
 
 
-def test_zip_entry_count_reads_a_real_archive(tmp_path):
+def test_zip_record_ceiling_reads_a_real_archive(tmp_path):
     """Positive control: the preflight must return the true count, not just
-    refuse things. A parser that returned None always would pass the cap test
+    refuse things. A ceiling that returned 0 always would pass the cap test
     above by disabling the guard entirely."""
-    from mcpwatchman.workers.scanner.source import _zip_entry_count
+    from mcpwatchman.workers.scanner.source import _zip_record_ceiling
 
     archive = tmp_path / "ok.zip"
     with zipfile.ZipFile(archive, "w") as zf:
         for i in range(7):
             zf.writestr(f"f{i}.txt", b"x")
-    assert _zip_entry_count(archive) == 7
+    assert _zip_record_ceiling(archive) == 7
 
-    # A comment pushes the EOCD away from the very end of the file.
+    # A comment pushes the end record away from the very end of the file.
     commented = tmp_path / "commented.zip"
     with zipfile.ZipFile(commented, "w") as zf:
         zf.writestr("a.txt", b"x")
         zf.comment = b"c" * 400
-    assert _zip_entry_count(commented) == 1
+    assert _zip_record_ceiling(commented) == 1
+
+
+def test_a_zip_that_UNDERSTATES_its_entry_count_is_still_refused(tmp_path, monkeypatch):
+    """⚠ CPython walks the central directory by its declared BYTE size and never
+    reads the end record's entry COUNT — so the old gate, which read the count,
+    waved through an archive declaring one entry over a directory of sixty
+    (Codex, `/qaa` 2026-10-19). The fixture is the attack: a real 60-entry
+    archive whose count fields are rewritten to 1, which `ZipFile` still opens
+    with all 60 entries."""
+    from mcpwatchman.workers.scanner import source as S
+
+    archive = tmp_path / "liar.zip"
+    with zipfile.ZipFile(archive, "w") as zf:
+        for i in range(60):
+            zf.writestr(f"f{i:03d}.txt", b"")
+    raw = bytearray(archive.read_bytes())
+    eocd = raw.rindex(b"PK\x05\x06")
+    raw[eocd + 8 : eocd + 12] = (1).to_bytes(2, "little") * 2  # this disk, total
+    archive.write_bytes(bytes(raw))
+    with zipfile.ZipFile(archive) as zf:  # the attack is real: CPython builds 60
+        assert len(zf.infolist()) == 60
+
+    monkeypatch.setattr(S, "MAX_MEMBERS", 10)
+
+    def explode(*a, **kw):
+        raise AssertionError("ZipFile was constructed before the member cap ran")
+
+    monkeypatch.setattr(S.zipfile, "ZipFile", explode)
+    spec = SourceSpec(SourceKind.PYPI, "pkg", "1.0.0")
+    with pytest.raises(FetchError, match="may hold 60 members"):
+        S._safe_extract(archive, tmp_path / "out", spec)
 
 
 def test_measure_all_is_bounded_by_entry_count(tmp_path, monkeypatch):
@@ -797,6 +842,8 @@ def test_sparse_checkout_uses_cone_mode_for_a_literal_path(monkeypatch, tmp_path
         return None
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     monkeypatch.setattr(S, "_confine", lambda c, r: c)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "a/b", "1.0.0", "apps/server"), tmp_path)
@@ -1038,6 +1085,8 @@ def test_an_unreachable_repository_is_attempted_ONCE(monkeypatch, tmp_path):
             raise S.SourceUnreachableError("git failed (rc=128): repository not found")
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     with pytest.raises(S.SourceUnreachableError):
         S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/gone", "1.2.3"), tmp_path)
     assert len(clones) == 1
@@ -1063,6 +1112,8 @@ def test_a_missing_TAG_is_still_retried_across_candidates(monkeypatch, tmp_path)
             raise FetchError("no such ref")
 
     monkeypatch.setattr(S, "_run", fake_run)
+    # No repository behind a stubbed `_run`, so nothing to list.
+    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert tried == ["1.2.3", "v1.2.3"]
@@ -1196,3 +1247,148 @@ def test_a_fetch_that_fails_after_recording_leaves_no_answer_behind(tmp_path):
                     tmp_path / "w", commit=first)
     checkout = tmp_path / "w" / "src"
     assert checkout not in S._GIT_COMMIT_READ and checkout not in S._GIT_REF_USED
+
+
+# ── Pre-checkout bound (v0.38.6): the tree is sized before it is written ────
+
+
+def _worktree_files(dest: Path) -> list[str]:
+    """Every file outside `.git` — what a checkout wrote."""
+    return sorted(
+        str(p.relative_to(dest)) for p in dest.rglob("*")
+        if p.is_file() and ".git" not in p.relative_to(dest).parts
+    )
+
+
+def _origin_with_a_big_release(tmp_path: Path) -> Path:
+    """Tag `1.0.0` carries a 4000-byte file; `main` moves on without it."""
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    (origin / "big.bin").write_bytes(b"x" * 4000)
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "the big release")
+    _git(origin, "tag", "1.0.0")
+    _git(origin, "rm", "-q", "big.bin")
+    (origin / "small.txt").write_text("small\n")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "main moves on")
+    return origin
+
+
+def test_an_oversized_tree_is_refused_BEFORE_checkout_writes_it(tmp_path, monkeypatch):
+    """⚠ The size cap used to run after checkout — `_measure_all` then reported
+    a cap the scratch disk had already paid for, and a few hundred bytes of
+    compressible blob can declare gigabytes. Real git: the refusal must come
+    from git's listing, with nothing yet written outside `.git`."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = _origin_with_a_big_release(tmp_path)
+    monkeypatch.setattr(S, "MAX_UNPACKED_BYTES", 1000)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    with pytest.raises(FetchError, match="refused before checkout"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.0.0"), dest)
+    assert _worktree_files(dest) == []
+
+
+def test_a_tree_with_too_many_entries_is_refused_before_checkout(tmp_path, monkeypatch):
+    """Millions of EMPTY files sit under any byte cap; the entry cap is the one
+    that sees them, and it too must fire before the inodes are spent."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    for i in range(30):
+        (origin / f"e{i:02d}").write_text("")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "many empty files")
+    monkeypatch.setattr(S, "MAX_TREE_ENTRIES", 20)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    with pytest.raises(FetchError, match="entries, refused before checkout"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9"), dest)
+    assert _worktree_files(dest) == []
+
+
+def test_an_oversized_TAG_found_by_fetch_is_refused_not_swapped_for_main(
+    tmp_path, monkeypatch
+):
+    """The tag-fetch fallback used to try fetch AND checkout together and move
+    on when either failed. A bound raised there would have been read as "no
+    such tag" and the default branch scored in the release's place. A branch
+    shadowing the tag is what routes the ladder through that fallback."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = _origin_with_a_big_release(tmp_path)
+    _git(origin, "branch", "1.0.0", "main")  # shadows the tag in `--branch`
+    monkeypatch.setattr(S, "MAX_UNPACKED_BYTES", 1000)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    with pytest.raises(FetchError, match="refused before checkout"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.0.0"), dest)
+    assert _worktree_files(dest) == []
+
+
+def test_a_pinned_commit_is_sized_before_checkout_too(tmp_path, monkeypatch):
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = _origin_with_a_big_release(tmp_path)
+    big = subprocess.run(  # noqa: S603
+        ["git", "rev-parse", "1.0.0^{commit}"], cwd=origin,  # noqa: S607
+        capture_output=True, text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(S, "MAX_UNPACKED_BYTES", 1000)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    with pytest.raises(FetchError, match="refused before checkout"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.0.0"), dest, commit=big)
+    assert _worktree_files(dest) == []
+
+
+def _origin_for_a_cone(tmp_path: Path, crowded: str) -> Path:
+    """A monorepo with the server at `pkg/a` and 300 empty files in `crowded`.
+
+    300 against a cap of 200: over the cap only if `crowded` is counted, and
+    the post-checkout `_measure_all` (which counts `.git` too) stays under it."""
+    origin = tmp_path / "origin"
+    (origin / "pkg" / "a").mkdir(parents=True)
+    (origin / crowded).mkdir(parents=True, exist_ok=True)
+    (origin / "pkg" / "a" / "x.js").write_text("x\n")
+    for i in range(300):
+        (origin / crowded / f"e{i:03d}").write_text("")
+    _git(origin, "init", "-q", "-b", "main")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "monorepo")
+    return origin
+
+
+def test_a_sparse_clone_counts_what_the_cone_materialises(tmp_path, monkeypatch):
+    """Cone mode writes the files directly in each ANCESTOR of the subfolder,
+    not just the subfolder — so 300 files dropped in `pkg/` are written for a
+    server at `pkg/a`, and must count."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = _origin_for_a_cone(tmp_path, "pkg")
+    monkeypatch.setattr(S, "MAX_TREE_ENTRIES", 200)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    with pytest.raises(FetchError, match="entries, refused before checkout"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9", "pkg/a"), dest)
+    assert _worktree_files(dest) == []
+
+
+def test_a_sparse_clone_does_not_count_what_the_cone_leaves_out(tmp_path, monkeypatch):
+    """Positive control for the test above: the same 300 files OUTSIDE the cone
+    are never written, so a bound counting the whole repository would refuse
+    every server in a large monorepo for files it never reads."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = _origin_for_a_cone(tmp_path, "other")
+    monkeypatch.setattr(S, "MAX_TREE_ENTRIES", 200)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    root = S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9", "pkg/a"), dest)
+    assert (root / "x.js").read_text() == "x\n"
+    assert _worktree_files(dest) == ["pkg/a/x.js"]

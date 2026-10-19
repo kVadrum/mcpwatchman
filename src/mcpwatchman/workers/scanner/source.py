@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
 
-from mcpwatchman.workers.bounded import run_bounded
+from mcpwatchman.workers.bounded import run_bounded, stream_bounded
 from mcpwatchman.workers.commits import valid_commit
 from mcpwatchman.workers.crawler.registry import SourceKind
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS
@@ -415,14 +415,12 @@ def _is_zip(archive: Path) -> bool:
         return fh.read(4) in (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
 
 
-_EOCD_SIG = b"PK\x05\x06"
-_ZIP64_LOCATOR_SIG = b"PK\x06\x07"
-_ZIP64_EOCD_SIG = b"PK\x06\x06"
-_MAX_ZIP_COMMENT = 65_535
+_CENTRAL_DIR_SIG = b"PK\x01\x02"
 
 
-def _zip_entry_count(archive: Path) -> int | None:
-    """Entry count read from the end-of-central-directory, in BOUNDED work.
+def _zip_record_ceiling(archive: Path) -> int:
+    """An upper bound on the `ZipInfo`s `ZipFile(archive)` will build, in
+    bounded work and without parsing anything an attacker can make lie.
 
     ⚠ This exists because `MAX_MEMBERS` could not reach the zip path at all.
     `zipfile.ZipFile(...)` parses the ENTIRE central directory and builds a
@@ -431,42 +429,31 @@ def _zip_entry_count(archive: Path) -> int | None:
     happened. A ZIP64 archive of millions of empty entries compresses to almost
     nothing and stays far under the download cap.
 
-    The tar path was given a lazy, guard-during-the-walk form at v0.7.2 and this
-    one was left eager — the same asymmetry, the third instance in this file.
+    ⚠ **The end-of-central-directory COUNT was the first gate here, and it was
+    not one.** CPython never reads that count: it reads the directory's declared
+    BYTE size and walks records until it is consumed, so an archive declaring
+    one entry over a directory of millions was waved through (Codex, `/qaa`
+    2026-10-19). Mirroring CPython's location arithmetic instead would tie this
+    gate to a private parser that already differs between 3.12 and 3.14.
 
-    Returns None when the record cannot be located, in which case `ZipFile` will
-    fail to open the archive anyway. The count is attacker-controlled and may
-    understate the truth, so `_guard_members` still runs afterwards as the
-    second gate — exactly the arrangement the declared-size cap already uses.
+    So count what CPython cannot do without: every record it builds is checked
+    for the central-directory signature at its own position, records do not
+    overlap, and the 4-byte signature cannot overlap itself — so the number of
+    signature occurrences ANYWHERE in the file bounds the records parsed, under
+    any location logic. It can only over-count (stored member data containing
+    the bytes), and over-counting refuses an archive, never admits one.
     """
-    size = archive.stat().st_size
-    if size < 22:
-        return None
-    tail_len = min(size, _MAX_ZIP_COMMENT + 22)
+    count = 0
+    carry = b""
     with archive.open("rb") as fh:
-        fh.seek(size - tail_len)
-        tail = fh.read(tail_len)
-
-        pos = tail.rfind(_EOCD_SIG)
-        if pos < 0 or len(tail) - pos < 22:
-            return None
-        count = int.from_bytes(tail[pos + 10 : pos + 12], "little")
-        if count != 0xFFFF:
-            return count
-
-        # ZIP64: the 16-bit field is saturated and the real count lives in the
-        # ZIP64 end-of-central-directory, found via its locator.
-        loc = tail.rfind(_ZIP64_LOCATOR_SIG, 0, pos)
-        if loc < 0 or len(tail) - loc < 20:
-            return None
-        z64_offset = int.from_bytes(tail[loc + 8 : loc + 16], "little")
-        if z64_offset >= size:
-            return None
-        fh.seek(z64_offset)
-        head = fh.read(40)
-        if len(head) < 40 or not head.startswith(_ZIP64_EOCD_SIG):
-            return None
-        return int.from_bytes(head[32:40], "little")
+        while chunk := fh.read(1024 * 1024):
+            window = carry + chunk
+            count += window.count(_CENTRAL_DIR_SIG)
+            # An occurrence straddling the boundary is completed next chunk; one
+            # wholly inside the carry was already counted and cannot recur,
+            # because three bytes cannot hold a four-byte signature.
+            carry = window[-(len(_CENTRAL_DIR_SIG) - 1):]
+    return count
 
 
 def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
@@ -493,10 +480,10 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
     """
     dest.mkdir(parents=True, exist_ok=True)
     if _is_zip(archive):
-        declared = _zip_entry_count(archive)
-        if declared is not None and declared > MAX_MEMBERS:
+        ceiling = _zip_record_ceiling(archive)
+        if ceiling > MAX_MEMBERS:
             raise FetchError(
-                f"archive declares {declared} members, over the "
+                f"archive may hold {ceiling} members, over the "
                 f"{MAX_MEMBERS} cap: {spec}"
             )
         with zipfile.ZipFile(archive) as zf:
@@ -648,7 +635,81 @@ def _pinned_checkout(spec: SourceSpec, url: str, dest: Path, commit: str) -> Non
     _run([*fetch_cmd, "origin", commit], cwd=dest, remote=True, url=url)
     if spec.subfolder:
         _run(["git", "sparse-checkout", "set", "--cone", "--", spec.subfolder], cwd=dest)
-    _run(["git", "checkout", "-q", "--detach", "FETCH_HEAD"], cwd=dest)
+    _bounded_checkout(spec, dest, "FETCH_HEAD")
+
+
+# One ls-tree record is `<mode> <type> <oid>[ <size>]\t<path>`; git bounds none
+# of it, so a record longer than this is refused rather than buffered.
+_MAX_TREE_RECORD = 64 * 1024
+
+
+def _tree_budget(repo: Path, rev: str, spec: SourceSpec) -> None:
+    """Refuse `rev`'s tree from git's own listing, BEFORE checkout writes it.
+
+    Every clone is `--no-checkout` so that this runs while the tree exists only
+    as compressed objects: a few hundred bytes of highly compressible blob, or
+    trees that reference each other, expand to an unbounded working tree, and
+    `_measure_all` afterwards reports a cap the disk has already paid for.
+
+    A sparse clone is `--filter=blob:none`, so its blob sizes are not on disk
+    (reading them would fetch every blob, one round trip each) — there only the
+    ENTRY count is bounded here, over what cone mode materialises: the files at
+    the root and in each ancestor of the subfolder, and the subfolder's whole
+    subtree. Its bytes stay bounded after the fact, by `_measure_all`.
+    """
+    sized = not spec.subfolder
+    if spec.subfolder:
+        parts = Path(spec.subfolder).parts
+        ancestors = [".", *("/".join(parts[:i]) + "/" for i in range(1, len(parts)))]
+        listings = [["-z", rev, "--", *ancestors], ["-r", "-z", rev, "--", spec.subfolder]]
+    else:
+        listings = [["-r", "-l", "-z", rev]]
+
+    entries = total = 0
+    for args in listings:
+        cmd = ["git", "ls-tree", *args]
+        try:
+            # No lazy fetch: in a partial clone a stray size lookup would fetch
+            # the blob it asks about, which is the download this bound precedes.
+            with stream_bounded(
+                cmd, timeout=60, cwd=repo, env={"GIT_NO_LAZY_FETCH": "1"},
+            ) as out:
+                pending = b""
+                while chunk := out.stdout.read(64 * 1024):
+                    *records, pending = (pending + chunk).split(b"\0")
+                    if len(pending) > _MAX_TREE_RECORD:
+                        raise FetchError(f"tree listing record too long: {spec}")
+                    for record in records:
+                        entries += 1
+                        if entries > MAX_TREE_ENTRIES:
+                            raise FetchError(
+                                f"tree has over {MAX_TREE_ENTRIES} entries, refused "
+                                f"before checkout: {spec}"
+                            )
+                        if sized:
+                            meta = record.split(b"\t", 1)[0].split()
+                            if len(meta) == 4 and meta[1] == b"blob":
+                                total += int(meta[3])
+                                if total > MAX_UNPACKED_BYTES:
+                                    raise FetchError(
+                                        f"tree is over {MAX_UNPACKED_BYTES} bytes, "
+                                        f"refused before checkout: {spec}"
+                                    )
+        except FileNotFoundError as exc:
+            raise FetchError("git is not installed in this image") from exc
+        if out.timed_out:
+            raise FetchError(f"timed out listing the tree: {spec}")
+        if out.returncode != 0:
+            # Local, after the remote was reached: ours, never the publisher's.
+            raise FetchError(f"git ls-tree failed (rc={out.returncode}): {spec}")
+
+
+def _bounded_checkout(spec: SourceSpec, dest: Path, rev: str) -> None:
+    """The ONE place a git working tree is written — every fetch path, pinned,
+    resolved, tag-fetched or sparse, ends here, so the bound cannot be owed to
+    a path that skips it (`CLAUDE.md`: a bound on one path is owed to all)."""
+    _tree_budget(dest, rev, spec)
+    _run(["git", "checkout", "-q", "--detach", rev], cwd=dest)
 
 
 def _head_commit(repo: Path) -> str | None:
@@ -694,7 +755,9 @@ def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Pat
     # report which, because "no tag matches the published version" is itself a
     # Transparency finding (`04` §2: discrepancies between the published artifact
     # and the tagged source are a finding category).
-    base = ["git", "clone", "--depth", "1", "--no-tags", "--single-branch"]
+    # `--no-checkout`: nothing is written until `_bounded_checkout` has sized
+    # the tree, and then exactly once, at whichever commit the ladder settles on.
+    base = ["git", "clone", "--depth", "1", "--no-tags", "--single-branch", "--no-checkout"]
     if spec.subfolder:
         base += ["--filter=blob:none", "--sparse"]
 
@@ -711,6 +774,7 @@ def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Pat
     # `FetchError` exists to prevent. The subclass is re-raised before the
     # continue, so a publisher-side fact is decided once and ours is retried.
     resolved_ref: str | None = None
+    target = "HEAD"
     for candidate in (spec.version, f"v{spec.version}"):
         try:
             _run([*base, "--branch", candidate, "--", url, str(dest)], remote=True, url=url)
@@ -739,6 +803,10 @@ def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Pat
         # the exact failure v0.7.0 fixed for the no-tag case; this is the same
         # failure by a different route. Name the namespace and the ambiguity
         # cannot arise.
+        #
+        # Only the FETCH is tried per candidate. The checkout happens once,
+        # below, and its failure is ours to report — never a reason to try the
+        # next candidate and quietly score the default branch instead.
         for candidate in (spec.version, f"v{spec.version}"):
             try:
                 _run(
@@ -747,7 +815,6 @@ def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Pat
                     remote=True,
                     url=url,
                 )
-                _run(["git", "checkout", "--detach", "FETCH_HEAD"], cwd=dest)
             except SourceUnreachableError:
                 # The clone above already succeeded, so the repository IS
                 # reachable and this cannot normally fire. Re-raised anyway
@@ -758,6 +825,7 @@ def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Pat
             except FetchError:
                 continue
             resolved_ref = candidate
+            target = "FETCH_HEAD"
             break
 
     if spec.subfolder:
@@ -772,6 +840,7 @@ def fetch_git(spec: SourceSpec, dest: Path, *, commit: str | None = None) -> Pat
             ["git", "sparse-checkout", "set", "--cone", "--", spec.subfolder],
             cwd=dest,
         )
+    _bounded_checkout(spec, dest, target)
     return _finish_checkout(spec, dest, resolved_ref=resolved_ref)
 
 
@@ -785,13 +854,9 @@ def _finish_checkout(
     # semgrep's own working set.
     _run(["git", "gc", "--prune=now", "--quiet"], cwd=dest, timeout=60)
 
-    # A clone was the one fetch path with NO size ceiling: `MAX_UNPACKED_BYTES`
-    # and `MAX_MEMBERS` were applied to archives only, and `_tree_size` merely
-    # measured afterwards. A listed repository with a huge working tree could
-    # therefore consume the whole scratch budget (`04` §9 allows 5 GB per job).
-    # Enforced after the fact rather than before, because git offers no
-    # pre-flight size for a tree — so this bounds the NEXT step rather than this
-    # one, and says so instead of implying a guarantee it cannot give.
+    # The SECOND gate. `_bounded_checkout` sized the tree before writing it;
+    # this measures what landed, `.git` included — the only byte bound a sparse
+    # clone gets, whose blob sizes were not on disk to pre-check.
     cloned = _measure_all(dest)
     if cloned > MAX_UNPACKED_BYTES:
         raise FetchError(

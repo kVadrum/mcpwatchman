@@ -59,8 +59,10 @@ import contextlib
 import os
 import signal
 import subprocess
-from collections.abc import Mapping, Sequence
+import threading
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
+from typing import IO
 
 # What a child may inherit. An allowlist rather than a denylist of secret-shaped
 # names, because a denylist fails open on the next credential someone names
@@ -180,6 +182,79 @@ def run_bounded(
         raise
 
 
+class Streamed:
+    """A child whose stdout is read incrementally, inside `stream_bounded`.
+
+    `returncode` and `timed_out` are only meaningful once the block has exited.
+    """
+
+    __slots__ = ("returncode", "stdout", "timed_out")
+
+    def __init__(self, stdout: IO[bytes]) -> None:
+        self.stdout = stdout
+        self.returncode: int | None = None
+        self.timed_out = False
+
+
+@contextlib.contextmanager
+def stream_bounded(
+    cmd: Sequence[str], *, timeout: float, cwd: Path | str | None = None,
+    env: Mapping[str, str] | None = None,
+) -> Iterator[Streamed]:
+    """`run_bounded` for output too large to hold: the caller reads `stdout` as
+    it arrives and may stop at any point.
+
+    `communicate()` buffers everything, so a listing an attacker sizes — `git
+    ls-tree -r` over a tree of nested self-references — is unbounded memory
+    before the caller sees a byte. Here the caller counts as it reads and leaves
+    the block (normally or by raising) the moment a cap is crossed; the deadline
+    is a timer that ends the group even while the caller is blocked on a read.
+    Same environment and process-group rules as `run_bounded`. stderr is
+    discarded, because a pipe nobody drains blocks the child once it fills.
+    """
+    proc = subprocess.Popen(  # noqa: S603 - argv form, no shell; as run_bounded
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        cwd=str(cwd) if cwd is not None else None,
+        env=untrusted_env(env),
+        start_new_session=True,
+    )
+    if proc.stdout is None:  # stdout=PIPE above; narrows the type
+        raise RuntimeError("stream_bounded: child has no stdout pipe")
+    streamed = Streamed(proc.stdout)
+
+    def expire() -> None:
+        streamed.timed_out = True
+        _kill_group(proc)
+
+    timer = threading.Timer(timeout, expire)
+    timer.daemon = True
+    timer.start()
+    try:
+        yield streamed
+    except BaseException:
+        timer.cancel()
+        _kill_group(proc)
+        with contextlib.suppress(Exception):
+            proc.stdout.close()
+            proc.wait(timeout=10)
+        streamed.returncode = proc.returncode
+        raise
+    timer.cancel()
+    # Normal exit: closing our end ends a child the caller stopped reading
+    # (EPIPE), and one that already finished is reaped with its real status
+    # rather than killed mid-exit into a false -9.
+    proc.stdout.close()
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        _kill_group(proc)
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            proc.wait(timeout=10)
+    streamed.returncode = proc.returncode
+
+
 def _kill_group(proc: subprocess.Popen) -> None:
     """SIGKILL the child's process group, falling back to the child alone.
 
@@ -194,4 +269,6 @@ def _kill_group(proc: subprocess.Popen) -> None:
             proc.kill()
 
 
-__all__ = ["GIT_ISOLATION", "Bounded", "run_bounded", "untrusted_env"]
+__all__ = [
+    "GIT_ISOLATION", "Bounded", "Streamed", "run_bounded", "stream_bounded", "untrusted_env",
+]

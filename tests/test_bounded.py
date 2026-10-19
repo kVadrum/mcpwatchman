@@ -31,7 +31,7 @@ import time
 
 import pytest
 
-from mcpwatchman.workers.bounded import run_bounded
+from mcpwatchman.workers.bounded import run_bounded, stream_bounded
 
 
 def _spawner(pidfile) -> list[str]:
@@ -271,3 +271,48 @@ def test_git_children_ignore_the_operators_global_config(tmp_path, monkeypatch) 
         timeout=10, cwd=tmp_path,
     )
     assert helper.returncode != 0 and "leaked" not in helper.stdout
+
+
+# ── stream_bounded: the same rules for output too large to hold ─────────────
+
+
+def test_a_stream_read_to_the_end_keeps_the_childs_real_status() -> None:
+    """Positive control: a child that runs to completion reports its own exit
+    status through the stream, not the -9 of a kill."""
+    with stream_bounded(["sh", "-c", "head -c 300000 /dev/zero; exit 3"], timeout=30) as out:
+        data = out.stdout.read()
+    assert len(data) == 300_000
+    assert (out.returncode, out.timed_out) == (3, False)
+
+
+def test_a_streams_deadline_ends_the_group_while_the_caller_is_blocked(tmp_path) -> None:
+    """A child that writes nothing leaves the caller blocked in `read()`, where
+    no check of its own can run — the deadline has to be a timer."""
+    pidfile = tmp_path / "gc.pid"
+    started = time.monotonic()
+    with stream_bounded(_spawner(pidfile), timeout=1) as out:
+        assert out.stdout.read() == b""
+    assert out.timed_out is True
+    assert time.monotonic() - started < 10
+    assert _gone_within(_read_pid(pidfile), 5.0)
+
+
+def test_leaving_a_stream_early_ends_the_child_and_its_group(tmp_path) -> None:
+    """A caller that crosses a cap stops reading and raises; the child is still
+    writing, and its grandchild must not outlive the block either."""
+    pidfile = tmp_path / "gc.pid"
+    cmd = ["sh", "-c", f"sleep 300 & echo $! > {pidfile}; yes"]
+    with pytest.raises(RuntimeError, match="cap crossed"), \
+            stream_bounded(cmd, timeout=30) as out:
+        assert out.stdout.read(4096)
+        raise RuntimeError("cap crossed")
+    assert out.returncode is not None
+    assert _gone_within(_read_pid(pidfile), 5.0)
+
+
+def test_a_streamed_child_never_inherits_credentials(monkeypatch) -> None:
+    monkeypatch.setenv("GH_TOKEN", "sentinel-not-a-token")
+    with stream_bounded(["env", "-0"], timeout=30) as out:
+        names = {kv.split(b"=", 1)[0] for kv in out.stdout.read().split(b"\0") if kv}
+    assert b"GH_TOKEN" not in names
+    assert b"GIT_CONFIG_GLOBAL" in names
