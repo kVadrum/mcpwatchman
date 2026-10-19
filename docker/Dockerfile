@@ -16,6 +16,14 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+# Hash-locked, so the image runs the semgrep and dependencies CI tested, not
+# whatever resolves on the day it is built; the project itself installs with
+# --no-deps and builds with the locked hatchling rather than a fresh one.
+# One invocation, so a pin the two files disagree on fails the build instead of
+# the second file silently replacing the first's.
+COPY requirements ./requirements
+RUN pip install --no-cache-dir --require-hashes \
+      -r requirements/workers.txt -r requirements/build.txt
 COPY pyproject.toml README.md ./
 COPY src ./src
 # REQUIRED, and its absence is a BUILD failure rather than a runtime one.
@@ -25,6 +33,6 @@ COPY src ./src
 # does not degrade the image — it stops the image existing. Measured by
 # reproducing this exact context.
 COPY rules ./rules
-RUN pip install --no-cache-dir ".[workers]"
+RUN pip install --no-cache-dir --no-deps --no-build-isolation .
 
 USER scanner

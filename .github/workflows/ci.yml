@@ -65,10 +65,13 @@ jobs:
   # it skips, and a broken invocation returns `[]` with every other secret test
   # still green.
   #
-  # ⚠ This job CAN red on upstream breakage that is not ours — an extra that
-  # resolves is a claim about the world, not about this commit. That is the
-  # cost, accepted deliberately: the alternative is learning the same thing
-  # from a worker that will not start.
+  # It installs `requirements/workers.txt`, the hash-locked set the worker
+  # image and the nightly venv run, so CI tests the semgrep that scores
+  # servers rather than whichever release is newest today. The lock is
+  # generated FROM the extra, and `tests/test_requirements_lock.py` (every
+  # job) refuses a lock that no longer satisfies it — so a declaration added
+  # to the extra without regenerating the lock reds instead of shipping
+  # undeclared.
   workers-extra:
     runs-on: ubuntu-latest
     steps:
@@ -86,7 +89,9 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"
-      - run: pip install -e ".[workers,dev]"
+      - run: pip install --require-hashes -r requirements/workers.txt
+      - run: pip install --no-deps -e .
+      - run: pip install -e ".[dev]"
       # Prove the extra RESOLVED rather than merely installed: both of these
       # are the reason the job exists, and an import is the cheapest assertion
       # that the wheel is present and loadable on this interpreter.

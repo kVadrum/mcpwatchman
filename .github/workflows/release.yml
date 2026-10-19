@@ -38,8 +38,11 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"
-      - run: pip install build twine
-      - run: python -m build
+      # The whole toolchain from a hash-locked file, and the build NOT isolated:
+      # an isolated build resolves `hatchling` fresh from PyPI inside this job,
+      # so an unpinned build backend would write the wheel PyPI receives.
+      - run: pip install --require-hashes -r requirements/build.txt
+      - run: python -m build --no-isolation
       # Malformed metadata is rejected at upload — and a rejected upload still
       # burns the version number, which PyPI never lets you reuse.
       - run: twine check dist/*

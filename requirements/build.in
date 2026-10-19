@@ -1,0 +1,7 @@
+# The release build's own toolchain, hash-locked into build.txt: `release.yml`
+# installs exactly this and builds with --no-isolation, so no unpinned package
+# runs between the checkout and the wheel PyPI receives. Regenerate with the
+# command at the top of build.txt.
+build
+twine
+hatchling
