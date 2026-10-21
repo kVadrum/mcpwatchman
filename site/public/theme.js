@@ -82,6 +82,11 @@
     document.documentElement.setAttribute("data-theme", initial);
     paintBrowserChrome(initial);
   }
+  // Tells the CSS this file ran, so the control's place is held from the first
+  // paint. `wire()` waits for DOMContentLoaded, which on the 1 MB server index
+  // lands ~850 ms in on a phone, and the header growing then pushed the whole
+  // page down: 0.05 CLS, measured, and 0 with this file blocked.
+  document.documentElement.setAttribute("data-theme-js", "");
 
   // ── after the DOM exists: reveal and wire the control ───────────────────────
   function wire() {

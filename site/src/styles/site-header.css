@@ -96,6 +96,16 @@
   display: none;
 }
 
+/* `theme.js` marks the root before first paint, so the control WILL appear —
+   and revealing it late shifts everything under the header. Its box is held
+   from the first paint instead: invisible, so out of the tab order and the
+   accessibility tree until it works. With JS off the mark never lands and the
+   control takes no space. */
+:root[data-theme-js] .theme[hidden] {
+  display: flex;
+  visibility: hidden;
+}
+
 .theme label {
   font-family: var(--font-struct);
   font-size: 0.8125rem;

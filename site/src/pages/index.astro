@@ -12,6 +12,7 @@ import "@fontsource/ibm-plex-mono/latin-500.css";
 import "../styles/tokens.css";
 import VoidHatch from "../components/VoidHatch.astro";
 import SiteHeader from "../components/SiteHeader.astro";
+import FontPreloads from "../components/FontPreloads.astro";
 import scans from "../data/scans.json";
 
 // Build-time, not hardcoded: a footer year that has to be remembered is a footer
@@ -112,6 +113,7 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
       content="Continuous, evidence-linked security and quality audit of the servers in the official Model Context Protocol registry. Every point subtracted for a reason you can read."
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <FontPreloads />
     {/* Two tags, media-scoped, so the browser chrome follows the system theme
       with no script involved. `theme.js` rewrites the `media` attributes when
       the visitor picks a theme explicitly — `data-scheme` is what it keys on. */}

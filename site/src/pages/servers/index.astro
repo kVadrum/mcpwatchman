@@ -173,7 +173,7 @@ const W = 96;
                     {a.score === null ? "—" : a.score}
                   </span>
                   <svg viewBox={`0 0 ${W} 5`} width={W} height="5" aria-hidden="true">
-                    <rect class="m-lost" x="0" y="0" width={aw} height="5" />
+                    {aw > 0 && <rect class="m-lost" x="0" y="0" width={aw} height="5" />}
                     {sw > 0 && <rect class="m-scored" x="0" y="0" width={sw} height="5" />}
                     {weight < 1 && (
                       <rect class="m-void" x={aw} y="0" width={W - aw} height="5" fill="url(#void-hatch)" />

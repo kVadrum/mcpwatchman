@@ -284,6 +284,27 @@ def test_the_pages_carry_no_inline_style_or_script() -> None:
         assert 'style="' not in html, f"{page}: inline style attribute"
 
 
+@needs_dist
+def test_every_preloaded_font_is_one_a_stylesheet_uses() -> None:
+    """A preload names a font file itself; the @font-face rule names it again,
+    through fontsource's CSS. Should the two disagree — a fontsource release
+    that renames or re-encodes a face — every page downloads a font nothing
+    uses, and the swap the preload exists to prevent comes back, with nothing
+    failing but a console warning. Every page, for the reason above."""
+    css = "".join(p.read_text() for p in (DIST / "_astro").glob("*.css"))
+    faces = set(re.findall(r"url\((/_astro/[^)]+\.woff2)\)", css))
+    assert faces, "no @font-face sources found — the gate would pass vacuously"
+    preloaded = 0
+    for page in sorted(DIST.rglob("*.html")):
+        for link in re.findall(r"<link\b[^>]*\brel=\"preload\"[^>]*>", page.read_text()):
+            if 'as="font"' not in link:
+                continue
+            href = re.search(r'\bhref="([^"]+)"', link)
+            assert href and href.group(1) in faces, f"{page}: {link} preloads no font in use"
+            preloaded += 1
+    assert preloaded, "no font preload on any page — the gate would pass vacuously"
+
+
 def test_no_published_field_carries_a_local_filesystem_path(reports) -> None:
     """Measured leak, gated permanently.
 

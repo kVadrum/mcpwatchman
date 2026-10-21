@@ -398,6 +398,19 @@ main {
   text-decoration: none;
   color: inherit;
   padding: 0 0.5rem;
+  /* ~500 rows and ~2,500 meters: laying them all out cost a phone 300 ms
+     before the page could settle, for rows nobody can see yet. Off-screen rows
+     are skipped and sized from these estimates (measured row heights), and
+     `auto` keeps the real height once a row has rendered. On the LINK, not the
+     `li`: containment clips a box's descendants, so on the `li` it would cut
+     the sides off this link's focus ring; its own outline is not clipped. */
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 15.2rem;
+}
+@media (min-width: 30rem) {
+  .roster-link {
+    contain-intrinsic-block-size: auto 6.9rem;
+  }
 }
 .roster-link:hover .roster-name,
 .roster-link:focus-visible .roster-name {
@@ -408,6 +421,7 @@ main {
     grid-template-columns: minmax(0, 22rem) 1fr;
     align-items: center;
     gap: 1.5rem;
+    contain-intrinsic-block-size: auto 3.3rem;
   }
 }
 .roster-name {

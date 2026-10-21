@@ -1,0 +1,26 @@
+---
+/**
+ * Preloads for the faces that set text in the first viewport of every page.
+ *
+ * Without these a face is discovered only after the stylesheet has parsed and
+ * the layout asks for it, so the first paint is in the fallback and the swap
+ * re-flows the page: measured 0.38 CLS on a long server report at desktop
+ * width, from the swap alone (0 with fonts blocked), and a warm cache did not
+ * help — the fetch was cheap, the late discovery was the cost.
+ *
+ * `?url` resolves to the same fingerprinted file the @font-face rule points
+ * at, so nothing is downloaded twice; `crossorigin` is required even
+ * same-origin, because fonts are fetched in CORS mode and a preload in the
+ * other mode is thrown away. Plex Sans 500 is left out: no page sets
+ * first-viewport text in it, and a preload competes with the stylesheet.
+ */
+import sans400 from "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url";
+import condensed500 from "@fontsource/ibm-plex-sans-condensed/files/ibm-plex-sans-condensed-latin-500-normal.woff2?url";
+import condensed600 from "@fontsource/ibm-plex-sans-condensed/files/ibm-plex-sans-condensed-latin-600-normal.woff2?url";
+import mono400 from "@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2?url";
+import mono500 from "@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2?url";
+
+const faces = [sans400, condensed500, condensed600, mono400, mono500];
+---
+
+{faces.map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
