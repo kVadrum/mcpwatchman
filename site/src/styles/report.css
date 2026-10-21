@@ -77,10 +77,17 @@ a:hover {
   background: var(--ground-lift);
 }
 
+/* Pages quote publisher-written strings — repository URLs, paths, package
+   names — and one unbroken token wider than a phone scrolled the whole page
+   sideways (`.source-note`, 2026-10-21). Inherited from here so no new
+   element can forget it. `break-word`, not `anywhere`: it breaks only what
+   would overflow and leaves flex and grid minimums alone, so a short label
+   is never split to fit; the grid cells that need `anywhere` set it. */
 main {
   padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) 4rem;
   max-width: 68rem;
   margin-inline: auto;
+  overflow-wrap: break-word;
 }
 
 /* ── server header ──────────────────────────────────────────────────────── */
@@ -238,15 +245,22 @@ main {
   margin-top: 0;
 }
 
+/* `minmax(0, 1fr)`, not the implicit `auto` track: an auto track is as wide
+   as its widest item's min-content, so ONE long evidence line widened every
+   finding in the list past a phone's width (22 pages, up to 371px over at
+   375px, measured 2026-10-21). The `pre` scrolls on its own; nothing else
+   may push the column. */
 .findings {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 .finding {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.3rem;
 }
 .finding-where {
@@ -263,6 +277,7 @@ main {
 .finding-why {
   margin: 0;
   max-width: 72ch;
+  overflow-wrap: anywhere;
 }
 .finding pre {
   margin: 0.15rem 0 0;
