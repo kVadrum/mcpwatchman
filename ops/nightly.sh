@@ -42,13 +42,39 @@ WRANGLER="wrangler@4.147.0"
 log() { printf '[nightly %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 die() { log "FAILED: $2"; exit "$1"; }
 
-# Each stage gets only the credentials it uses. The build and the deploy run
-# third-party npm code, and the scan reads attacker-controlled repositories, so
-# a token one of them does not need is a token that leaks for nothing. The
-# session bus goes too: it reaches the keyring holding the operator's `gh` login
-# (removing the variable deters, it does not confine — that is the unit's job).
-NO_GITHUB=(-u MCPWATCHMAN_GITHUB_TOKEN -u GITHUB_TOKEN -u GH_TOKEN -u DBUS_SESSION_BUS_ADDRESS)
-NO_DEPLOY=(-u CLOUDFLARE_API_TOKEN -u CLOUDFLARE_ACCOUNT_ID -u MCPW_DEPLOY_KEY)
+# Every stage that runs code we did not write — the scanner's tools over
+# attacker-controlled repositories, npm's dependencies in the build, wrangler,
+# and the gates over the data they produced — starts from an EMPTY environment
+# plus what it names: an allowlist, for the reason `bounded.py` gives for the
+# scanner's own children. The denylist it replaces removed the tokens and the
+# bus address and passed everything else, which here was SSH_AUTH_SOCK,
+# GPG_AGENT_INFO, DISPLAY, XAUTHORITY, WAYLAND_DISPLAY and XDG_RUNTIME_DIR —
+# where libdbus finds the session bus, and so the keyring holding the `gh`
+# login, with its address unset. Removing a variable deters rather than
+# confines (the unit says why); what is kept is what the stages were measured
+# to need, HOME above all: npm's cache and wrangler's login live there.
+STAGE_ENV=" PATH HOME USER LOGNAME LANG LANGUAGE TZ TMPDIR XDG_CONFIG_HOME XDG_CACHE_HOME \
+XDG_DATA_HOME SSL_CERT_FILE SSL_CERT_DIR HTTP_PROXY HTTPS_PROXY NO_PROXY ALL_PROXY \
+http_proxy https_proxy no_proxy all_proxy "
+
+# stage [NAME...] -- COMMAND...: run COMMAND with STAGE_ENV, the LC_* locale and
+# the variables NAMEd. Names, never values: a value on a command line is
+# readable in /proc by every process of this user, so a credential reaches the
+# one stage that uses it by being named here, and only non-secret settings ride
+# on `env VAR=value` inside COMMAND.
+stage() {
+  local keep="$STAGE_ENV" name
+  while (($#)) && [[ $1 != -- ]]; do keep+="$1 "; shift; done
+  shift
+  (
+    for name in $(compgen -e); do
+      [[ $keep == *" $name "* || $name == LC_* ]] || unset "$name" 2>/dev/null || true
+    done
+    exec "$@"
+  )
+}
+GITHUB_CREDENTIAL=(MCPWATCHMAN_GITHUB_TOKEN GITHUB_TOKEN)
+DEPLOY_CREDENTIAL=(CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID)
 
 # Where the scan unpacks third-party trees: TMPDIR, which every mkdtemp in the
 # scanner and every scanner binary honours. Not /tmp — on this box a tmpfs, so
@@ -140,13 +166,14 @@ DEV_SHA="$(git -C "$REPO" rev-parse origin/dev)"
 git -C "$REPO" worktree add -q --detach "$WORK/main" "$MAIN_SHA"
 MAIN="$WORK/main"
 
-# Fail closed on a `main` that predates the systemic-staleness guard: without it
-# an exhausted token writes our outage onto every page and exits 0. Asked of
-# the COMMIT, not of an import — the import also fails on a broken venv, and
-# exit 11 is a quiet success to the unit, so a broken environment would have
-# read as "waiting for a sync" forever (base.md § Signal design).
+# Without the systemic-staleness guard an exhausted token writes our outage onto
+# every page and exits 0, so a `main` without it is refused. This was once a
+# quiet skip (exit 11, "waiting for a sync"), while `main` predated the guard;
+# it has carried it since v0.33.0 and only moves forward, so its absence now
+# means a moved or renamed guard, and a quiet success would hide that forever
+# (base.md § Signal design).
 git -C "$REPO" grep -q 'def systemic_staleness' "$MAIN_SHA" -- src/mcpwatchman/cohort.py \
-  || { log "SKIPPED: origin/main (${MAIN_SHA:0:9}) predates cohort.systemic_staleness — waiting for a sync"; exit 11; }
+  || die 23 "origin/main (${MAIN_SHA:0:9}) has no cohort.systemic_staleness — moved or renamed? Nothing was scanned"
 # The environment itself, loudly: any failure here is a fault, never a skip.
 PYTHONPATH="$MAIN/src" "$PY" -c 'import mcpwatchman.cohort, mcpwatchman.workers.scanner.runner' \
   || die 19 "main's code does not import under $PY — the venv needs rebuilding"
@@ -167,7 +194,8 @@ log "scanning the pinned cohort"
 # below keeps the operator's config: it is ours, to our own repository.
 SCAN_GIT=(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_TERMINAL_PROMPT=0)
 set +e
-env "${NO_DEPLOY[@]}" "${SCAN_ENV[@]}" "${SCAN_GIT[@]}" PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
+stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_ENV[@]}" "${SCAN_GIT[@]}" \
+    PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
   "$PY" "$MAIN/ops/scan_cohort.py" \
   --out "$MAIN/site/src/data/scans.json" --cohort "$MAIN/ops/cohort.json"
 rc=$?
@@ -183,18 +211,18 @@ log "checking that every repository scored this run is publicly readable"
 git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$WORK/scans.before.json"
 # It keeps the GitHub token: a repository the public cannot read is asked about
 # with it, because "private" and "deleted" fail the same anonymous probe.
-env "${NO_DEPLOY[@]}" -u GH_TOKEN -u DBUS_SESSION_BUS_ADDRESS "$PY" "$REPO/ops/visibility_gate.py" \
+stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_GIT[@]}" "$PY" "$REPO/ops/visibility_gate.py" \
     --before "$WORK/scans.before.json" --after "$MAIN/site/src/data/scans.json" \
   || die 22 "the visibility gate refused this run — nothing committed or deployed"
 
 log "building the site"
-( cd "$MAIN/site" && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" npm ci --no-audit --no-fund --loglevel=error \
-    && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" npm run build --silent ) \
+( cd "$MAIN/site" && stage -- npm ci --no-audit --no-fund --loglevel=error \
+    && stage -- npm run build --silent ) \
   || die 12 "site build failed"
 
 # The same artifact gates CI runs, against the site about to be published.
 log "running the publication gates"
-( cd "$MAIN" && env "${NO_GITHUB[@]}" "${NO_DEPLOY[@]}" PYTHONPATH="$MAIN/src" "$PY" -m pytest -q -p no:cacheprovider \
+( cd "$MAIN" && stage -- env PYTHONPATH="$MAIN/src" "$PY" -m pytest -q -p no:cacheprovider \
     tests/test_site_scans.py tests/test_site_example.py tests/test_cohort.py ) \
   || die 13 "publication gates failed on the new data"
 
@@ -312,6 +340,6 @@ else
   log "main's site lockfile carries no wrangler: deploying with npx $WRANGLER (transitive dependencies unpinned)"
   deploy=(npx --yes "$WRANGLER" deploy)
 fi
-( cd "$MAIN/site" && env "${NO_GITHUB[@]}" -u MCPW_DEPLOY_KEY WRANGLER_SEND_METRICS=false "${deploy[@]}" ) \
+( cd "$MAIN/site" && stage "${DEPLOY_CREDENTIAL[@]}" -- env WRANGLER_SEND_METRICS=false "${deploy[@]}" ) \
   || die 16 "wrangler deploy failed"
 log "published"

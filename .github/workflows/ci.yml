@@ -69,9 +69,11 @@ jobs:
   # image and the nightly venv run, so CI tests the semgrep that scores
   # servers rather than whichever release is newest today. The lock is
   # generated FROM the extra, and `tests/test_requirements_lock.py` (every
-  # job) refuses a lock that no longer satisfies it — so a declaration added
-  # to the extra without regenerating the lock reds instead of shipping
-  # undeclared.
+  # job) refuses a lock that no longer satisfies it — so a package or version
+  # range added to the extra without regenerating the lock reds instead of
+  # shipping undeclared. Not an EXTRA added to a requirement already locked
+  # (`psycopg` → `psycopg[binary]`): the lock records the packages an extra
+  # pulls in, never the extra, so that change stays green until regenerated.
   workers-extra:
     runs-on: ubuntu-latest
     steps:

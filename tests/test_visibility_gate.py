@@ -103,7 +103,8 @@ def test_maintenance_from_a_url_the_gate_cannot_name_is_refused(
 ) -> None:
     """Assessed Maintenance came from SOME repository; a gate that skipped what
     it could not name would pass it unasked. No question asked, no yes."""
-    assert gate.to_check([], [_row("s", url)]) == ({}, ["s"])
+    urls, unaskable = gate.to_check([], [_row("s", url)])
+    assert (urls, [slug for slug, _ in unaskable]) == ({}, ["s"])
     before, after = tmp_path / "before.json", tmp_path / "after.json"
     before.write_text("[]")
     after.write_text(json.dumps([_row("s", url)]))
@@ -112,8 +113,41 @@ def test_maintenance_from_a_url_the_gate_cannot_name_is_refused(
 
 
 def test_an_unreadable_weight_is_asked_about_rather_than_assumed_zero() -> None:
-    urls, _ = gate.to_check([], [_row("odd", "https://github.com/acme/odd", weight="n/a")])
-    assert urls
+    for weight in ("n/a", None):
+        urls, _ = gate.to_check([], [_row("odd", "https://github.com/acme/odd", weight=weight)])
+        assert urls, weight
+
+
+@pytest.mark.parametrize("drop", ["slug", "scanned_at", "axes", "maintenance", "assessed_weight"])
+def test_a_row_without_what_the_gate_reads_is_refused_not_skipped(
+    tmp_path: Path, monkeypatch, drop: str,
+) -> None:
+    """main's scanner writes the data and this gate runs from dev, so a field
+    renamed on one side reads, on the other, as "carried forward" or "nothing
+    measured" — and a gate that skipped those rows passed having asked nothing."""
+    row = _row("s", "https://github.com/acme/r")
+    if drop == "maintenance":
+        del row["axes"]["maintenance"]
+    elif drop == "assessed_weight":
+        del row["axes"]["maintenance"]["assessed_weight"]
+    else:
+        del row[drop]
+    urls, unaskable = gate.to_check([row], [row])
+    assert urls == {} and len(unaskable) == 1
+    before, after = tmp_path / "before.json", tmp_path / "after.json"
+    before.write_text(json.dumps([row]))
+    after.write_text(json.dumps([row]))
+    monkeypatch.setattr(gate, "probe_anonymous", lambda url: True)
+    assert gate.main(["--before", str(before), "--after", str(after)]) == 1
+
+
+def test_the_published_data_carries_every_field_the_gate_reads() -> None:
+    """The positive control for the test above, against the real records: every
+    row is readable, and the gate finds repositories to ask about in them."""
+    data = Path(__file__).resolve().parents[1] / "site" / "src" / "data" / "scans.json"
+    urls, unaskable = gate.to_check([], json.loads(data.read_text()))
+    assert unaskable == []
+    assert len(urls) > 100
 
 
 def test_one_repository_behind_several_servers_is_asked_once() -> None:
@@ -163,8 +197,32 @@ def test_the_probe_never_reads_the_operators_git_config(tmp_path: Path, monkeypa
     assert gate.probe_anonymous(missing, attempts=1) is False
 
 
+def test_the_probe_never_reads_the_config_of_the_repository_it_runs_in(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    """`ls-remote` inside a repository reads that repository's config, and the
+    nightly runs this gate from inside ours: a rewrite or credential helper
+    there would answer for the public. The probe runs from `/`."""
+    bare = _bare(tmp_path)
+    here = tmp_path / "here"
+    subprocess.run([GIT, "init", "-q", str(here)], check=True, capture_output=True)  # noqa: S603
+    missing = f"file://{tmp_path}/missing.git"
+    subprocess.run(  # noqa: S603
+        [GIT, "config", f"url.file://{bare}.insteadOf", missing],
+        cwd=here, check=True, capture_output=True,
+    )
+    monkeypatch.chdir(here)
+    plain = subprocess.run([GIT, "ls-remote", "-q", missing],  # noqa: S603
+                           capture_output=True, check=False)
+    assert plain.returncode == 0, "the fixture's rewrite did not take; the test proves nothing"
+    assert gate.probe_anonymous(missing, attempts=1) is False
+
+
 @pytest.mark.parametrize("refusal,code", [(False, 0), (True, 1)])
 def test_main_exits_by_the_answer(tmp_path: Path, monkeypatch, refusal: bool, code: int) -> None:
+    # No token: a refusal would otherwise put a live question to GitHub.
+    for name in ("MCPWATCHMAN_GITHUB_TOKEN", "GITHUB_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
     before, after = tmp_path / "before.json", tmp_path / "after.json"
     before.write_text("[]")
     after.write_text(json.dumps([_row("s", "https://github.com/acme/r")]))

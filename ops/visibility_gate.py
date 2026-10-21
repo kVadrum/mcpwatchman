@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
@@ -60,13 +61,16 @@ def probe_anonymous(url: str, *, attempts: int = 2, timeout: float = 30) -> bool
     """Whether `url` answers `git ls-remote` with no credentials at all.
 
     Anonymous by construction: `run_bounded`'s environment is the scanner's
-    allowlist, which carries no token, plus the git isolation that reads no
-    config file — so no credential helper and no url rewrite — and no prompt,
-    so a private repository fails instead of waiting. On a timeout it kills
-    the whole group, `git-remote-https` included.
+    allowlist, which carries no token; git reads no global or system config
+    and, with HOME emptied, no `.netrc`; and it runs from `/`, because
+    `ls-remote` inside a repository reads THAT repository's config, where a
+    credential helper or url rewrite would answer for a private repository
+    (measured 2026-10-21). No prompt, so a private repository fails instead of
+    waiting. On a timeout it kills the whole group, `git-remote-https` included.
     """
     for _ in range(attempts):
-        done = run_bounded(["git", "ls-remote", "-q", "--", url, "HEAD"], timeout=timeout)
+        done = run_bounded(["git", "ls-remote", "-q", "--", url, "HEAD"],
+                           timeout=timeout, cwd=os.sep)
         if done.returncode == 0 and not done.timed_out:
             return True
     return False
@@ -78,27 +82,39 @@ def _maintenance_assessed(row: dict) -> bool:
         return Decimal(str(weight)) > 0
     except (InvalidOperation, ValueError):
         # Unreadable is not "nothing measured": ask rather than assume.
-        return weight is not None
+        return True
 
 
 def to_check(
     before: Iterable[dict], after: Iterable[dict],
-) -> tuple[dict[str, list[str]], list[str]]:
+) -> tuple[dict[str, list[str]], list[tuple[str, str]]]:
     """(repository URL -> slugs of the rows scanned this run that need asking,
-    slugs of rows scanned this run that cannot be asked about)."""
+    (slug, why) for each row this gate cannot ask about — refused)."""
     previous = {(r.get("slug"), r.get("scanned_at")) for r in before}
     urls: dict[str, list[str]] = {}
-    unaskable: list[str] = []
+    unaskable: list[tuple[str, str]] = []
     for row in after:
+        slug = str(row.get("slug"))
+        # A row without what this gate keys on is not a row with nothing to
+        # ask. The data is written by main's scanner and this gate runs from
+        # dev, so a renamed field would otherwise read every row as carried
+        # forward or unmeasured, and the gate would pass having asked nothing.
+        maintenance = (row.get("axes") or {}).get("maintenance")
+        if not (row.get("slug") and row.get("scanned_at") and isinstance(maintenance, dict)
+                and "assessed_weight" in maintenance):
+            unaskable.append((slug, "lacks the slug, scanned_at or Maintenance "
+                                    "assessed_weight this gate reads"))
+            continue
         if (row.get("slug"), row.get("scanned_at")) in previous:
             continue  # carried forward, not scanned this run
         if not _maintenance_assessed(row):
             continue  # no forge data was read
         ref = parse_repo_url(row.get("repository_url") or "")
         if ref is None:
-            unaskable.append(str(row.get("slug")))
+            unaskable.append((slug, "Maintenance scored from a repository URL "
+                                    "the forge parser cannot read"))
             continue
-        urls.setdefault(f"https://github.com/{ref.slug}", []).append(str(row.get("slug")))
+        urls.setdefault(f"https://github.com/{ref.slug}", []).append(slug)
     return urls, unaskable
 
 
@@ -192,11 +208,11 @@ def main(argv: list[str] | None = None) -> int:
     bad, invisible = refused(urls)
     print(f"visibility gate: {len(urls)} repositories asked anonymously, "
           f"{len(invisible)} readable by nobody (allowed), {len(bad)} refused, "
-          f"{len(unaskable)} rows naming no repository this gate can ask about")
+          f"{len(unaskable)} rows this gate cannot ask about")
     for url, slugs in sorted(bad.items()):
         print(f"  private or unanswered: {url} (Maintenance scored for {', '.join(slugs)})")
-    for slug in sorted(unaskable):
-        print(f"  Maintenance scored from a repository URL the forge parser cannot read: {slug}")
+    for slug, why in sorted(unaskable):
+        print(f"  {slug}: {why}")
     return 1 if bad or unaskable else 0
 
 

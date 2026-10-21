@@ -31,21 +31,24 @@ pytestmark = pytest.mark.skipif(
 )
 
 # Stands in for ops/scan_cohort.py: rewrites the published data (or not), and
-# can push to origin/dev mid-run the way a concurrent session would.
+# can push to origin/dev mid-run the way a concurrent session would. Its knobs
+# come from a file beside the repository, not the environment: the scan stage
+# gets an allowlisted environment, which is the thing under test.
 SCAN_STUB = '''\
 import argparse, json, os, subprocess, sys, tempfile
 ap = argparse.ArgumentParser()
 ap.add_argument("--out"); ap.add_argument("--cohort")
 a = ap.parse_args()
-if os.environ.get("FAKE_SCAN") != "same":
+knobs = json.load(open(os.path.join(os.path.dirname(os.getcwd()), "knobs.json")))
+if knobs.get("FAKE_SCAN") != "same":
     rows = json.load(open(a.out))
     rows[0]["v"] += 1
     json.dump(rows, open(a.out, "w"))
-move = os.environ.get("FAKE_MOVE")
+move = knobs.get("FAKE_MOVE")
 if move:
     d = tempfile.mkdtemp()
     run = lambda *c: subprocess.run(c, cwd=d, check=True, capture_output=True)
-    run("git", "clone", "-q", "-b", "dev", os.environ["FAKE_ORIGIN"], ".")
+    run("git", "clone", "-q", "-b", "dev", knobs["FAKE_ORIGIN"], ".")
     path, body = (("rules/_meta/changelog.md", "## 0.1.2 — moved\\n")
                   if move == "contract" else ("README.md", "moved\\n"))
     open(os.path.join(d, path), "w").write(body)
@@ -61,7 +64,13 @@ FILES = {
     "README.md": "fixture\n",
     "ops/cohort.json": "{}\n",
     "ops/scan_cohort.py": SCAN_STUB,
-    "site/src/data/scans.json": '[{"name": "a", "registry_state": "listed", "v": 1}]\n',
+    # The keys the real visibility gate reads, with Maintenance unassessed:
+    # nothing to ask, and nothing missing for it to refuse.
+    "site/src/data/scans.json": json.dumps([{
+        "name": "a", "slug": "a", "scanned_at": "2026-10-20T02:00:00Z",
+        "registry_state": "listed", "v": 1,
+        "axes": {"maintenance": {"assessed_weight": "0"}},
+    }]) + "\n",
     "rules/_meta/changelog.md": "## 0.1.1 — fixture\n",
     "src/mcpwatchman/__init__.py": "",
     "src/mcpwatchman/cohort.py": "def systemic_staleness():\n    pass\n",
@@ -106,9 +115,12 @@ class World:
     def run(self, **extra: str) -> tuple[int, str]:
         repo = self.root / "repo"
         self.git("fetch", "-q", "origin", cwd=repo)
+        env = {**self.env, **extra}
+        (self.root / "knobs.json").write_text(
+            json.dumps({k: v for k, v in env.items() if k.startswith("FAKE_")}))
         done = subprocess.run(  # noqa: S603 - argument list, never a shell string
             [BASH, str(repo / "ops" / "nightly.sh")], cwd=repo,
-            env={**self.env, **extra}, capture_output=True, text=True, timeout=180,
+            env=env, capture_output=True, text=True, timeout=180,
         )
         return done.returncode, done.stdout + done.stderr
 
@@ -231,12 +243,16 @@ def test_an_unparseable_contract_is_a_fault_not_a_skip(world: World) -> None:
     assert "could not read dev's scoring contract" in out
 
 
-def test_a_main_without_the_staleness_guard_waits_for_a_sync(world: World) -> None:
+def test_a_main_without_the_staleness_guard_is_a_fault_not_a_skip(world: World) -> None:
+    """`main` has carried the guard since v0.33.0 and only moves forward, so its
+    absence is a moved or renamed guard — exit 11 would read as success to the
+    unit every night while nothing was scanned."""
     world.commit_to("main", "src/mcpwatchman/cohort.py", "")
-    rc, out = world.run()
-    assert rc == 11, out
-    assert "predates cohort.systemic_staleness" in out
+    rc, out = world.run(MCPW_PUBLISH="1")
+    assert rc == 23, out
+    assert "has no cohort.systemic_staleness" in out
     assert world.dev_log() == ["seed"]
+    assert not world.deployed
 
 
 # ── Each stage gets only the credentials it uses ────────────────────────────
@@ -275,6 +291,39 @@ def test_only_the_scan_sees_the_github_token_and_nothing_sees_it_twice(world: Wo
     scanned = json.loads(scan_seen.read_text())
     assert "MCPWATCHMAN_GITHUB_TOKEN" in scanned, "Maintenance needs it"
     assert "CLOUDFLARE_API_TOKEN" not in scanned
+
+
+def test_every_third_party_stage_gets_only_the_allowlisted_environment(world: World) -> None:
+    """The denylist this replaced named the tokens and passed the rest — the SSH
+    and GPG agents, the display, and XDG_RUNTIME_DIR, through which libdbus
+    finds the session bus with its address unset. A name nobody has thought of
+    yet is the case an allowlist exists for."""
+    npm = _recording(world, "npm")
+    npx = _recording(world, "npx", f'echo "$@" > "{world.root}/deployed"\n')
+    scan_seen = _record_scan_env(world)
+    gate_seen = world.root / "gate.env"
+    (world.root / "repo" / "ops" / "visibility_gate.py").write_text(
+        f"import json, os\nopen({str(gate_seen)!r}, 'w').write(json.dumps(dict(os.environ)))\n")
+    leaked = {"SSH_AUTH_SOCK": "/run/agent", "GPG_AGENT_INFO": "/run/gpg", "DISPLAY": ":0",
+              "XAUTHORITY": "/run/xauth", "WAYLAND_DISPLAY": "wayland-0",
+              "XDG_RUNTIME_DIR": "/run/user/0", "SOME_FUTURE_TOKEN": "future-sentinel",
+              "MCPW_DEPLOY_KEY": str(world.root / "unused-key")}
+    rc, out = world.run(MCPW_PUBLISH="1", **leaked)
+    # The deploy key is for the data push, which this run's file:// origin
+    # refuses — so the run stops there, after every stage under test has run
+    # except the deploy, which is checked below with the key unset.
+    assert rc == 21, out
+    seen = {"build": npm.read_text(), "scan": json.dumps(json.loads(scan_seen.read_text())),
+            "gate": json.dumps(json.loads(gate_seen.read_text()))}
+    rc, out = world.run(MCPW_PUBLISH="1", **{k: v for k, v in leaked.items()
+                                              if k != "MCPW_DEPLOY_KEY"})
+    assert rc == 0, out
+    seen["deploy"] = npx.read_text()
+    for stage, env in seen.items():
+        for name in leaked:
+            assert name not in env, f"{name} reached the {stage}"
+        assert "HOME" in env and "PATH" in env, f"the {stage} lost what it needs"
+    assert "MCPWATCHMAN_GITHUB_TOKEN" in seen["scan"] and "MCPWATCHMAN_GITHUB_TOKEN" in seen["gate"]
 
 
 def test_a_lockfile_wrangler_is_deployed_rather_than_npx(world: World) -> None:
