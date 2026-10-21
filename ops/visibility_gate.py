@@ -11,30 +11,39 @@ from outside, anonymously, so it also holds for a scanner older than that check
 (the nightly runs `main`'s) and for any future path that reads a repository
 without asking.
 
-This gate runs in the nightly between the scan and anything leaving the box. It
-REFUSES; it never edits a row. That is why it may run from the working tree
-while the scanner runs from `main`: it cannot state anything about a third
-party, only stop a run from stating it. For every row scanned THIS run whose
-Maintenance was assessed, the repository must answer an anonymous
-`git ls-remote`. Which repository that is comes from `forge.parse_repo_url`,
-the parser that decided what the lookup read — a row the parser cannot name
-was read from SOME repository this gate cannot ask about, and is refused.
-Rows carried forward from an earlier run
-are not re-asked — they are already public, and a repository deleted since
-would refuse every run over a page nobody can change.
+This gate runs in the nightly between the scan and anything leaving the box.
+For every row scanned THIS run whose Maintenance was assessed, the repository
+must answer an anonymous `git ls-remote`. Which repository that is comes from
+`forge.parse_repo_url`, the parser that decided what the lookup read — a row
+the parser cannot name was read from SOME repository this gate cannot ask
+about. Rows carried forward from an earlier run are not re-asked — they are
+already public, and a repository deleted since would be withheld every night
+over a page nobody can change.
+
+A row that fails is WITHHELD, not the run: that server keeps its previous page,
+labelled as kept and why (`cohort.carry_forward`, state `stale`), and the rest
+of the night publishes. One publisher making a repository private between the
+scan and this check used to stop every page's refresh (operator ruling
+2026-10-21: one record is noted, skipped, and the run moves on). The gate still
+states nothing new about a third party — every number it publishes was
+published by an earlier run — which is why it may run from the working tree
+while the scanner runs from `main`. Withheld rows count toward
+`cohort.systemic_staleness`, so a dead network or a broken token, which fails
+every question at once, still refuses the run instead of carrying every page.
 
 A repository that fails anonymously is then asked about with the run's own
 token, because "the public cannot read it" has two causes and only one is the
-leak. PRIVATE, and visible to our token: refused. Visible to nobody, our token
+leak. PRIVATE, and visible to our token: withheld. Visible to nobody, our token
 included — deleted, like the 16 `mcp-dir` repositories on 2026-10-19 — is not a
 leak: any data for it can only have come from when it was public (the forge
-cache keeps a payload 24 hours), and refusing it would stop the run over a page
-nobody can change. Measured that day: 356 repositories asked, 16 anonymous
+cache keeps a payload 24 hours), and withholding it would freeze a page nobody
+can change. Measured that day: 356 repositories asked, 16 anonymous
 failures, all that one deleted account.
 
-Exit 0: nothing to refuse. Exit 1: refused, with the rows named. Any question
-that could not get an answer counts as refused: an unanswered question about
-visibility is not a yes.
+Exit 0: publishable, with any withheld rows named and `--after` rewritten.
+Exit 1: refused — too many rows withheld, or one with no previous page to keep.
+Any question that could not get an answer withholds its row: an unanswered
+question about visibility is not a yes.
 """
 
 from __future__ import annotations
@@ -43,11 +52,13 @@ import argparse
 import json
 import os
 import sys
+import time
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from mcpwatchman.cohort import atomic_write, carry_forward, systemic_staleness
 from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.scanner.forge import (
     GITHUB_GRAPHQL_URL,
@@ -88,33 +99,33 @@ def _maintenance_assessed(row: dict) -> bool:
 def to_check(
     before: Iterable[dict], after: Iterable[dict],
 ) -> tuple[dict[str, list[str]], list[tuple[str, str]]]:
-    """(repository URL -> slugs of the rows scanned this run that need asking,
-    (slug, why) for each row this gate cannot ask about — refused)."""
-    previous = {(r.get("slug"), r.get("scanned_at")) for r in before}
+    """(repository URL -> names of the rows scanned this run that need asking,
+    (name, why) for each row this gate cannot ask about — withheld)."""
+    previous = {(r.get("name"), r.get("scanned_at")) for r in before}
     urls: dict[str, list[str]] = {}
     unaskable: list[tuple[str, str]] = []
     for row in after:
-        slug = str(row.get("slug"))
+        name = str(row.get("name"))
         # A row without what this gate keys on is not a row with nothing to
         # ask. The data is written by main's scanner and this gate runs from
         # dev, so a renamed field would otherwise read every row as carried
         # forward or unmeasured, and the gate would pass having asked nothing.
         maintenance = (row.get("axes") or {}).get("maintenance")
-        if not (row.get("slug") and row.get("scanned_at") and isinstance(maintenance, dict)
+        if not (row.get("name") and row.get("scanned_at") and isinstance(maintenance, dict)
                 and "assessed_weight" in maintenance):
-            unaskable.append((slug, "lacks the slug, scanned_at or Maintenance "
+            unaskable.append((name, "lacks the name, scanned_at or Maintenance "
                                     "assessed_weight this gate reads"))
             continue
-        if (row.get("slug"), row.get("scanned_at")) in previous:
+        if (row.get("name"), row.get("scanned_at")) in previous:
             continue  # carried forward, not scanned this run
         if not _maintenance_assessed(row):
             continue  # no forge data was read
         ref = parse_repo_url(row.get("repository_url") or "")
         if ref is None:
-            unaskable.append((slug, "Maintenance scored from a repository URL "
+            unaskable.append((name, "Maintenance scored from a repository URL "
                                     "the forge parser cannot read"))
             continue
-        urls.setdefault(f"https://github.com/{ref.slug}", []).append(slug)
+        urls.setdefault(f"https://github.com/{ref.slug}", []).append(name)
     return urls, unaskable
 
 
@@ -179,7 +190,7 @@ def refused(
     probe: Callable[[str], bool] | None = None,
     ask: Callable[[list[str]], dict[str, str]] | None = None,
 ) -> tuple[dict[str, list[str]], list[str]]:
-    """(refused url -> slugs, the urls allowed because nobody can read them)."""
+    """(refused url -> row names, the urls allowed because nobody can read them)."""
     probe = probe or probe_anonymous
     if ask is None:
         # The token the forge lookup read with: same variables, same order.
@@ -196,24 +207,82 @@ def refused(
     return bad, invisible
 
 
+# What a withheld row's page says. It states what was observed — the
+# repository could not be CONFIRMED public — never why: "private" and "did not
+# answer" fail the same way, and only one of them is the publisher's doing.
+WITHHELD_OBSERVATION = (
+    "This server is listed in the registry, and its newest scan was withheld: "
+    "the repository its maintenance record was read from could not be confirmed "
+    "as publicly readable when that scan was checked before publishing"
+)
+WITHHELD_BECAUSE = (
+    ", because nothing read from a repository that cannot be confirmed public "
+    "is published."
+)
+
+
+def withhold(
+    before: Iterable[dict], after: list[dict], names: Iterable[str], today: str,
+) -> tuple[list[dict], list[str]]:
+    """`after` with each named row replaced by its previous page, labelled,
+    and the names that have no previous page to keep."""
+    previous = {r.get("name"): r for r in before if r.get("name")}
+    names = set(names)
+    out: list[dict] = []
+    orphans: list[str] = []
+    for row in after:
+        name = row.get("name")
+        if str(name) not in names:
+            out.append(row)
+        elif name in previous:
+            out.append(carry_forward(
+                previous[name], checked_on=today, state="stale",
+                observation=WITHHELD_OBSERVATION,
+                not_recomputed_because=WITHHELD_BECAUSE,
+            ))
+        else:
+            orphans.append(str(name))
+            out.append(row)
+    return out, orphans
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--before", type=Path, required=True,
                     help="the published scans.json this run started from")
-    ap.add_argument("--after", type=Path, required=True, help="the scans.json this run wrote")
+    ap.add_argument("--after", type=Path, required=True,
+                    help="the scans.json this run wrote; rewritten when a row is withheld")
     a = ap.parse_args(argv)
     before = json.loads(a.before.read_text())
     after = json.loads(a.after.read_text())
     urls, unaskable = to_check(before, after)
     bad, invisible = refused(urls)
+    why = dict(unaskable)
+    for url, names in bad.items():
+        for name in names:
+            why[name] = f"{url} is private or did not answer"
     print(f"visibility gate: {len(urls)} repositories asked anonymously, "
-          f"{len(invisible)} readable by nobody (allowed), {len(bad)} refused, "
-          f"{len(unaskable)} rows this gate cannot ask about")
-    for url, slugs in sorted(bad.items()):
-        print(f"  private or unanswered: {url} (Maintenance scored for {', '.join(slugs)})")
-    for slug, why in sorted(unaskable):
-        print(f"  {slug}: {why}")
-    return 1 if bad or unaskable else 0
+          f"{len(invisible)} readable by nobody (allowed), {len(bad)} not confirmed "
+          f"public, {len(unaskable)} rows this gate cannot ask about; "
+          f"{len(why)} rows withheld, each keeping its previous page")
+    for name, reason in sorted(why.items()):
+        print(f"  withheld {name}: {reason}")
+    if not why:
+        return 0
+    published, orphans = withhold(before, after, why, time.strftime("%Y-%m-%d", time.gmtime()))
+    if orphans:
+        # A pinned server always has a published page, so this is our record
+        # being inconsistent, not a publisher's doing — and withholding the
+        # row would 404 the page instead.
+        print(f"REFUSED: no previous page to keep for {', '.join(sorted(orphans))}; "
+              "nothing written")
+        return 1
+    systemic = systemic_staleness(published)
+    if systemic:
+        print(f"REFUSED: {systemic}")
+        return 1
+    atomic_write(a.after, json.dumps(published, indent=1) + "\n")
+    return 0
 
 
 if __name__ == "__main__":

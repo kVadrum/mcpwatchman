@@ -15,9 +15,24 @@ GIT = shutil.which("git") or "git"
 
 def _row(slug: str, url: str, weight: str = "0.45", scanned_at: str = "2026-10-20") -> dict:
     return {
-        "slug": slug, "scanned_at": scanned_at, "repository_url": url,
+        "name": slug, "slug": slug, "scanned_at": scanned_at, "repository_url": url,
+        "registry_state": "listed", "registry_note": "",
         "axes": {"maintenance": {"assessed_weight": weight}},
     }
+
+
+def _main(tmp_path: Path, monkeypatch, before: list[dict], after: list[dict],
+          probe=lambda url: True) -> tuple[int, str]:
+    """Run the gate as the nightly does; (exit code, the --after file afterwards)."""
+    # No token: an anonymous failure would otherwise put a live question to GitHub.
+    for name in ("MCPWATCHMAN_GITHUB_TOKEN", "GITHUB_TOKEN"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setattr(gate, "probe_anonymous", probe)
+    b, a = tmp_path / "before.json", tmp_path / "after.json"
+    b.write_text(json.dumps(before))
+    a.write_text(json.dumps(after))
+    code = gate.main(["--before", str(b), "--after", str(a)])
+    return code, a.read_text()
 
 
 def test_a_row_scored_this_run_from_an_unreadable_repository_is_refused() -> None:
@@ -98,18 +113,18 @@ def test_every_url_the_forge_lookup_reads_is_asked_about(url: str) -> None:
 
 
 @pytest.mark.parametrize("url", ["https://gitlab.com/acme/x", "", "git@github.com:acme/x.git"])
-def test_maintenance_from_a_url_the_gate_cannot_name_is_refused(
+def test_maintenance_from_a_url_the_gate_cannot_name_is_withheld(
     tmp_path: Path, monkeypatch, url: str,
 ) -> None:
     """Assessed Maintenance came from SOME repository; a gate that skipped what
     it could not name would pass it unasked. No question asked, no yes."""
     urls, unaskable = gate.to_check([], [_row("s", url)])
-    assert (urls, [slug for slug, _ in unaskable]) == ({}, ["s"])
-    before, after = tmp_path / "before.json", tmp_path / "after.json"
-    before.write_text("[]")
-    after.write_text(json.dumps([_row("s", url)]))
-    monkeypatch.setattr(gate, "probe_anonymous", lambda url: True)
-    assert gate.main(["--before", str(before), "--after", str(after)]) == 1
+    assert (urls, [name for name, _ in unaskable]) == ({}, ["s"])
+    previous = _row("s", url, scanned_at="2026-10-19")
+    code, written = _main(tmp_path, monkeypatch, [previous], [_row("s", url)])
+    assert code == 0
+    [kept] = json.loads(written)
+    assert (kept["scanned_at"], kept["registry_state"]) == ("2026-10-19", "stale")
 
 
 def test_an_unreadable_weight_is_asked_about_rather_than_assumed_zero() -> None:
@@ -118,13 +133,14 @@ def test_an_unreadable_weight_is_asked_about_rather_than_assumed_zero() -> None:
         assert urls, weight
 
 
-@pytest.mark.parametrize("drop", ["slug", "scanned_at", "axes", "maintenance", "assessed_weight"])
-def test_a_row_without_what_the_gate_reads_is_refused_not_skipped(
+@pytest.mark.parametrize("drop", ["name", "scanned_at", "axes", "maintenance", "assessed_weight"])
+def test_a_row_without_what_the_gate_reads_is_withheld_not_skipped(
     tmp_path: Path, monkeypatch, drop: str,
 ) -> None:
     """main's scanner writes the data and this gate runs from dev, so a field
     renamed on one side reads, on the other, as "carried forward" or "nothing
     measured" — and a gate that skipped those rows passed having asked nothing."""
+    previous = _row("s", "https://github.com/acme/r", scanned_at="2026-10-19")
     row = _row("s", "https://github.com/acme/r")
     if drop == "maintenance":
         del row["axes"]["maintenance"]
@@ -134,11 +150,13 @@ def test_a_row_without_what_the_gate_reads_is_refused_not_skipped(
         del row[drop]
     urls, unaskable = gate.to_check([row], [row])
     assert urls == {} and len(unaskable) == 1
-    before, after = tmp_path / "before.json", tmp_path / "after.json"
-    before.write_text(json.dumps([row]))
-    after.write_text(json.dumps([row]))
-    monkeypatch.setattr(gate, "probe_anonymous", lambda url: True)
-    assert gate.main(["--before", str(before), "--after", str(after)]) == 1
+    code, written = _main(tmp_path, monkeypatch, [previous], [row])
+    if drop == "name":
+        # Nothing names the page to keep, so the run is refused, not the row.
+        assert (code, json.loads(written)) == (1, [row])
+    else:
+        assert code == 0
+        assert json.loads(written)[0]["scanned_at"] == "2026-10-19"
 
 
 def test_the_published_data_carries_every_field_the_gate_reads() -> None:
@@ -218,13 +236,75 @@ def test_the_probe_never_reads_the_config_of_the_repository_it_runs_in(
     assert gate.probe_anonymous(missing, attempts=1) is False
 
 
-@pytest.mark.parametrize("refusal,code", [(False, 0), (True, 1)])
-def test_main_exits_by_the_answer(tmp_path: Path, monkeypatch, refusal: bool, code: int) -> None:
-    # No token: a refusal would otherwise put a live question to GitHub.
+def test_one_unconfirmed_repository_costs_its_own_page_its_refresh_not_the_run(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    """Operator ruling 2026-10-21: one publisher making a repository private
+    stopped every page's refresh. Now that row keeps its previous page —
+    labelled, its numbers untouched — and every other row publishes."""
+    before = [_row("a", "https://github.com/acme/a", scanned_at="2026-10-19"),
+              _row("b", "https://github.com/acme/private", scanned_at="2026-10-19"),
+              _row("c", "https://github.com/acme/c", scanned_at="2026-10-19")]
+    before[1]["v"] = "old"
+    after = [_row("a", "https://github.com/acme/a"),
+             _row("b", "https://github.com/acme/private"),
+             _row("c", "https://github.com/acme/c")]
+    after[1]["v"] = "new, read with our token"
+    code, written = _main(tmp_path, monkeypatch, before, after,
+                          probe=lambda url: not url.endswith("/private"))
+    assert code == 0
+    rows = json.loads(written)
+    assert [r["name"] for r in rows] == ["a", "b", "c"], "order is the published order"
+    assert rows[0] == after[0] and rows[2] == after[2]
+    kept = rows[1]
+    assert kept == {**before[1], "registry_state": "stale",
+                    "registry_note": kept["registry_note"]}, "only the label changes"
+    note = kept["registry_note"]
+    assert "could not be confirmed as publicly readable" in note, note
+    assert "2026-10-19" in note, "the page says how old its numbers are"
+    # It says what was observed, never why: "private" and "did not answer"
+    # fail the same probe, and only one of them is the publisher's doing.
+    assert "private" not in note.lower(), note
+    assert "did not complete" not in note, "the scan completed; it was withheld"
+
+
+def test_a_withheld_row_with_no_previous_page_refuses_the_run(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    """Withholding a row that was never published would 404 a pinned page."""
+    after = [_row("a", "https://github.com/acme/a"), _row("b", "https://github.com/acme/b")]
+    code, written = _main(tmp_path, monkeypatch, [], after,
+                          probe=lambda url: not url.endswith("/b"))
+    assert code == 1
+    assert json.loads(written) == after, "nothing written"
+
+
+def test_withholding_past_the_staleness_bound_refuses_the_run(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    """A dead network fails every question at once; carrying every page then
+    would be a run that changed nothing, reported as one that published."""
+    from mcpwatchman.cohort import STALE_FLOOR
+
+    n = STALE_FLOOR + 1
+    before = [_row(f"s{i}", f"https://github.com/acme/s{i}", scanned_at="2026-10-19")
+              for i in range(n)]
+    after = [_row(f"s{i}", f"https://github.com/acme/s{i}") for i in range(n)]
+    code, written = _main(tmp_path, monkeypatch, before, after, probe=lambda url: False)
+    assert code == 1
+    assert json.loads(written) == after, "nothing written"
+    # The positive control: one fewer is an ordinary night.
+    code, _ = _main(tmp_path, monkeypatch, before[:-1], after[:-1], probe=lambda url: False)
+    assert code == 0
+
+
+def test_a_clean_run_leaves_the_file_byte_for_byte(tmp_path: Path, monkeypatch) -> None:
+    after = [_row("s", "https://github.com/acme/r")]
+    b, a = tmp_path / "before.json", tmp_path / "after.json"
+    b.write_text("[]")
+    a.write_text(json.dumps(after, indent=4))
     for name in ("MCPWATCHMAN_GITHUB_TOKEN", "GITHUB_TOKEN"):
         monkeypatch.delenv(name, raising=False)
-    before, after = tmp_path / "before.json", tmp_path / "after.json"
-    before.write_text("[]")
-    after.write_text(json.dumps([_row("s", "https://github.com/acme/r")]))
-    monkeypatch.setattr(gate, "probe_anonymous", lambda url: not refusal)
-    assert gate.main(["--before", str(before), "--after", str(after)]) == code
+    monkeypatch.setattr(gate, "probe_anonymous", lambda url: True)
+    assert gate.main(["--before", str(b), "--after", str(a)]) == 0
+    assert a.read_text() == json.dumps(after, indent=4)

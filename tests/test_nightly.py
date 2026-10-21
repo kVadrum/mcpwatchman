@@ -42,7 +42,14 @@ a = ap.parse_args()
 knobs = json.load(open(os.path.join(os.path.dirname(os.getcwd()), "knobs.json")))
 if knobs.get("FAKE_SCAN") != "same":
     rows = json.load(open(a.out))
-    rows[0]["v"] += 1
+    for row in rows:
+        row["v"] += 1
+    if knobs.get("FAKE_SCAN") == "unconfirmed":
+        # Scanned tonight, Maintenance scored from a repository the real gate
+        # cannot name, so it can never be confirmed public: withheld.
+        rows[0].update(scanned_at="2026-10-21T02:00:00Z",
+                       repository_url="https://gitlab.com/acme/a")
+        rows[0]["axes"]["maintenance"]["assessed_weight"] = "0.5"
     json.dump(rows, open(a.out, "w"))
 move = knobs.get("FAKE_MOVE")
 if move:
@@ -67,10 +74,10 @@ FILES = {
     # The keys the real visibility gate reads, with Maintenance unassessed:
     # nothing to ask, and nothing missing for it to refuse.
     "site/src/data/scans.json": json.dumps([{
-        "name": "a", "slug": "a", "scanned_at": "2026-10-20T02:00:00Z",
-        "registry_state": "listed", "v": 1,
+        "name": name, "slug": name, "scanned_at": "2026-10-20T02:00:00Z",
+        "registry_state": "listed", "registry_note": "", "v": 1,
         "axes": {"maintenance": {"assessed_weight": "0"}},
-    }]) + "\n",
+    } for name in ("a", "b")]) + "\n",
     "rules/_meta/changelog.md": "## 0.1.1 — fixture\n",
     "src/mcpwatchman/__init__.py": "",
     "src/mcpwatchman/cohort.py": "def systemic_staleness():\n    pass\n",
@@ -495,4 +502,23 @@ def test_the_real_gate_passes_a_run_with_nothing_to_ask(world: World) -> None:
     rc, out = world.run()
     assert rc == 0, out
     assert "visibility gate: 0 repositories asked anonymously" in out
-    assert "0 refused" in out
+    assert "0 rows withheld" in out
+
+
+def test_a_withheld_row_keeps_its_page_and_the_night_publishes(world: World) -> None:
+    """Operator ruling 2026-10-21: one record the gate cannot confirm used to
+    stop the whole night (exit 22, nothing deployed). Now that row keeps its
+    previous page, labelled; everything else commits and deploys, and the data
+    commit names what was withheld."""
+    rc, out = world.run(FAKE_SCAN="unconfirmed", MCPW_PUBLISH="1")
+    assert rc == 0, out
+    assert world.deployed
+    log = world.git("--git-dir", str(world.origin), "log", "-1", "--format=%B", "dev")
+    assert log.startswith("data — nightly rescan"), log
+    assert "2 servers, 1 kept an older scan" in log
+    assert "withheld a:" in log
+    rows = {r["name"]: r for r in json.loads(world.git(
+        "--git-dir", str(world.origin), "show", "dev:site/src/data/scans.json"))}
+    assert (rows["a"]["v"], rows["a"]["registry_state"]) == (1, "stale")
+    assert "could not be confirmed as publicly readable" in rows["a"]["registry_note"]
+    assert (rows["b"]["v"], rows["b"]["registry_state"]) == (2, "listed"), "the rest published"

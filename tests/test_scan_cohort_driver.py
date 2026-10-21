@@ -51,7 +51,8 @@ def driver(monkeypatch, tmp_path: Path):
     """A `main()` wired to fixtures, returning (run, state) for each test to shape."""
     import ops.scan_cohort as sc
 
-    state: dict = {"entries": {}, "reports": {}, "cohort": Cohort(servers=())}
+    state: dict = {"entries": {}, "reports": {}, "cohort": Cohort(servers=()),
+                   "raises": set(), "calls": []}
 
     def run(*argv: str) -> tuple[int, str]:
         out = tmp_path / "scans.json"
@@ -66,7 +67,13 @@ def driver(monkeypatch, tmp_path: Path):
             sc, "current_entries",
             lambda m: [e for e in m if e.status == "active" and e.is_latest],
         )
-        monkeypatch.setattr(sc, "scan_entry", lambda e: _ScanStub(state["reports"][e.name]))
+        def scan_entry(entry):
+            state["calls"].append(entry.name)
+            if entry.name in state["raises"]:
+                raise ValueError(f"a check met a shape it never expected in {entry.name}")
+            return _ScanStub(state["reports"][entry.name])
+
+        monkeypatch.setattr(sc, "scan_entry", scan_entry)
         monkeypatch.setattr(
             "sys.argv",
             ["scan_cohort", "--out", str(out), "--cohort", str(tmp_path / "cohort.json"), *argv],
@@ -272,3 +279,41 @@ def test_an_ordinary_handful_of_our_side_gaps_is_still_absorbed(
     assert code == 0
     states = [r.get("registry_state") for r in json.loads(written)]
     assert states.count("stale") == 5
+
+
+def test_a_scan_that_raises_costs_that_page_its_refresh_not_the_run(
+    driver, capsys, tmp_path: Path
+) -> None:
+    """Operator ruling 2026-10-21: one record is noted, skipped, and the run
+    moves on. A check module raising on one repository's contents ended the
+    whole run with a traceback; now the pinned page keeps its last scan, a
+    growth candidate is not pinned, and the traceback is still printed."""
+    run, state = driver
+    state["cohort"] = Cohort(servers=(_pin("ai.a/one"), _pin("ai.b/two")))
+    state["entries"] = {
+        "ai.a/one": RegistryEntry(name="ai.a/one", version="1", is_latest=True),
+        "ai.b/two": RegistryEntry(name="ai.b/two", version="1", is_latest=True),
+        "ai.c/three": RegistryEntry(
+            name="ai.c/three", version="1", is_latest=True,
+            repository=Repository(url="https://github.com/c/three", source="github"),
+        ),
+    }
+    state["reports"] = {n: _report(n) for n in state["entries"]}
+    state["raises"] = {"ai.b/two", "ai.c/three"}
+    previous = [{**_report(n), "scanned_at": "2026-09-19T00:00:00+00:00"}
+                for n in ("ai.a/one", "ai.b/two")]
+    (tmp_path / "scans.json").write_text(json.dumps(previous))
+
+    code, written = run("--grow", "1")
+
+    assert code == 0, "one record must not end the run"
+    rows = {r["name"]: r for r in json.loads(written)}
+    assert set(rows) == {"ai.a/one", "ai.b/two"}, "the candidate that raised is not pinned"
+    assert rows["ai.a/one"]["scanned_at"] == "2026-09-20T00:00:00+00:00", "the rest rescanned"
+    assert rows["ai.b/two"]["scanned_at"] == "2026-09-19T00:00:00+00:00"
+    assert rows["ai.b/two"]["registry_state"] == "stale"
+    assert state["calls"].count("ai.b/two") == 2, "retried once, like any our-side gap"
+    captured = capsys.readouterr()
+    assert "ValueError" in captured.err and "Traceback" in captured.err, "a defect to fix"
+    assert "kept previous scan (1): ai.b/two" in captured.out
+    assert "not pinned, our side failed (1): ai.c/three" in captured.out

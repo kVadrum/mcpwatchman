@@ -206,13 +206,17 @@ set -e
 # operator's own login until a public-read token is configured — and main's
 # scanner does not yet ask whether a repository is public. So before anything
 # leaves the box, every repository scored tonight must answer anonymously
-# (ops/visibility_gate.py, which only refuses and never edits a row).
+# (ops/visibility_gate.py). A row that does not is withheld — that server keeps
+# its previous page, labelled — and the night goes on; only a refusal of the
+# whole run, too many withheld at once, stops it here.
 log "checking that every repository scored this run is publicly readable"
 git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$WORK/scans.before.json"
 # It keeps the GitHub token: a repository the public cannot read is asked about
-# with it, because "private" and "deleted" fail the same anonymous probe.
+# with it, because "private" and "deleted" fail the same anonymous probe. Its
+# report goes into the data commit, so what was withheld is on the record.
 stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_GIT[@]}" "$PY" "$REPO/ops/visibility_gate.py" \
     --before "$WORK/scans.before.json" --after "$MAIN/site/src/data/scans.json" \
+    | tee "$WORK/visibility.txt" \
   || die 22 "the visibility gate refused this run — nothing committed or deployed"
 
 log "building the site"
@@ -283,6 +287,7 @@ EOF
   git add site/src/data/scans.json || exit 17
   git commit -q -m "data — nightly rescan ${STAMP}: ${summary}" \
     -m "Scanned with main at ${MAIN_SHA:0:9}. Code from main, data from dev (ops/nightly.sh)." \
+    -m "$(<"$WORK/visibility.txt")" \
     || exit 17
   [[ "$(git rev-parse HEAD)" != "$DEV_SHA" ]] || exit 17
   for attempt in 1 2; do

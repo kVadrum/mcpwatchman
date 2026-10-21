@@ -46,6 +46,7 @@ import json
 import shutil
 import sys
 import time
+import traceback
 from pathlib import Path
 
 from mcpwatchman.cohort import (
@@ -165,9 +166,29 @@ def _scan(entry: RegistryEntry, label: str, index: int, total: int) -> dict:
     return report.to_dict()
 
 
+def _scan_or_gap(
+    entry: RegistryEntry, label: str, index: int, total: int
+) -> tuple[dict | None, list[str]]:
+    """Scan, turning an exception into this server's our-side gap.
+
+    `scan_entry` promises never to raise for a server's own defects, but a bug
+    of ours that one repository's contents reach — a check module meeting a
+    shape it never expected — still raised straight through this loop and ended
+    the run with a traceback, every other page losing its refresh over one
+    record (operator ruling 2026-10-21: one record is noted, skipped, and the
+    run moves on). The traceback is printed, because it is a defect to fix.
+    """
+    try:
+        report = _scan(entry, label, index, total)
+    except Exception as exc:  # noqa: BLE001 - printed in full, never published
+        traceback.print_exc()
+        return None, [f"the scan raised {type(exc).__name__}, a defect of ours"]
+    return report, unpublishable_gaps(entry.name, report)
+
+
 def _scan_once_more_if_ours(
     entry: RegistryEntry, label: str, index: int, total: int
-) -> tuple[dict, list[str]]:
+) -> tuple[dict | None, list[str]]:
     """Scan, and retry exactly once if the only gaps are ours.
 
     **Measured, not defensive.** Under load, `ai.adeu/adeu` came back with an
@@ -181,13 +202,13 @@ def _scan_once_more_if_ours(
     a documented budget — is attributed `project` and never reaches here, so
     anything failing twice is worth a human reading the reason rather than a
     machine trying harder.
+
+    The report is None only when `gaps` is not empty.
     """
-    report = _scan(entry, label, index, total)
-    gaps = unpublishable_gaps(entry.name, report)
+    report, gaps = _scan_or_gap(entry, label, index, total)
     if gaps:
         print(f"[retry]   {entry.name} — {gaps[0][:90]}", flush=True)
-        report = _scan(entry, label, index, total)
-        gaps = unpublishable_gaps(entry.name, report)
+        report, gaps = _scan_or_gap(entry, label, index, total)
     return report, gaps
 
 
@@ -438,7 +459,7 @@ def main() -> int:
         # prevent — a page disappearing — so the page keeps the last scan
         # taken when we could measure it, labelled, exactly as a delisted
         # server does. The next run retries for free.
-        if gaps:
+        if gaps or report is None:
             kept = _keep_previous(entry.name, previous, today, gaps)
             if kept is None:
                 return 2
@@ -454,7 +475,7 @@ def main() -> int:
         # non-deprecated pin was absorbed. 1 of the 40 original pins is
         # deprecated, so that asymmetry was load-bearing.
         report, gaps = _scan_once_more_if_ours(entry, "flagged", index, total)
-        if gaps:
+        if gaps or report is None:
             kept = _keep_previous(entry.name, previous, today, gaps)
             if kept is None:
                 return 2
@@ -511,7 +532,7 @@ def main() -> int:
         # Nothing promises this page yet, so an our-side gap means DON'T PIN
         # IT — publishing it would mint a URL whose first version states our
         # broken run as the reason nobody scored them.
-        if gaps:
+        if gaps or report is None:
             print(f"[skipped] {entry.name} — our side failed; not pinned")
             skipped.append(entry.name)
             continue
