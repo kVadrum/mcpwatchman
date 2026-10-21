@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -22,7 +23,7 @@ def _row(slug: str, url: str, weight: str = "0.45", scanned_at: str = "2026-10-2
 def test_a_row_scored_this_run_from_an_unreadable_repository_is_refused() -> None:
     after = [_row("a", "https://github.com/acme/public"),
              _row("b", "https://github.com/acme/private")]
-    urls = gate.to_check([], after)
+    urls, _ = gate.to_check([], after)
     bad, _ = gate.refused(urls, probe=lambda url: url.endswith("/public"),
                           ask=lambda batch: dict.fromkeys(batch, gate.PRIVATE))
     assert bad == {"https://github.com/acme/private": ["b"]}
@@ -70,28 +71,54 @@ def test_an_error_that_is_not_NOT_FOUND_leaves_a_missing_repository_unknown() ->
 
 
 def test_only_what_needs_asking_is_asked() -> None:
-    """Carried-forward rows are already public, an unassessed axis read no
-    forge data, and a URL that is not a plain github.com repository was never
-    sent to the forge lookup."""
+    """Carried-forward rows are already public and an unassessed axis read no
+    forge data; every other row is asked about the repository the forge lookup
+    actually read — which for a URL into a repository is the repository."""
     carried = _row("carried", "https://github.com/acme/gone", scanned_at="2026-10-19")
     after = [
         carried,
         _row("unassessed", "https://github.com/acme/x", weight="0"),
-        _row("gitlab", "https://gitlab.com/acme/x"),
-        _row("deep", "https://github.com/acme/x/tree/main"),
-        _row("none", ""),
         _row("asked", "https://github.com/acme/asked/"),
     ]
-    assert gate.to_check([carried], after) == {"https://github.com/acme/asked": ["asked"]}
+    assert gate.to_check([carried], after) == ({"https://github.com/acme/asked": ["asked"]}, [])
+
+
+@pytest.mark.parametrize("url", [
+    "https://github.com/acme/x/tree/main",
+    "http://github.com/acme/x",
+    "https://www.github.com/acme/x",
+    "https://GitHub.com/acme/x",
+    "https://github.com/acme/x.git",
+])
+def test_every_url_the_forge_lookup_reads_is_asked_about(url: str) -> None:
+    """The gate once matched its own regex, which the forge's parser outgrew:
+    each of these URLs had its Maintenance read from `acme/x` and was never
+    asked about."""
+    assert gate.to_check([], [_row("s", url)]) == ({"https://github.com/acme/x": ["s"]}, [])
+
+
+@pytest.mark.parametrize("url", ["https://gitlab.com/acme/x", "", "git@github.com:acme/x.git"])
+def test_maintenance_from_a_url_the_gate_cannot_name_is_refused(
+    tmp_path: Path, monkeypatch, url: str,
+) -> None:
+    """Assessed Maintenance came from SOME repository; a gate that skipped what
+    it could not name would pass it unasked. No question asked, no yes."""
+    assert gate.to_check([], [_row("s", url)]) == ({}, ["s"])
+    before, after = tmp_path / "before.json", tmp_path / "after.json"
+    before.write_text("[]")
+    after.write_text(json.dumps([_row("s", url)]))
+    monkeypatch.setattr(gate, "probe_anonymous", lambda url: True)
+    assert gate.main(["--before", str(before), "--after", str(after)]) == 1
 
 
 def test_an_unreadable_weight_is_asked_about_rather_than_assumed_zero() -> None:
-    assert gate.to_check([], [_row("odd", "https://github.com/acme/odd", weight="n/a")])
+    urls, _ = gate.to_check([], [_row("odd", "https://github.com/acme/odd", weight="n/a")])
+    assert urls
 
 
 def test_one_repository_behind_several_servers_is_asked_once() -> None:
     after = [_row("a", "https://github.com/acme/mono"), _row("b", "https://github.com/acme/mono")]
-    assert gate.to_check([], after) == {"https://github.com/acme/mono": ["a", "b"]}
+    assert gate.to_check([], after) == ({"https://github.com/acme/mono": ["a", "b"]}, [])
 
 
 def _bare(tmp_path: Path) -> Path:
@@ -140,8 +167,6 @@ def test_the_probe_never_reads_the_operators_git_config(tmp_path: Path, monkeypa
 def test_main_exits_by_the_answer(tmp_path: Path, monkeypatch, refusal: bool, code: int) -> None:
     before, after = tmp_path / "before.json", tmp_path / "after.json"
     before.write_text("[]")
-    after.write_text('[{"slug": "s", "scanned_at": "t", '
-                     '"repository_url": "https://github.com/acme/r", '
-                     '"axes": {"maintenance": {"assessed_weight": "0.5"}}}]')
+    after.write_text(json.dumps([_row("s", "https://github.com/acme/r")]))
     monkeypatch.setattr(gate, "probe_anonymous", lambda url: not refusal)
     assert gate.main(["--before", str(before), "--after", str(after)]) == code

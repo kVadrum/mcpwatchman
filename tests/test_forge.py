@@ -726,10 +726,25 @@ def test_a_tracker_only_the_project_files_into_is_not_called_empty() -> None:
 
 
 def _not_found_reason(tmp_path: Path) -> str:
-    return fetch_signals(
-        "https://github.com/acme/gone", token="t", cache_dir=tmp_path / "nf", as_of=AS_OF,
-        client=_Client(_Response(200, {"data": {"repository": None}})),
-    ).reason
+    """The wording of an absent repository — asserted identical across both
+    shapes GitHub uses for one, so a refusal compared against it is compared
+    against what the public pages actually say. GitHub's usual answer is the
+    `errors` array; comparing only against the bare null let the private
+    refusal drift to the null branch's shorter wording, which every published
+    absent repository does NOT carry."""
+    reasons = {
+        fetch_signals(
+            "https://github.com/acme/gone", token="t", cache_dir=tmp_path / name,
+            as_of=AS_OF, client=_Client(_Response(200, body)),
+        ).reason
+        for name, body in (
+            ("nf-errors", {"data": {"repository": None},
+                           "errors": [{"type": "NOT_FOUND", "path": ["repository"]}]}),
+            ("nf-null", {"data": {"repository": None}}),
+        )
+    }
+    assert len(reasons) == 1, reasons
+    return reasons.pop()
 
 
 @pytest.mark.parametrize("flag", [True, None, "false"], ids=["private", "absent", "string"])

@@ -798,6 +798,19 @@ def _write_cache(cache_dir: Path, ref: RepoRef, payload: dict, now: float) -> No
         return
 
 
+# ⚠ ONE wording for every repository the API would not give us — NOT_FOUND, a
+# null with no explanation, and a private repository our token CAN see. Two
+# wordings let a page announce which case it is, and "private, and readable by
+# the maintainer of this site" is the one a page must never reveal. Why it is
+# not the fetch stage's wording: `_classify_errors`.
+_UNREADABLE_REPOSITORY = (
+    "this server's declared repository could not be read through the "
+    "GitHub API, so `03` §5's maintenance signals were not retrieved "
+    "— note that a private repository and an absent one are "
+    "indistinguishable from outside"
+)
+
+
 def _classify_errors(errors: list) -> Exception:
     """Turn a GraphQL `errors` array into the right exception.
 
@@ -830,10 +843,7 @@ def _classify_errors(errors: list) -> Exception:
             # claim is true, and phrased in the fetch stage's words it is
             # indistinguishable from the false one, so it names its own stage
             # instead. Caught by that gate on a real regeneration.
-            "this server's declared repository could not be read through the "
-            "GitHub API, so `03` §5's maintenance signals were not retrieved "
-            "— note that a private repository and an absent one are "
-            "indistinguishable from outside"
+            _UNREADABLE_REPOSITORY
         )
     if "RATE_LIMITED" in types:
         return ForgeError("the GitHub API rate limit was exhausted for this run")
@@ -888,10 +898,7 @@ def _post(client: Any, query: str, variables: dict, token: str) -> dict:
         # No `errors` array and a null repository. GitHub does emit NOT_FOUND
         # for this, but a null with no explanation is still THEIR repository
         # being unreadable rather than our request failing.
-        raise ForgeUnreachableError(
-            "this server's declared repository could not be read through the "
-            "GitHub API, so `03` §5's maintenance signals were not retrieved"
-        )
+        raise ForgeUnreachableError(_UNREADABLE_REPOSITORY)
     if not isinstance(repository, dict):
         raise ForgeError("the GitHub API returned a repository of an unexpected shape")
     return repository
@@ -933,10 +940,7 @@ def _fetch_repository(client: Any, ref: RepoRef, token: str, as_of: date) -> dic
     # that it exists. Fail closed: only an explicit `false` is public. Raised
     # before any further page is read and before anything is cached.
     if repository.get("isPrivate") is not False:
-        raise ForgeUnreachableError(
-            "this server's declared repository could not be read through the "
-            "GitHub API, so `03` §5's maintenance signals were not retrieved"
-        )
+        raise ForgeUnreachableError(_UNREADABLE_REPOSITORY)
 
     history = _nodes(repository, "defaultBranchRef", "target", "history", "nodes")
     hist_obj = _dict(repository, "defaultBranchRef", "target", "history")
@@ -1037,7 +1041,13 @@ def fetch_signals(
         _write_cache(cache_dir, ref, wrapper, now)
 
     repository = wrapper.get("repository")
-    if isinstance(repository, dict) and repository.get("isPrivate") is not False:
+    if not isinstance(repository, dict):
+        return ForgeOutcome(
+            MaintenanceSignals(fault=Fault.ENVIRONMENT.value),
+            Fault.ENVIRONMENT,
+            "the cached forge payload for this repository is unusable",
+        )
+    if repository.get("isPrivate") is not False:
         # Unreachable from a fresh fetch, which refuses before caching — so this
         # is a cache written by something else, and it is not trusted.
         return ForgeOutcome(
@@ -1045,12 +1055,6 @@ def fetch_signals(
             Fault.ENVIRONMENT,
             "the cached forge payload for this repository does not state that it "
             "is public, so it was not used",
-        )
-    if not isinstance(repository, dict):
-        return ForgeOutcome(
-            MaintenanceSignals(fault=Fault.ENVIRONMENT.value),
-            Fault.ENVIRONMENT,
-            "the cached forge payload for this repository is unusable",
         )
     fetched = wrapper.get("fetched")
     total = wrapper.get("total")

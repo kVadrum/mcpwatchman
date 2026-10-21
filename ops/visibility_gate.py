@@ -2,17 +2,24 @@
 
 The forge lookup behind Maintenance runs with whatever GitHub token the nightly
 holds, and until a dedicated public-read token is configured that is the
-operator's own login. `main`'s scanner does not ask whether a repository is
-public (the `isPrivate` check is v0.38.4, unsynced), so a pinned publisher
-naming a private repository the operator can read would have its commit
-recency, issue and release cadence and contributor band scored and published.
+operator's own login — so a pinned publisher naming a private repository the
+operator can read would have its commit recency, issue and release cadence and
+contributor band scored and published. Since v0.38.4 the forge lookup refuses
+any repository GitHub does not report as public. This gate is the SECOND,
+independent enforcer, and stays one after that check reaches `main`: it asks
+from outside, anonymously, so it also holds for a scanner older than that check
+(the nightly runs `main`'s) and for any future path that reads a repository
+without asking.
 
 This gate runs in the nightly between the scan and anything leaving the box. It
 REFUSES; it never edits a row. That is why it may run from the working tree
 while the scanner runs from `main`: it cannot state anything about a third
 party, only stop a run from stating it. For every row scanned THIS run whose
-Maintenance was assessed from a github.com repository, the repository must
-answer an anonymous `git ls-remote`. Rows carried forward from an earlier run
+Maintenance was assessed, the repository must answer an anonymous
+`git ls-remote`. Which repository that is comes from `forge.parse_repo_url`,
+the parser that decided what the lookup read — a row the parser cannot name
+was read from SOME repository this gate cannot ask about, and is refused.
+Rows carried forward from an earlier run
 are not re-asked — they are already public, and a repository deleted since
 would refuse every run over a page nobody can change.
 
@@ -34,38 +41,33 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import re
-import subprocess
 import sys
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-_GITHUB = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
-
-# Anonymous by construction: no config file, so no credential helper and no
-# url rewrite; no prompt, so a private repository fails instead of waiting.
-_ANONYMOUS = {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
-              "GIT_TERMINAL_PROMPT": "0"}
-_PASSED_THROUGH = ("PATH", "HOME", "LANG", "SSL_CERT_FILE", "SSL_CERT_DIR",
-                   "HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy")
+from mcpwatchman.workers.bounded import run_bounded
+from mcpwatchman.workers.scanner.forge import (
+    GITHUB_GRAPHQL_URL,
+    USER_AGENT,
+    parse_repo_url,
+    token_from_env,
+)
 
 
 def probe_anonymous(url: str, *, attempts: int = 2, timeout: float = 30) -> bool:
-    """Whether `url` answers `git ls-remote` with no credentials at all."""
-    env = {k: os.environ[k] for k in _PASSED_THROUGH if k in os.environ}
-    env.update(_ANONYMOUS)
+    """Whether `url` answers `git ls-remote` with no credentials at all.
+
+    Anonymous by construction: `run_bounded`'s environment is the scanner's
+    allowlist, which carries no token, plus the git isolation that reads no
+    config file — so no credential helper and no url rewrite — and no prompt,
+    so a private repository fails instead of waiting. On a timeout it kills
+    the whole group, `git-remote-https` included.
+    """
     for _ in range(attempts):
-        try:
-            done = subprocess.run(  # noqa: S603 - argv form; url matched _GITHUB or a test path
-                ["git", "ls-remote", "-q", "--", url, "HEAD"],  # noqa: S607
-                env=env, capture_output=True, timeout=timeout, check=False,
-            )
-        except subprocess.TimeoutExpired:
-            continue
-        if done.returncode == 0:
+        done = run_bounded(["git", "ls-remote", "-q", "--", url, "HEAD"], timeout=timeout)
+        if done.returncode == 0 and not done.timed_out:
             return True
     return False
 
@@ -79,28 +81,30 @@ def _maintenance_assessed(row: dict) -> bool:
         return weight is not None
 
 
-def to_check(before: Iterable[dict], after: Iterable[dict]) -> dict[str, list[str]]:
-    """repository URL -> slugs of the rows scanned this run that need asking."""
+def to_check(
+    before: Iterable[dict], after: Iterable[dict],
+) -> tuple[dict[str, list[str]], list[str]]:
+    """(repository URL -> slugs of the rows scanned this run that need asking,
+    slugs of rows scanned this run that cannot be asked about)."""
     previous = {(r.get("slug"), r.get("scanned_at")) for r in before}
     urls: dict[str, list[str]] = {}
+    unaskable: list[str] = []
     for row in after:
         if (row.get("slug"), row.get("scanned_at")) in previous:
             continue  # carried forward, not scanned this run
-        url = (row.get("repository_url") or "").strip()
-        if not _GITHUB.match(url) or not _maintenance_assessed(row):
+        if not _maintenance_assessed(row):
+            continue  # no forge data was read
+        ref = parse_repo_url(row.get("repository_url") or "")
+        if ref is None:
+            unaskable.append(str(row.get("slug")))
             continue
-        urls.setdefault(url.rstrip("/"), []).append(str(row.get("slug")))
-    return urls
+        urls.setdefault(f"https://github.com/{ref.slug}", []).append(str(row.get("slug")))
+    return urls, unaskable
 
 
 # What the run's token says about a repository the public could not read.
 PRIVATE, PUBLIC, INVISIBLE, UNKNOWN = "private", "public", "invisible", "unknown"
 _BATCH = 50
-
-
-def _owner_name(url: str) -> tuple[str, str]:
-    owner, name = url.rstrip("/").split("/")[-2:]
-    return owner, name.removesuffix(".git")
 
 
 def parse_answers(urls: list[str], payload: dict) -> dict[str, str]:
@@ -132,16 +136,19 @@ def ask_with_token(urls: list[str], token: str | None) -> dict[str, str]:
     answers: dict[str, str] = {}
     for start in range(0, len(urls), _BATCH):
         batch = urls[start:start + _BATCH]
-        # Owner and name matched _GITHUB's character class, so neither can
-        # carry a quote or a backslash into the query string.
+        # `parse_repo_url` admits only GitHub's name alphabet, so neither part
+        # can carry a quote or a backslash into the query string. A URL it does
+        # not parse gets no field, so it reads back UNKNOWN: refused.
+        refs = list(map(parse_repo_url, batch))
         fields = " ".join(
-            f'r{i}: repository(owner: "{o}", name: "{n}") {{ isPrivate }}'
-            for i, (o, n) in enumerate(map(_owner_name, batch))
+            f'r{i}: repository(owner: "{ref.owner}", name: "{ref.name}") {{ isPrivate }}'
+            for i, ref in enumerate(refs) if ref is not None
         )
         request = urllib.request.Request(  # noqa: S310 - fixed https URL
-            "https://api.github.com/graphql",
+            GITHUB_GRAPHQL_URL,
             data=json.dumps({"query": f"query {{ {fields} }}"}).encode(),
-            headers={"Authorization": f"bearer {token}", "Content-Type": "application/json"},
+            headers={"Authorization": f"bearer {token}", "Content-Type": "application/json",
+                     "User-Agent": USER_AGENT},
         )
         try:
             with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
@@ -159,11 +166,11 @@ def refused(
     """(refused url -> slugs, the urls allowed because nobody can read them)."""
     probe = probe or probe_anonymous
     if ask is None:
-        token = os.environ.get("MCPWATCHMAN_GITHUB_TOKEN") or os.environ.get("GITHUB_TOKEN")
+        # The token the forge lookup read with: same variables, same order.
+        token = token_from_env()
         ask = lambda batch: ask_with_token(batch, token)  # noqa: E731
     with ThreadPoolExecutor(max_workers=8) as pool:
-        public = dict(zip(urls, pool.map(probe, urls), strict=True))
-    failed = [url for url in urls if not public[url]]
+        failed = [url for url, ok in zip(urls, pool.map(probe, urls), strict=True) if not ok]
     answers = ask(failed) if failed else {}
     # PUBLIC after a failed probe is GitHub saying it is not private (a
     # transient probe failure, or a repository disabled for everyone).
@@ -181,13 +188,16 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     before = json.loads(a.before.read_text())
     after = json.loads(a.after.read_text())
-    urls = to_check(before, after)
+    urls, unaskable = to_check(before, after)
     bad, invisible = refused(urls)
     print(f"visibility gate: {len(urls)} repositories asked anonymously, "
-          f"{len(invisible)} readable by nobody (allowed), {len(bad)} refused")
+          f"{len(invisible)} readable by nobody (allowed), {len(bad)} refused, "
+          f"{len(unaskable)} rows naming no repository this gate can ask about")
     for url, slugs in sorted(bad.items()):
         print(f"  private or unanswered: {url} (Maintenance scored for {', '.join(slugs)})")
-    return 1 if bad else 0
+    for slug in sorted(unaskable):
+        print(f"  Maintenance scored from a repository URL the forge parser cannot read: {slug}")
+    return 1 if bad or unaskable else 0
 
 
 if __name__ == "__main__":
