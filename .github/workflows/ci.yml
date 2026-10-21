@@ -32,6 +32,40 @@ jobs:
 
 # Publishing lives in release.yml, fired by a vX.Y.Z tag.
 
+  # Every lock in requirements/ is GENERATED, and its first comment is the
+  # command that generated it. This job runs each one again and fails on any
+  # difference, so the lock is proven to be what its source resolves to — not
+  # merely to satisfy it, which is all `tests/test_requirements_lock.py` can
+  # read. Measured 2026-10-21: an extra added to a requirement already locked
+  # (`pgqueuer[psycopg]` → `pgqueuer[psycopg,asyncpg]`) kept that test green
+  # while the regeneration added asyncpg. `--exclude-newer` in each command is
+  # what makes this deterministic: it resolves against PyPI as it stood on that
+  # date, so a release made since cannot red the job.
+  #
+  # ⚠ Like `workers-extra`, it reaches PyPI, so an outage there reds it.
+  locks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+      # uv itself is hash-locked (requirements/ci.txt, one of the locks below).
+      - run: pip install --require-hashes -r requirements/ci.txt
+      - name: Every lock regenerates to itself
+        run: |
+          for lock in requirements/*.txt; do
+            cmd="$(sed -n '2s/^#    //p' "$lock")"
+            # A lock with no generating command is refused, not skipped.
+            case "$cmd" in
+              "uv pip compile "*" -o $lock") ;;
+              *) echo "::error file=$lock::line 2 is not the uv pip compile that writes this file"; exit 1 ;;
+            esac
+            read -r -a argv <<< "$cmd"
+            "${argv[@]}"
+          done
+          git diff --exit-code -- requirements/
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -68,12 +102,7 @@ jobs:
   # It installs `requirements/workers.txt`, the hash-locked set the worker
   # image and the nightly venv run, so CI tests the semgrep that scores
   # servers rather than whichever release is newest today. The lock is
-  # generated FROM the extra, and `tests/test_requirements_lock.py` (every
-  # job) refuses a lock that no longer satisfies it — so a package or version
-  # range added to the extra without regenerating the lock reds instead of
-  # shipping undeclared. Not an EXTRA added to a requirement already locked
-  # (`psycopg` → `psycopg[binary]`): the lock records the packages an extra
-  # pulls in, never the extra, so that change stays green until regenerated.
+  # generated FROM the extra; the `locks` job below proves it still is.
   workers-extra:
     runs-on: ubuntu-latest
     steps:

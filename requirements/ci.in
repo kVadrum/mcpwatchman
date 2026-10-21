@@ -1,0 +1,5 @@
+# The tool CI's `locks` job regenerates every lock in this directory with,
+# hash-locked into ci.txt so the regeneration runs a known uv rather than
+# whichever release is newest today. ci.txt is one of the locks it regenerates.
+# Regenerate with the command at the top of ci.txt.
+uv

@@ -8,6 +8,10 @@ changes — so a dependency added to the extra and not to the lock installs
 nowhere that runs the scanner, with every import in a developer venv still
 resolving from something else. These tests read the files as text, so they run
 in every CI job, not only the one that installs the lock.
+
+They prove a lock SATISFIES its source, not that it is what the source resolves
+to: an extra added to a requirement already locked stays green here. CI's
+`locks` job regenerates every lock and diffs it, which is the check for that.
 """
 
 from __future__ import annotations
