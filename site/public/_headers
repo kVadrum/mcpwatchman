@@ -7,7 +7,6 @@
   X-Frame-Options: DENY
   Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
   # Self-hosted fonts and no third-party anything, so the CSP can be strict.
-  # 'unsafe-inline' for style only: Astro inlines the page's critical CSS.
   # No inline script and no inline style survive the build (the page script is
   # a real file in public/, and astro.config pins inlineStylesheets:'never'), so
   # this needs no 'unsafe-inline' anywhere. Verified against dist/, not assumed —

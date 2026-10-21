@@ -11,3 +11,9 @@
 # If www is ever wanted, the mechanism is a dashboard-side Bulk Redirect (or a
 # redirect rule), which Cloudflare's own docs name for exactly this case — not a
 # file in this repo.
+
+# A path rule, which the platform does match. Browsers ask for /favicon.ico on
+# documents that carry no <link rel="icon"> — the JSON API, the feed, llms.txt —
+# and feed readers and crawlers ask for it unprompted; the mark exists only as
+# SVG, so the conventional path points at it instead of answering 404.
+/favicon.ico /favicon.svg 301
