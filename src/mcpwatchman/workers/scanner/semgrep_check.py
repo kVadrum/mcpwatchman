@@ -631,7 +631,7 @@ def run_semgrep(
     # rate compounds: measured, a clean run reached six live `semgrep-core`
     # processes and a 16-in-20 failure rate by server 300. `workers.bounded`
     # carries the full measurement.
-    proc = run_bounded(cmd, timeout=timeout_s, env=semgrep_env())
+    proc = run_bounded(cmd, timeout=timeout_s, extra_env=semgrep_env())
     if proc.timed_out:
         return SemgrepResult(
             status=SemgrepStatus.FAILED,

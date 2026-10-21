@@ -808,7 +808,7 @@ def test_semgrep_is_launched_on_the_posix_io_backend(tree, monkeypatch) -> None:
     seen: dict = {}
 
     def fake(cmd, **kw):
-        seen.update(kw.get("env") or {})
+        seen.update(kw.get("extra_env") or {})
         return types.SimpleNamespace(
             returncode=0, stdout='{"results": [], "errors": [], "paths": {"scanned": []}}',
             stderr="", timed_out=False,

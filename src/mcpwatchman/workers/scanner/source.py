@@ -672,7 +672,7 @@ def _tree_budget(repo: Path, rev: str, spec: SourceSpec) -> None:
             # No lazy fetch: in a partial clone a stray size lookup would fetch
             # the blob it asks about, which is the download this bound precedes.
             with stream_bounded(
-                cmd, timeout=60, cwd=repo, env={"GIT_NO_LAZY_FETCH": "1"},
+                cmd, timeout=60, cwd=repo, extra_env={"GIT_NO_LAZY_FETCH": "1"},
             ) as out:
                 pending = b""
                 while chunk := out.stdout.read(64 * 1024):
@@ -686,15 +686,17 @@ def _tree_budget(repo: Path, rev: str, spec: SourceSpec) -> None:
                                 f"tree has over {MAX_TREE_ENTRIES} entries, refused "
                                 f"before checkout: {spec}"
                             )
-                        if sized:
-                            meta = record.split(b"\t", 1)[0].split()
-                            if len(meta) == 4 and meta[1] == b"blob":
-                                total += int(meta[3])
-                                if total > MAX_UNPACKED_BYTES:
-                                    raise FetchError(
-                                        f"tree is over {MAX_UNPACKED_BYTES} bytes, "
-                                        f"refused before checkout: {spec}"
-                                    )
+                        if not sized:
+                            continue
+                        meta = record.split(b"\t", 1)[0].split()
+                        if len(meta) != 4 or meta[1] != b"blob":
+                            continue
+                        total += int(meta[3])
+                        if total > MAX_UNPACKED_BYTES:
+                            raise FetchError(
+                                f"tree is over {MAX_UNPACKED_BYTES} bytes, "
+                                f"refused before checkout: {spec}"
+                            )
         except FileNotFoundError as exc:
             raise FetchError("git is not installed in this image") from exc
         if out.timed_out:

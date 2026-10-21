@@ -137,6 +137,13 @@ def test_malformed_specs_raise_rather_than_defaulting(bad):
 # --- archive safety -------------------------------------------------------
 
 
+def _stub_run(monkeypatch, fake_run) -> None:
+    """Stub `source._run`, and with it the pre-checkout tree listing: there is
+    no repository behind a stubbed `_run`, so there is nothing to list."""
+    monkeypatch.setattr(source, "_run", fake_run)
+    monkeypatch.setattr(source, "_tree_budget", lambda *a: None)
+
+
 def _spec():
     return SourceSpec(SourceKind.NPM, "pkg", "1.0.0")
 
@@ -269,9 +276,7 @@ def test_git_clone_requests_the_version_as_a_ref(monkeypatch, tmp_path):
     from mcpwatchman.workers.scanner import source as S
 
     seen: list[list[str]] = []
-    monkeypatch.setattr(S, "_run", lambda cmd, **kw: seen.append(cmd))
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, lambda cmd, **kw: seen.append(cmd))
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     clone = seen[0]
     assert "--branch" in clone
@@ -289,9 +294,7 @@ def test_git_clone_falls_back_to_a_v_prefixed_tag(monkeypatch, tmp_path):
         if "--branch" in cmd and cmd[cmd.index("--branch") + 1] == "1.2.3":
             raise FetchError("no such ref")
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     tried = [c[c.index("--branch") + 1] for c in seen if "--branch" in c]
     assert tried == ["1.2.3", "v1.2.3"]
@@ -312,9 +315,7 @@ def test_no_matching_tag_falls_back_to_default_branch_and_SAYS_SO(monkeypatch, t
         if "--branch" in cmd or any(str(a).startswith("refs/tags/") for a in cmd):
             raise FetchError("no such ref")
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9"), tmp_path)
     assert S._GIT_REF_USED[tmp_path] is None
 
@@ -437,9 +438,7 @@ def test_git_commands_terminate_options_before_positionals(monkeypatch, tmp_path
     from mcpwatchman.workers.scanner import source as S
 
     seen: list[list[str]] = []
-    monkeypatch.setattr(S, "_run", lambda cmd, **kw: seen.append(cmd))
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, lambda cmd, **kw: seen.append(cmd))
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.0.0", "src/x"), tmp_path)
     clone = seen[0]
     assert "--" in clone and clone.index("--") < clone.index(str(tmp_path))
@@ -603,9 +602,7 @@ def test_a_branch_named_like_the_version_is_not_reported_as_a_tag(monkeypatch, t
             return None
         return None
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert S._GIT_REF_USED[tmp_path] is None  # fell back, correctly
@@ -621,9 +618,7 @@ def test_a_real_tag_detaches_head_and_IS_reported(monkeypatch, tmp_path):
             raise FetchError("detached")  # a tag
         return None
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert S._GIT_REF_USED[tmp_path] == "1.2.3"
@@ -639,9 +634,7 @@ def test_an_oversized_checkout_is_refused(monkeypatch, tmp_path):
             raise FetchError("detached")
         return None
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     monkeypatch.setattr(S, "_measure_all", lambda p: S.MAX_UNPACKED_BYTES + 1)
     with pytest.raises(FetchError, match="over the"):
         S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
@@ -841,9 +834,7 @@ def test_sparse_checkout_uses_cone_mode_for_a_literal_path(monkeypatch, tmp_path
             return None
         return None
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     monkeypatch.setattr(S, "_confine", lambda c, r: c)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "a/b", "1.0.0", "apps/server"), tmp_path)
@@ -1084,9 +1075,7 @@ def test_an_unreachable_repository_is_attempted_ONCE(monkeypatch, tmp_path):
             clones.append(cmd)
             raise S.SourceUnreachableError("git failed (rc=128): repository not found")
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     with pytest.raises(S.SourceUnreachableError):
         S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/gone", "1.2.3"), tmp_path)
     assert len(clones) == 1
@@ -1111,9 +1100,7 @@ def test_a_missing_TAG_is_still_retried_across_candidates(monkeypatch, tmp_path)
         if any(str(a).startswith("refs/tags/") for a in cmd):
             raise FetchError("no such ref")
 
-    monkeypatch.setattr(S, "_run", fake_run)
-    # No repository behind a stubbed `_run`, so nothing to list.
-    monkeypatch.setattr(S, "_tree_budget", lambda *a: None)
+    _stub_run(monkeypatch, fake_run)
     monkeypatch.setattr(S, "_measure_all", lambda p: 0)
     S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "1.2.3"), tmp_path)
     assert tried == ["1.2.3", "v1.2.3"]

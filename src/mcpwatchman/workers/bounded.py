@@ -49,7 +49,7 @@ would have been published (measured 2026-10-19 — a scanner-shaped `git
 ls-remote` read a private repository; with the helper disabled it was refused).
 The scanners inherited the same environment, tokens included. So the child
 environment is an ALLOWLIST (`untrusted_env`) applied here by default — one
-chokepoint, so a new call site cannot forget it — and a caller's `env` is
+chokepoint, so a new call site cannot forget it — and a caller's `extra_env` is
 layered over it, never substituted for it.
 """
 
@@ -123,7 +123,7 @@ class Bounded:
 
 def run_bounded(
     cmd: Sequence[str], *, timeout: float, cwd: Path | str | None = None,
-    env: Mapping[str, str] | None = None,
+    extra_env: Mapping[str, str] | None = None,
 ) -> Bounded:
     """Run `cmd` with a deadline, ending its whole process group if it expires.
 
@@ -136,7 +136,7 @@ def run_bounded(
     Python is waiting on, and a polite signal to a wrapper that has already
     been killed reaches nothing.
 
-    `env` holds EXTRA variables, layered over `untrusted_env()` — never a
+    `extra_env` holds EXTRA variables, layered over `untrusted_env()` — never a
     replacement for it (module docstring).
     """
     proc = subprocess.Popen(  # noqa: S603 - argv form, no shell; callers build
@@ -146,7 +146,7 @@ def run_bounded(
         stderr=subprocess.PIPE,
         text=True,
         cwd=str(cwd) if cwd is not None else None,
-        env=untrusted_env(env),
+        env=untrusted_env(extra_env),
         # Half one: its own process group, so there is a group to kill.
         start_new_session=True,
     )
@@ -199,7 +199,7 @@ class Streamed:
 @contextlib.contextmanager
 def stream_bounded(
     cmd: Sequence[str], *, timeout: float, cwd: Path | str | None = None,
-    env: Mapping[str, str] | None = None,
+    extra_env: Mapping[str, str] | None = None,
 ) -> Iterator[Streamed]:
     """`run_bounded` for output too large to hold: the caller reads `stdout` as
     it arrives and may stop at any point.
@@ -217,7 +217,7 @@ def stream_bounded(
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         cwd=str(cwd) if cwd is not None else None,
-        env=untrusted_env(env),
+        env=untrusted_env(extra_env),
         start_new_session=True,
     )
     if proc.stdout is None:  # stdout=PIPE above; narrows the type

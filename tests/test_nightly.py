@@ -261,11 +261,7 @@ def _recording(world: World, name: str, extra: str = "") -> Path:
 def test_only_the_scan_sees_the_github_token_and_nothing_sees_it_twice(world: World) -> None:
     npm = _recording(world, "npm")
     npx = _recording(world, "npx", f'echo "$@" > "{world.root}/deployed"\n')
-    scan_seen = world.root / "scan.env"
-    # The scan stub is main's committed file; record before it runs.
-    world.commit_to("main", "ops/scan_cohort.py",
-                    f"import os\nopen({str(scan_seen)!r}, 'w').write('\\n'.join(os.environ))\n"
-                    + SCAN_STUB)
+    scan_seen = _record_scan_env(world)
     rc, out = world.run(MCPW_PUBLISH="1", CLOUDFLARE_API_TOKEN="cf-sentinel",
                         DBUS_SESSION_BUS_ADDRESS="unix:path=/nonexistent")
     assert rc == 0, out
@@ -276,7 +272,7 @@ def test_only_the_scan_sees_the_github_token_and_nothing_sees_it_twice(world: Wo
     assert "cf-sentinel" not in built, "the build has no use for the Cloudflare credential"
     assert "cf-sentinel" in deployed, "the deploy does"
     assert "WRANGLER_SEND_METRICS=false" in deployed
-    scanned = scan_seen.read_text().splitlines()
+    scanned = json.loads(scan_seen.read_text())
     assert "MCPWATCHMAN_GITHUB_TOKEN" in scanned, "Maintenance needs it"
     assert "CLOUDFLARE_API_TOKEN" not in scanned
 

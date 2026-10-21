@@ -188,15 +188,26 @@ def test_a_child_never_inherits_credentials_or_the_session_bus(monkeypatch) -> N
 
 
 def test_a_callers_extra_env_reaches_the_child() -> None:
-    env = _child_env(env={"EIO_BACKEND": "posix"})
+    env = _child_env(extra_env={"EIO_BACKEND": "posix"})
     assert env.get("EIO_BACKEND") == "posix"
     assert env.get("GIT_CONFIG_GLOBAL") == os.devnull, "extras are layered, not substituted"
 
 
+def test_the_stdlib_env_keyword_is_refused_rather_than_layered() -> None:
+    """`env={**os.environ, ...}` is the ordinary `subprocess` idiom. Under the
+    stdlib's name it would read as a replacement while being layered, so the
+    parameter is named for what it does and the familiar keyword fails loudly."""
+    with pytest.raises(TypeError):
+        run_bounded(["true"], timeout=10, env={})  # type: ignore[call-arg]
+    with pytest.raises(TypeError), stream_bounded(["true"], timeout=10, env={}):  # type: ignore[call-arg]
+        pass
+
+
 def test_semgreps_environment_carries_no_credentials(monkeypatch) -> None:
-    """The one caller that passes `env=`, and the reason layering matters: it
-    used to build `{**os.environ, ...}`, which no chokepoint can scrub once a
-    caller hands it over. Every semgrep launch — scanner and tests — uses it."""
+    """The caller that hands a whole environment to `extra_env=`, and the
+    reason layering matters: it used to build `{**os.environ, ...}`, which no
+    chokepoint can scrub once a caller hands it over. Every semgrep launch —
+    scanner and tests — uses it."""
     from mcpwatchman.workers.scanner.semgrep_check import semgrep_env
 
     monkeypatch.setenv("GITHUB_TOKEN", "sentinel-must-not-reach-the-child")
