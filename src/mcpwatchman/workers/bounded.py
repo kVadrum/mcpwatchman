@@ -103,6 +103,21 @@ def untrusted_env(extra: Mapping[str, str] | None = None) -> dict[str, str]:
     return env
 
 
+# git's HTTPS transport is libcurl, which sends credentials from $HOME/.netrc
+# whatever git's own configuration says — measured 2026-10-21: with every
+# variable in GIT_ISOLATION set, a `.netrc` entry still reached the server.
+# HOME stays in the allowlist (semgrep keeps its settings there, osv-scanner its
+# cache), so git alone gets a HOME with nothing in it — here, keyed on the
+# binary, so a git call site added later cannot forget it.
+_GIT_HOME = {"HOME": os.devnull}
+
+
+def _child_env(cmd: Sequence[str], extra: Mapping[str, str] | None) -> dict[str, str]:
+    if cmd and Path(cmd[0]).name == "git":
+        extra = {**_GIT_HOME, **(extra or {})}
+    return untrusted_env(extra)
+
+
 class Bounded:
     """What `subprocess.run` would have returned, plus whether time ran out.
 
@@ -146,7 +161,7 @@ def run_bounded(
         stderr=subprocess.PIPE,
         text=True,
         cwd=str(cwd) if cwd is not None else None,
-        env=untrusted_env(extra_env),
+        env=_child_env(cmd, extra_env),
         # Half one: its own process group, so there is a group to kill.
         start_new_session=True,
     )
@@ -217,7 +232,7 @@ def stream_bounded(
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         cwd=str(cwd) if cwd is not None else None,
-        env=untrusted_env(extra_env),
+        env=_child_env(cmd, extra_env),
         start_new_session=True,
     )
     if proc.stdout is None:  # stdout=PIPE above; narrows the type

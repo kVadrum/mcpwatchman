@@ -1334,6 +1334,88 @@ def test_a_pinned_commit_is_sized_before_checkout_too(tmp_path, monkeypatch):
     assert _worktree_files(dest) == []
 
 
+def test_directories_count_against_the_entry_cap_before_checkout(tmp_path, monkeypatch):
+    """`ls-tree -r` lists files only, while the cap's other half, `_measure_all`,
+    counts every directory: one file at the bottom of a deep chain was one entry
+    before checkout and thirty-one after it."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = tmp_path / "origin"
+    deep = origin.joinpath(*(f"d{i}" for i in range(30)))
+    deep.mkdir(parents=True)
+    (deep / "leaf.js").write_text("x\n")
+    _git(origin, "init", "-q", "-b", "main")
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "a chain of directories")
+    monkeypatch.setattr(S, "MAX_TREE_ENTRIES", 20)
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    with pytest.raises(FetchError, match="entries, refused before checkout"):
+        S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9"), dest)
+    assert _worktree_files(dest) == []
+
+
+def test_checkout_writes_the_bytes_that_were_sized(tmp_path, monkeypatch):
+    """The tree's own `.gitattributes` applies at checkout: `ident` turns each
+    4-byte `$Id$` into 47 bytes, past the size `_tree_budget` approved."""
+    from mcpwatchman.workers.scanner import source as S
+
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _git(origin, "init", "-q", "-b", "main")
+    (origin / ".gitattributes").write_text("* ident eol=crlf\n")
+    (origin / "f.txt").write_text("$Id$\n" * 1000)
+    _git(origin, "add", "-A")
+    _git(origin, "commit", "-qm", "expanding attributes")
+    dest = tmp_path / "checkout"
+    monkeypatch.setattr(S, "_git_url", lambda _spec: f"file://{origin}")
+    S.fetch_git(SourceSpec(SourceKind.GITHUB, "acme/repo", "9.9.9"), dest)
+    assert (dest / "f.txt").stat().st_size == 5000
+
+
+@pytest.mark.parametrize("fmt", [tarfile.GNU_FORMAT, tarfile.PAX_FORMAT])
+def test_a_tar_header_cannot_make_the_walk_hold_its_body(tmp_path, fmt):
+    """`tarfile` reads a long-name or pax header's whole body inside `next()`,
+    before the walk sees the member: a 51 KB .tgz once cost 150 MiB of RSS. The
+    claim is the allocation, so it is what is measured."""
+    import gzip
+    import io
+    import tracemalloc
+
+    raw = io.BytesIO()
+    with tarfile.open(fileobj=raw, mode="w", format=fmt) as tf:
+        info = tarfile.TarInfo("n" * (8 * 1024 * 1024))
+        tf.addfile(info)
+    payload = tmp_path / "bomb.tgz"
+    payload.write_bytes(gzip.compress(raw.getvalue()))
+    del raw
+
+    tracemalloc.start()
+    try:
+        with pytest.raises(FetchError, match="past its budget"):
+            _safe_extract(payload, tmp_path / "out", _spec())
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+    assert peak < 4 * 1024 * 1024, f"the walk allocated {peak} bytes for one header"
+
+
+@pytest.mark.parametrize("compression", ["", "gz", "bz2", "xz"])
+def test_every_compression_tarfile_detected_still_extracts(tmp_path, compression):
+    """Decompression moved out of `tarfile.open` so the read budget can sit
+    between the two; a format it used to detect must not become unreadable."""
+    import io
+
+    payload = tmp_path / "pkg.tar"
+    body = b"module.exports = 1;\n"
+    with tarfile.open(payload, f"w:{compression}") as tf:
+        info = tarfile.TarInfo("package/index.js")
+        info.size = len(body)
+        tf.addfile(info, io.BytesIO(body))
+    _safe_extract(payload, tmp_path / "out", _spec())
+    assert (tmp_path / "out" / "package" / "index.js").read_bytes() == body
+
+
 def _origin_for_a_cone(tmp_path: Path, crowded: str) -> Path:
     """A monorepo with the server at `pkg/a` and 300 empty files in `crowded`.
 

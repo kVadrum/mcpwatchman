@@ -13,6 +13,10 @@ download-and-unpack only, and the unpack is the dangerous half: see `_safe_extra
 
 from __future__ import annotations
 
+import bz2
+import gzip
+import io
+import lzma
 import os
 import re
 import shutil
@@ -497,29 +501,10 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
                     raise FetchError(f"archive member escapes destination: {name!r}")
             zf.extractall(dest)  # noqa: S202 - members validated immediately above
     else:
-        with tarfile.open(archive) as tf:
-            # Iterate LAZILY and bail on the first breach. `getmembers()` builds
-            # a TarInfo for every entry before any limit is consulted, so an
-            # archive of millions of zero-length headers — which compresses to
-            # almost nothing — exhausts memory before the member cap can fire.
-            # The guard has to run DURING the walk, not after it.
-            declared = 0
-            # Named distinctly from the zip branch's `info`: one name bound to
-            # a ZipInfo above and a TarInfo here made the function read as one
-            # type while being two, in the code that walks attacker-controlled
-            # archives. Same reuse this session already fixed in `registry.py`;
-            # neither was a runtime bug, and both are the last thing you want
-            # ambiguous in a bounds check.
-            for count, tar_member in enumerate(tf, 1):
-                if count > MAX_MEMBERS:
-                    raise FetchError(f"archive exceeds {MAX_MEMBERS} members: {spec}")
-                declared += tar_member.size
-                if declared > MAX_UNPACKED_BYTES:
-                    raise FetchError(
-                        f"archive declares {declared}+ bytes, over the "
-                        f"{MAX_UNPACKED_BYTES} cap: {spec}"
-                    )
-            tf.extractall(dest, filter="data")
+        with _decompressed(archive) as raw:
+            stream = _BudgetedReads(raw, spec)
+            stream.allow(_TAR_HEADER_BUDGET, per_read=_TAR_HEADER_READ)
+            _extract_tar(stream, dest, spec)
 
     # Second gate: the declared sizes above are attacker-controlled and may lie
     # low. This measures what actually landed, and counts EXCLUDED directories
@@ -530,6 +515,92 @@ def _safe_extract(archive: Path, dest: Path, spec: SourceSpec) -> None:
         raise FetchError(
             f"unpacked to {size} bytes, over the {MAX_UNPACKED_BYTES} cap: {spec}"
         )
+
+
+# `tarfile` reads a GNU long-name or pax header's whole body into memory inside
+# `next()`, before the walk yields the member — so neither cap there gets a
+# turn. Measured 2026-10-21: a 51 KB .tgz naming one member with 50 MB took
+# 150 MiB of RSS, and the download cap allows ten thousand times that archive.
+# So while the headers are walked every read is budgeted, singly (no real
+# header nears 1 MiB) and in total (50,000 members with a pax header each read
+# ~75 MiB); the extraction then gets the data cap.
+_TAR_HEADER_READ = 1024 * 1024
+_TAR_HEADER_BUDGET = MAX_MEMBERS * 2048
+
+
+_Decompressed = gzip.GzipFile | bz2.BZ2File | lzma.LZMAFile | io.BufferedReader
+
+
+class _BudgetedReads:
+    """The decompressed archive, refusing a read that would pass its budget
+    BEFORE making it, so the allocation never happens."""
+
+    def __init__(self, raw: _Decompressed, spec: SourceSpec) -> None:
+        self._raw = raw
+        self._spec = spec
+        self._left = 0
+        self._per_read: int | None = None
+
+    def allow(self, total: int, *, per_read: int | None = None) -> None:
+        self._left, self._per_read = total, per_read
+
+    def read(self, size: int = -1) -> bytes:
+        over_one = self._per_read is not None and size > self._per_read
+        if size < 0 or size > self._left or over_one:
+            raise FetchError(f"archive asks to read {size} bytes past its budget: {self._spec}")
+        data = self._raw.read(size)
+        self._left -= len(data)
+        return data
+
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
+        return self._raw.seek(offset, whence)
+
+    def tell(self) -> int:
+        return self._raw.tell()
+
+    def write(self, b: bytes) -> int:
+        raise io.UnsupportedOperation("read-only")
+
+    def close(self) -> None:
+        """The opener closes the stream; `tarfile` never closes one it was handed."""
+
+
+def _decompressed(archive: Path) -> _Decompressed:
+    """The archive's tar stream, decompressed here rather than inside `tarfile`
+    so `_BudgetedReads` sits between the two. The formats `tarfile.open`
+    detects on 3.12; anything else is read as a plain tar, which refuses it."""
+    with archive.open("rb") as fh:
+        magic = fh.read(6)
+    if magic.startswith(b"\x1f\x8b"):
+        return gzip.open(archive, "rb")
+    if magic.startswith(b"BZh"):
+        return bz2.open(archive, "rb")
+    if magic.startswith(b"\xfd7zXZ\x00"):
+        return lzma.open(archive, "rb")
+    return archive.open("rb")
+
+
+def _extract_tar(stream: _BudgetedReads, dest: Path, spec: SourceSpec) -> None:
+    with tarfile.open(fileobj=stream, mode="r:") as tf:
+        # Iterate LAZILY and bail on the first breach. `getmembers()` builds a
+        # TarInfo for every entry before any limit is consulted, so an archive
+        # of millions of zero-length headers — which compresses to almost
+        # nothing — exhausts memory before the member cap can fire. The guard
+        # has to run DURING the walk, not after it.
+        declared = 0
+        for count, member in enumerate(tf, 1):
+            if count > MAX_MEMBERS:
+                raise FetchError(f"archive exceeds {MAX_MEMBERS} members: {spec}")
+            declared += member.size
+            if declared > MAX_UNPACKED_BYTES:
+                raise FetchError(
+                    f"archive declares {declared}+ bytes, over the "
+                    f"{MAX_UNPACKED_BYTES} cap: {spec}"
+                )
+        # The members are cached now, so extraction reads only their data,
+        # which the walk capped by declared size.
+        stream.allow(MAX_UNPACKED_BYTES)
+        tf.extractall(dest, filter="data")
 
 
 def _single_wrapper_dir(root: Path) -> Path:
@@ -656,14 +727,19 @@ def _tree_budget(repo: Path, rev: str, spec: SourceSpec) -> None:
     ENTRY count is bounded here, over what cone mode materialises: the files at
     the root and in each ancestor of the subfolder, and the subfolder's whole
     subtree. Its bytes stay bounded after the fact, by `_measure_all`.
+
+    `-t` lists the trees as well as the blobs: `_measure_all` counts every
+    directory entry against `MAX_TREE_ENTRIES`, and `-r` alone counts files
+    only — measured, twenty chains of 1,000 nested directories counted as 20
+    entries and checked out as 20,021 directories.
     """
     sized = not spec.subfolder
     if spec.subfolder:
         parts = Path(spec.subfolder).parts
         ancestors = [".", *("/".join(parts[:i]) + "/" for i in range(1, len(parts)))]
-        listings = [["-z", rev, "--", *ancestors], ["-r", "-z", rev, "--", spec.subfolder]]
+        listings = [["-z", rev, "--", *ancestors], ["-r", "-t", "-z", rev, "--", spec.subfolder]]
     else:
-        listings = [["-r", "-l", "-z", rev]]
+        listings = [["-r", "-t", "-l", "-z", rev]]
 
     entries = total = 0
     for args in listings:
@@ -706,10 +782,22 @@ def _tree_budget(repo: Path, rev: str, spec: SourceSpec) -> None:
             raise FetchError(f"git ls-tree failed (rc={out.returncode}): {spec}")
 
 
+# Checkout honours the TREE'S OWN `.gitattributes`, and some attributes write
+# more than the blobs `_tree_budget` summed: `ident` turns each 4-byte `$Id$`
+# into 47 bytes (measured: a 50,000-byte blob checked out as 480,000), and
+# `eol`/`text` and `working-tree-encoding` grow it again. `info/attributes`
+# outranks every in-tree file, so the bytes written are the bytes sized — and
+# the bytes a finding's evidence cites.
+_CHECKOUT_AS_STORED = "* -ident -text -eol -working-tree-encoding -filter\n"
+
+
 def _bounded_checkout(spec: SourceSpec, dest: Path, rev: str) -> None:
     """The ONE place a git working tree is written — every fetch path, pinned,
     resolved, tag-fetched or sparse, ends here, so the bound cannot be owed to
     a path that skips it (`CLAUDE.md`: a bound on one path is owed to all)."""
+    info = dest / ".git" / "info"
+    info.mkdir(parents=True, exist_ok=True)
+    (info / "attributes").write_text(_CHECKOUT_AS_STORED)
     _tree_budget(dest, rev, spec)
     _run(["git", "checkout", "-q", "--detach", rev], cwd=dest)
 

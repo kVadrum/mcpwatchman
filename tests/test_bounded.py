@@ -284,6 +284,51 @@ def test_git_children_ignore_the_operators_global_config(tmp_path, monkeypatch) 
     assert helper.returncode != 0 and "leaked" not in helper.stdout
 
 
+def test_git_children_never_send_a_netrc_credential(tmp_path, monkeypatch) -> None:
+    """libcurl reads $HOME/.netrc whatever git's configuration says, so the
+    isolation variables alone let it through. A server that challenges and
+    records whether credentials came back; the negative control is plain
+    `subprocess` under the same HOME, which must send them."""
+    import http.server
+    import threading
+
+    seen: list[bool] = []
+
+    class Challenge(http.server.BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802 - the stdlib's name
+            seen.append("Authorization" in self.headers)
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="r"')
+            self.end_headers()
+
+        def log_message(self, *args) -> None:
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Challenge)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{server.server_port}/r.git"
+    home = tmp_path / "home"
+    home.mkdir()
+    netrc = home / ".netrc"
+    netrc.write_text("machine 127.0.0.1 login probe password from-netrc\n")
+    netrc.chmod(0o600)
+    monkeypatch.setenv("HOME", str(home))
+    isolated = {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+                "GIT_TERMINAL_PROMPT": "0"}
+    try:
+        subprocess.run(  # noqa: S603 - argument list, never a shell string
+            [GIT, "ls-remote", "-q", "--", url], capture_output=True, timeout=30,
+            env={**os.environ, **isolated},
+        )
+        assert True in seen, "fixture is inert: the .netrc credential was never sent"
+        seen.clear()
+        run_bounded(["git", "ls-remote", "-q", "--", url], timeout=30)
+        assert seen and True not in seen, "a git child sent the operator's .netrc credential"
+    finally:
+        server.shutdown()
+    assert _child_env().get("HOME") == str(home), "only git loses HOME; the scanners keep it"
+
+
 # ── stream_bounded: the same rules for output too large to hold ─────────────
 
 
