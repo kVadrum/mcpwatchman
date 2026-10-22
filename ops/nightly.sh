@@ -37,7 +37,7 @@ PUBLISH="${MCPW_PUBLISH:-0}"
 # cache, inside the process holding the Cloudflare login. The npx form remains
 # only for a `main` whose lockfile predates wrangler, and is pinned to the
 # version the lockfile now carries.
-WRANGLER="wrangler@4.147.0"
+WRANGLER="wrangler@4.148.0"
 
 log() { printf '[nightly %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 die() { log "FAILED: $2"; exit "$1"; }
