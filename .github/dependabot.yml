@@ -20,7 +20,10 @@ updates:
   # construction; eight also pinned past a constraint they never resolved
   # (pydantic-core past pydantic's exact pin, protobuf 7 past opentelemetry-proto's
   # <7, exceptiongroup and peewee past semgrep's ~=). A lock moves by moving the
-  # cutoff in every file and re-running each line-2 command.
+  # cutoff in every file and re-running each line-2 command WITH --upgrade:
+  # without it uv prefers the pins already in the output file, so a moved cutoff
+  # alone changes nothing but the header. uv leaves --upgrade out of the header,
+  # so line 2 stays the command the locks job runs.
   #
   # The site's npm lockfile, with a two-week cooldown: a release is adopted once
   # it has been public long enough for a compromised one to be caught and pulled.
