@@ -12,18 +12,15 @@ updates:
     target-branch: dev
     schedule:
       interval: weekly
-  # No pip entry, deliberately. The hash-locked Python sets (requirements/*.txt)
-  # are `uv pip compile` output whose line-2 command carries an `--exclude-newer`
-  # cutoff set two weeks back — the cutoff is their cool-off — and CI's `locks`
-  # job re-runs that command and diffs. Dependabot rewrites a pin but cannot move
-  # the cutoff, so all ten pip PRs it opened on 2026-10-22 were red by
-  # construction; eight also pinned past a constraint they never resolved
-  # (pydantic-core past pydantic's exact pin, protobuf 7 past opentelemetry-proto's
-  # <7, exceptiongroup and peewee past semgrep's ~=). A lock moves by moving the
-  # cutoff in every file and re-running each line-2 command WITH --upgrade:
-  # without it uv prefers the pins already in the output file, so a moved cutoff
-  # alone changes nothing but the header. uv leaves --upgrade out of the header,
-  # so line 2 stays the command the locks job runs.
+  # No pip entry, deliberately — do not add one back. The hash-locked Python
+  # sets (requirements/*.txt) are `uv pip compile` output whose line-2 command
+  # carries an `--exclude-newer` cutoff two weeks back (their cool-off), and CI's
+  # `locks` job re-runs that command and diffs. Dependabot rewrites a pin without
+  # moving the cutoff or resolving the graph, so every pip PR it opens is red by
+  # construction (24b84e2 records the batch that proved it). A lock moves by
+  # moving the cutoff in every file and re-running each line-2 command WITH
+  # --upgrade — without it uv keeps the pins already in the output file — and uv
+  # leaves --upgrade out of the header, so line 2 stays the locks job's command.
   #
   # The site's npm lockfile, with a two-week cooldown: a release is adopted once
   # it has been public long enough for a compromised one to be caught and pulled.

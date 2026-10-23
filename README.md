@@ -247,7 +247,7 @@ A scan's failure rate is dominated by concurrent load rather than by the reposit
 **A missing binary does not fail — it produces a clean "not assessed".**
 Code Safety carries 30% of the weighting and Dependency Health 20%, so a scan run without them publishes a page that looks measured and is not.
 `ops/scan_cohort.py` refuses to start rather than let that happen.
-semgrep is pinned in `requirements/workers.txt` (1.179.0), and the osv-scanner release the dependency check was written against is recorded in `workers/scanner/osv_check.py` (2.6.0).
+semgrep's version is pinned in `requirements/workers.txt`, and the osv-scanner release the dependency check was written against is recorded in `workers/scanner/osv_check.py`.
 
 ## Development
 
