@@ -38,6 +38,11 @@ const buildOnly = scans.filter(
 const fromRepo = scans.filter((r) =>
   r.axes.code_safety.reason.startsWith("scored on the declared repository"),
 ).length;
+// Minified or bundled files are another: pruned unread, and a server left with
+// no other covered source is unassessed as OUR limit (`semgrep_check`).
+const minifiedOnly = scans.filter(
+  (r) => r.axes.code_safety.score === null && r.axes.code_safety.reason.includes("judged machine-generated"),
+).length;
 
 const partial = scans.filter((r) =>
   Object.values(r.axes).some(
@@ -94,6 +99,11 @@ ${fromRepo} of them, Code Safety is scored on the repository the server declares
 instead, and the axis says so; for ${buildOnly} more, no readable repository was
 declared and the axis is left unassessed. That is a limit of this scanner, not
 a fact about those servers.
+
+` : ""}${minifiedOnly ? `Minified or bundled files are not read as a server's own source either. For
+${minifiedOnly} ${minifiedOnly === 1 ? "server" : "servers"}, every source file in a language the ruleset covers was
+judged machine-generated, so Code Safety is left unassessed. That is a limit of
+this scanner, not a fact about ${minifiedOnly === 1 ? "that server" : "those servers"}.
 
 ` : ""}The analysis is static, always. Published source, manifests and lockfiles are
 read; the code is never executed and no running server is contacted. The blind

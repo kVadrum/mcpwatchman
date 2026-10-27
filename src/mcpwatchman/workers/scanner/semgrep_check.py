@@ -399,15 +399,16 @@ def _is_minified(path: Path) -> bool:
     # line share on purpose — a minified file behind a multi-line licence
     # header has few long lines but nearly all its bytes in them, and missing a
     # bundle is the failure that scored a real server 0. The residual — a real
-    # file that is mostly one giant literal — is pruned and then refused as our
-    # gap: visible, never a false score.
+    # file that is mostly one giant literal — is pruned; when it was the tree's
+    # only covered source, `run_semgrep` says so as our limit: visible, never a
+    # false score.
     lines = head.split(b"\n")
     total = sum(len(line) for line in lines)
     long_bytes = sum(len(line) for line in lines if len(line) > MINIFIED_LINE_CHARS)
     return total > 0 and long_bytes * 2 > total
 
 
-def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
+def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...], frozenset[str]]:
     """Remove from the scratch copy what must not be scored.
 
     Two categories, one mechanism:
@@ -426,9 +427,13 @@ def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
     Safe because `root` is a scratch copy `scan_workspace` throws away, and it
     runs after `enumerate_tree`, so the inventory still records what shipped.
     Returns the count and a bounded sample for the per-server page: "we did not
-    read these, and here is why" is a fact a reader is owed.
+    read these, and here is why" is a fact a reader is owed. Also returns every
+    file `_is_minified` removed, as inventory-style POSIX paths: when semgrep
+    then scans nothing, that set is what tells our own deliberate prune from a
+    run that failed (`run_semgrep`'s zero-files control).
     """
     pruned: list[str] = []
+    minified: set[str] = set()
 
     def removed(path: Path) -> bool:
         """Whether the path is really gone. `exists()` alone follows symlinks."""
@@ -477,8 +482,9 @@ def _prune_unscannable(root: Path) -> tuple[int, tuple[str, ...]]:
             path.unlink(missing_ok=True)
             if removed(path):
                 pruned.append(str(path.relative_to(root)))
+                minified.add(path.relative_to(root).as_posix())
 
-    return len(pruned), tuple(sorted(pruned)[:20])
+    return len(pruned), tuple(sorted(pruned)[:20]), frozenset(minified)
 
 
 def _neutralise_hostile_config(root: Path) -> tuple[str, ...]:
@@ -547,12 +553,16 @@ _COVERED_LANGUAGES = frozenset(
 )
 
 
-def _scannable_source_files(inventory: Inventory) -> int:
+def _covered_source_paths(inventory: Inventory) -> frozenset[str]:
     """Files the ruleset could match: source in a language we carry rules for."""
-    return sum(
-        1 for f in inventory.files
+    return frozenset(
+        f.path for f in inventory.files
         if f.language in _COVERED_LANGUAGES and f.role in (Role.SOURCE, Role.ENTRY_POINT)
     )
+
+
+def _scannable_source_files(inventory: Inventory) -> int:
+    return len(_covered_source_paths(inventory))
 
 
 def _covered_build_output(inventory: Inventory) -> int:
@@ -588,7 +598,7 @@ def run_semgrep(
         )
 
     neutralised = _neutralise_hostile_config(root)
-    pruned_count, pruned_sample = _prune_unscannable(root)
+    pruned_count, pruned_sample, minified = _prune_unscannable(root)
 
     # `--disable-nosem` is the third door in the same room as `.semgrepignore`
     # and `--no-git-ignore`, and it was open. semgrep honours inline `nosem` /
@@ -672,10 +682,37 @@ def run_semgrep(
     # subtraction: `assess_code_safety` returns UNAVAILABLE before semgrep runs.
     #
     # ⚠ The sets DO overlap in one place: a file `_is_minified` prunes is one
-    # the inventory counted. If that probe misfires on authored source, THIS
-    # control is what fires — which is how a one-long-line `index.ts` kept two
-    # pages stale until `_is_minified` learned to judge the whole file.
+    # the inventory counted. When that probe took EVERY covered file, the first
+    # branch below says so as our limit; before it existed, a misfire on
+    # authored source fired the control instead, and a one-long-line
+    # `index.ts` kept two pages stale until `_is_minified` learned to judge the
+    # whole file.
     if inventory is not None and scanned == 0 and _scannable_source_files(inventory):
+        covered = _covered_source_paths(inventory)
+        if covered <= minified:
+            # ⚠ OURS, DELIBERATE, AND THE SAME EVERY RUN — so not ENVIRONMENT.
+            # Every covered file was one `_is_minified` removed, so semgrep was
+            # handed nothing to read. Left on the FAILED path below, this
+            # derived to ENVIRONMENT, a refusal meant for one run's accident;
+            # because the cause is a fixed decision of ours, it refused every
+            # night, and ai.mcpanalytics/analytics kept a stale page from
+            # 2026-10-24 on (its one authored `src/index.js` misjudged). Right
+            # or wrong about the file, not reading it is this scanner's limit.
+            n = len(covered)
+            return SemgrepResult(
+                status=SemgrepStatus.UNAVAILABLE,
+                reason=(
+                    f"every source file in a covered language ({n} file"
+                    f"{'' if n == 1 else 's'}) was judged machine-generated — "
+                    "minified or bundled — and not read, because this scanner "
+                    "does not score machine-generated code as the server's own"
+                ),
+                explicit_fault=Fault.PROJECT,
+                methodology_version=version,
+                neutralised=neutralised,
+                pruned=pruned_count,
+                pruned_sample=pruned_sample,
+            )
         # The positive control, wired in rather than left to a test: the
         # inventory says there was source in a language we cover, and semgrep
         # looked at nothing. That is a scanner defect, and reporting it as a

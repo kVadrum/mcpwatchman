@@ -136,6 +136,41 @@ def test_scanning_zero_files_with_source_present_is_a_failure(tree, monkeypatch)
     assert "scanned 0 files" in result.reason
 
 
+def test_every_covered_file_pruned_as_minified_is_our_limit_not_an_accident(
+    tmp_path, monkeypatch
+) -> None:
+    """ai.mcpanalytics/analytics, 2026-10-24 → 10-26: its only covered file was
+    pruned as minified, semgrep read nothing, and the zero derived to
+    ENVIRONMENT — refused every night, so the page froze stale. A deliberate
+    prune repeats identically each run, which is what makes it PROJECT."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "index.js").write_text("!function(e){" + "var x=1;" * 200 + "}\n")
+    inventory = enumerate_tree(tmp_path)  # taken before pruning, as the runner does
+    _fake_run(monkeypatch, _payload([], scanned=()))
+    result = sc.run_semgrep(tmp_path, rules=RULES, inventory=inventory)
+    assert result.status is sc.SemgrepStatus.UNAVAILABLE
+    assert result.score is None
+    assert result.fault is Fault.PROJECT and result.fault.publishable
+    # The site derives its PROJECT disclosure from this phrase.
+    assert "judged machine-generated" in result.reason
+    assert result.pruned == 1
+
+
+def test_zero_files_with_an_unpruned_covered_file_is_still_our_accident(
+    tmp_path, monkeypatch
+) -> None:
+    """The negative control: one covered file SURVIVED the prune and semgrep
+    still read nothing — that is the scanner failing, never our limit."""
+    (tmp_path / "bundle.js").write_text("!function(e){" + "var x=1;" * 200 + "}\n")
+    (tmp_path / "server.py").write_text("print('hi')\n")
+    inventory = enumerate_tree(tmp_path)
+    _fake_run(monkeypatch, _payload([], scanned=()))
+    result = sc.run_semgrep(tmp_path, rules=RULES, inventory=inventory)
+    assert result.status is sc.SemgrepStatus.FAILED
+    assert result.fault is Fault.ENVIRONMENT and not result.fault.publishable
+    assert "scanned 0 files" in result.reason
+
+
 def test_scanning_zero_files_with_no_covered_source_is_fine(tree, monkeypatch) -> None:
     """The negative control for the test above: an empty scan can be honest."""
     _fake_run(monkeypatch, _payload([], scanned=()))
@@ -306,12 +341,14 @@ def test_minified_bundles_are_not_scored(tmp_path: Path) -> None:
     (docs / "app.min.js").write_text("const a=1;\n")
     (tmp_path / "server.js").write_text("const cp = require('child_process');\n")
 
-    pruned, sample = sc._prune_unscannable(tmp_path)
+    pruned, sample, minified = sc._prune_unscannable(tmp_path)
     assert pruned == 2
     assert not bundle.exists()
     assert not (docs / "app.min.js").exists()
     assert (tmp_path / "server.js").exists(), "authored source must survive"
     assert any("highlight-abc7f01d.js" in s for s in sample)
+    # Keyed like `FileRecord.path`, which the zero-files control compares it to.
+    assert minified == {"guide/book/highlight-abc7f01d.js", "guide/book/app.min.js"}
 
 
 def test_vendored_trees_are_not_scored(tmp_path: Path) -> None:
@@ -326,7 +363,7 @@ def test_vendored_trees_are_not_scored(tmp_path: Path) -> None:
     (tmp_path / "vendor" / "dep.py").write_text("eval(x)\n")
     (tmp_path / "server.py").write_text("print('hi')\n")
 
-    pruned, _ = sc._prune_unscannable(tmp_path)
+    pruned, _, _ = sc._prune_unscannable(tmp_path)
     assert pruned == 2
     assert not (tmp_path / "node_modules").exists()
     assert not (tmp_path / "vendor").exists()
@@ -427,7 +464,7 @@ def test_a_symlinked_vendor_tree_cannot_evade_the_prune(tmp_path: Path) -> None:
     (root / "node_modules").symlink_to(outside)
     (root / "server.py").write_text("print('hi')\n")
 
-    pruned, sample = _prune_unscannable(root)
+    pruned, sample, _ = _prune_unscannable(root)
 
     assert not (root / "node_modules").is_symlink(), "the link survived the prune"
     assert pruned == 1 and sample == ("node_modules/",)
@@ -446,7 +483,7 @@ def test_the_prune_count_never_includes_something_it_failed_to_remove(
     (root / "node_modules" / "dep.js").write_text("eval(x)\n")
 
     monkeypatch.setattr(sc.shutil, "rmtree", lambda *a, **kw: None)  # a silent refusal
-    pruned, sample = _prune_unscannable(root)
+    pruned, sample, _ = _prune_unscannable(root)
 
     assert pruned == 0, "counted a removal that did not happen"
     assert sample == ()
@@ -475,7 +512,7 @@ def test_a_symlinked_file_is_never_read_while_hunting_for_minified_files(
     (root / "payload.js").symlink_to(outside / "real.js")
     (root / "server.py").write_text("print('hi')\n")
 
-    pruned, sample = _prune_unscannable(root)
+    pruned, sample, _ = _prune_unscannable(root)
 
     assert pruned == 0, "followed a symlink to decide whether to prune"
     assert sample == ()
@@ -772,7 +809,7 @@ def test_git_metadata_is_pruned_but_never_counted(tmp_path: Path) -> None:
     (tmp_path / "node_modules" / "dep").mkdir(parents=True)
     (tmp_path / "server.js").write_text("const x = 1;\n")
 
-    pruned, sample = sc._prune_unscannable(tmp_path)
+    pruned, sample, _ = sc._prune_unscannable(tmp_path)
 
     assert not (tmp_path / ".git").exists(), "semgrep must still not read it"
     assert (pruned, sample) == (1, ("node_modules/",))
