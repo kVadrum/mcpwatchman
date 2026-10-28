@@ -203,6 +203,10 @@ def main() -> int:
         if rec.stale:
             print(f"          {len(rec.stale)} stale label(s): the scanner no longer reports "
                   "those findings — re-audit this entry")
+            # Listed, not just counted: the re-audit is per label, and the count
+            # alone sent a ratifier to guess which ones by matching rule counts.
+            for f in rec.stale:
+                print(f"            {f.label:2} {f.rule} {f.path}:{f.line}")
         if rec.unverifiable:
             print(f"          {len(rec.unverifiable)} label(s) could not be checked: "
                   f"{rec.unverifiable_reason}")

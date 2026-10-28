@@ -6,12 +6,15 @@ that reached the default exit 1 would read as evidence against the methodology.
 
 from __future__ import annotations
 
+import dataclasses
 import io
 import json
 import urllib.error
 
 import ops.calibrate as cal
 import pytest
+
+from mcpwatchman.goldset import Label
 
 
 def _serve(monkeypatch, answer) -> list[str]:
@@ -181,3 +184,34 @@ def test_calibration_scans_at_the_pin_and_refuses_an_unpinned_repository(
     assert asked == [A, None]
     assert "[ok   ] a/x" in out
     assert "pins no commit" in out
+
+
+def test_a_stale_label_is_named_not_only_counted(monkeypatch, tmp_path, capsys) -> None:
+    """The re-audit is per label: a bare count left the ratifier matching rule
+    totals to guess which labels went stale (ratification packet, 2026-10-27)."""
+    kept = Label(rule="r-kept", path="a.js", line=3, label="fp", why="w")
+    gone = Label(rule="r-gone", path="b.js", line=9, label="tp", why="w")
+    entry = dataclasses.replace(_entry("draft"), findings=(kept, gone))
+
+    class _Report:
+        def to_dict(self):
+            axes = {a: {"score": 50, "reason": "", "evidence": []} for a in cal.AXES}
+            axes["code_safety"]["evidence"] = [
+                {"label": "r-kept (medium/low)", "path": "a.js", "line": 3},
+            ]
+            return {"axes": axes, "ref_matched_version": True}
+
+    monkeypatch.setattr(cal, "preflight", lambda: [])
+    monkeypatch.setattr(cal, "entry_files", lambda *_a, **_k: [tmp_path / "e.md"])
+    monkeypatch.setattr(cal, "load", lambda _p: entry)
+    monkeypatch.setattr(cal, "registry_entry", lambda n, v: (object(), ""))
+    monkeypatch.setattr(cal, "scan_entry", lambda _e, **_k: _Report())
+    monkeypatch.setattr(cal, "unpublishable_gaps", lambda _n, _r: [])
+    monkeypatch.setattr(cal, "compare", lambda *_a: [])
+    monkeypatch.setattr("sys.argv", ["calibrate", "--include-drafts"])
+
+    assert cal.main() == 1
+    out = capsys.readouterr().out
+    assert "1 stale label(s)" in out
+    assert "tp r-gone b.js:9" in out
+    assert "r-kept a.js:3" not in out, "a matched label is not stale"
