@@ -87,6 +87,15 @@ rules:
                   regex: ^(node:)?child_process$
       - pattern-not: $CP.$F("...", ...)
       - pattern-not: $F("...", ...)
+      # ⚠ AN INTERPOLATED TEMPLATE IS THE SIBLING RULE'S, NOT THIS ONE'S (ruleset
+      # 0.1.2). Both rules fired on it, so one sink deducted twice — critical
+      # -20 then -15 under 03 §3's stacking: 67 of the 80 deducting JS shell
+      # lines on 15 of 17 servers (published data, 2026-10-28). The exclusion
+      # is the sibling's own template pattern and the sibling covers every sink
+      # this rule does, so the two partition by argument shape. A template
+      # joined with `+` is a binary expression, not a template, and stays here.
+      - pattern-not: $CP.$F(`...${$X}...`, ...)
+      - pattern-not: $F(`...${$X}...`, ...)
 
   - id: mcp-js-shell-exec-template-literal
     languages: [javascript, typescript]
@@ -108,10 +117,15 @@ rules:
     # inline require, and dynamic `import()` — the same binding block as the
     # rule above, changed with it. tests/fixtures/semgrep/receivers pins both
     # directions.
+    # Every sink of mcp-js-shell-exec-nonliteral, spawn with `shell: true`
+    # included (0.1.2): that rule now leaves interpolated templates to this
+    # one, so a sink missing here would be a sink neither rule reports.
     patterns:
       - pattern-either:
           - pattern: "child_process.exec(`...${$X}...`, ...)"
           - pattern: "child_process.execSync(`...${$X}...`, ...)"
+          - pattern: "child_process.spawn(`...${$X}...`, ..., {shell: true})"
+          - pattern: "child_process.spawnSync(`...${$X}...`, ..., {shell: true})"
           - patterns:
               - pattern-either:
                   - pattern-inside: |
@@ -134,6 +148,8 @@ rules:
               - pattern-either:
                   - pattern: "$CP.exec(`...${$X}...`, ...)"
                   - pattern: "$CP.execSync(`...${$X}...`, ...)"
+                  - pattern: "$CP.spawn(`...${$X}...`, ..., {shell: true})"
+                  - pattern: "$CP.spawnSync(`...${$X}...`, ..., {shell: true})"
           - patterns:
               - pattern-either:
                   - pattern-inside: |
@@ -157,8 +173,12 @@ rules:
               - pattern-either:
                   - pattern: "require(\"$M\").exec(`...${$X}...`, ...)"
                   - pattern: "require(\"$M\").execSync(`...${$X}...`, ...)"
+                  - pattern: "require(\"$M\").spawn(`...${$X}...`, ..., {shell: true})"
+                  - pattern: "require(\"$M\").spawnSync(`...${$X}...`, ..., {shell: true})"
                   - pattern: "(await import(\"$M\")).exec(`...${$X}...`, ...)"
                   - pattern: "(await import(\"$M\")).execSync(`...${$X}...`, ...)"
+                  - pattern: "(await import(\"$M\")).spawn(`...${$X}...`, ..., {shell: true})"
+                  - pattern: "(await import(\"$M\")).spawnSync(`...${$X}...`, ..., {shell: true})"
               - metavariable-regex:
                   metavariable: $M
                   regex: ^(node:)?child_process$

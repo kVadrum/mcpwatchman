@@ -6,3 +6,5 @@ export function a(cmd: string) { exec(cmd); } // FIRE: mcp-js-shell-exec-nonlite
 export function b(cmd: string) { cp.execSync(cmd); } // FIRE: mcp-js-shell-exec-nonliteral
 export function c(cmd: string) { cpd.exec(cmd); } // FIRE: mcp-js-shell-exec-nonliteral
 export function d(cmd: string) { run(cmd); } // FIRE: mcp-js-shell-exec-nonliteral
+export function e(dir: string) { run(`ls ${dir}`); } // FIRE: mcp-js-shell-exec-template-literal
+export function f(dir: string) { cp.spawnSync(`ls ${dir}`, { shell: true }); } // FIRE: mcp-js-shell-exec-template-literal

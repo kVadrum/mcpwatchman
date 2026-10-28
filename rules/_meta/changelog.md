@@ -1,12 +1,27 @@
 # Ruleset changelog
 
-Versioned in lockstep with the scoring methodology (`04` §4.3). The first
-`## <version>` heading in this file is what `semgrep_check.ruleset_version()`
-records on every scan, so the newest release goes at the top.
+Versioned in lockstep with the scoring methodology (`04` §4.3).
+The first `## <version>` heading in this file is what `semgrep_check.ruleset_version()` records on every scan, so the newest release goes at the top.
 
-`04` §4.3 on what a version change costs: a patch bump (rule fixes, new rules)
-re-scans affected servers on the next daily crawl; a minor bump (a new rule
-category) re-scans everything.
+`04` §4.3 on what a version change costs: a patch bump (rule fixes, new rules) re-scans affected servers on the next daily crawl; a minor bump (a new rule category) re-scans everything.
+
+## 0.1.2 — 2026-10-28
+
+**An interpolated template literal is `mcp-js-shell-exec-template-literal`'s alone.**
+`mcp-js-shell-exec-nonliteral` excluded only string literals, so a command built from a template with interpolation matched both rules, and one sink deducted twice — critical, -20 and then -15 under `03` §3's stacking.
+Measured on the published data of 2026-10-28: 67 of the 80 deducting JavaScript shell lines carried both findings, on 15 of the 17 servers with any; no other pair of rules shares a line anywhere in that data.
+`mcp-js-shell-exec-nonliteral` now excludes the sibling's own template pattern, and the sibling gains the `spawn`/`spawnSync` with `shell: true` sinks it lacked, so the two partition by the argument's shape and no sink falls to neither.
+A template joined with `+` is a binary expression and stays with `-nonliteral`; a template with no interpolation matches neither, as before.
+`tests/fixtures/semgrep/receivers/` pins both directions, and the 0.1.1 rules fail those fixtures.
+
+Found while triaging the gold-set drafts, but it rests on the published data alone, not on any draft label (`evals/gold-set/README.md` → *Unratified labels may narrow a rule, never raise one*).
+No server gains a deduction; each of the 15 loses one finding per double-counted line.
+The regeneration of 2026-10-29 bears it out: no line carries both findings, and Code Safety rose on 13 servers and fell on none — the other two were already at 0 with deductions to spare.
+`ai.palmyr/palmyr`'s evidence list, capped at 50, now shows 19 template findings that were there before behind the duplicates (151 findings became 108), so its page lists more shell findings without having gained one.
+
+Not changed: `mcp-js-tool-arg-to-shell` still fires beside `-nonliteral` on the same sink by construction (`receivers/tool_handler.js`), the same double count; it fires on no published server today.
+
+A patch bump: a rule fix, so affected servers are re-scanned on the next run.
 
 ## 0.1.1 — 2026-09-29
 
@@ -30,32 +45,24 @@ A patch bump: rule fixes, so affected servers are re-scanned on the next run.
 
 ## 0.1.0 — 2026-09-17
 
-First shipped ruleset. 32 rules across python, javascript/typescript and go,
-replacing four empty `.gitkeep` files.
+First shipped ruleset. 32 rules across python, javascript/typescript and go, replacing four empty `.gitkeep` files.
 
-**Coverage.** Per language: shell execution, SSRF, unsafe deserialization and
-dynamic code execution, path traversal, plus SQL injection (python),
-prototype pollution (javascript), and an `mcp-specific.yaml` in each carrying
-the rules that key on an MCP tool handler rather than on a generic sink.
+**Coverage.**
+Per language: shell execution, SSRF, unsafe deserialization and dynamic code execution, path traversal, plus SQL injection (python), prototype pollution (javascript), and an `mcp-specific.yaml` in each carrying the rules that key on an MCP tool handler rather than on a generic sink.
 
-**Every rule is positive-controlled.** `tests/test_ruleset.py` runs the whole
-ruleset over `tests/fixtures/semgrep/vulnerable` and requires all 32 to fire,
-then over `tests/fixtures/semgrep/safe` and requires zero findings. A rule that
-cannot be made to fire does not ship — which is not hypothetical:
-`mcp-js-prototype-pollution-assignment` was written with a `pattern-not` whose
-metavariable matched its own positive pattern, so it was **dead on arrival** and
-looked fine. It is gone, replaced by two narrower rules that each fire.
+**Every rule is positive-controlled.**
+`tests/test_ruleset.py` runs the whole ruleset over `tests/fixtures/semgrep/vulnerable` and requires all 32 to fire, then over `tests/fixtures/semgrep/safe` and requires zero findings.
+A rule that cannot be made to fire does not ship — which is not hypothetical: `mcp-js-prototype-pollution-assignment` was written with a `pattern-not` whose metavariable matched its own positive pattern, so it was **dead on arrival** and looked fine.
+It is gone, replaced by two narrower rules that each fire.
 
-**No rule claims `high` confidence.** `03` §3 defines that tier as a measured
-false-positive rate on a gold set that does not exist yet. See
-`_meta/severity-mapping.yaml` and `weights.ruleset_calibrated()`.
+**No rule claims `high` confidence.**
+`03` §3 defines that tier as a measured false-positive rate on a gold set that does not exist yet.
+See `_meta/severity-mapping.yaml` and `weights.ruleset_calibrated()`.
 
 **Known gaps, recorded rather than implied.**
 
-- No taint analysis, per `03` §3's explicit v0.1 decision. Rules match shapes,
-  not flows, so "a tool argument reaches a sink" is approximated by "a sink
-  appears inside a tool handler".
+- No taint analysis, per `03` §3's explicit v0.1 decision.
+  Rules match shapes, not flows, so "a tool argument reaches a sink" is approximated by "a sink appears inside a tool handler".
 - Rust, Ruby, Java and C# are inventoried by `inventory.py` and have no rules.
   A server written in them returns `UNAVAILABLE` for Code Safety, not 100.
-- The false-positive rates `04` §4.2 requires per rule are unmeasured; the
-  safe-fixture control is a floor, not a corpus.
+- The false-positive rates `04` §4.2 requires per rule are unmeasured; the safe-fixture control is a floor, not a corpus.
