@@ -25,6 +25,16 @@ Only ratified entries count towards calibration, and `tests/test_gold_set.py` re
 
 A reviewer ratifying an entry is checking four things: the expected ranges follow from `03`'s rubric and the code rather than from the scanner's output; every label's reason holds up against the cited line; the entry has no Track B note whose embargo is still open (see *Disclosure*); and its `commit` is the tree the audit read (see *Pinning the tree*).
 
+## Unratified labels may narrow a rule, never raise one
+
+No entry is being ratified: a hand audit of thirty servers is more than this project can staff today (operator ruling 2026-10-28).
+The gate above is unchanged, so no rule claims `high` and no composite is published — what a hand audit would license stays withheld rather than being licensed another way.
+
+The drafts are still evidence, used in one direction only.
+A label nobody has verified may justify narrowing a rule, demoting it, or stopping it deducting: if the label is wrong, the cost is a missed finding, which `03` §1 ranks as the cheaper error.
+It may never justify raising a rule's confidence or declaring calibration, because there a wrong label becomes a confident claim about somebody else's code.
+A ruleset change made on draft evidence says so in `rules/_meta/changelog.md`, with the counts it rests on.
+
 ## Labelling standard
 
 A label answers one question: **does the matched code have the flaw the rule's message describes, judged on the code itself?**
