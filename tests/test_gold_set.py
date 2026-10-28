@@ -113,6 +113,52 @@ def test_an_expected_unassessed_axis_must_stay_unassessed() -> None:
     ]
 
 
+def test_live_axis_drift_is_reported_not_blocking() -> None:
+    """Operator ruling 2026-10-27: Maintenance and Dependency Health score the
+    world at scan time, so at a fixed pin they drift with no code change. Their
+    drift — and a composite only they moved — is printed, never blocking."""
+    e = gs.parse(entry())
+    axes = in_range()
+    axes["maintenance"] = {"score": 95}  # 80 + 8 = 88: outside
+    lines, blocking = gs.drift_report(e, {"axes": axes}, composite=81)  # 75 + 5: outside
+    assert lines == [
+        "maintenance: expected 60–80 (±8), scored 95",
+        "composite: expected 60–75 (±5), computed 81",
+    ]
+    assert blocking == []
+
+
+def test_a_fixed_axis_drifting_keeps_the_composite_blocking() -> None:
+    e = gs.parse(entry())
+    axes = in_range()
+    axes["maintenance"] = {"score": 95}
+    axes["auth_posture"] = {"score": 69}
+    _, blocking = gs.drift_report(e, {"axes": axes}, composite=81)
+    assert blocking == [
+        "auth_posture: expected 40–60 (±8), scored 69",
+        "composite: expected 60–75 (±5), computed 81",
+    ]
+
+
+def test_a_live_axis_changing_assessability_still_blocks() -> None:
+    """At a fixed pin only our code or the tree turns a score into an abstention."""
+    e = gs.parse(entry())
+    axes = in_range()
+    axes["dependency_health"] = {"score": None}
+    _, blocking = gs.drift_report(e, {"axes": axes}, composite=None)
+    assert blocking == [
+        "dependency_health: expected 50–80, unassessed",
+        "composite: expected 60–75, not computable",
+    ]
+
+
+def test_composite_drift_with_no_axis_drift_still_blocks() -> None:
+    """Nothing live moved it, so the expectation itself is inconsistent."""
+    e = gs.parse(entry())
+    _, blocking = gs.drift_report(e, {"axes": in_range()}, composite=81)
+    assert blocking == ["composite: expected 60–75 (±5), computed 81"]
+
+
 @pytest.mark.parametrize(
     ("fp", "total", "tier"),
     [(0, 9, "unmeasured"), (0, 10, "high"), (1, 20, "medium"), (1, 21, "high"),

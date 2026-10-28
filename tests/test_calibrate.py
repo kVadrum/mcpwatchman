@@ -110,7 +110,8 @@ def test_a_draft_cannot_block_a_ratified_verdict(monkeypatch, tmp_path, capsys) 
     monkeypatch.setattr(cal, "scan_entry", lambda _e, **_k: _Report())
     monkeypatch.setattr(cal, "unpublishable_gaps", lambda _n, _r: [])
     monkeypatch.setattr(
-        cal, "compare", lambda e, _r, _c: [] if e.ratified else ["the draft drifted"],
+        cal, "drift_report",
+        lambda e, _r, _c: ([], []) if e.ratified else (["the draft drifted"],) * 2,
     )
     monkeypatch.setattr("sys.argv", ["calibrate", "--include-drafts"])
 
@@ -176,7 +177,7 @@ def test_calibration_scans_at_the_pin_and_refuses_an_unpinned_repository(
     monkeypatch.setattr(cal, "registry_entry", lambda n, v: (object(), ""))
     monkeypatch.setattr(cal, "scan_entry", scan)
     monkeypatch.setattr(cal, "unpublishable_gaps", lambda _n, _r: [])
-    monkeypatch.setattr(cal, "compare", lambda *_a: [])
+    monkeypatch.setattr(cal, "drift_report", lambda *_a: ([], []))
     monkeypatch.setattr("sys.argv", ["calibrate", "--include-drafts"])
 
     assert cal.main() == 2
@@ -207,7 +208,7 @@ def test_a_stale_label_is_named_not_only_counted(monkeypatch, tmp_path, capsys) 
     monkeypatch.setattr(cal, "registry_entry", lambda n, v: (object(), ""))
     monkeypatch.setattr(cal, "scan_entry", lambda _e, **_k: _Report())
     monkeypatch.setattr(cal, "unpublishable_gaps", lambda _n, _r: [])
-    monkeypatch.setattr(cal, "compare", lambda *_a: [])
+    monkeypatch.setattr(cal, "drift_report", lambda *_a: ([], []))
     monkeypatch.setattr("sys.argv", ["calibrate", "--include-drafts"])
 
     assert cal.main() == 1
@@ -215,3 +216,32 @@ def test_a_stale_label_is_named_not_only_counted(monkeypatch, tmp_path, capsys) 
     assert "1 stale label(s)" in out
     assert "tp r-gone b.js:9" in out
     assert "r-kept a.js:3" not in out, "a matched label is not stale"
+
+
+def test_live_only_drift_does_not_stop_calibration(monkeypatch, tmp_path, capsys) -> None:
+    """Operator ruling 2026-10-27: drift on the live-data axes is reported, not
+    blocking — a ratified entry drifting only there may still be declared, and
+    the exit code (1 = drift) stays reserved for drift that blocks."""
+    entry = _entry("ratified")
+
+    class _Report:
+        def to_dict(self):
+            axes = {a: {"score": 50, "reason": "", "evidence": []} for a in cal.AXES}
+            return {"axes": axes, "ref_matched_version": True}
+
+    line = "maintenance: expected 60–80 (±8), scored 95"
+    monkeypatch.setattr(cal, "MIN_RATIFIED_ENTRIES", 1)
+    monkeypatch.setattr(cal, "preflight", lambda: [])
+    monkeypatch.setattr(cal, "entry_files", lambda *_a, **_k: [tmp_path / "e.md"])
+    monkeypatch.setattr(cal, "load", lambda _p: entry)
+    monkeypatch.setattr(cal, "registry_entry", lambda n, v: (object(), ""))
+    monkeypatch.setattr(cal, "scan_entry", lambda _e, **_k: _Report())
+    monkeypatch.setattr(cal, "unpublishable_gaps", lambda _n, _r: [])
+    monkeypatch.setattr(cal, "drift_report", lambda *_a: ([line], []))
+    monkeypatch.setattr("sys.argv", ["calibrate"])
+
+    assert cal.main() == 0
+    out = capsys.readouterr().out
+    assert "[live ] a/x" in out
+    assert f"{line}  (live data: reported, not blocking)" in out
+    assert "Calibration may be declared." in out

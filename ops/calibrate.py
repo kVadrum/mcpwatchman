@@ -60,7 +60,7 @@ from mcpwatchman.goldset import (
     MIN_RATIFIED_ENTRIES,
     GoldEntry,
     Label,
-    compare,
+    drift_report,
     entry_files,
     fp_rates,
     load,
@@ -157,6 +157,7 @@ def main() -> int:
     # the same server can both be loaded, and keyed by name the draft's drift
     # would block the ratified verdict it is barred from moving (Codex leg).
     drifted: list[GoldEntry] = []
+    live_drifted: list[GoldEntry] = []  # drift on LIVE_AXES alone: reported only
     stale_entries: list[GoldEntry] = []
     unmeasured: list[GoldEntry] = []
     unchecked: list[GoldEntry] = []
@@ -190,16 +191,17 @@ def main() -> int:
         composite = (
             composite_score(scores) if all(v is not None for v in scores.values()) else None
         )
-        drift = compare(entry, report, composite)
+        drift, blocking_drift = drift_report(entry, report, composite)
         rec = reconcile(entry, report)
         (official if entry.ratified else preview).extend(rec.matched)
 
         tag = "ratified" if entry.ratified else "draft"
         shown = " ".join(f"{a.split('_')[0]}={scores[a]}" for a in AXES)
-        status = "drift" if drift or rec.stale else "ok"
+        status = "drift" if blocking_drift or rec.stale else ("live" if drift else "ok")
         print(f"[{status:5}] {entry.name} ({tag}) {shown} composite={composite}")
         for line in drift:
-            print(f"          {line}")
+            print(f"          {line}" + ("" if line in blocking_drift else
+                  "  (live data: reported, not blocking)"))
         if rec.stale:
             print(f"          {len(rec.stale)} stale label(s): the scanner no longer reports "
                   "those findings — re-audit this entry")
@@ -214,8 +216,10 @@ def main() -> int:
             print(f"          {len(rec.unlabeled)} current finding(s) unlabelled"
                   + (f", {rec.evidence_omitted} more not shown (evidence cap)"
                      if rec.evidence_omitted else ""))
-        if drift:
+        if blocking_drift:
             drifted.append(entry)
+        elif drift:
+            live_drifted.append(entry)
         if rec.stale:
             stale_entries.append(entry)
         if rec.unverifiable:
@@ -228,7 +232,8 @@ def main() -> int:
     blocking = [e for e in drifted + stale_entries + unmeasured + unchecked if e.ratified]
     ready = ratified >= MIN_RATIFIED_ENTRIES and not blocking
     print(
-        f"\n{len(drifted)} of {len(entries)} entries drift, {len(stale_entries)} carry stale "
+        f"\n{len(drifted)} of {len(entries)} entries drift ({len(live_drifted)} more only on "
+        "live-data axes, not blocking), {len(stale_entries)} carry stale "
         f"labels, {len(unmeasured)} could not be measured, {len(unchecked)} have labels "
         "that could not be checked. Calibration "
         + ("may be declared." if ready else

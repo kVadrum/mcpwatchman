@@ -65,7 +65,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 from mcpwatchman.workers.commits import valid_commit
 
@@ -77,6 +77,10 @@ LABELS = frozenset({"tp", "fp"})
 # `09` §5: drift tolerances.
 COMPOSITE_TOLERANCE = 5
 AXIS_TOLERANCE = 8
+# Scored from the world at scan time, not from the pinned tree: Maintenance reads
+# live forge signals, Dependency Health the live OSV database. Their scores move
+# at a fixed pin with no code change (`drift_report`).
+LIVE_AXES = frozenset({"maintenance", "dependency_health"})
 
 # `03` §3: the confidence tiers ARE these measured rates.
 HIGH_MAX_FP_RATE = 0.05
@@ -245,30 +249,70 @@ def ratified_entries(root: Path = DEFAULT_ROOT) -> list[GoldEntry]:
     return [e for e in (load(p) for p in entry_files(root)) if e.ratified]
 
 
-def compare(entry: GoldEntry, report: Mapping[str, Any], composite: int | None) -> list[str]:
-    """Every way `report` drifts from the entry's expectations (`09` §5 tolerances)."""
+def _drift(
+    entry: GoldEntry, report: Mapping[str, Any], composite: int | None
+) -> list[tuple[str, str, bool]]:
+    """(axis or "composite", the drift line, whether it is a SCORE out of range
+    rather than a change of assessability) for every way the report drifts."""
     drift = []
     for axis in AXES:
         want = entry.expected_axes[axis]
         got = report["axes"][axis]["score"]
         if want is None:
             if got is not None:
-                drift.append(f"{axis}: expected unassessed, scored {got}")
+                drift.append((axis, f"{axis}: expected unassessed, scored {got}", False))
             continue
         if got is None:
-            drift.append(f"{axis}: expected {want[0]}–{want[1]}, unassessed")
+            drift.append((axis, f"{axis}: expected {want[0]}–{want[1]}, unassessed", False))
         elif not want[0] - AXIS_TOLERANCE <= got <= want[1] + AXIS_TOLERANCE:
-            drift.append(f"{axis}: expected {want[0]}–{want[1]} (±{AXIS_TOLERANCE}), scored {got}")
+            drift.append((
+                axis, f"{axis}: expected {want[0]}–{want[1]} (±{AXIS_TOLERANCE}), scored {got}",
+                True,
+            ))
     want_c = entry.expected_composite
     if want_c is not None:
         if composite is None:
-            drift.append(f"composite: expected {want_c[0]}–{want_c[1]}, not computable")
+            drift.append((
+                "composite", f"composite: expected {want_c[0]}–{want_c[1]}, not computable", False,
+            ))
         elif not want_c[0] - COMPOSITE_TOLERANCE <= composite <= want_c[1] + COMPOSITE_TOLERANCE:
-            drift.append(
+            drift.append((
+                "composite",
                 f"composite: expected {want_c[0]}–{want_c[1]} (±{COMPOSITE_TOLERANCE}), "
-                f"computed {composite}"
-            )
+                f"computed {composite}",
+                True,
+            ))
     return drift
+
+
+def compare(entry: GoldEntry, report: Mapping[str, Any], composite: int | None) -> list[str]:
+    """Every way `report` drifts from the entry's expectations (`09` §5 tolerances)."""
+    return [line for _, line, _ in _drift(entry, report, composite)]
+
+
+class DriftReport(NamedTuple):
+    lines: list[str]  # every drift, to print
+    blocking: list[str]  # the drift that stops calibration being declared
+
+
+def drift_report(
+    entry: GoldEntry, report: Mapping[str, Any], composite: int | None
+) -> DriftReport:
+    """Every drift, and the part of it that blocks declaring calibration.
+
+    A LIVE_AXES score out of range is reported, not blocking — the world moved,
+    not the tree — and so is a composite out of range when only live axes
+    drifted (operator ruling 2026-10-27). A change of ASSESSABILITY on a live
+    axis still blocks: at a fixed pin only our code or the tree can cause it.
+    """
+    found = _drift(entry, report, composite)
+    live = {k for k, _, scored in found if scored and k in LIVE_AXES}
+    fixed = {k for k, _, scored in found if k != "composite" and k not in live}
+    blocking = [
+        line for k, line, scored in found
+        if k not in live and not (k == "composite" and scored and live and not fixed)
+    ]
+    return DriftReport([line for _, line, _ in found], blocking)
 
 
 @dataclass(frozen=True, slots=True)
@@ -357,12 +401,15 @@ __all__ = [
     "AXIS_TOLERANCE",
     "COMPOSITE_TOLERANCE",
     "DEFAULT_ROOT",
+    "DriftReport",
+    "LIVE_AXES",
     "GoldEntry",
     "GoldSetError",
     "Label",
     "MIN_RATIFIED_ENTRIES",
     "Reconciliation",
     "compare",
+    "drift_report",
     "entry_files",
     "fp_rates",
     "load",

@@ -25,6 +25,17 @@ Only ratified entries count towards calibration, and `tests/test_gold_set.py` re
 
 A reviewer ratifying an entry is checking four things: the expected ranges follow from `03`'s rubric and the code rather than from the scanner's output; every label's reason holds up against the cited line; the entry has no Track B note whose embargo is still open (see *Disclosure*); and its `commit` is the tree the audit read (see *Pinning the tree*).
 
+## Labelling standard
+
+A label answers one question: **does the matched code have the flaw the rule's message describes, judged on the code itself?**
+`tp` if it does, `fp` if it does not (operator ruling 2026-10-27).
+That measures the rule's precision, which is what `03` §3's tiers claim, so two other questions are deliberately not part of it:
+
+- **Whether the code ships.** A correct match in test code is `tp`. Test-code findings are listed and never deducted, so labelling them on their merits moves no score — it only stops scope from posing as precision.
+- **Whether an MCP client can reach it.** That is exploitability, and no static rule's confidence claims it.
+
+The label's `why` names what on the cited line makes it a true or a false positive.
+
 ## Disclosure
 
 An audit reads code more closely than the scanner does, so it will sometimes find a real flaw the scanner missed.
@@ -56,6 +67,8 @@ PATH=.venv-workers/bin:$PATH .venv/bin/python ops/calibrate.py --include-drafts 
 
 It scans every entry at its pinned commit, reports drift against the expected ranges (`09` §5: ±8 per axis, ±5 composite), and prints each rule's measured tier from the labels.
 It flips nothing.
+Maintenance and Dependency Health are scored from the world at scan time — live forge signals, the live OSV database — so their scores move at a fixed pin with no code change.
+Their drift, and composite drift only they caused, is printed but does not block declaring calibration; a change of assessability on them still does (operator ruling 2026-10-27).
 Declaring calibration is a deliberate edit to `weights.py`, made when the report says it may be declared and reviewed like any methodology change (`03` §11).
 It is a scan, so never run it beside another scan or the test suite.
 
