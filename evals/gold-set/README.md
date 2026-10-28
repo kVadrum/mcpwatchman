@@ -23,14 +23,16 @@ Anyone may draft an entry, an agent included, and a draft is useful: it proposes
 It is not a hand audit until a human ratifies it — sets `status = "ratified"`, `ratified_by` and `ratified_on`, and moves the file out of `drafts/`.
 Only ratified entries count towards calibration, and `tests/test_gold_set.py` refuses `RULESET_CALIBRATED` or `COMPOSITE_PUBLISHED` being set while fewer than 25 are ratified.
 
-A reviewer ratifying an entry is checking four things: the expected ranges follow from `03`'s rubric and the code rather than from the scanner's output; every label's reason holds up against the cited line; nothing in the entry is a Track B finding; and its `commit` is the tree the audit read (see *Pinning the tree*).
+A reviewer ratifying an entry is checking four things: the expected ranges follow from `03`'s rubric and the code rather than from the scanner's output; every label's reason holds up against the cited line; the entry has no Track B note whose embargo is still open (see *Disclosure*); and its `commit` is the tree the audit read (see *Pinning the tree*).
 
 ## Disclosure
 
 An audit reads code more closely than the scanner does, so it will sometimes find a real flaw the scanner missed.
 That is **Track B** under `08-disclosure-policy.md` §3 — manual review finding what automated tools did not — and it is owed maintainer contact and an embargo before it is public.
 A committed entry is public, so such a finding goes in `private/<slug>.md`, never in the entry.
-The entry may say that the audit found an issue the scanner does not detect, and in which *class*; it does not say where or how until the embargo has run.
+**An entry with an open Track B note is not ratified at all until that note's embargo has run** (`08` §3.2) or the note is resolved as not Track B.
+Removing the text is not enough: the expected ranges carry the finding on their own — an entry expecting Code Safety far below what the scanner reports tells every reader that a named server has an issue we found and have not disclosed.
+After the embargo the entry may name the class; where and how stay in the published advisory, not here.
 
 ## Pinning the tree
 
