@@ -1,6 +1,6 @@
 """`mcpwatchman check` against the static API (`07` §3).
 
-The network is stubbed at `get_json`, the one function that touches it, so
+The network is stubbed at `cli.api.get_json`, which every JSON read goes through, so
 these pin what the CLI does with an answer: which URL it asks, what it prints,
 and — the part a CI pipeline depends on — which `07` §3.5 exit code it returns.
 """
@@ -12,6 +12,7 @@ import json
 import pytest
 from click.testing import CliRunner
 
+from mcpwatchman.cli import api as cli_api
 from mcpwatchman.cli import check as chk
 from mcpwatchman.cli.main import cli
 
@@ -65,7 +66,7 @@ def api(monkeypatch):
         return docs.get(url)
 
     monkeypatch.setenv("MCPWATCHMAN_API_URL", BASE)
-    monkeypatch.setattr(chk, "get_json", get_json)
+    monkeypatch.setattr(cli_api, "get_json", get_json)
     return asked
 
 
@@ -148,7 +149,7 @@ def test_a_network_failure_is_4(monkeypatch) -> None:
     def down(url):
         raise chk.CheckError(f"could not reach {url}", chk.EXIT_NETWORK)
 
-    monkeypatch.setattr(chk, "get_json", down)
+    monkeypatch.setattr(cli_api, "get_json", down)
     result = run("io.example/tool")
     assert result.exit_code == chk.EXIT_NETWORK
 
@@ -156,7 +157,7 @@ def test_a_network_failure_is_4(monkeypatch) -> None:
 def test_a_non_listed_server_shows_its_registry_note(api, monkeypatch) -> None:
     """Anything other than `listed` explains itself — on this surface too."""
     record = _server(registry_state="delisted", registry_note="no longer listed since 2026-09-20")
-    monkeypatch.setattr(chk, "get_json", lambda url: record)
+    monkeypatch.setattr(cli_api, "get_json", lambda url: record)
     result = run("io.example/tool")
     assert "Registry: delisted — no longer listed since 2026-09-20" in result.output
 
@@ -185,9 +186,24 @@ def test_a_repository_shared_by_several_servers_is_refused_not_guessed(api, monk
          "repository_url": "https://github.com/example/mono"},
     ]}
     monkeypatch.setattr(
-        chk, "get_json", lambda url: shared if url.endswith("/index.json") else None
+        cli_api, "get_json", lambda url: shared if url.endswith("/index.json") else None
     )
     result = run("https://github.com/example/mono")
     assert result.exit_code == chk.EXIT_USAGE
     assert "matches 2 published servers" in result.output
     assert "io.example/a, io.example/b" in result.output
+
+
+@pytest.mark.parametrize("fmt", ["pretty", "compact"])
+def test_third_party_text_cannot_drive_the_terminal(monkeypatch, fmt) -> None:
+    """A registry name or a reason is somebody else's text: an ESC sequence in
+    it would rewrite the reader's terminal, a bidi override reorder the line."""
+    hostile = _server(name="io.evil/\x1b]0;pwned\x07tool‮", registry_state="deprecated",
+                      registry_note="see \x1b[2Jhere")
+    hostile["server"]["axes"]["dependency_health"]["reason"] = "gone\x1b[31m red"
+    monkeypatch.setenv("MCPWATCHMAN_API_URL", BASE)
+    monkeypatch.setattr(cli_api, "get_json", lambda url: hostile)
+    result = run("io.evil/tool", "--format", fmt)
+    assert result.exit_code == 0, result.output
+    assert "\x1b" not in result.output and "‮" not in result.output
+    assert "\x07" not in result.output

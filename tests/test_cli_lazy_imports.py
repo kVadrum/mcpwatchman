@@ -18,6 +18,9 @@ the same contract identically whether or not anything is installed.
 from __future__ import annotations
 
 import ast
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -99,3 +102,57 @@ def test_the_check_catches_a_module_level_heavy_import(tmp_path: Path) -> None:
     names = [n for n, _ in _module_level_imports(ast.parse(sample.read_text()))]
     assert "httpx" in names          # module level — caught
     assert "rich" not in names       # inside a function — allowed, and not flagged
+
+
+# The command modules, and the stdlib modules only they need. `--help` and the
+# startup of any OTHER command must load none of them: a command's module is
+# imported inside its own function in `main`, never at `main`'s module level.
+COMMAND_MODULES = (
+    "mcpwatchman.cli.api", "mcpwatchman.cli.check", "mcpwatchman.cli.info",
+    "mcpwatchman.cli.listing", "mcpwatchman.cli.trend", "mcpwatchman.cli.feeds",
+    "mcpwatchman.cli.badge",
+)
+COMMAND_ONLY_STDLIB = ("urllib.request", "http.client", "ssl", "xml.etree.ElementTree", "json")
+COMMANDS = ("check", "info", "list", "trend", "feed", "badge")
+
+
+def test_main_imports_no_command_module_at_module_level() -> None:
+    tree = ast.parse((CLI_DIR / "main.py").read_text())
+    offenders = [n for n, _ in _module_level_imports(tree) if n in COMMAND_MODULES]
+    assert not offenders, f"main.py imports {offenders} at module level"
+
+
+def test_every_command_module_exists() -> None:
+    # Positive control: a renamed module would make the checks below vacuous.
+    for module in COMMAND_MODULES:
+        assert (CLI_DIR / f"{module.rsplit('.', 1)[1]}.py").is_file(), module
+
+
+def _loaded_after(code: str) -> set[str]:
+    env = {**os.environ, "PYTHONPATH": str(CLI_DIR.parent.parent)}
+    out = subprocess.run(  # noqa: S603 - fixed argv, our own interpreter
+        [sys.executable, "-c", code + "\nimport sys; print('\\n'.join(sorted(sys.modules)))"],
+        capture_output=True, text=True, env=env, check=True,
+    ).stdout
+    return set(out.splitlines())
+
+
+@pytest.mark.parametrize("command", COMMANDS)
+def test_help_for_each_command_loads_no_command_module(command: str) -> None:
+    """Runtime twin of the AST checks, and sound where the module docstring's
+    `sys.modules` caveat bites: every module looked for here is stdlib or our
+    own, present wherever the suite runs, so absence means "not imported",
+    never "not installed"."""
+    loaded = _loaded_after(
+        "from mcpwatchman.cli.main import cli\n"
+        f"cli.main([{command!r}, '--help'], standalone_mode=False)"
+    )
+    assert "mcpwatchman.cli.main" in loaded  # the probe ran
+    leaked = sorted(loaded & set(COMMAND_MODULES + COMMAND_ONLY_STDLIB))
+    assert not leaked, f"`{command} --help` imported {leaked}"
+
+
+def test_the_runtime_probe_sees_a_command_module_once_loaded() -> None:
+    # Positive control for the probe: importing a command module DOES show.
+    loaded = _loaded_after("import mcpwatchman.cli.feeds")
+    assert {"mcpwatchman.cli.feeds", "xml.etree.ElementTree", "urllib.request"} <= loaded
