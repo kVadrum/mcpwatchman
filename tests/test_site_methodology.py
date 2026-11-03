@@ -23,8 +23,13 @@ from xml.etree import ElementTree
 
 import pytest
 
-from mcpwatchman.workers.scanner import forge, maintenance_check, osv_check, transparency_check
-from mcpwatchman.workers.scanner import auth_check
+from mcpwatchman.workers.scanner import (
+    auth_check,
+    forge,
+    maintenance_check,
+    osv_check,
+    transparency_check,
+)
 from mcpwatchman.workers.scanner.runner import MAX_EVIDENCE_PER_AXIS
 from mcpwatchman.workers.scoring import composite, weights
 
@@ -235,7 +240,8 @@ def _expected(m: dict, report: dict) -> tuple[str, str]:
     lowest = min(scored, key=lambda a: report["axes"][a["key"]]["score"])
     axis = report["axes"][lowest["key"]]
     pct = _measured(axis["assessed_weight"])
-    text = f"{lowest['label'].lower()} {axis['score']}" + (f" ({pct}% measured)" if pct < 100 else "")
+    text = f"{lowest['label'].lower()} {axis['score']}"
+    text += f" ({pct}% measured)" if pct < 100 else ""
     return text, _band(m, axis["score"])
 
 
@@ -277,7 +283,7 @@ def test_every_server_has_a_badge_naming_its_lowest_axis(m, reports) -> None:
     for report in reports:
         path = DIST / "badge" / f"{report['slug']}.svg"
         assert path.is_file(), f"no badge for {report['name']}"
-        root = ElementTree.fromstring(path.read_text())
+        root = ElementTree.fromstring(path.read_text())  # noqa: S314 - our own build output
         texts = [t.text for t in root.iter(f"{SVG}text")]
         assert texts[0] == "mcpwatchman", path.name
         want_text, want_colour = _expected(m, report)
@@ -292,7 +298,7 @@ def test_no_badge_publishes_the_composite(m, reports) -> None:
     share; and the title says the composite is not published."""
     for report in reports:
         svg = (DIST / "badge" / f"{report['slug']}.svg").read_text()
-        root = ElementTree.fromstring(svg)
+        root = ElementTree.fromstring(svg)  # noqa: S314 - our own build output
         value = [t.text for t in root.iter(f"{SVG}text")][1]
         allowed = set()
         scored = {k: a for k, a in report["axes"].items() if a["score"] is not None}
@@ -316,9 +322,10 @@ def test_badges_are_self_contained_and_legible(reports) -> None:
     `default-src 'none'` — and every text run meets AA against its fill."""
     for report in reports:
         svg = (DIST / "badge" / f"{report['slug']}.svg").read_text()
-        root = ElementTree.fromstring(svg)
+        root = ElementTree.fromstring(svg)  # noqa: S314 - our own build output
         tags = {el.tag.removeprefix(SVG) for el in root.iter()}
-        assert tags <= {"svg", "title", "clipPath", "rect", "g", "text"}, f"{report['slug']}: {tags}"
+        allowed_tags = {"svg", "title", "clipPath", "rect", "g", "text"}
+        assert tags <= allowed_tags, f"{report['slug']}: {tags}"
         attrs = {name for el in root.iter() for name in el.attrib}
         # An attribute check, not a substring one: a server's NAME is in the
         # title, and one published server is called `com.hreflangly/site`.

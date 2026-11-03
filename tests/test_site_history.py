@@ -43,7 +43,7 @@ def test_the_drops_feed_is_the_python_derivation_and_never_maintenance() -> None
     hist = json.loads((DATA / "history.json").read_text())
     published = {r["slug"] for r in _rows()}
     expected = [d for d in hist["drops"] if d["slug"] in published][:100]
-    feed = ET.parse(DIST / "feed/score-drops.xml").getroot()
+    feed = ET.parse(DIST / "feed/score-drops.xml").getroot()  # noqa: S314 - our own build output
     entries = feed.findall(f"{ATOM}entry")
     assert len(entries) == len(expected)
     for entry, drop in zip(entries, expected, strict=True):
