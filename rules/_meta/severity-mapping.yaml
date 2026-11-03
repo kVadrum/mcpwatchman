@@ -52,6 +52,8 @@ rules:
   mcp-python-path-join-unvalidated:      {severity: medium,   confidence: low}
   mcp-python-archive-extract-unconfined: {severity: critical, confidence: medium}
   mcp-python-sql-string-built:           {severity: medium,   confidence: medium}
+  mcp-js-sql-string-built:               {severity: medium,   confidence: low, listed: true}
+  mcp-go-sql-string-built:               {severity: medium,   confidence: low, listed: true}
   mcp-python-tool-arg-to-shell:          {severity: critical, confidence: medium}
   mcp-python-tool-returns-environment:   {severity: critical, confidence: medium}
   mcp-python-tool-description-injection: {severity: medium, confidence: low, listed: true}

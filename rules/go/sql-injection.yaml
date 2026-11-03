@@ -1,0 +1,43 @@
+rules:
+  - id: mcp-go-sql-string-built
+    languages: [go]
+    severity: WARNING
+    message: >-
+      A SQL statement is assembled by string building — fmt.Sprintf, or
+      concatenation with something that is not a constant — and passed straight
+      to a query method. A value built in can always be sent as an argument
+      after the statement instead (database/sql, pgx and sqlx all take them),
+      and a caller-supplied one is SQL injection; an identifier (a table or
+      column name) cannot be an argument and must be validated or quoted. This
+      check cannot tell which the built part is, so it is listed for review,
+      not deducted.
+    metadata:
+      mcp_pattern: sql-injection
+      cwe: "CWE-89"
+    # The receiver is free (*sql.DB, *sql.Tx, pgx.Conn, sqlx.DB); the METHOD is
+    # pinned to database/sql's query family and the STRING must read as SQL —
+    # see the JavaScript rule for why both pins are needed.
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: $DB.$M($Q, ...)
+              - pattern-either:
+                  - pattern: $DB.$M(fmt.Sprintf(...), ...)
+                  - pattern: $DB.$M("..." + $X, ...)
+                  - pattern: $DB.$M($X + "...", ...)
+          - patterns:
+              - pattern: $DB.$M($CTX, $Q, ...)
+              - pattern-either:
+                  - pattern: $DB.$M($CTX, fmt.Sprintf(...), ...)
+                  - pattern: $DB.$M($CTX, "..." + $X, ...)
+                  - pattern: $DB.$M($CTX, $X + "...", ...)
+      # Concatenated literals and constants fold to one string and build
+      # nothing from a value (see the JavaScript rule).
+      - pattern-not: $DB.$M("...", ...)
+      - pattern-not: $DB.$M($CTX, "...", ...)
+      - metavariable-regex:
+          metavariable: $M
+          regex: ^(Query|QueryRow|Exec|Prepare|Get|Select|QueryContext|QueryRowContext|ExecContext|PrepareContext|GetContext|SelectContext|MustExec)$
+      - metavariable-regex:
+          metavariable: $Q
+          regex: (?is)^.*?(?:\bselect\s[\s\S]*?\sfrom\s|\binsert\s+into\s|\bupdate\s+\S+\s+set\s|\bdelete\s+from\s|\b(?:drop|create|alter|truncate)\s+table\s)

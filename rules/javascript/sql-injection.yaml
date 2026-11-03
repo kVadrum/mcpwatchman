@@ -1,0 +1,48 @@
+rules:
+  - id: mcp-js-sql-string-built
+    languages: [javascript, typescript]
+    severity: WARNING
+    message: >-
+      A SQL statement is assembled by string building — a template literal that
+      interpolates, or concatenation with something that is not a constant — and
+      passed straight to a query method. A value built in can always be sent as
+      a query parameter instead (pg's `$1`, mysql2's and sqlite's `?`, a tagged
+      `sql` template), and a caller-supplied one is SQL injection; an identifier
+      (a table or column name) cannot be a parameter and must be validated or
+      quoted. This check cannot tell which the built part is, so it is listed
+      for review, not deducted.
+    metadata:
+      mcp_pattern: sql-injection
+      cwe: "CWE-89"
+    # ⚠ PINNED THREE WAYS (CLAUDE.md: a sink pattern pins its receiver and its
+    # method). The receiver is free — pg, mysql2, better-sqlite3, sqlite,
+    # postgres.js and knex all name theirs differently — so the METHOD is pinned
+    # to the query methods, and the STRING must read as SQL: `re.exec(...)` and
+    # `cmd.run(...)` built from a template are a different API, and only SQL
+    # text makes them this one. A TAGGED template (sql`... ${x}`, Prisma's
+    # $queryRaw`...`) is how the parameterised form is written and never fires:
+    # it is a different AST node from a plain template literal.
+    patterns:
+      - pattern: $DB.$M($Q, ...)
+      - pattern-either:
+          - pattern: $DB.$M(`...${...}...`, ...)
+          - pattern: $DB.$M("..." + $X, ...)
+          - pattern: $DB.$M('...' + $X, ...)
+          - pattern: $DB.$M($X + "...", ...)
+          - pattern: $DB.$M($X + '...', ...)
+      # Concatenated LITERALS (a statement wrapped across lines) and constants
+      # (`const TABLE = "users"`) fold to one string — semgrep's constant
+      # propagation — and build nothing from a value. Measured: the first
+      # regeneration's 34 JS findings were mostly "INSERT … " + "ON CONFLICT …".
+      - pattern-not: $DB.$M("...", ...)
+      - metavariable-regex:
+          metavariable: $M
+          regex: ^(query|execute|exec|prepare|all|get|run|each|raw|unsafe|\$queryRawUnsafe|\$executeRawUnsafe)$
+      # ⚠ NON-CAPTURING GROUPS ONLY. Each capture group in a metavariable-regex
+      # becomes a binding, and semgrep 1.181.0 reported every match TWICE with
+      # them (measured: 14 results for 7 lines; `(?:` → 7).
+      # SQL-shaped: keywords separated by whitespace, so a URL path such as
+      # `/select/from/${id}` (a REST call through `.get`) is not SQL.
+      - metavariable-regex:
+          metavariable: $Q
+          regex: (?is)^.*?(?:\bselect\s[\s\S]*?\sfrom\s|\binsert\s+into\s|\bupdate\s+\S+\s+set\s|\bdelete\s+from\s|\b(?:drop|create|alter|truncate)\s+table\s)

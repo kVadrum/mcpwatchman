@@ -513,6 +513,125 @@ main {
   font-weight: 500;
 }
 
+/* ── roster controls: search, filter, sort ────────────────────────────
+   Revealed by /roster.js; the list is complete without them. The strip
+   shares `.roster-link`'s grid (and its 0.5rem inset) on wide screens, so
+   each axis button stands over the meter column it sorts — the control IS
+   the column header, which is why it carries the rows' own short labels. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.roster-controls {
+  margin: 0 0 1rem;
+}
+.roster-strip {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 0.5rem;
+}
+@media (min-width: 52rem) {
+  .roster-strip {
+    grid-template-columns: minmax(0, 22rem) 1fr;
+    align-items: end;
+    gap: 1.5rem;
+  }
+}
+.roster-find input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-family: var(--font-data);
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.5rem 0.65rem;
+}
+.roster-find input::placeholder {
+  color: var(--ink-faint);
+}
+.roster-sort {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+.roster-sort-axis {
+  font: inherit;
+  font-family: var(--font-struct);
+  font-size: 0.78rem;
+  text-align: left;
+  color: var(--ink-dim);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0.35rem 0;
+  cursor: pointer;
+}
+.roster-sort-axis:hover {
+  color: var(--ink);
+}
+.roster-sort-axis[aria-pressed="true"] {
+  color: var(--signal-ink);
+  border-bottom-color: var(--signal-ink);
+}
+.roster-sort-dir {
+  margin-left: 0.3em;
+}
+.roster-find input:focus-visible,
+.roster-sort-axis:focus-visible,
+.roster-show select:focus-visible,
+.roster-clear:focus-visible {
+  outline: 2px solid var(--signal-ink);
+  outline-offset: 2px;
+}
+.roster-strip-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  padding: 0.75rem 0.5rem 0;
+  font-family: var(--font-struct);
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+.roster-show select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 0.2rem 0.35rem;
+}
+.roster-status {
+  margin: 0;
+  max-width: var(--measure);
+}
+.roster-empty {
+  margin: 1.5rem 0.5rem 0;
+  font-family: var(--font-struct);
+  color: var(--ink);
+}
+.roster-clear {
+  font: inherit;
+  color: var(--signal-ink);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  padding: 0;
+  cursor: pointer;
+}
+.roster-controls[hidden],
+.roster-empty[hidden],
+.roster > li[hidden] {
+  display: none;
+}
+
 .roster {
   list-style: none;
   margin: 0;

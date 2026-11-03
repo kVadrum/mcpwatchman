@@ -5,6 +5,21 @@ The first `## <version>` heading in this file is what `semgrep_check.ruleset_ver
 
 `04` §4.3 on what a version change costs: a patch bump (rule fixes, new rules) re-scans affected servers on the next daily crawl; a minor bump (a new rule category) re-scans everything.
 
+## 0.1.4 — 2026-11-03
+
+**SQL built by string, in JavaScript, TypeScript and Go.**
+`mcp-python-sql-string-built` has existed since the first ruleset; nothing looked for the same defect in the other two languages, which is where most of the registry's database bridges are written.
+`mcp-js-sql-string-built` and `mcp-go-sql-string-built` find a statement assembled by a template literal with interpolation, `fmt.Sprintf` or concatenation and passed straight to a query method (pg, mysql2, better-sqlite3, sqlite, postgres.js, knex, Prisma's `$queryRawUnsafe`; database/sql, pgx, sqlx).
+Each is pinned twice, because its receiver cannot be: the METHOD must be a query method, and the STRING must read as SQL (`SELECT … FROM`, `INSERT INTO`, `UPDATE … SET`, `DELETE FROM`, a table DDL) — a REST call through `.get` with `/select/from/` in its path is not SQL.
+A tagged template (``sql`… ${x}` ``, Prisma's ``$queryRaw`…` ``) is how the parameterised form is written and never matches.
+Concatenated literals and constants (`"INSERT … " + "ON CONFLICT …"`, `const TABLE = "users"`) fold to one string and never match either: the first regeneration under a draft without that exclusion found 34 JS findings, mostly statements wrapped across lines.
+The message does not claim more than a pattern can see: a built-in VALUE can always be a parameter, an IDENTIFIER (a table or column name) cannot and must be validated or quoted, and the check cannot tell which it found — one more reason it is listed.
+`tests/fixtures/semgrep/receivers/sql.{ts,go}` pins both directions.
+Listed, not deducted, like every new check.
+The regeneration of 2026-11-03 found 24: 11 in JavaScript/TypeScript on 7 servers and 13 in Go on 2, every one a statement built from a value or an identifier (WHERE-clause builders, placeholder lists, table names quoted by hand). No score moved.
+
+A patch bump: rules added, no weight or formula change.
+
 ## 0.1.3 — 2026-11-03
 
 **A new check: instructions to the model hidden in a tool's description.**

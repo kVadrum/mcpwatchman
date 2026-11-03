@@ -10,6 +10,15 @@ const AXES = [
   { key: "maintenance", label: "Maint" },
   { key: "transparency", label: "Transp" },
 ];
+// The status line names an axis in full; the buttons carry the short label
+// the rows use.
+const AXIS_NAMES: Record<string, string> = {
+  code_safety: "Code Safety",
+  auth_posture: "Auth Posture",
+  dependency_health: "Dependency Health",
+  maintenance: "Maintenance",
+  transparency: "Transparency",
+};
 
 const reports = [...scans].sort((a, b) => a.name.localeCompare(b.name));
 // Counted by what was READ, not by what produced a number. An unreachable
@@ -156,9 +165,56 @@ const W = 96;
     ))}
   </p>
 
+  {/* Search, filter and sort: shipped `hidden` and revealed by /roster.js, so
+      with no script the reader gets the whole list in name order and no
+      control that does nothing. The sort buttons sit on the rows' own grid —
+      each axis button is the header of the meter column it sorts. */}
+  <div class="roster-controls" hidden>
+    <div class="roster-strip">
+      <label class="roster-find">
+        <span class="visually-hidden">Find a server by name</span>
+        <input type="search" name="q" placeholder="Find a server by name" autocomplete="off" spellcheck="false" />
+      </label>
+      <div class="roster-sort" role="group" aria-label="Sort by an axis score">
+        {AXES.map((axis) => (
+          <button type="button" class="roster-sort-axis" data-axis={axis.key} data-name={AXIS_NAMES[axis.key]} aria-pressed="false">
+            {axis.label}<span class="roster-sort-dir" aria-hidden="true"></span>
+          </button>
+        ))}
+      </div>
+    </div>
+    <div class="roster-strip-foot">
+      <label class="roster-show">
+        Show{" "}
+        <select name="show">
+          <option value="all">all servers</option>
+          <option value="read">source we could read</option>
+          <option value="unread">source we could not read</option>
+          <option value="noted">a registry note</option>
+        </select>
+      </label>
+      <p class="roster-status" role="status" aria-live="polite"></p>
+    </div>
+    <p class="roster-empty" hidden>
+      <span class="roster-empty-text"></span>{" "}
+      <button type="button" class="roster-clear">Show all {reports.length}</button>
+    </p>
+  </div>
   <ul class="roster">
     {reports.map((report) => (
-      <li>
+      <li
+        data-name={report.name.toLowerCase()}
+        data-source={report.source_state === "fetched" ? "read" : "unread"}
+        data-noted={report.registry_state !== "listed" ? "true" : "false"}
+        {...Object.fromEntries(AXES.map((axis) => [
+          `data-score-${axis.key}`,
+          report.axes[axis.key].score === null ? "" : String(report.axes[axis.key].score),
+        ]))}
+        {...Object.fromEntries(AXES.map((axis) => [
+          `data-weight-${axis.key}`,
+          String(report.axes[axis.key].assessed_weight),
+        ]))}
+      >
         <a class="roster-link" href={`/servers/${report.slug}/`}>
           <span class="roster-name">
             {report.name}
@@ -199,4 +255,5 @@ const W = 96;
       </li>
     ))}
   </ul>
+  <script type="module" src="/roster.js"></script>
 </Report>
