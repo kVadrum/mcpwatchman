@@ -223,6 +223,35 @@ def test_a_finding_in_test_code_is_listed_but_not_deducted(tree, monkeypatch) ->
     assert result.score == 80  # one critical/medium: -20, the test finding nothing
 
 
+def test_a_listed_rule_is_published_and_deducts_nothing(tree, monkeypatch) -> None:
+    """A rule the mapping marks `listed: true` has unmeasured precision: its
+    finding is evidence, never a deduction (the 2026-10-28 ruling — unratified
+    evidence may narrow what we claim, never raise it)."""
+    _fake_run(monkeypatch, _payload([
+        _result("mcp-python-pickle-loads", line=5),
+        _result("mcp-python-tool-description-injection", line=5),
+        _result("mcp-python-ssrf-metadata-endpoint", line=5),
+    ]))
+    result = sc.run_semgrep(tree, rules=RULES)
+    by_rule = {f.rule_id: f for f in result.findings}
+    assert by_rule["mcp-python-tool-description-injection"].listed
+    assert by_rule["mcp-python-ssrf-metadata-endpoint"].listed
+    assert not by_rule["mcp-python-tool-description-injection"].deducts
+    assert by_rule["mcp-python-pickle-loads"].deducts
+    assert result.score == 80  # the pickle finding alone: -20
+
+
+def test_a_listed_flag_that_is_not_a_boolean_is_refused(tmp_path) -> None:
+    import shutil
+
+    rules = tmp_path / "rules"
+    shutil.copytree(RULES, rules)
+    mapping = rules / "_meta" / "severity-mapping.yaml"
+    mapping.write_text(mapping.read_text().replace(", listed: true}", ', listed: "yes"}', 1))
+    with pytest.raises(sc.RulesetError, match="listed"):
+        sc.load_severity_mapping(rules)
+
+
 def test_a_test_file_semgrep_cannot_parse_is_not_a_coverage_gap(tree, monkeypatch) -> None:
     """Test code is not graded, so an unparseable fixture must not lower the
     served code's coverage (Codex leg, 2026-10-07)."""
@@ -857,3 +886,33 @@ def test_semgrep_is_launched_on_the_posix_io_backend(tree, monkeypatch) -> None:
     sc.run_semgrep(tree, rules=RULES)
     assert seen.get("EIO_BACKEND") == "posix"
     assert seen.get("PATH") == os.environ["PATH"], "the rest of the environment is kept"
+
+
+def _rec(path: str, language: str, role: str) -> FileRecord:
+    return FileRecord(path=path, language=Language(language), role=Role(role),
+                      size_bytes=10, sha256="0" * 64)
+
+
+@pytest.mark.parametrize(("files", "fault", "says"), [
+    # A Rust server is unscored because WE have no Rust rules — ours, named.
+    ([("src/main.rs", "rust", "source"), ("README.md", "markdown", "docs")],
+     Fault.PROJECT, "its source is in rust"),
+    ([("Server.fs", "unknown", "other"), ("README.md", "markdown", "docs")],
+     Fault.PROJECT, "a language this scanner does not read (.fs)"),
+    ([("install.sh", "shell", "source"), ("README.md", "markdown", "docs")],
+     Fault.PROJECT, "its only code is shell scripts"),
+    # A README-and-manifest repository: nothing to scan, and saying "no source in
+    # a COVERED language" implied code in another one.
+    ([("README.md", "markdown", "docs"), ("server.json", "json", "mcp_manifest"),
+      ("logo.png", "unknown", "other")],
+     Fault.PUBLISHER, "the source this server declares holds no code"),
+])
+def test_no_covered_source_says_what_the_tree_holds_and_whose_gap_it_is(
+    files: list[tuple[str, str, str]], fault: Fault, says: str,
+) -> None:
+    inv = Inventory(files=tuple(_rec(*f) for f in files))
+    result = sc.assess_code_safety(Path("/nonexistent"), inv)
+    assert result.status is sc.SemgrepStatus.UNAVAILABLE and result.score is None
+    assert result.fault is fault
+    assert says in result.reason
+    assert "ruleset covers python, javascript, typescript and go" in result.reason

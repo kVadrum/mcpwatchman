@@ -48,7 +48,7 @@ import shutil
 from dataclasses import dataclass
 from decimal import ROUND_DOWN, Decimal
 from enum import StrEnum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import yaml
 
@@ -160,6 +160,16 @@ class CodeFinding:
     # nothing on the scoring path read the separation, so 70 of 1,099 published
     # findings (2026-09-29) deducted from test fixtures (operator ruling).
     in_test: bool = False
+    # From a rule the severity mapping marks `listed: true`: its precision has
+    # never been measured, so it is published for review and scores nothing.
+    # The 2026-10-28 ruling lets unratified evidence narrow what we claim and
+    # never raise it; a new check that deducted on day one would raise it.
+    listed: bool = False
+
+    @property
+    def deducts(self) -> bool:
+        """Whether this finding counts against the axis — the one place that says."""
+        return not (self.in_test or self.listed)
 
     @property
     def clamped(self) -> bool:
@@ -306,6 +316,8 @@ def load_severity_mapping(root: Path | None = None) -> dict[str, dict[str, str]]
             raise RulesetError(f"{rule_id}: unknown severity {entry.get('severity')!r}")
         if entry.get("confidence") not in _CONFIDENCES:
             raise RulesetError(f"{rule_id}: unknown confidence {entry.get('confidence')!r}")
+        if not isinstance(entry.get("listed", False), bool):
+            raise RulesetError(f"{rule_id}: `listed` must be true or false")
     return mapping
 
 
@@ -563,6 +575,53 @@ def _covered_source_paths(inventory: Inventory) -> frozenset[str]:
 
 def _scannable_source_files(inventory: Inventory) -> int:
     return len(_covered_source_paths(inventory))
+
+
+_COVERS = "the ruleset covers python, javascript, typescript and go"
+_UNCOVERED_CODE = (Language.RUST, Language.RUBY, Language.JAVA, Language.CSHARP)
+# Extensions of languages the inventory does not classify: present, they mean
+# code we did not read, so "no code" would be a false statement about them.
+_UNREAD_CODE_SUFFIXES = frozenset({
+    ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".m", ".mm", ".swift", ".kt", ".kts",
+    ".scala", ".php", ".fs", ".fsx", ".ex", ".exs", ".erl", ".hs", ".lua", ".dart",
+    ".zig", ".nim", ".clj", ".jl", ".pl", ".pm", ".r", ".vb", ".cr", ".sol", ".groovy",
+})
+
+
+def _no_covered_source(inventory: Inventory) -> tuple[str, Fault]:
+    """Why a tree with no covered source is unassessed, and whose gap that is.
+
+    ⚠ This said "no source files in a language the ruleset covers" with the
+    PUBLISHER's fault for every such tree. For a Rust server that is false
+    twice — the gap is our missing rules, not their code — and for the 61 of
+    70 repositories behind it in the 2026-11-03 data that held no code at all,
+    it implied code in another language. Three cases, each stated as what it is.
+    """
+    code = [f for f in inventory.files if f.role in (Role.SOURCE, Role.ENTRY_POINT)]
+    langs = sorted({f.language.value for f in code if f.language in _UNCOVERED_CODE})
+    if langs:
+        return (f"its source is in {', '.join(langs)}, which the ruleset does not cover "
+                f"yet ({_COVERS})", Fault.PROJECT)
+    unread = sorted({
+        PurePosixPath(f.path).suffix.lower() for f in inventory.files
+        if f.language is Language.UNKNOWN and f.role is not Role.TEST
+        and PurePosixPath(f.path).suffix.lower() in _UNREAD_CODE_SUFFIXES
+    })
+    if unread:
+        return (f"it carries code in a language this scanner does not read "
+                f"({', '.join(unread[:6])}); {_COVERS}", Fault.PROJECT)
+    if any(f.language is Language.SHELL for f in code):
+        return (f"its only code is shell scripts, which the ruleset does not cover "
+                f"({_COVERS})", Fault.PROJECT)
+    if inventory.files and not inventory.build_output:
+        # "Declares", not "repository": a registry entry may name a subfolder,
+        # and only that is read (measured: io.usefulapi/youcanbookme's
+        # subfolder holds a README and server.json in a 3,033-file repository).
+        return ("the source this server declares holds no code — only documentation, "
+                f"configuration or data files — so there was nothing to scan ({_COVERS})",
+                Fault.PUBLISHER)
+    # THEIRS: what they shipped is what we could not read.
+    return (f"no source files in a language the ruleset covers ({_COVERS})", Fault.PUBLISHER)
 
 
 def _covered_build_output(inventory: Inventory) -> int:
@@ -827,6 +886,7 @@ def run_semgrep(
                 cwe=str(meta.get("cwe", "")),
                 declared_confidence=declared if effective is not declared else None,
                 in_test=rel in test_paths,
+                listed=bool(entry.get("listed", False)),
             )
         )
 
@@ -930,7 +990,7 @@ def run_semgrep(
     return SemgrepResult(
         status=SemgrepStatus.OK,
         findings=tuple(findings),
-        score=axis_score(f.to_scoring() for f in findings if not f.in_test),
+        score=axis_score(f.to_scoring() for f in findings if f.deducts),
         files_scanned=scanned,
         ruleset_version=ruleset_version(rules),
         methodology_version=version,
@@ -1007,15 +1067,28 @@ def assess_code_safety(
                 methodology_version=version,
                 build_output_unfinished=True,
             )
+        reason, fault = _no_covered_source(inventory)
         return SemgrepResult(
             status=SemgrepStatus.UNAVAILABLE,
-            reason="no source files in a language the ruleset covers "
-                   "(python, javascript, typescript, go)",
-            # THEIRS: what they shipped is what we could not read.
-            explicit_fault=Fault.PUBLISHER,
+            reason=reason,
+            explicit_fault=fault,
             methodology_version=version,
         )
-    return run_semgrep(root, rules=rules, inventory=inventory, version=version)
+    result = run_semgrep(root, rules=rules, inventory=inventory, version=version)
+    if result.status is SemgrepStatus.OK and inventory is not None:
+        # Listed evidence from outside semgrep: npm install hooks
+        # (`install_scripts`) and outsider-steerable CI (`ci_workflows`).
+        # Listed, so the score above is unchanged.
+        from dataclasses import replace
+
+        from mcpwatchman.workers.scanner.ci_workflows import workflow_findings
+        from mcpwatchman.workers.scanner.install_scripts import install_script_findings
+
+        extra = [*install_script_findings(root, inventory), *workflow_findings(root, inventory)]
+        if extra:
+            findings = sorted((*result.findings, *extra), key=lambda f: (f.path, f.line, f.rule_id))
+            result = replace(result, findings=tuple(findings))
+    return result
 
 
 __all__ = [

@@ -251,7 +251,7 @@ def test_sink_rules_fire_only_on_the_real_sink(scanned) -> None:
         for r in payload["results"]
     }
     expected = set()
-    for path in sorted(p for p in target.iterdir() if p.suffix in (".js", ".ts", ".py")):
+    for path in sorted(p for p in target.iterdir() if p.suffix in (".js", ".ts", ".py", ".go")):
         for n, line in enumerate(path.read_text().splitlines(), 1):
             marker = _re.search(r"(?://|#) FIRE: (.*)$", line)
             if marker:
@@ -281,3 +281,18 @@ def test_the_scanner_still_scans_with_no_locked_memory_at_all(scanned) -> None:
         resource.setrlimit(resource.RLIMIT_MEMLOCK, (soft, hard))
     assert result.assessed, result.reason
     assert result.findings, "scanned, but found nothing in a fixture built to fire"
+
+
+def test_the_tool_description_markers_are_one_regex_in_every_language() -> None:
+    """One check, three copies: a marker added to one language and not the
+    others is a silent gap no fixture of the others can show."""
+    import yaml as _yaml
+
+    regexes = set()
+    for lang in ("python", "javascript", "go"):
+        doc = _yaml.safe_load((RULES / lang / "mcp-specific.yaml").read_text())
+        (rule,) = [r for r in doc["rules"] if r["id"].endswith("-tool-description-injection")]
+        (regex,) = [p["metavariable-regex"]["regex"] for p in rule["patterns"]
+                    if "metavariable-regex" in p]
+        regexes.add(regex)
+    assert len(regexes) == 1

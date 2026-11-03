@@ -369,6 +369,21 @@ def parsed_ecosystems(inventory: Inventory) -> set[str]:
     return {eco for name, eco in _MANIFEST_ECOSYSTEM.items() if name in names}
 
 
+
+# A manifest is attacker input: any field can be any JSON/TOML type. These read
+# a wrong type as "nothing declared" — `doc.get` on a top-level array, or
+# `.lower()` on a numeric key, raised and froze that server's page as stale.
+def _mapping(value: object) -> dict:
+    return value if isinstance(value, dict) else {}
+
+
+def _strings(value: object) -> list[str]:
+    return [v for v in value if isinstance(v, str)] if isinstance(value, list) else []
+
+
+def _keys(value: object) -> set[str]:
+    return {k.lower() for k in value if isinstance(k, str)} if isinstance(value, dict) else set()
+
 def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
     """Dependency names the project DECLARES, lowercased.
 
@@ -401,36 +416,33 @@ def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
             continue
         if name == "package.json":
             try:
-                doc = json.loads(text)
-            except json.JSONDecodeError:
+                doc = _mapping(json.loads(text))
+            except (ValueError, RecursionError):
                 continue
             for table in ("dependencies", "devDependencies",
                           "optionalDependencies", "peerDependencies"):
-                names.update(k.lower() for k in (doc.get(table) or {}))
+                names.update(_keys(doc.get(table)))
         elif name == "pyproject.toml":
             try:
                 doc = tomllib.loads(text)
-            except tomllib.TOMLDecodeError:
+            except (ValueError, RecursionError):
                 continue
-            project = doc.get("project") or {}
-            for spec in project.get("dependencies") or []:
+            project = _mapping(doc.get("project"))
+            for spec in _strings(project.get("dependencies")):
                 names.update(_requirements_names(spec))
-            for group in (project.get("optional-dependencies") or {}).values():
-                for spec in group:
+            for group in _mapping(project.get("optional-dependencies")).values():
+                for spec in _strings(group):
                     names.update(_requirements_names(spec))
             # Poetry keeps its dependencies somewhere else entirely, and a
             # Poetry project has no `[project].dependencies` at all — so
             # reading only PEP 621 returned an empty direct set for every one
             # of them and scored their vulnerabilities at the transitive rate.
-            poetry = ((doc.get("tool") or {}).get("poetry") or {})
+            poetry = _mapping(_mapping(doc.get("tool")).get("poetry"))
             for table in ("dependencies", "dev-dependencies"):
+                names.update(k for k in _keys(poetry.get(table)) if k != "python")
+            for group in _mapping(poetry.get("group")).values():
                 names.update(
-                    k.lower() for k in (poetry.get(table) or {}) if k.lower() != "python"
-                )
-            for group in (poetry.get("group") or {}).values():
-                names.update(
-                    k.lower() for k in (group.get("dependencies") or {})
-                    if k.lower() != "python"
+                    k for k in _keys(_mapping(group).get("dependencies")) if k != "python"
                 )
         elif name == "requirements.txt":
             names.update(_requirements_names(text))

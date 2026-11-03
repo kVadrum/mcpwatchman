@@ -5,6 +5,30 @@ The first `## <version>` heading in this file is what `semgrep_check.ruleset_ver
 
 `04` §4.3 on what a version change costs: a patch bump (rule fixes, new rules) re-scans affected servers on the next daily crawl; a minor bump (a new rule category) re-scans everything.
 
+## 0.1.3 — 2026-11-03
+
+**A new check: instructions to the model hidden in a tool's description.**
+`mcp-{python,js,go}-tool-description-injection` reads the text a client places in the model's context as tool metadata — a tool's description, a Python tool's docstring, a parameter's `.describe()` / `Field(description=…)` / `mcp.Description(…)` — for wording shaped like an instruction to the model rather than a description for it: a hidden-instruction tag (`<IMPORTANT>`, `<SYSTEM>`), a request to keep something from the user, an override of earlier instructions, a step required before using a tool, or an invisible character (zero-width, bidi, tag characters, raw or escaped).
+That is how a tool-poisoning attack is carried, and no other check here looks at it.
+The marker regex is one regex in all three languages (`tests/test_ruleset.py` holds them equal); an override phrase in quotes is excluded, since a security tool quotes the phrases it detects.
+`tests/fixtures/semgrep/receivers/tool_descriptions.*` pins both directions.
+A finding points at the description itself (`focus-metavariable`), so the excerpt shows the words that matched rather than the registration call around them.
+The first regeneration under this rule found one match, and it was wrong: "do not tell the user it is done until check_edit confirms it" is about timing, not concealment; a concealment marker followed closely by `until` or `unless` no longer matches, and the receivers fixture keeps that sentence as a look-alike.
+
+**New checks are listed, not deducted.**
+The severity mapping gains an optional `listed: true`: the rule's findings are published as evidence, marked "listed, not deducted", and change no score.
+A new check's precision has never been measured, and the 2026-10-28 ruling lets unratified evidence narrow what we claim, never raise it; one that deducted on its first night would raise it.
+Making a listed rule deduct is a methodology change.
+
+**`mcp-*-ssrf-metadata-endpoint` is narrowed and moved to listed.**
+It was a bare text match on `169.254.169.254` / `metadata.google.internal`, so it matched comments too, deducted as critical, and said the endpoint "is contacted directly".
+In the published data of 2026-11-03 it carried 29 findings on 7 servers, and every one was an SSRF defence (a denylist, a guard), a comment explaining one, or a test — none contacted the endpoint.
+It now matches string literals only, never comments, says only what a literal shows, and is listed.
+Found in the published data alone, like 0.1.2.
+Code Safety rises on those of the 7 servers it deducted on; no server gains a deduction.
+
+A patch bump: rules added and narrowed, no weight or formula change.
+
 ## 0.1.2 — 2026-10-28
 
 **An interpolated template literal is `mcp-js-shell-exec-template-literal`'s alone.**

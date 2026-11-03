@@ -37,3 +37,33 @@ rules:
           func $HANDLER($CTX context.Context, $REQ $T) (...) {
             ...
           }
+
+  # ⚠ THE MARKER REGEX IS SHARED — identical in the python, javascript and go
+  # copies of this rule (tests/test_ruleset.py holds them equal). Semgrep's
+  # metavariable-regex is anchored at the start of the matched text, hence the
+  # leading `^.*?`. Listed, not deducted (severity-mapping `listed: true`): its
+  # precision is unmeasured, and a security tool that quotes the phrases it
+  # detects matches too — a quoted override phrase is excluded, the rest is
+  # left for the reader. Ruleset 0.1.3.
+  - id: mcp-go-tool-description-injection
+    languages: [go]
+    severity: WARNING
+    message: >-
+      A tool or parameter description contains text shaped like an instruction to the model rather than a description for it (a hidden-instruction tag, a request to keep something from the user, an override of earlier instructions, a step required before using a tool, or an invisible character). A client places tool descriptions in the model's context as trusted text, so wording like this is how a tool-poisoning attack is carried; it can also be a description that quotes such wording. Review the text in the excerpt.
+    metadata:
+      mcp_pattern: tool-description-injection
+      cwe: "CWE-1427"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              mcp.WithDescription($D)
+          - pattern: |
+              mcp.Description($D)
+          - pattern: |
+              $T{..., Description: $D, ...}
+      - metavariable-regex:
+          metavariable: $D
+          regex: '(?is)^.*?(<\s*/?\s*(important|system|instructions?|secret|hidden)\s*>|\b(do\s+not|don''t|never)\s+(tell|inform|notify|alert)\s+(the\s+)?(user|human)\b(?![^.\n]{0,80}\b(until|unless)\b)|\b(do\s+not|don''t|never)\s+(mention|reveal|disclose|show)\s+((this|it|that|these|any\s+of\s+this)\s+)?to\s+(the\s+)?(user|human)\b(?![^.\n]{0,80}\b(until|unless)\b)|(?<![''\"\x{2018}\x{201C}])\b(ignore|disregard|forget)\s+(all\s+|any\s+)?(previous|prior|above|earlier|other)\s+(instructions|prompts|rules|directions)|\b(before|prior\s+to)\s+(using|calling|invoking|running)\s+(this|any\s+other|other)\s+tools?\b[^.\n]{0,40}\b(you\s+must|must|always|first)\b|[\x{200B}-\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}\x{E0000}-\x{E007F}]|\\u(200[b-f]|202[a-e]|206[6-9])|\\U000e00[0-7][0-9a-f]|\\u\{e00[0-7][0-9a-f]\})'
+      # Report the DESCRIPTION, not the call around it: the excerpt must show
+      # the words that matched, or the page cannot show the reader why.
+      - focus-metavariable: $D

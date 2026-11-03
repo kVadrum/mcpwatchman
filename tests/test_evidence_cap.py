@@ -246,6 +246,21 @@ def test_findings_that_deduct_lead_and_test_code_says_it_does_not() -> None:
     assert small.evidence[-1].detail.startswith("Test code — listed, not deducted")
 
 
+def test_listed_findings_follow_every_deducting_one_and_say_why() -> None:
+    """`feed._comparable` relies on the order: a shown non-deducting finding
+    proves no deducting one was hidden behind the cap."""
+    from dataclasses import replace
+
+    served = [_code(Severity.MEDIUM, Confidence.MEDIUM, i) for i in range(2)]
+    listed = [replace(_code(Severity.CRITICAL, Confidence.MEDIUM, 50), listed=True)]
+    tests = [replace(_code(Severity.CRITICAL, Confidence.MEDIUM, 100), in_test=True)]
+    axis = _code_axis(_CodeResult(tests + listed + served), READABLE)
+    assert [e.deducts for e in axis.evidence] == [True, True, False, False]
+    assert axis.evidence[2].detail.startswith("Listed, not deducted")
+    assert axis.evidence[3].detail.startswith("Test code — listed, not deducted")
+    assert "1 finding from checks whose precision is not yet measured is listed" in axis.reason
+
+
 def test_an_unmeasured_ecosystem_narrows_the_coverage_it_claims() -> None:
     """`ai.emberverse/emberverse`: withholding resolved Python versions turned
     a fabricated 0 into a 100 at `assessed_weight` 1 — npm measured, Python

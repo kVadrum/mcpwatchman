@@ -33,3 +33,7 @@ def g(resp):
 
 def h():
     return requests.get("https://example.com/")
+
+# The metadata endpoint, ruleset 0.1.3: a literal is listed wherever it is,
+# a comment never — not even this one, which names 169.254.169.254.
+BLOCKED = ["169.254.169.254"]  # FIRE: mcp-python-ssrf-metadata-endpoint

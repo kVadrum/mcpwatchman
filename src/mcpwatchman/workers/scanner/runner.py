@@ -769,20 +769,27 @@ def _code_axis(
     def by_confidence(f):
         return _CONFIDENCE_RANK.get(f.confidence, len(_CONFIDENCE_RANK))
 
-    # Findings that DEDUCT lead; test-code findings, which deduct nothing, take
-    # whatever room the cap leaves — the cheapest thing on the page to omit.
-    served = [f for f in result.findings if not f.in_test]
+    # Findings that DEDUCT lead; findings that deduct nothing — from a rule
+    # whose precision is unmeasured (`listed`), then from test code — take
+    # whatever room the cap leaves. `feed._comparable` relies on this order: a
+    # shown non-deducting finding proves no deducting one was hidden.
+    served = [f for f in result.findings if f.deducts]
+    listed = [f for f in result.findings if f.listed and not f.in_test]
     tests = [f for f in result.findings if f.in_test]
     shown, omitted = _worst_first(served, by_confidence, evidence_cap)
-    room = None if evidence_cap is None else max(evidence_cap - len(shown), 0)
-    shown_tests, omitted_tests = _worst_first(tests, by_confidence, room)
-    shown, omitted = shown + shown_tests, omitted + omitted_tests
+    for tail in (listed, tests):
+        room = None if evidence_cap is None else max(evidence_cap - len(shown), 0)
+        shown_tail, omitted_tail = _worst_first(tail, by_confidence, room)
+        shown, omitted = shown + shown_tail, omitted + omitted_tail
     evidence = tuple(
         Evidence(
             label=f"{f.rule_id} ({f.severity}/{f.confidence})",
             detail=(
                 ("Test code — listed, not deducted: `03` §3 grades the code a "
-                 "user runs. " if f.in_test else "")
+                 "user runs. " if f.in_test else
+                 "Listed, not deducted: this check is new and its precision has "
+                 "not been measured, so it is shown for review and scores "
+                 "nothing. " if f.listed else "")
                 + f.message
             ),
             path=f.path,
@@ -790,11 +797,18 @@ def _code_axis(
             excerpt=f.excerpt,
             finding=f.rule_id,
             severity=str(f.severity),
-            deducts=not f.in_test,
+            deducts=f.deducts,
         )
         for f in shown
     )
     reason = source_note
+    if listed:
+        n = len(listed)
+        note = (
+            f"{n} finding{'' if n == 1 else 's'} from checks whose precision is "
+            f"not yet measured {'is' if n == 1 else 'are'} listed but not deducted"
+        )
+        reason = f"{reason}; {note}" if reason else note
     if tests:
         n = len(tests)
         note = (

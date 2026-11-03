@@ -10,6 +10,12 @@
 #   medium          -> WARNING
 #   low, info       -> INFO
 #
+# `listed: true` (optional, default false) — the rule's findings are published
+# as evidence and DEDUCT NOTHING (`CodeFinding.deducts`). For a new check whose
+# precision has never been measured: the 2026-10-28 ruling lets unratified
+# evidence narrow what we claim, never raise it, and a check that deducted on
+# its first night would raise it. Moving one to scored is a methodology change.
+#
 # ─────────────────────────────────────────────────────────────────────────────
 # ⚠ WHY NO RULE CLAIMS `high` CONFIDENCE, AND WHY THAT IS NOT MODESTY.
 #
@@ -39,7 +45,7 @@ rules:
   mcp-python-shell-true-nonliteral:      {severity: critical, confidence: medium}
   mcp-python-os-system-interpolated:     {severity: critical, confidence: medium}
   mcp-python-ssrf-nonliteral-url:        {severity: medium,   confidence: low}
-  mcp-python-ssrf-metadata-endpoint:     {severity: critical, confidence: medium}
+  mcp-python-ssrf-metadata-endpoint:     {severity: medium,   confidence: low, listed: true}
   mcp-python-pickle-loads:               {severity: critical, confidence: medium}
   mcp-python-yaml-unsafe-load:           {severity: medium,   confidence: medium}
   mcp-python-eval-exec-nonliteral:       {severity: critical, confidence: medium}
@@ -48,12 +54,13 @@ rules:
   mcp-python-sql-string-built:           {severity: medium,   confidence: medium}
   mcp-python-tool-arg-to-shell:          {severity: critical, confidence: medium}
   mcp-python-tool-returns-environment:   {severity: critical, confidence: medium}
+  mcp-python-tool-description-injection: {severity: medium, confidence: low, listed: true}
 
   # ── javascript / typescript ───────────────────────────────────────────────
   mcp-js-shell-exec-nonliteral:          {severity: critical, confidence: medium}
   mcp-js-shell-exec-template-literal:    {severity: critical, confidence: medium}
   mcp-js-ssrf-nonliteral-url:            {severity: medium,   confidence: low}
-  mcp-js-ssrf-metadata-endpoint:         {severity: critical, confidence: medium}
+  mcp-js-ssrf-metadata-endpoint:         {severity: medium,   confidence: low, listed: true}
   mcp-js-dynamic-code-execution:         {severity: critical, confidence: medium}
   mcp-js-unsafe-yaml-load:               {severity: medium,   confidence: medium}
   mcp-js-path-join-unvalidated:          {severity: medium,   confidence: low}
@@ -61,14 +68,16 @@ rules:
   mcp-js-prototype-pollution-json-merge: {severity: medium,   confidence: low}
   mcp-js-tool-arg-to-shell:              {severity: critical, confidence: medium}
   mcp-js-tool-returns-environment:       {severity: critical, confidence: medium}
+  mcp-js-tool-description-injection: {severity: medium, confidence: low, listed: true}
 
   # ── go ────────────────────────────────────────────────────────────────────
   mcp-go-shell-exec-interpreter:         {severity: critical, confidence: medium}
   mcp-go-shell-exec-formatted-binary:    {severity: medium,   confidence: low}
   mcp-go-ssrf-nonliteral-url:            {severity: medium,   confidence: low}
-  mcp-go-ssrf-metadata-endpoint:         {severity: critical, confidence: medium}
+  mcp-go-ssrf-metadata-endpoint:         {severity: medium,   confidence: low, listed: true}
   mcp-go-gob-decode-untrusted:           {severity: medium,   confidence: low}
   mcp-go-unmarshal-into-interface:       {severity: medium,   confidence: low}
   mcp-go-path-join-unvalidated:          {severity: medium,   confidence: low}
   mcp-go-tool-arg-to-shell:              {severity: critical, confidence: medium}
   mcp-go-tool-returns-environment:       {severity: critical, confidence: medium}
+  mcp-go-tool-description-injection: {severity: medium, confidence: low, listed: true}

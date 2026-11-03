@@ -8,3 +8,7 @@ function f(err) { return axios.isAxiosError(err); }
 function g(err) { return axios.isCancel(err); }
 async function h() { return axios.get("https://example.com/"); }
 module.exports = { a, b, c, d, e, f, g, h };
+
+// The metadata endpoint, ruleset 0.1.3: a literal is listed wherever it is,
+// a comment never — not even this one, which names 169.254.169.254.
+const BLOCKED_HOSTS = ["169.254.169.254", "metadata.google.internal"]; // FIRE: mcp-js-ssrf-metadata-endpoint, mcp-js-ssrf-metadata-endpoint

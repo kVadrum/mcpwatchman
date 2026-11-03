@@ -429,7 +429,7 @@ def _entry_points(root: Path) -> tuple[str, ...]:
     if pkg.is_file() and not pkg.is_symlink():
         try:
             data = json.loads(_read_manifest(pkg))
-        except (ValueError, OSError):
+        except (ValueError, OSError, RecursionError):
             data = {}
         if isinstance(data, dict):
             bin_field = data.get("bin")
@@ -445,7 +445,7 @@ def _entry_points(root: Path) -> tuple[str, ...]:
     if pyproject.is_file() and not pyproject.is_symlink():
         try:
             data = tomllib.loads(_read_manifest(pyproject))
-        except (tomllib.TOMLDecodeError, OSError):
+        except (ValueError, OSError, RecursionError):
             data = {}
         # ⚠ Each level is checked separately. `data.get("project", {}).get(...)`
         # raises AttributeError on a syntactically VALID file whose `project` is

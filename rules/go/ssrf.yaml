@@ -23,12 +23,23 @@ rules:
 
   - id: mcp-go-ssrf-metadata-endpoint
     languages: [go]
-    severity: ERROR
+    severity: WARNING
     message: >-
-      The cloud instance-metadata endpoint is contacted directly.
+      A string literal names the cloud instance-metadata endpoint, which serves
+      a hosted instance's credentials to anything on it that asks. Code that
+      contacts it can be the last step of an SSRF; the same literal is also how
+      an SSRF defence names what it blocks, and a pattern cannot tell the two
+      apart, so this is listed for review and not deducted.
     metadata:
       mcp_pattern: metadata-endpoint
       cwe: "CWE-918"
-    pattern-either:
-      - pattern-regex: \b169\.254\.169\.254\b
-      - pattern-regex: \bmetadata\.google\.internal\b
+    # ⚠ NARROWED IN RULESET 0.1.3. This was a bare pattern-regex, so it matched
+    # comments too, deducted as critical, and said the endpoint "is contacted
+    # directly". All 29 findings in the published data of 2026-11-03 (7 servers)
+    # were SSRF defences, comments explaining them, or tests; none contacted
+    # it. Now string literals only, and listed (severity-mapping `listed: true`).
+    patterns:
+      - pattern: '"$S"'
+      - metavariable-regex:
+          metavariable: $S
+          regex: (?s)^.*?\b(169\.254\.169\.254|metadata\.google\.internal)\b

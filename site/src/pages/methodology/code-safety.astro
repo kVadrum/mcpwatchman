@@ -141,8 +141,24 @@ const RULES = "https://github.com/kVadrum/mcpwatchman/tree/main/rules";
       nothing.
     </p>
     <p>
+      Some checks are <strong>listed, not deducted</strong>: their findings
+      are shown on the server's page, marked as such, and change no score,
+      because how often they are right has not been measured. They are: text
+      in a tool's description shaped like an instruction to the model (how a
+      tool-poisoning attack is carried); a string naming the cloud
+      instance-metadata endpoint; an npm install script, which runs code when
+      the package is installed; and a CI workflow an outsider can steer
+      (event text interpolated into a script, or a <code>pull_request_target</code>
+      workflow that runs a contributor's code with the repository's secrets).
+      Making one deduct is a methodology change, announced as one.
+    </p>
+    <p>
       An axis is unassessed — never 0 — when there is no source in a language
-      the ruleset covers, or no source could be read at all.
+      the ruleset covers, or no source could be read at all. Whose gap it is
+      depends on why: source in a language the ruleset does not cover yet
+      (Rust, Ruby, Java, C#, shell) is a limit of ours; a repository that holds
+      no code at all, only documentation and configuration, is the
+      publisher's.
     </p>
   </section>
 </Doc>

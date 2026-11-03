@@ -321,7 +321,7 @@ def _manifest_license(root: Path, inventory: Inventory) -> tuple[str | None, str
         if name == "package.json":
             try:
                 data = json.loads(text)
-            except ValueError:
+            except (ValueError, RecursionError):
                 continue
             raw = data.get("license") if isinstance(data, dict) else None
             # npm's deprecated object form: {"type": "MIT", "url": ...}
@@ -331,7 +331,7 @@ def _manifest_license(root: Path, inventory: Inventory) -> tuple[str | None, str
         elif name in ("pyproject.toml", "Cargo.toml"):
             try:
                 data = tomllib.loads(text)
-            except tomllib.TOMLDecodeError:
+            except (ValueError, RecursionError):
                 continue
             # `[workspace.package]` is where a Cargo workspace root puts the
             # license its members inherit via `license.workspace = true`; a
