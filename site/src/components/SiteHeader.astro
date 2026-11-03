@@ -17,12 +17,15 @@ import Wordmark from "./Wordmark.astro";
 const path = Astro.url.pathname.replace(/\/+$/, "");
 const serversCurrent =
   path === "/servers" ? "page" : path.startsWith("/servers/") ? "true" : undefined;
+const methodologyCurrent =
+  path === "/methodology" ? "page" : path.startsWith("/methodology/") ? "true" : undefined;
 ---
 
 <header class="site-header">
   <Wordmark />
   <nav class="site-nav" aria-label="Site">
     <a href="/servers/" aria-current={serversCurrent}>Servers</a>
+    <a href="/methodology/" aria-current={methodologyCurrent}>Methodology</a>
     <a href="/api/servers.json">API</a>
     <a href="https://github.com/kVadrum/mcpwatchman">Source</a>
     <a href="https://pypi.org/project/mcpwatchman/">PyPI</a>

@@ -218,6 +218,18 @@ const sourceNote =
     expected and welcome condition, and `base.md` § *Signal design* is that a
     fault signal raised for an expected condition trains the reader to
     discount the channel. */}
+  {/* The README badge (`06` §2). It names the LOWEST scored axis, never a
+    single overall number: the composite is withheld (`lib/badge.ts`). */}
+  <section class="badge-block" aria-labelledby="badge-heading">
+    <h2 id="badge-heading">Add a badge</h2>
+    <p>
+      The badge names this server's lowest-scoring axis and links back to
+      this page. It is redrawn on every nightly scan.
+    </p>
+    <img src={`/badge/${report.slug}.svg`} alt="Preview of this server's mcpwatchman badge" height="20" />
+    <pre><code>{`[![mcpwatchman](https://mcpwatchman.com/badge/${report.slug}.svg)](https://mcpwatchman.com/servers/${report.slug}/)`}</code></pre>
+  </section>
+
   <section class="contest">
     <h2>Contest a finding</h2>
     <p>

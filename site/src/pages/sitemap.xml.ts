@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import scans from "../data/scans.json";
+import { DOC_PAGES } from "../lib/pages";
 
 /**
  * Generated, not hand-maintained.
@@ -15,6 +16,11 @@ const BASE = "https://mcpwatchman.com";
 const urls = [
   { loc: `${BASE}/`, priority: "1.0", changefreq: "weekly" },
   { loc: `${BASE}/servers/`, priority: "0.9", changefreq: "daily" },
+  ...DOC_PAGES.map((page) => ({
+    loc: `${BASE}${page.path}`,
+    priority: "0.6",
+    changefreq: "monthly",
+  })),
   ...scans.map((report) => ({
     loc: `${BASE}/servers/${report.slug}/`,
     priority: "0.7",

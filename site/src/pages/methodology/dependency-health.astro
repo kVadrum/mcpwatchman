@@ -1,0 +1,108 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import MethodologyNav from "../../components/MethodologyNav.astro";
+import MethodFacts from "../../components/MethodFacts.astro";
+import { M, axisByKey, percent, stackingPercents, stackingTailPercent } from "../../lib/methodology";
+
+const axis = axisByKey("dependency_health");
+const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+const rows = M.dependency_deductions;
+const cvss = (i: number) =>
+  i === 0
+    ? `${rows[0].cvss_min} and above`
+    : rows[i].cvss_min === "0"
+      ? `below ${rows[i - 1].cvss_min}`
+      : `${rows[i].cvss_min} to below ${rows[i - 1].cvss_min}`;
+---
+
+<Doc
+  title="Dependency Health — mcpwatchman methodology"
+  description="How mcpwatchman's Dependency Health axis scores MCP servers: known vulnerabilities in pinned dependencies via osv-scanner, deducted by CVSS band and direct or transitive."
+  canonical="https://mcpwatchman.com/methodology/dependency-health/"
+  heading="Dependency Health"
+  crumb={{ href: "/methodology/", label: "Methodology" }}
+>
+  <Fragment slot="lede">
+    <p>
+      Exposure to known vulnerabilities in the dependencies a server pins —
+      the classic supply-chain risk. Provisional weight{" "}
+      {percent(axis.weight)}%.
+    </p>
+  </Fragment>
+  <MethodFacts slot="facts" />
+
+  <MethodologyNav />
+
+  <section class="doc-section" aria-labelledby="reads-heading">
+    <h2 id="reads-heading">What is read</h2>
+    <p>
+      osv-scanner runs against the lockfiles in the server's published source
+      and matches every pinned version against the OSV vulnerability
+      database.
+    </p>
+    <p>
+      <strong>Only what a publisher pinned is attributed to them.</strong> A
+      lockfile pins; so does a requirements file, but only for the
+      requirements it pins exactly with <code>==</code>. A version the scanner
+      resolved on its own is never attributed. An ecosystem declared only by
+      unpinned requirements was not measured, so the axis covers only the
+      ecosystems a lockfile did, and <code>assessed_weight</code> says how
+      much. With no lockfile at all the axis is unassessed — not 0, and not
+      100.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="table-heading">
+    <h2 id="table-heading">Deductions</h2>
+    <p>
+      The axis opens at 100 and floors at 0. Each vulnerability deducts by
+      its CVSS band and by whether the dependency is direct or transitive.
+    </p>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th scope="col">Severity</th>
+            <th scope="col">CVSS</th>
+            <th scope="col" class="num">Direct</th>
+            <th scope="col" class="num">Transitive</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr>
+              <th scope="row">{cap(r.severity)}</th>
+              <td>{cvss(i)}</td>
+              <td class="num deduct">−{r.direct}</td>
+              <td class="num deduct">−{r.transitive}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Direct dependencies cost more because the maintainer controls them and
+      can update them, and because a transitive vulnerability more often sits
+      in code a given server never reaches. Findings of one severity stack as
+      they do on Code Safety — {stackingPercents.join("%, ")}%, then{" "}
+      {stackingTailPercent}% — with the same rounding: only the axis score,
+      half up.
+    </p>
+    <h3>Counting</h3>
+    <ul>
+      <li>One advisory is one finding. osv-scanner lists each alias of an advisory separately; they are grouped, never counted twice.</li>
+      <li>A vulnerability with no CVSS score is listed on the page and not scored: the methodology defines no band for it.</li>
+      <li>When directness cannot be told — a manifest we cannot parse — that is recorded, not guessed.</li>
+      <li>“Fixed in” names the fix on the installed version's own release line.</li>
+    </ul>
+  </section>
+
+  <section class="doc-section" aria-labelledby="limits-heading">
+    <h2 id="limits-heading">Limits</h2>
+    <p>
+      There is no reachability analysis: a vulnerable function is counted
+      whether or not the server calls it. That over-counts, most of all for
+      transitive dependencies, which is part of why they deduct less.
+    </p>
+  </section>
+</Doc>

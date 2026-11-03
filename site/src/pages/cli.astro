@@ -1,0 +1,113 @@
+---
+import Doc from "../layouts/Doc.astro";
+import scans from "../data/scans.json";
+
+// A real record, rendered as `check --format compact` renders it
+// (`cli/check.py` `render_compact`), so the example is one a reader can run.
+const SHORT: [string, string][] = [
+  ["code_safety", "code"],
+  ["auth_posture", "auth"],
+  ["dependency_health", "deps"],
+  ["maintenance", "maint"],
+  ["transparency", "trans"],
+];
+const sample =
+  scans.find((r) => Object.values(r.axes).some((a) => a.score !== null && Number(a.assessed_weight) < 1)) ??
+  scans[0];
+const compact = sample
+  ? [
+      `${sample.name}@${sample.version}`,
+      ...SHORT.map(([key, short]) => {
+        const a = sample.axes[key as keyof typeof sample.axes];
+        return a.score === null ? `${short}=null` : `${short}=${a.score}@${Number(a.assessed_weight).toFixed(2)}`;
+      }),
+      "composite=withheld",
+    ].join("  ")
+  : "";
+---
+
+<Doc
+  title="CLI reference — mcpwatchman"
+  description="The mcpwatchman command-line tool: check an MCP server's published per-axis scores before installing it, in a terminal or a CI pipeline."
+  canonical="https://mcpwatchman.com/cli/"
+  heading="CLI reference"
+>
+  <Fragment slot="lede">
+    <p>
+      <code>mcpwatchman</code> reads a server's published scan from your
+      terminal, before you install it, or from a CI pipeline. It reads the
+      same static JSON as <a href="/api/">the API</a>, so it reports exactly
+      what the site does.
+    </p>
+  </Fragment>
+
+  <section class="paper doc-paper" aria-labelledby="install-heading">
+    <h2 id="install-heading">Install</h2>
+    <p>From PyPI, on Python 3.12 or later:</p>
+    <pre><code>pipx install mcpwatchman
+# or
+pip install mcpwatchman</code></pre>
+    <p>
+      There is no npm distribution of the tool: <code>npx mcpwatchman</code>{" "}
+      prints where the real one is and exits.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="check-heading">
+    <h2 id="check-heading"><code>mcpwatchman check &lt;server&gt;</code></h2>
+    <p>
+      Shows the published scan for a server: each axis's score with the share
+      of the axis that was measured, or why it was not assessed. There is no
+      overall number; the composite is withheld until calibration.
+    </p>
+    <p>
+      <code>&lt;server&gt;</code> may be a registry name or slug, an npm or
+      PyPI package name, or a repository URL.
+    </p>
+    <pre><code>mcpwatchman check io.github.owner/server
+mcpwatchman check @scope/some-mcp-server --format json</code></pre>
+
+    <h3>Options</h3>
+    <dl class="defs">
+      <div><dt>--format pretty|json|compact</dt><dd>Default <code>pretty</code>, for people. <code>json</code> and <code>compact</code> are for scripts; both carry each axis's measured share beside its score, and <code>json</code> includes <code>"composite_score": null</code> and <code>"composite_published": false</code>.</dd></div>
+      <div><dt>--version VERSION</dt><dd>Require the published scan to be of this server version; exits 1 if it is not. Earlier versions are not kept.</dd></div>
+      <div><dt>--threshold SCORE</dt><dd>Exit 2 when a server scores below this. The comparison is against the composite, which is withheld, so today the option prints a notice and exits 0.</dd></div>
+    </dl>
+
+    <h3>Compact output</h3>
+    <p>
+      One line per server: each axis as <code>score@measured-share</code>, or{" "}
+      <code>null</code> when not assessed. A real record:
+    </p>
+    <pre><code>{compact}</code></pre>
+
+    <h3>Exit codes</h3>
+    <dl class="defs">
+      <div><dt>0</dt><dd>The scan was found and printed.</dd></div>
+      <div><dt>1</dt><dd>The server is not published by mcpwatchman — not a judgement, only that we have not scanned it — or not at the version asked for.</dd></div>
+      <div><dt>2</dt><dd>Below <code>--threshold</code>. Unused until the composite is published.</dd></div>
+      <div><dt>4</dt><dd>A network or API error.</dd></div>
+      <div><dt>5</dt><dd>Invalid arguments. Not 2, so a typo in a pipeline never reads as a failing server.</dd></div>
+    </dl>
+
+    <h3>Environment</h3>
+    <dl class="defs">
+      <div><dt>MCPWATCHMAN_API_URL</dt><dd>Read from another copy of the site's JSON. Must be an http or https URL.</dd></div>
+    </dl>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="next-heading">
+    <h2 id="next-heading">Arriving in the next release</h2>
+    <p>
+      These commands are being added and are not in the current package.
+      Like <code>check</code>, none of them prints a composite.
+    </p>
+    <dl class="defs">
+      <div><dt>info &lt;server&gt;{" "}<span class="tag">next release</span></dt><dd>The full per-axis breakdown, with each finding's file, line and matched code.</dd></div>
+      <div><dt>list{" "}<span class="tag">next release</span></dt><dd>The published servers with their per-axis scores and coverage.</dd></div>
+      <div><dt>trend &lt;server&gt;{" "}<span class="tag">next release</span></dt><dd>A server's per-axis scores across its recorded scans, from <code>history.json</code>.</dd></div>
+      <div><dt>feed{" "}<span class="tag">next release</span></dt><dd>Recent critical and high findings, as the Atom feed carries them, for reading in a terminal.</dd></div>
+      <div><dt>badge &lt;server&gt;{" "}<span class="tag">next release</span></dt><dd>Prints the README badge markdown for a server, ready to paste.</dd></div>
+    </dl>
+  </section>
+</Doc>

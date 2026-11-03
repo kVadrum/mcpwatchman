@@ -1,0 +1,38 @@
+---
+/**
+ * One axis's sub-check weights, from `methodology.json` (checked against
+ * `weights.SUBCHECK_WEIGHTS`). The `status` column is the page's own words:
+ * what each sub-check does TODAY, which is sometimes less than `03` plans.
+ */
+import { subchecks, percent, type AxisKey } from "../lib/methodology";
+
+interface Props {
+  axis: AxisKey;
+  caption: string;
+  notes: Record<string, string>;
+}
+const { axis, caption, notes } = Astro.props;
+const rows = subchecks(axis);
+---
+
+<div class="table-wrap">
+  <table class="ledger">
+    <caption>{caption}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Sub-check</th>
+        <th scope="col" class="num">Share of axis</th>
+        <th scope="col">What 100 looks like, and what runs today</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <th scope="row">{r.label}</th>
+          <td class="num">{percent(r.weight)}%</td>
+          <td>{notes[r.key]}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

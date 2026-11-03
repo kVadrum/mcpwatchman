@@ -9,6 +9,7 @@ import "../styles/tokens.css";
 import "../styles/report.css";
 import SiteHeader from "../components/SiteHeader.astro";
 import FontPreloads from "../components/FontPreloads.astro";
+import SiteFooterNav from "../components/SiteFooterNav.astro";
 
 interface Props {
   title: string;
@@ -55,6 +56,7 @@ const year = new Date().getFullYear();
     </main>
 
     <footer class="colophon">
+      <SiteFooterNav />
       <p>
         Scores are per-axis. The weighted composite is computed and withheld
         until a hand-audited gold set validates the weights, so no single

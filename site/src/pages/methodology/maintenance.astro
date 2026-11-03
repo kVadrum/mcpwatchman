@@ -1,0 +1,137 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import MethodologyNav from "../../components/MethodologyNav.astro";
+import MethodFacts from "../../components/MethodFacts.astro";
+import SubcheckTable from "../../components/SubcheckTable.astro";
+import { M, axisByKey, percent } from "../../lib/methodology";
+
+const axis = axisByKey("maintenance");
+const b = M.maintenance_bands;
+const f = M.forge_bounds;
+const last = (xs: number[][]) => xs[xs.length - 1];
+const notes = {
+  recency: "A commit within the last month.",
+  issue_responsiveness: "Outside issues answered by a maintainer within days.",
+  release_cadence: "A release in the last month, or a short median gap between releases.",
+  bus_factor: "Three or more people committing regularly.",
+  repository_signals: "Not scored today: it ranks a server within its category, which needs a distribution across every scanned server — a pass that does not exist yet. A limit of ours.",
+};
+const signalsShare = percent(M.subcheck_weights.maintenance.find((s) => s.key === "repository_signals")!.weight);
+---
+
+<Doc
+  title="Maintenance — mcpwatchman methodology"
+  description="How mcpwatchman's Maintenance axis scores MCP servers: commit recency, release cadence, issue responsiveness and bus factor, with every band and the limits of a bounded fetch."
+  canonical="https://mcpwatchman.com/methodology/maintenance/"
+  heading="Maintenance"
+  crumb={{ href: "/methodology/", label: "Methodology" }}
+>
+  <Fragment slot="lede">
+    <p>
+      The likelihood that a problem found tomorrow gets fixed. An unmaintained
+      server with no findings today is a riskier choice than a maintained one
+      with a medium finding, because the first cannot answer the next one.
+      Provisional weight {percent(axis.weight)}%.
+    </p>
+  </Fragment>
+  <MethodFacts slot="facts" />
+
+  <MethodologyNav />
+
+  <section class="paper doc-paper" aria-labelledby="sub-heading">
+    <h2 id="sub-heading">Sub-checks</h2>
+    <p>
+      Signals are read from the declared repository through the GitHub API.
+      A repository on another forge, or one that cannot be read, leaves the
+      axis unassessed. Because repository signals are never scored today, the
+      axis is measured on at most {100 - Number(signalsShare)}% of itself.
+    </p>
+    <SubcheckTable axis="maintenance" caption="Maintenance sub-checks" notes={notes} />
+
+    <h3>Recency of activity</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">Last commit</th></tr></thead>
+        <tbody>
+          {b.recency_days.map(([days, score]) => (
+            <tr><td class="num">{score}</td><td>within {days} days</td></tr>
+          ))}
+          <tr><td class="num">0</td><td>more than {last(b.recency_days)[0]} days ago</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      A stable server is not penalised for being stable: one commit a month
+      on a finished project is maintained.
+    </p>
+
+    <h3>Release cadence</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">Releases over the last year</th></tr></thead>
+        <tbody>
+          <tr><td class="num">{b.release_gap_days[0][1]}</td><td>released in the last {b.recent_release_days} days, or a median gap of at most {b.release_gap_days[0][0]} days</td></tr>
+          {b.release_gap_days.slice(1).map(([days, score]) => (
+            <tr><td class="num">{score}</td><td>median gap of at most {days} days</td></tr>
+          ))}
+          <tr><td class="num">30</td><td>released in the last year, but a median gap over {last(b.release_gap_days)[0]} days</td></tr>
+          <tr><td class="num">0</td><td>no release in the last year</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Issue responsiveness</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">Median time to a maintainer's first response</th></tr></thead>
+        <tbody>
+          {b.issue_response_days.map(([days, score]) => (
+            <tr><td class="num">{score}</td><td>at most {days} days</td></tr>
+          ))}
+          <tr><td class="num">0</td><td>over {last(b.issue_response_days)[0]} days, or no response on any issue</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Issues from the last six months count. A repository with fewer than{" "}
+      {b.issue_sample_min} of them uses its lifetime median instead. Issues
+      the project filed itself — a maintainer's tracking issue, a bot's
+      notice — are left out: the question is whether someone outside will be
+      answered.
+    </p>
+
+    <h3>Bus factor</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">People with at least {b.bus_factor_min_commits} commits in the last year</th></tr></thead>
+        <tbody>
+          <tr><td class="num">100</td><td>three or more</td></tr>
+          <tr><td class="num">80</td><td>two</td></tr>
+          <tr><td class="num">50</td><td>one</td></tr>
+          <tr><td class="num">30</td><td>one, with no activity in the last {b.bus_factor_stale_days} days</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Sole maintainers are not penalised harshly; many of the best servers in
+      the registry have one. Release and dependency bots are excluded by name.
+      An AI agent committing under its own identity counts as an author, as a
+      person does, so a sole maintainer working through an agent can read as
+      two.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="bounded-heading">
+    <h2 id="bounded-heading">A bounded fetch never asserts an absence</h2>
+    <p>
+      The scanner reads a bounded sample of each repository: up to{" "}
+      {f.issue_sample_size} issues, {f.tag_sample_size} tags and{" "}
+      {f.max_commit_pages} pages of {f.commit_page_size} commits. “We found
+      none” in a sample is not “there are none”. When the unread part of the
+      history could change a band — a release tag beyond the first{" "}
+      {f.tag_sample_size}, an author whose commits continue past the last page
+      — the sub-check abstains, and the page names our bound as the reason
+      rather than blaming the publisher.
+    </p>
+  </section>
+</Doc>

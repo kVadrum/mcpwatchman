@@ -1,0 +1,117 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import MethodologyNav from "../../components/MethodologyNav.astro";
+import MethodFacts from "../../components/MethodFacts.astro";
+import SubcheckTable from "../../components/SubcheckTable.astro";
+import { M, axisByKey, percent } from "../../lib/methodology";
+
+const axis = axisByKey("transparency");
+const notes = {
+  license: "A valid SPDX identifier in a LICENSE file that matches the package metadata.",
+  readme_quality: "A README that says what the server does and documents installation, configuration and its tools.",
+  declared_scopes: "The README or manifest documents what the server can access. Only the lower bands are scored today.",
+  changelog: "A CHANGELOG or release notes file in the source.",
+  security_contact: "A SECURITY.md, or a disclosure contact documented in the README.",
+};
+---
+
+<Doc
+  title="Transparency — mcpwatchman methodology"
+  description="How mcpwatchman's Transparency axis scores MCP servers: licence, README quality, declared scopes, changelog and security contact, with every band."
+  canonical="https://mcpwatchman.com/methodology/transparency/"
+  heading="Transparency"
+  crumb={{ href: "/methodology/", label: "Methodology" }}
+>
+  <Fragment slot="lede">
+    <p>
+      How discoverable and honest a server is about its own behaviour. The
+      softest axis, and the one a maintainer can move most directly with
+      documentation. Provisional weight {percent(axis.weight)}%.
+    </p>
+  </Fragment>
+  <MethodFacts slot="facts" />
+
+  <MethodologyNav />
+
+  <section class="paper doc-paper" aria-labelledby="sub-heading">
+    <h2 id="sub-heading">Sub-checks</h2>
+    <p>
+      Every sub-check reads the server's published files, so a server whose
+      source cannot be read is generally not assessed on this axis.
+    </p>
+    <SubcheckTable axis="transparency" caption="Transparency sub-checks" notes={notes} />
+
+    <h3>License</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">When</th></tr></thead>
+        <tbody>
+          <tr><td class="num">100</td><td>An SPDX identifier in the LICENSE file that agrees with the package manifest's licence field. A dual licence offered by the manifest counts as agreement.</td></tr>
+          <tr><td class="num">70</td><td>A LICENSE file whose licence can be identified but which carries no SPDX tag, or has no manifest field to check it against.</td></tr>
+          <tr><td class="num">30</td><td>A licence named in the manifest with no LICENSE file shipped, or a LICENSE file and manifest that disagree.</td></tr>
+          <tr><td class="num">0</td><td>No licence file and no licence field anywhere. Without a licence, nobody has a grant to use the server at all.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      SPDX exceptions (<code>WITH …</code>) are compared on both sides or
+      neither. A NOTICE file never outranks the LICENSE beside it.
+    </p>
+
+    <h3>README quality</h3>
+    <p>
+      A README under {M.readme_min_bytes} bytes scores 0. Above that, points
+      add up to a maximum of 100:
+    </p>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Points</th><th scope="col">The README</th></tr></thead>
+        <tbody>
+          <tr><td class="num">+25</td><td>has installation instructions — a code block after an install heading</td></tr>
+          <tr><td class="num">+25</td><td>documents configuration, such as environment variables or a config file</td></tr>
+          <tr><td class="num">+30</td><td>enumerates the tools or resources the server exposes</td></tr>
+          <tr><td class="num">+20</td><td>says what the server does within its first {M.readme_intro_words} words</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      These are heuristics, and this is the sub-check most likely to misjudge
+      an unusual README. If yours is scored wrongly, contest it.
+    </p>
+
+    <h3>Declared scopes</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">When</th></tr></thead>
+        <tbody>
+          <tr><td class="num dim">100</td><td>Every scope the code is inferred to use is documented. <strong>Not scored today.</strong></td></tr>
+          <tr><td class="num dim">60</td><td>Some scopes documented, more found in code. <strong>Not scored today.</strong></td></tr>
+          <tr><td class="num">30</td><td>Capabilities documented only in vague terms.</td></tr>
+          <tr><td class="num">0</td><td>No documentation of what the server accesses or what side effects it has.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The two upper bands compare the documentation against scopes inferred
+      from static analysis, and that inference is not built. Scoring 100
+      against an empty inference would be a vacuous truth, so a server that
+      does document specific scopes is left unassessed here — a limit of
+      ours, not a fault of theirs.
+    </p>
+
+    <h3>Changelog and security contact</h3>
+    <p>
+      Each scores 100 when present and 0 when absent. The methodology also
+      allows partial changelog credit for tagged releases that carry release
+      notes; that needs the forge API, which this check does not call yet, so
+      it is not applied and the evidence says so. A security policy may be a
+      SECURITY.md or a disclosure contact in the README.
+    </p>
+    <p>
+      A licence, changelog or security policy found only inside a nested
+      sub-project — a directory with its own package manifest — describes
+      that project. It neither credits the server nor accuses it; the
+      sub-check is left unassessed.
+    </p>
+  </section>
+</Doc>

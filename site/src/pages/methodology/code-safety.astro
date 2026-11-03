@@ -1,0 +1,148 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import MethodologyNav from "../../components/MethodologyNav.astro";
+import MethodFacts from "../../components/MethodFacts.astro";
+import { M, axisByKey, percent, stackingPercents, stackingTailPercent } from "../../lib/methodology";
+
+const axis = axisByKey("code_safety");
+const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+const rows = M.code_safety_deductions;
+const crit = rows[0];
+// `03` §3's worked example, computed from the table rather than typed: two
+// critical findings, the second at the second rung of the ladder.
+const second = (crit.medium as number) * Number(M.stacking[1]);
+const RULES = "https://github.com/kVadrum/mcpwatchman/tree/main/rules";
+---
+
+<Doc
+  title="Code Safety — mcpwatchman methodology"
+  description="How mcpwatchman's Code Safety axis scores MCP servers: an MCP-specific semgrep ruleset, the deduction table by severity and confidence, and the stacking rule."
+  canonical="https://mcpwatchman.com/methodology/code-safety/"
+  heading="Code Safety"
+  crumb={{ href: "/methodology/", label: "Methodology" }}
+>
+  <Fragment slot="lede">
+    <p>
+      Code patterns that produce a security impact if attacker-controlled
+      input reaches them: shell execution, server-side request forgery,
+      unsafe deserialization, path traversal. Provisional weight{" "}
+      {percent(axis.weight)}%.
+    </p>
+  </Fragment>
+  <MethodFacts slot="facts" />
+
+  <MethodologyNav />
+
+  <section class="doc-section" aria-labelledby="reads-heading">
+    <h2 id="reads-heading">What is read</h2>
+    <p>
+      An MCP-specific semgrep ruleset runs over the server's published source
+      in Python, JavaScript and TypeScript, and Go. The categories are shell
+      execution, SSRF, deserialization and path traversal in every language,
+      SQL injection in Python and prototype pollution in JavaScript, plus rules
+      keyed on the shape of an MCP tool handler. A tool argument is a value a
+      language model was persuaded to produce, so “the caller is trusted” is
+      not a mitigation. Every rule is public in the{" "}
+      <a href={RULES}>repository's rules directory</a>.
+    </p>
+    <p>
+      The rules are patterns, not taint analysis: they do not follow data
+      across functions, which is why no confidence above medium is claimed for
+      them.
+    </p>
+    <p>
+      A server is graded on its own code. Vendored dependencies are not read,
+      nor is build output (<code>dist/</code>, <code>build/</code>), because a
+      bundle inlines other people's code; nor are minified files. When a
+      package ships only build output, Code Safety is scored on the
+      repository it declares, and the axis says so. A scanned repository's own
+      scanner configuration is removed before the scan, so a repository cannot
+      exclude itself from it.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="table-heading">
+    <h2 id="table-heading">Deductions</h2>
+    <p>
+      The axis opens at 100, each finding deducts by its severity and its
+      confidence, and the axis floors at 0. Low-confidence findings deduct at
+      the lowest value in their severity's row.
+    </p>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th scope="col">Severity</th>
+            <th scope="col" class="num">High confidence</th>
+            <th scope="col" class="num">Medium confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) =>
+            "any" in r ? (
+              <tr>
+                <th scope="row">{cap(r.severity)}</th>
+                <td class="num deduct" colspan="2">{r.any === 0 ? "0, listed only" : `−${r.any} at any confidence`}</td>
+              </tr>
+            ) : (
+              <tr>
+                <th scope="row">{cap(r.severity)}</th>
+                <td class="num dim">−{r.high}</td>
+                <td class="num deduct">−{r.medium}</td>
+              </tr>
+            ),
+          )}
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The high-confidence column is greyed because it is unused: no rule may
+      claim high confidence until the gold set measures its false-positive
+      rate, so every finding is capped at {M.confidence_ceiling}.
+    </p>
+
+    <h3>Stacking</h3>
+    <p>
+      Findings of one severity stack with diminishing returns. Within a
+      severity, the largest deduction is taken first at {stackingPercents[0]}%,
+      then the rest at {stackingPercents.slice(1).join("%, ")}% and{" "}
+      {stackingTailPercent}% from the fifth on. Grouping is by severity alone, so
+      a critical/high and a critical/medium finding share a group. Only the
+      final axis score is rounded, half up: two critical findings at medium
+      confidence deduct {crit.medium} + {second} = {(crit.medium as number) + second},
+      so the axis is {100 - ((crit.medium as number) + second)}.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="severity-heading">
+    <h2 id="severity-heading">Severity and confidence</h2>
+    <ul>
+      <li><strong>Critical</strong> — a direct, unauthenticated remote impact path, such as shell injection through a tool argument with no validation.</li>
+      <li><strong>High</strong> — impact with modest preconditions, such as SSRF restricted to outbound HTTP, or <code>pickle.loads</code> on caller-supplied data.</li>
+      <li><strong>Medium</strong> — meaningful preconditions, or bounded impact.</li>
+      <li><strong>Low</strong> — a smell with security implications and no clear exploitation path.</li>
+      <li><strong>Informational</strong> — recorded, never deducted.</li>
+    </ul>
+    <p>
+      Confidence is a measured false-positive rate, not a feeling: high means
+      under 5% on the gold set, medium under 20%, low is a heuristic used only
+      where the alternative is missing a class entirely. Until the gold set
+      exists, the ceiling is enforced in code.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="evidence-heading">
+    <h2 id="evidence-heading">Evidence</h2>
+    <p>
+      Each finding records the file, line, rule ID, severity, confidence and a
+      short excerpt of the matched code, and the server page prints it. A
+      finding in test code (<code>tests/</code>, <code>*.test.ts</code>,{" "}
+      <code>*_test.go</code> and the like) is listed and marked, and deducts
+      nothing.
+    </p>
+    <p>
+      An axis is unassessed — never 0 — when there is no source in a language
+      the ruleset covers, or no source could be read at all.
+    </p>
+  </section>
+</Doc>

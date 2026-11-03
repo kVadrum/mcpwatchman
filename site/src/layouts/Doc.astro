@@ -1,0 +1,37 @@
+---
+/**
+ * The reference pages: methodology, disclosure, about, API, CLI.
+ *
+ * Built on the report layout, so they wear the one header, the one colophon
+ * and the same tokens, and they keep its division of labour: the instrument's
+ * own voice (what we do, why, what we do not) speaks from the dark ground, and
+ * anything a reader might check a score against — a deduction table, a
+ * response shape, a command — is printed on the paper, the surface every
+ * report puts its evidence on.
+ */
+import Report from "./Report.astro";
+import "../styles/docs.css";
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+  heading: string;
+  crumb?: { href: string; label: string };
+}
+const { title, description, canonical, heading, crumb } = Astro.props;
+---
+
+<Report title={title} description={description} canonical={canonical}>
+  <header class="doc-head">
+    {crumb && (
+      <nav class="doc-crumb" aria-label="Breadcrumb">
+        <a href={crumb.href}>{crumb.label}</a>
+      </nav>
+    )}
+    <h1>{heading}</h1>
+    <div class="doc-lede"><slot name="lede" /></div>
+    <slot name="facts" />
+  </header>
+  <slot />
+</Report>

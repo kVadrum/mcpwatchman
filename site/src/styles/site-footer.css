@@ -1,0 +1,35 @@
+/* The reference links in every colophon (`SiteFooterNav.astro`).
+ *
+ * Quiet on purpose: the colophon is the instrument's own fine print, so the
+ * links take its faint ink and only brighten under a pointer or focus. A
+ * hairline above separates them from the page's last sentence without a box.
+ */
+
+.site-foot-nav {
+  margin: 0 0 1.1rem;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-foot-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-struct);
+  font-size: 0.9rem;
+}
+
+.site-foot-nav a {
+  color: var(--ink-dim);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.site-foot-nav a:hover,
+.site-foot-nav a[aria-current] {
+  color: var(--ink);
+  border-bottom-color: var(--signal-ink);
+}

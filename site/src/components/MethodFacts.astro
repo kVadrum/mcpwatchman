@@ -1,0 +1,23 @@
+---
+/**
+ * The versions every methodology page is true of. Read from
+ * `methodology.json` and the newest ruleset heading, never typed.
+ */
+import { M } from "../lib/methodology";
+import changelog from "../../../rules/_meta/changelog.md?raw";
+
+// `semgrep_check.ruleset_version()` records the FIRST `## <version>` heading
+// of the changelog on every scan; the page reads it the same way.
+const ruleset = changelog.match(/^## (\d+\.\d+\.\d+)/m)?.[1] ?? "";
+const CHANGELOG_URL =
+  "https://github.com/kvadrum/mcpwatchman/blob/main/rules/_meta/changelog.md";
+---
+
+<ul class="report-facts">
+  <li>methodology <b>{M.methodology_version}</b></li>
+  {ruleset && (
+    <li>ruleset <b>{ruleset}</b> <a href={CHANGELOG_URL}>changelog</a></li>
+  )}
+  <li>composite <b>{M.composite_published ? "published" : "withheld"}</b></li>
+  <li>confidence ceiling <b>{M.confidence_ceiling}</b></li>
+</ul>

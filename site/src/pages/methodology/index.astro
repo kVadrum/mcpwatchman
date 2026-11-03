@@ -1,0 +1,304 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import MethodologyNav from "../../components/MethodologyNav.astro";
+import MethodFacts from "../../components/MethodFacts.astro";
+import AxisMeter from "../../components/AxisMeter.astro";
+import VoidHatch from "../../components/VoidHatch.astro";
+import { AXES, M, EVIDENCE_CAP, percent, stackingPercents, stackingTailPercent } from "../../lib/methodology";
+
+const howScored: Record<string, string> = {
+  code_safety: "Opens at 100; each semgrep finding deducts by severity and confidence.",
+  auth_posture: "Weighted sub-checks: authentication model, transport, secrets, authorization.",
+  dependency_health: "Opens at 100; each known vulnerability deducts by severity and whether it is direct.",
+  maintenance: "Weighted sub-checks: recency, issue response, release cadence, bus factor.",
+  transparency: "Weighted sub-checks: licence, README, declared scopes, changelog, security contact.",
+};
+const critical = M.code_safety_deductions[0];
+---
+
+<Doc
+  title="Methodology — mcpwatchman"
+  description="How mcpwatchman scores MCP servers: five independent axes, every weight and deduction, why the composite is withheld, and what an unassessed axis means."
+  canonical="https://mcpwatchman.com/methodology/"
+  heading="How a score is made"
+>
+  <Fragment slot="lede">
+    <p>
+      mcpwatchman reads what an MCP server publishes — source, manifests,
+      lockfiles, repository history — and scores it on five axes, each 0 to
+      100 and each on its own. Nothing here is hidden: the rules, the weights
+      and the arithmetic are in the public repository, and this section
+      prints the numbers the engine actually uses.
+    </p>
+  </Fragment>
+  <MethodFacts slot="facts" />
+
+  <MethodologyNav />
+  <VoidHatch />
+
+  <figure class="reading" aria-labelledby="reading-caption">
+    <ul class="legend">
+      <li>
+        <svg width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><rect class="m-scored" width="22" height="10" rx="1"></rect></svg>
+        scored
+      </li>
+      <li>
+        <svg width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><rect class="m-lost" width="22" height="10" rx="1"></rect></svg>
+        deducted
+      </li>
+      <li>
+        <svg width="22" height="10" viewBox="0 0 22 10" aria-hidden="true"><rect class="m-void" width="22" height="10" rx="1" fill="url(#void-hatch)"></rect></svg>
+        never measured
+      </li>
+    </ul>
+    <div class="rail">
+      <AxisMeter axis="example-full" label="Fully measured" score={72} assessedWeight="1" />
+      <AxisMeter axis="example-partial" label="Partly measured" score={80} assessedWeight="0.25" />
+      <AxisMeter axis="example-none" label="Not assessed" score={null} assessedWeight="0" />
+    </div>
+    <figcaption id="reading-caption">
+      How to read every meter on this site (illustrations, not servers). The
+      track is the whole axis. The middle meter is the case this design exists
+      for: a server whose repository cannot be read can still score 80 on the
+      one Auth Posture sub-check that needs only its registry manifest — 80 of
+      a quarter of the axis, which is not 80. The unmeasured share is hatched,
+      because a grey fill reads as zero and a hatch reads as absence.
+    </figcaption>
+  </figure>
+
+  <section class="paper doc-paper" aria-labelledby="axes-heading">
+    <h2 id="axes-heading">Five axes, scored independently</h2>
+    <p>
+      Each axis has its own page with its full table. The weights are what the
+      composite would use; they are provisional starting values, not
+      calibration outputs, and they are not applied to anything published.
+    </p>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th scope="col">Axis</th>
+            <th scope="col" class="num">Provisional weight</th>
+            <th scope="col">How it is scored</th>
+          </tr>
+        </thead>
+        <tbody>
+          {AXES.map((a) => (
+            <tr>
+              <th scope="row"><a href={`/methodology/${a.slug}/`}>{a.label}</a></th>
+              <td class="num">{percent(a.weight)}%</td>
+              <td>{howScored[a.key]}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="doc-section" aria-labelledby="composite-heading">
+    <h2 id="composite-heading">There is no overall score, yet</h2>
+    <p>
+      The methodology defines a composite: the weighted sum of the five axis
+      scores, rounded half up. The engine computes it, and no page, API record,
+      CLI output or badge publishes it. It stays withheld until a hand-audited
+      gold set shows that the weights rank servers the way a security engineer
+      would.
+    </p>
+    <p>
+      That gold set is not being built. A hand audit of thirty servers is more
+      than this project can staff, so no entry is being ratified, and what a
+      ratified set would license — a published composite, and rules claiming
+      high confidence — stays withheld rather than being licensed some other
+      way. Drafted, unverified audit labels are still used, in one direction
+      only: they may justify narrowing a rule, demoting it or stopping it
+      deducting, because a wrong label then costs a missed finding. They may
+      never justify raising a rule's confidence.
+    </p>
+    <p>
+      If you need a single number, weight the axes yourself and own that
+      choice. The README badge names a server's lowest-scoring axis instead,
+      the most conservative summary there is.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="confidence-heading">
+    <h2 id="confidence-heading">No rule claims high confidence</h2>
+    <p>
+      A finding's confidence is defined as a measured false-positive rate
+      against the gold set: high means under 5%, medium under 20%. Nobody has
+      performed that measurement, so no rule may claim high. The engine
+      enforces the ceiling — every finding is capped at{" "}
+      <strong>{M.confidence_ceiling}</strong> — rather than trusting rule
+      authors to remember it.
+    </p>
+    <p>
+      The cost runs in one direction. A critical finding at high confidence
+      would deduct {critical.high}; at medium it deducts {critical.medium}.
+      Every server currently scores better than it would after calibration,
+      and under-accusing while uncalibrated is the correct way to be wrong.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="unassessed-heading">
+    <h2 id="unassessed-heading">Unassessed is not zero</h2>
+    <p>
+      When a sub-check cannot be evaluated — no source to read, no lockfile,
+      a band the methodology does not define — it is left out of the axis
+      and its weight is renormalised away. Scoring it 0 would accuse a server
+      of a fault nobody looked for; scoring it 100 would hide risk behind a
+      number that looks measured.
+    </p>
+    <p>
+      So every score travels with its <code>assessed_weight</code>: the share
+      of the axis that was actually measured, from 0 to 1, rounded down so an
+      incomplete measurement never reads as a complete one. A score means
+      “of what we could measure, this”. An axis with nothing measurable has a
+      score of <code>null</code>, which is the opposite claim to 0: not
+      assessed, rather than assessed and failed.
+    </p>
+    <p>
+      Where the methodology defines no band for a case, the scanner abstains
+      instead of inventing one.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="fault-heading">
+    <h2 id="fault-heading">Whose gap it is</h2>
+    <p>
+      An unassessed axis also says why, and whose limit the gap is. The{" "}
+      <code>fault</code> field takes one of four values:
+    </p>
+    <ul>
+      <li>
+        <strong>publisher</strong> — a property of what the server published:
+        an unreachable repository, no lockfile, no source in a language the
+        ruleset covers. A fact its page owes the reader. GitHub answers 404
+        for a private repository and an absent one alike, so this means
+        “we could not read it”, never “it does not exist”.
+      </li>
+      <li>
+        <strong>project</strong> — a limit of mcpwatchman, stated in our own
+        voice: a check we have not built, a band the methodology leaves
+        undefined, a bounded fetch that stopped short.
+      </li>
+      <li>
+        <strong>environment</strong> — an accident of one run, such as a
+        scanner that timed out. Never published.
+      </li>
+      <li>
+        <strong>unattributed</strong> — the default when nothing recorded a
+        cause. Never published.
+      </li>
+    </ul>
+    <p>
+      The last two are refused at the point of publication, so a gap caused by
+      our own tooling cannot reach a page as a statement about someone else's
+      server. A pinned server whose rescan failed for our reasons keeps its
+      previous page, labelled as such. The refusal also reaches inside scored
+      axes: an axis can publish a number while one of its sub-checks
+      abstained, and <code>unmeasured_faults</code> lists whose those
+      abstentions were.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="evidence-heading">
+    <h2 id="evidence-heading">Every point traces to evidence</h2>
+    <p>
+      Every deduction names the artefact that produced it — a file and line
+      with the matched code for a rule, an advisory ID for a vulnerability, a
+      date or count for a maintenance signal. A finding whose evidence cannot
+      be linked does not appear.
+    </p>
+    <p>
+      A page shows at most the {EVIDENCE_CAP} most severe findings per axis
+      and says so when it stops. The score is computed over all of them; the
+      cap limits what is printed, not what is counted.
+    </p>
+    <p>
+      Findings in test code are listed, marked, and deduct nothing: an axis
+      grades the code a user runs.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="arithmetic-heading">
+    <h2 id="arithmetic-heading">The arithmetic</h2>
+    <p>
+      The two deduction-scored axes share one stacking rule. Findings of the
+      same severity stack with diminishing returns, largest first: the first
+      takes {stackingPercents[0]}% of its deduction, then{" "}
+      {stackingPercents.slice(1).join("%, ")}%, and {stackingTailPercent}% from
+      the {stackingPercents.length + 1}th on. Twenty critical findings and one
+      do not score the same, and the worst finding still takes the full hit.
+    </p>
+    <p>
+      Arithmetic is exact decimal, never floating point, and only the
+      published axis score is rounded — half up, at the end. Rounding a
+      deduction first would turn half-up into half-down on the number a
+      reader sees.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="versions-heading">
+    <h2 id="versions-heading">Versions</h2>
+    <p>
+      Every server page and API record names the methodology version that
+      produced it, and the ruleset version wherever a rule ran. The methodology is at{" "}
+      <strong>{M.methodology_version}</strong>. New rules and rule fixes are a
+      patch release; weight changes, new sub-checks and formula changes a
+      minor one; adding or removing an axis a major one. The semgrep ruleset is
+      versioned separately, and every change to it is recorded, with the
+      measurement behind it, in the{" "}
+      <a href="https://github.com/kvadrum/mcpwatchman/blob/main/rules/_meta/changelog.md">ruleset changelog</a>.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="limits-heading">
+    <h2 id="limits-heading">What this methodology does not capture</h2>
+    <ul>
+      <li>
+        <strong>Behaviour under hostile input.</strong> The analysis is static:
+        source is read, never run, and no running server is contacted. Clean
+        static analysis does not rule out runtime misbehaviour.
+      </li>
+      <li>
+        <strong>Tampering between repository and package.</strong> We do not
+        verify that a published package was built from the repository it
+        declares.
+      </li>
+      <li>
+        <strong>A compromised or coerced maintainer.</strong> Static analysis
+        cannot see it.
+      </li>
+      <li>
+        <strong>Whether a server does what it claims.</strong> We check that
+        it does what it does safely, not that it is correct.
+      </li>
+      <li>
+        <strong>Privacy.</strong> Outbound calls can be detected; whether they
+        leak sensitive data is not assessed.
+      </li>
+      <li>
+        <strong>Who is behind a commit.</strong> Bus factor counts commit
+        identities, so an AI agent committing under its own identity counts as
+        an author, as a person does.
+      </li>
+    </ul>
+    <p>
+      A score is a summary of measurable signals at a point in time, not a
+      recommendation. We do not say “do not install this server”; we say what
+      we found and where.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="prior-heading">
+    <h2 id="prior-heading">Prior art</h2>
+    <p>
+      The published-rubric posture follows Mozilla Observatory; the
+      multi-check shape is closest to OpenSSF Scorecard; the per-finding
+      evidence trail follows Snyk; severity bands use CVSS v3.1. Widely quoted
+      figures on MCP vulnerability prevalence come from vendor research with
+      unpublished methods. We cite them as the reason to build an axis, never
+      as a baseline our scores are calibrated or compared against.
+    </p>
+  </section>
+</Doc>

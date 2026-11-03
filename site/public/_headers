@@ -21,6 +21,12 @@
   # still looking fine in a browser.
   Content-Type: text/plain; charset=utf-8
 
+/badge/*
+  # `06` §2: the badge follows the nightly rescan, so it may be cached for an
+  # hour and no longer. Type pinned rather than inferred, as above.
+  Content-Type: image/svg+xml; charset=utf-8
+  Cache-Control: public, max-age=3600
+
 /_astro/*
   # Astro fingerprints these filenames, so they are safe to cache forever.
   Cache-Control: public, max-age=31536000, immutable

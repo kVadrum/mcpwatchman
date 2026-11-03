@@ -522,3 +522,46 @@ main {
 .contest-go a:hover {
   color: var(--signal-hover);
 }
+
+/* ── adding the badge ──────────────────────────────────────────────────── */
+
+/* Addressed to the maintainer, like `.contest` below it, so it takes the same
+   quiet ground-and-rule treatment rather than paper or amber. */
+
+.badge-block {
+  max-width: var(--measure);
+  margin: var(--gap) auto 0;
+  padding: 1.4rem 0 0 1.2rem;
+  border-left: 3px solid var(--rule);
+  color: var(--ink-dim);
+}
+.badge-block h2 {
+  margin: 0 0 0.7rem;
+  font-family: var(--font-struct);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.badge-block p {
+  margin: 0 0 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+.badge-block img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 0.8rem;
+}
+.badge-block pre {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 2px;
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

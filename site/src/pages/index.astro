@@ -13,6 +13,7 @@ import "../styles/tokens.css";
 import VoidHatch from "../components/VoidHatch.astro";
 import SiteHeader from "../components/SiteHeader.astro";
 import FontPreloads from "../components/FontPreloads.astro";
+import SiteFooterNav from "../components/SiteFooterNav.astro";
 import scans from "../data/scans.json";
 
 // Build-time, not hardcoded: a footer year that has to be remembered is a footer
@@ -375,8 +376,10 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
                   <a href="/api/servers.json">as one file</a>, an{" "}
                   <a href="/llms.txt">llms.txt</a> index for agents, an{" "}
                   <a href="/feed/high-severity.xml">Atom feed</a> of new critical and
-                  high findings, and <code>mcpwatchman check</code> to read a server
-                  from a terminal.
+                  high findings, <code>mcpwatchman check</code> to read a server
+                  from a terminal, and a README badge for every server that
+                  names its lowest-scoring axis. The{" "}
+                  <a href="/methodology/">methodology</a> is published in full.
                   Every server is rescanned nightly; the current data was scanned on{" "}
                   <time datetime={lastScanned}>{lastScanned}</time>.
                 </dd>
@@ -394,7 +397,7 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
                 <dd>
                   A hand-audited gold set to measure each rule's false-positive
                   rate and calibrate the weights; the weighted composite it would
-                  license, and the feed of its drops. The badge.
+                  license, and the feed of its drops.
                 </dd>
               </div>
             </dl>
@@ -412,6 +415,7 @@ const minus = (n: number) => `−${n.toFixed(1)}`;
       </main>
 
       <footer class="colophon">
+        <SiteFooterNav />
         <p>
           <span class="colophon__brand">mcpwatchman</span> — an independent audit, free,
           code MIT and text CC&nbsp;BY&nbsp;4.0, run by <a href="https://github.com/kVadrum">kVadrum</a>.

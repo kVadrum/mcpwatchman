@@ -1,0 +1,32 @@
+---
+/**
+ * The reference shelf every page carries in its colophon.
+ *
+ * The masthead holds what a reader came for (the servers, the method, the
+ * data); this holds what they look up — how disclosure works, the API and CLI
+ * references, the file for agents. One component, for the reason the header
+ * is one: two footers each listing the pages drift apart, and the page a
+ * footer forgets is the one nobody finds.
+ */
+import "../styles/site-footer.css";
+
+const path = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const links = [
+  { href: "/methodology/", label: "Methodology" },
+  { href: "/disclosure/", label: "Disclosure and appeals" },
+  { href: "/api/", label: "API reference" },
+  { href: "/cli/", label: "CLI reference" },
+  { href: "/about/", label: "About" },
+  { href: "/llms.txt", label: "llms.txt" },
+  { href: "https://github.com/kVadrum/mcpwatchman/blob/main/rules/_meta/changelog.md", label: "Ruleset changelog" },
+];
+const current = (href: string) => (href.replace(/\/+$/, "") === path ? "page" : undefined);
+---
+
+<nav class="site-foot-nav" aria-label="Reference">
+  <ul>
+    {links.map((l) => (
+      <li><a href={l.href} aria-current={current(l.href)}>{l.label}</a></li>
+    ))}
+  </ul>
+</nav>

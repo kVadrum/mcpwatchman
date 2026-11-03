@@ -28,7 +28,8 @@ interface Props {
   label: string;
   score: number | null;
   assessedWeight: string;
-  weight: number;
+  // Omitted on the methodology page's illustrations, which are not axes.
+  weight?: number;
 }
 
 const { axis, label, score, assessedWeight, weight } = Astro.props;
@@ -50,7 +51,7 @@ const reading =
 <div class="axis" data-assessed={score === null ? "none" : partial ? "partial" : "full"}>
   <div class="axis-head">
     <span class="axis-name">{label}</span>
-    <span class="axis-weight">weight {weight}</span>
+    {weight !== undefined && <span class="axis-weight">weight {weight}</span>}
   </div>
 
   <svg

@@ -1,0 +1,161 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import scans from "../../data/scans.json";
+import { AXES, EVIDENCE_CAP } from "../../lib/methodology";
+
+// A real slug, so every example URL on this page resolves.
+const example = scans[0]?.slug ?? "";
+const BASE = "https://mcpwatchman.com";
+const axisKeys = AXES.map((a) => `"${a.key}"`).join(", ");
+
+const historyShape = `{
+  "slug": "${example}",
+  "name": "…",
+  "points": [
+    {
+      "date": "2026-10-29",
+      "scanned_at": "2026-10-29T03:28:02+00:00",
+      "methodology_version": "0.2.0",
+      "ruleset_version": "0.1.2",
+      "scanner_version": "0.38.28",
+      "axes": {
+        "code_safety": { "score": 72, "assessed_weight": "1", "fault": null },
+        "auth_posture": { "score": null, "assessed_weight": "0", "fault": "publisher" }
+      }
+    }
+  ]
+}`;
+---
+
+<Doc
+  title="API reference — mcpwatchman"
+  description="mcpwatchman's JSON API: static, unauthenticated endpoints for every published server's per-axis scores, coverage and evidence, and how to read them."
+  canonical="https://mcpwatchman.com/api/"
+  heading="API reference"
+>
+  <Fragment slot="lede">
+    <p>
+      Everything on the site is also JSON. The API is a set of static files,
+      regenerated after each nightly scan: no key, no account, and the same
+      data the pages are built from.
+    </p>
+  </Fragment>
+
+  <section class="doc-section" aria-labelledby="rules-heading">
+    <h2 id="rules-heading">Before you read a score</h2>
+    <ul>
+      <li>
+        <strong>There is no composite.</strong> Every response carries{" "}
+        <code>"composite_published": false</code>. The weighted overall score
+        is computed and withheld until calibration; do not derive one and
+        present it as ours.
+      </li>
+      <li>
+        <strong>Read <code>assessed_weight</code> with every score.</strong> It
+        is the share of the axis that was measured, a decimal string from{" "}
+        <code>"0"</code> to <code>"1"</code>, rounded down. A score of 80 at{" "}
+        <code>"0.25"</code> is 80 of a quarter of the axis, and must not be
+        shown as 80.
+      </li>
+      <li>
+        <strong><code>null</code> is not zero.</strong> A <code>null</code>{" "}
+        score means not assessed; <code>fault</code> then says whose gap it is
+        (<code>"publisher"</code> or <code>"project"</code>). See{" "}
+        <a href="/methodology/">the methodology</a>.
+      </li>
+      <li>
+        <strong>The set is pinned and only grows.</strong> A server's URLs never
+        change once published. The set is not a random sample of the registry,
+        and a server's absence is never a judgement.
+      </li>
+    </ul>
+    <p>
+      Every response repeats these rules in its own <code>*_note</code>{" "}
+      fields, so a record read on its own still carries them.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="endpoints-heading">
+    <h2 id="endpoints-heading">Endpoints</h2>
+    <p>
+      All under <code>{BASE}</code>, all <code>GET</code>, all{" "}
+      <code>application/json</code>. Axis keys are {axisKeys}.
+    </p>
+
+    <h3><code>/api/index.json</code></h3>
+    <p>
+      Every published server, without evidence: name, slug, version, package,
+      repository URL, <code>registry_state</code>, <code>scanned_at</code>,
+      page and record URLs, and for each axis its <code>score</code>,{" "}
+      <code>assessed_weight</code> and <code>fault</code>. Use it to find a
+      server by package name or repository URL.
+    </p>
+    <pre><code>curl {BASE}/api/index.json</code></pre>
+
+    <h3><code>/api/servers/&lt;slug&gt;.json</code></h3>
+    <p>
+      One server's full record — the machine twin of{" "}
+      <code>/servers/&lt;slug&gt;/</code> — wrapped with the reading notes and
+      its page URL. The slug is the registry name lowercased, every run of
+      characters other than letters and digits replaced by one hyphen, with
+      no hyphen at either end. Prefer this for a single server.
+    </p>
+    <pre><code>curl {BASE}/api/servers/{example}.json</code></pre>
+
+    <h3><code>/api/servers.json</code></h3>
+    <p>
+      Every full record in one document, several megabytes. Prefer it to
+      scraping pages when you need everything.
+    </p>
+
+    <h3><code>/api/servers/&lt;slug&gt;/history.json</code>{" "}<span class="tag">new</span></h3>
+    <p>
+      One point per recorded scan of the server, with the versions that
+      produced it and each axis's score, coverage and fault. The shape, with
+      illustrative values:
+    </p>
+    <pre><code>{historyShape}</code></pre>
+    <p>
+      Points scored under different methodology or ruleset versions are not
+      directly comparable; the version fields are there so you can tell.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="fields-heading">
+    <h2 id="fields-heading">A server record</h2>
+    <p>
+      The fields of <code>server</code> in a per-server response. Notes in the
+      response itself cover the subtler ones in more detail.
+    </p>
+    <dl class="defs">
+      <div><dt>name, slug, version</dt><dd>The registry name and version scanned, and the URL-safe slug.</dd></div>
+      <div><dt>scanned_at</dt><dd>When the scan ran, ISO 8601 with offset.</dd></div>
+      <div><dt>methodology_version, ruleset_version, scanner_version</dt><dd>What produced the scores. <code>ruleset_version</code> is empty when no rule ran.</dd></div>
+      <div><dt>repository_url, repository_commit, package</dt><dd>What was read. The commit names the exact tree; <code>null</code> when no repository was read.</dd></div>
+      <div><dt>source_state, source_subject, source_reason</dt><dd>Whether source could be read, and if not, whether the repository or the package was the problem, in a sentence.</dd></div>
+      <div><dt>ref_matched_version</dt><dd><code>true</code>, <code>false</code> (the default branch was read instead of the release) or <code>null</code> (nothing established it). <code>null</code> is not <code>false</code>.</dd></div>
+      <div><dt>registry_state, registry_note</dt><dd><code>"listed"</code> with an empty note, or another value that explains itself in the note: <code>"deprecated"</code>, <code>"delisted"</code>, <code>"stale"</code>.</dd></div>
+      <div><dt>axes.&lt;key&gt;.score</dt><dd>0–100, or <code>null</code> when not assessed.</dd></div>
+      <div><dt>axes.&lt;key&gt;.assessed_weight</dt><dd>The measured share of the axis, a decimal string.</dd></div>
+      <div><dt>axes.&lt;key&gt;.fault</dt><dd>Whose gap an unassessed axis is; <code>null</code> on a scored axis.</dd></div>
+      <div><dt>axes.&lt;key&gt;.unmeasured_faults</dt><dd>On a scored axis, whose gaps the unmeasured remainder is. Empty when measured in full.</dd></div>
+      <div><dt>axes.&lt;key&gt;.reason</dt><dd>Why the axis is unassessed or partial, in a sentence.</dd></div>
+      <div><dt>axes.&lt;key&gt;.evidence</dt><dd>The trail: label, detail, path, line, excerpt, url, and for a finding its rule or advisory ID, severity, <code>first_seen</code> and whether it <code>deducts</code>. At most {EVIDENCE_CAP} per axis, most severe first.</dd></div>
+      <div><dt>axes.&lt;key&gt;.evidence_omitted</dt><dd>How many further findings were not listed. The score counts them all.</dd></div>
+    </dl>
+  </section>
+
+  <section class="doc-section" aria-labelledby="other-heading">
+    <h2 id="other-heading">Other machine surfaces</h2>
+    <ul>
+      <li><a href="/feed/high-severity.xml">/feed/high-severity.xml</a> — Atom: critical and high findings new on a tracked page.</li>
+      <li><a href="/llms.txt">/llms.txt</a> — a plain-text guide to the site for agents.</li>
+      <li><code>/badge/&lt;slug&gt;.svg</code> — the README badge, which names a server's lowest-scoring axis.</li>
+      <li><a href="/cli/">The CLI</a> reads these same files.</li>
+    </ul>
+    <p>
+      A hosted, queryable API with on-demand scans is specified but not built.
+      Until it is, these files are the API.
+    </p>
+  </section>
+</Doc>

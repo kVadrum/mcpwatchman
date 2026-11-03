@@ -1,0 +1,28 @@
+---
+/**
+ * The methodology's contents: the overview and the five axes, each with the
+ * provisional weight it carries in the (withheld) composite. Weights come from
+ * `methodology.json`, never typed here.
+ */
+import { AXES, percent } from "../lib/methodology";
+
+const path = Astro.url.pathname.replace(/\/+$/, "");
+const entries = [
+  { href: "/methodology/", label: "Overview", weight: "" },
+  ...AXES.map((a) => ({ href: `/methodology/${a.slug}/`, label: a.label, weight: percent(a.weight) })),
+];
+const current = (href: string) => (href.replace(/\/+$/, "") === path ? "page" : undefined);
+---
+
+<nav class="method-nav" aria-label="Methodology">
+  <ul>
+    {entries.map((e) => (
+      <li>
+        <a href={e.href} aria-current={current(e.href)}>
+          <span class="method-nav__name">{e.label}</span>{" "}
+          {e.weight && <span class="method-nav__weight">weight {e.weight}</span>}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>

@@ -1,0 +1,131 @@
+---
+import Doc from "../../layouts/Doc.astro";
+import MethodologyNav from "../../components/MethodologyNav.astro";
+import MethodFacts from "../../components/MethodFacts.astro";
+import SubcheckTable from "../../components/SubcheckTable.astro";
+import { M, axisByKey, percent } from "../../lib/methodology";
+
+const axis = axisByKey("auth_posture");
+const transportShare = percent(
+  M.subcheck_weights.auth_posture.find((s) => s.key === "transport_security")!.weight,
+);
+const notes = {
+  authentication_model: "OAuth 2.0 or a robust API key, required, documented, and refused without credentials.",
+  transport_security: "stdio, or HTTPS-only with HSTS. Read from the registry entry, so it is measured even when no source is reachable.",
+  secret_handling: "No credentials committed; secrets read from the environment and documented. Needs source.",
+  authorization_granularity: "Per-tool or per-resource access control. Scored only where the methodology's heuristic decides the case; otherwise not assessed.",
+};
+---
+
+<Doc
+  title="Auth Posture — mcpwatchman methodology"
+  description="How mcpwatchman's Auth Posture axis scores MCP servers: authentication model, transport security, secret handling and authorization granularity, with every band."
+  canonical="https://mcpwatchman.com/methodology/auth-posture/"
+  heading="Auth Posture"
+  crumb={{ href: "/methodology/", label: "Methodology" }}
+>
+  <Fragment slot="lede">
+    <p>
+      How a server authenticates its clients and protects its credentials.
+      Provisional weight {percent(axis.weight)}%. This is a property of the
+      server's interface, not its code patterns, so it is kept apart from Code
+      Safety: perfect code can still sit behind an unauthenticated HTTP port.
+    </p>
+  </Fragment>
+  <MethodFacts slot="facts" />
+
+  <MethodologyNav />
+
+  <section class="paper doc-paper" aria-labelledby="sub-heading">
+    <h2 id="sub-heading">Sub-checks</h2>
+    <p>
+      The axis is the weighted mean of the sub-checks that could be assessed.
+      One that could not is left out and its weight renormalised away, and
+      the axis reports the share that was measured.
+    </p>
+    <SubcheckTable axis="auth_posture" caption="Auth Posture sub-checks" notes={notes} />
+
+    <h3>Authentication model</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">When</th></tr></thead>
+        <tbody>
+          <tr><td class="num">100</td><td>stdio transport. The client launches the server as a subprocess, so the operating-system process boundary is the authentication boundary, and absent auth is not penalised.</td></tr>
+          <tr><td class="num">100</td><td>Network transport, and the source enforces a credential: the request is refused without one.</td></tr>
+          <tr><td class="num">80</td><td>A credential is required but weakly validated; or an authentication library is imported with no call to it found; or the registry declares a required credential header.</td></tr>
+          <tr><td class="num">60</td><td>Authentication is present but optional or trivially bypassed, or the source reads a credential header with no enforcement found.</td></tr>
+          <tr><td class="num">30</td><td>Network transport and no authentication in code that serves the endpoint.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The 30 band is an accusation, so it is only established from code that
+      serves the endpoint. A server whose network transport is declared only
+      as a hosted remote is not accused from its repository's silence; the
+      sub-check abstains. A detector must show that the server checks a
+      credential, not that a credential-shaped name appears: a header the
+      server sends, an import nothing uses, or a token request to somebody
+      else's OAuth server is not authentication.
+    </p>
+
+    <h3>Transport security</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">When</th></tr></thead>
+        <tbody>
+          <tr><td class="num">100</td><td>stdio, or HTTPS-only with HSTS.</td></tr>
+          <tr><td class="num">80</td><td>HTTPS-only endpoints. HSTS can only be seen by connecting, which the scanner never does, so this band is the ceiling for a remote server today — an unverifiable band, not an observed absence.</td></tr>
+          <tr><td class="num">50</td><td>Both HTTP and HTTPS endpoints declared.</td></tr>
+          <tr><td class="num">20</td><td>Plaintext HTTP only.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      An HTTP server with no authentication and no TLS falls to the 20–30
+      range. That is the single highest-impact misconfiguration in the
+      ecosystem, and the score says so plainly.
+    </p>
+
+    <h3>Secret handling</h3>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead><tr><th scope="col" class="num">Score</th><th scope="col">When</th></tr></thead>
+        <tbody>
+          <tr><td class="num">0</td><td>A committed credential in a provider format — an AWS key, a GitHub token, a PEM private key.</td></tr>
+          <tr><td class="num">100</td><td>Secrets are read from the environment and the README documents them.</td></tr>
+          <tr><td class="num">70</td><td>Secrets are read from the environment but not documented.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      A credential's shape is not a credential. Matches from keyword, entropy
+      or basic-auth heuristics alone flag placeholders, variable names and
+      hashes as readily as real secrets, so they are listed and the sub-check
+      is left unassessed, as a limit of ours. Matches in test code are listed
+      and never scored.
+    </p>
+
+    <h3>Authorization granularity</h3>
+    <p>
+      The methodology's heuristic asks whether a server exposes more than{" "}
+      {M.granularity_tool_threshold} tools, and whether any conditional access
+      logic exists. Two outcomes are decided and score 100: at most{" "}
+      {M.granularity_tool_threshold} tools, so there is nothing to segregate;
+      or more, with conditional access logic present. The methodology assigns
+      no band to the remaining case — many tools, no access logic, “needs
+      human review” — so it is not assessed rather than given an invented
+      number. Neither is a server whose tools could not be counted.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="partial-heading">
+    <h2 id="partial-heading">Why this axis is often partly measured</h2>
+    <p>
+      Transport security needs only the registry entry, and every other
+      sub-check needs source. A server whose repository cannot be read
+      therefore often scores on transport security alone —{" "}
+      {transportShare}% of the axis. The meter draws the rest hatched, and the score is printed with
+      its measured share, never on its own.
+    </p>
+  </section>
+</Doc>

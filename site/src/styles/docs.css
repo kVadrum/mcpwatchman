@@ -1,0 +1,347 @@
+/* The reference pages (`layouts/Doc.astro`).
+ *
+ * No new vocabulary. These pages reuse the report's two surfaces for the same
+ * two jobs: prose in the instrument's voice on the ground, anything a reader
+ * would check a score against printed on `.paper`. Tables are set in mono with
+ * right-aligned figures because they are read down a column; a deduction is
+ * printed in `--paper-deduct`, the one colour reserved for a subtraction.
+ */
+
+/* ── page head ──────────────────────────────────────────────────────────── */
+
+.doc-head {
+  max-width: 64ch;
+  margin: 0 0 2rem;
+}
+
+.doc-crumb {
+  font-family: var(--font-struct);
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+}
+.doc-crumb a {
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.doc-crumb a:hover {
+  color: var(--ink);
+}
+
+.doc-head h1 {
+  font-family: var(--font-struct);
+  font-size: clamp(1.75rem, 4.4vw, 2.6rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.85rem;
+}
+
+.doc-lede p {
+  color: var(--ink-dim);
+  font-size: 1.075rem;
+  line-height: 1.6;
+  margin: 0 0 0.75rem;
+}
+
+/* ── methodology contents ───────────────────────────────────────────────── */
+
+.method-nav {
+  margin: 0 0 2.5rem;
+  border-block: 1px solid var(--rule);
+}
+.method-nav ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 46rem) {
+  .method-nav ul {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+.method-nav a {
+  display: grid;
+  gap: 0.1rem;
+  height: 100%;
+  padding: 0.75rem 0.75rem 0.7rem 0;
+  border-top: 2px solid transparent;
+  margin-top: -1px;
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.method-nav a:hover {
+  color: var(--ink);
+}
+/* The page you are on carries the amber edge, the way the masthead marks
+   its section: a position, not an alarm. */
+.method-nav a[aria-current] {
+  color: var(--ink);
+  border-top-color: var(--signal-ink);
+}
+.method-nav__name {
+  font-family: var(--font-struct);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.method-nav__weight {
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+/* ── prose on the ground ────────────────────────────────────────────────── */
+
+.doc-section {
+  max-width: var(--measure);
+  margin: 0 0 2.75rem;
+}
+.doc-section h2,
+.paper.doc-paper h2 {
+  font-family: var(--font-struct);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 0.75rem;
+}
+.doc-section h3 {
+  font-family: var(--font-struct);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.5rem;
+}
+.doc-section p,
+.doc-section li {
+  color: var(--ink-dim);
+}
+.doc-section p {
+  margin: 0 0 0.9rem;
+}
+.doc-section strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.doc-section ul {
+  padding-left: 1.2rem;
+  margin: 0 0 1rem;
+}
+.doc-section li {
+  margin: 0 0 0.45rem;
+}
+.doc-section code,
+.doc-paper code {
+  font-family: var(--font-data);
+  font-size: 0.88em;
+}
+
+/* A qualification of what the page just said — the same amber edge
+   `.source-note` gives a report's qualification. */
+.doc-note {
+  border-left: 3px solid var(--signal);
+  padding: 0.6rem 0 0.6rem 1rem;
+  margin: 1.25rem 0;
+  color: var(--ink);
+}
+.doc-note p {
+  color: var(--ink);
+  margin: 0 0 0.5rem;
+}
+.doc-note p:last-child {
+  margin-bottom: 0;
+}
+
+/* A short status word set beside a heading or an endpoint: "new", "next
+   release", "planned". Outlined rather than filled, and in sentence case —
+   it qualifies the thing it sits beside, it is not the thing. */
+.tag {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0 0.4rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  font-family: var(--font-struct);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  vertical-align: 0.2em;
+  color: var(--signal-ink);
+}
+.paper .tag {
+  color: var(--paper-dim);
+}
+
+/* ── the paper, as a reference sheet ────────────────────────────────────── */
+
+.doc-paper > p,
+.doc-paper > ul,
+.doc-paper > ol {
+  max-width: 70ch;
+}
+.doc-paper > p {
+  color: var(--paper-dim);
+}
+.doc-paper h3 {
+  font-family: var(--font-struct);
+  font-size: 1rem;
+  font-weight: 600;
+}
+.doc-paper ul,
+.doc-paper ol {
+  padding-left: 1.2rem;
+  margin: 0 0 1.25rem;
+}
+.doc-paper li {
+  margin: 0 0 0.4rem;
+}
+.doc-paper a {
+  color: var(--paper-ink);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 0 1.5rem;
+}
+.ledger {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 0.9rem;
+}
+.ledger caption {
+  text-align: left;
+  font-family: var(--font-struct);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0 0 0.5rem;
+}
+.ledger th,
+.ledger td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 1.25rem 0.5rem 0;
+  border-bottom: 1px solid var(--paper-rule);
+}
+.ledger thead th {
+  font-family: var(--font-struct);
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--paper-dim);
+  border-bottom-color: var(--paper-ink);
+}
+.ledger tbody th {
+  font-weight: 500;
+}
+.ledger .num {
+  font-family: var(--font-data);
+  text-align: right;
+  white-space: nowrap;
+}
+.ledger .deduct {
+  color: var(--paper-deduct);
+}
+.ledger .dim {
+  color: var(--paper-dim);
+}
+.ledger code {
+  font-family: var(--font-data);
+  font-size: 0.85em;
+}
+
+.doc-paper pre {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--ground);
+  color: var(--ink);
+  border-radius: 2px;
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.doc-paper pre code {
+  font-size: inherit;
+}
+
+/* ── reading a meter (methodology overview) ─────────────────────────────── */
+
+.reading {
+  margin: 0 0 2.75rem;
+}
+.reading .rail {
+  margin-bottom: 1rem;
+}
+.reading figcaption {
+  max-width: var(--measure);
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-struct);
+  font-size: 0.88rem;
+  color: var(--ink-dim);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.legend svg {
+  flex: none;
+}
+
+/* ── disclosure timeline ────────────────────────────────────────────────── */
+/* A real sequence of days, so it is numbered by its days. */
+
+.timeline {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.timeline li {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--paper-rule);
+}
+.timeline .day {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  color: var(--paper-dim);
+}
+
+/* ── definition lists (API fields, CLI exit codes) ──────────────────────── */
+
+.defs {
+  margin: 0 0 1.5rem;
+  display: grid;
+  gap: 0;
+}
+.defs > div {
+  display: grid;
+  gap: 0.15rem 1.25rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--paper-rule);
+}
+@media (min-width: 40rem) {
+  .defs > div {
+    grid-template-columns: 13rem minmax(0, 1fr);
+  }
+}
+.defs dt {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.defs dd {
+  margin: 0;
+  color: var(--paper-dim);
+}

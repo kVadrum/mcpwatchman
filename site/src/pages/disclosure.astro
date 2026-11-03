@@ -1,0 +1,177 @@
+---
+import Doc from "../layouts/Doc.astro";
+
+// ⚠ GITHUB ONLY, as on every server page. The policy drafts name mailboxes
+// on mcpwatchman.com, and the domain has NO MX RECORD: an address published
+// here would swallow a maintainer's appeal or a researcher's report in
+// silence. `tests/test_site_scans.py` refuses the appeals address; add a
+// mailbox here only once it receives mail. Same channels as security.txt.
+const ISSUES = "https://github.com/kVadrum/mcpwatchman/issues";
+const NEW_ISSUE = `${ISSUES}/new?title=${encodeURIComponent("Appeal: ")}`;
+const ADVISORY = "https://github.com/kVadrum/mcpwatchman/security/advisories/new";
+---
+
+<Doc
+  title="Disclosure and appeals — mcpwatchman"
+  description="How mcpwatchman publishes findings about MCP servers: what is published at once, what is coordinated with the maintainer first, the embargo terms, and how to contest a finding."
+  canonical="https://mcpwatchman.com/disclosure/"
+  heading="Disclosure and appeals"
+>
+  <Fragment slot="lede">
+    <p>
+      mcpwatchman publishes findings about other people's software, so how
+      and when it publishes them is part of the method. Most findings are
+      published as soon as they are found. A few would be harmful to publish
+      without warning, and those are coordinated with the maintainer first.
+      Every finding can be contested.
+    </p>
+  </Fragment>
+
+  <section class="doc-section" aria-labelledby="tracks-heading">
+    <h2 id="tracks-heading">Two tracks</h2>
+    <h3>Track A — what anyone can see in the source</h3>
+    <p>
+      Static-analysis matches, licence and transport facts, dependency
+      advisories: anyone running the same public tools against the same
+      published source finds the same thing. There is no informational
+      asymmetry to protect, so these are not embargoed. They appear on the
+      server's page from the first scan that detects them; pages are rebuilt
+      after each nightly scan.
+    </p>
+    <div class="doc-note">
+      <p>
+        <strong>Not yet in place: maintainer notification.</strong> The
+        policy calls for an automatic notice to a maintainer's documented
+        security contact when a high or critical Track A finding is first
+        published, with a link to contest it. That notice is not built. Until
+        it is, such findings appear on the server's page and in the{" "}
+        <a href="/feed/high-severity.xml">high-severity feed</a> without any
+        maintainer being contacted.
+      </p>
+    </div>
+    <h3>Track B — what would be harmful to publish unannounced</h3>
+    <p>
+      The line is not severity. It is the gap between a pattern anyone can
+      grep for and knowledge of how to exploit it. A finding is Track B when
+      any of these holds:
+    </p>
+    <ul>
+      <li>it takes several files or non-obvious data flow to see, so the exploitation path is not obvious from the rule match;</li>
+      <li>it chains two or more individually benign patterns into something exploitable;</li>
+      <li>a public exploit has appeared for exactly this pattern;</li>
+      <li>a manual review found what automated tools did not flag.</li>
+    </ul>
+    <p>
+      A Track B finding is withheld from every surface — page, API, feed —
+      until its embargo ends. No finding has been published under Track B so
+      far.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="embargo-heading">
+    <h2 id="embargo-heading">The Track B timeline</h2>
+    <ol class="timeline">
+      <li><span class="day">Day 0</span><span>The finding is identified and its Track B classification confirmed by review.</span></li>
+      <li><span class="day">Day 0–1</span><span>We try to reach the maintainer: a SECURITY.md contact first, then a security address in the README, then a GitHub private security advisory, and only as a last resort the address on recent commits. Every attempt is logged.</span></li>
+      <li><span class="day">Day 1</span><span>The embargo begins on contact: 14 days by default.</span></li>
+      <li><span class="day">Day 7</span><span>A reminder if there has been no response. The embargo continues.</span></li>
+      <li><span class="day">Day 14</span><span>The embargo ends and the finding is published, fixed or not.</span></li>
+    </ol>
+    <h3>What changes the clock</h3>
+    <dl class="defs">
+      <div><dt>Active exploitation</dt><dd>A public proof of concept, a reported incident or a vendor advisory shortens the embargo to 7 days. We do not hold back a warning while users are demonstrably at risk.</dd></div>
+      <div><dt>Maintainer unreachable</dt><dd>If nobody answers within 48 hours of the first attempt, the clock still starts, and the target becomes 21 days from that first attempt. Being slow to check mail is not the same as being unresponsive.</dd></div>
+      <div><dt>Extension requested</dt><dd>A maintainer with a concrete fix timeline can have the embargo extended, to 45 days in total at most. Past that, the public's interest outweighs the collaboration.</dd></div>
+      <div><dt>CVE</dt><dd>A finding that warrants a CVE is registered through MITRE or a GitHub Security Advisory when it is published, crediting mcpwatchman as reporter, and the CVE ID joins the finding's evidence.</dd></div>
+    </dl>
+    <p>
+      We never publish a maintainer's personal contact details. If you
+      maintain a server and want one intake channel, add a SECURITY.md with a
+      contact; we will use it.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="appeal-heading">
+    <h2 id="appeal-heading">Contesting a finding</h2>
+    <p>
+      Every number on this site comes from a rule reading published source,
+      and rules get things wrong. Anyone may contest any finding: the
+      maintainer, a researcher who disagrees with the classification, or a
+      user who tested the server and could not reproduce it.
+    </p>
+    <p>
+      <a href={NEW_ISSUE} rel="nofollow noopener">Open an appeal on GitHub</a>,
+      or use the link at the foot of the server's page, which fills in the
+      server for you. Include:
+    </p>
+    <ul>
+      <li>the server, and the rule or advisory ID shown beside the finding;</li>
+      <li>why it is incorrect or misleading;</li>
+      <li>any context the source does not show, such as a runtime check the rule does not model;</li>
+      <li>whether you are the maintainer or filing as a third party. Third-party appeals are welcome; we may ask the maintainer to confirm.</li>
+    </ul>
+    <h3>What happens next</h3>
+    <ul>
+      <li><strong>The finding was wrong.</strong> It is removed, the rule is fixed so the same mistake does not recur elsewhere, and the score recomputes.</li>
+      <li><strong>The finding is correct but mitigated</strong> by context the rule cannot see. It stays, and the issue thread records the mitigation; a maintainer note shown on the server page itself is planned, not built.</li>
+      <li><strong>The finding stands.</strong> We say why, in writing, on the issue.</li>
+    </ul>
+    <p>
+      We aim to reply within five business days and to resolve within ten.
+      Those are targets, not guarantees — this is a small project — but they
+      are the standard we hold ourselves to. We do not remove a finding
+      because its maintainer dislikes it; we do remove one shown to be wrong.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="language-heading">
+    <h2 id="language-heading">How findings are written</h2>
+    <ul>
+      <li><strong>Facts, not characterisations.</strong> A finding describes an observed pattern and its security implications. It never attributes intent, and never calls a server malicious, dangerous or negligent.</li>
+      <li><strong>Evidence is mandatory.</strong> Every finding links the file and line, or the advisory, behind it. A finding whose evidence cannot be linked is not published.</li>
+      <li><strong>A score is not a recommendation.</strong> We say what we found and where; the reader decides.</li>
+    </ul>
+  </section>
+
+  <section class="doc-section" aria-labelledby="registry-heading">
+    <h2 id="registry-heading">The official registry</h2>
+    <p>
+      A finding that affects the official MCP registry itself — its metadata
+      handling, or a systemic issue across many registered servers — goes to
+      the registry's and Anthropic's own security disclosure channel first,
+      on their published terms. We will not surprise the registry with a
+      public flag on a platform issue. Findings about an individual server
+      are between us and its maintainer.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="self-heading">
+    <h2 id="self-heading">Reporting a problem in mcpwatchman</h2>
+    <p>
+      A vulnerability in mcpwatchman itself — the site, the scanner, the CLI
+      or the published package — goes to{" "}
+      <a href={ADVISORY}>GitHub's private advisory form</a> for the
+      repository, so it stays private while it is fixed. We apply the same
+      14-day default embargo to our own findings that we apply to anyone
+      else's. The same channels are in{" "}
+      <a href="/.well-known/security.txt">security.txt</a>.
+    </p>
+    <p>
+      A vulnerability in a server mcpwatchman scores is not ours to receive:
+      report it to that server's maintainer. A mistake in the methodology or a
+      wrong number goes to the{" "}
+      <a href={ISSUES}>issue tracker</a>, in public.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="scope-heading">
+    <h2 id="scope-heading">What this policy does not cover</h2>
+    <ul>
+      <li><strong>Bug bounties.</strong> We do not offer them for the servers we audit, and we do not solicit findings from researchers; ours come from automated analysis.</li>
+      <li><strong>Guarantees.</strong> Scores are informational. Installing any MCP server, including one scoring 100 on every axis, is at the user's own risk, and the MIT licence's disclaimer applies.</li>
+    </ul>
+    <p>
+      Changes to this page are visible in the public repository's history.
+    </p>
+  </section>
+</Doc>

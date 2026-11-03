@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import scans from "../data/scans.json";
+import { DOC_PAGES } from "../lib/pages";
 
 /**
  * Generated, because its numbers are claims about the data.
@@ -112,9 +113,9 @@ remote configuration, code fetched at runtime, or a deployment that differs from
 the repository it declares. Bus factor counts commit identities, so an AI agent
 committing under its own identity counts as an author like a person does.
 
-A badge endpoint and a score-drops feed are specified but NOT BUILT — the
-score-drops feed reports the composite, which is withheld. Do not construct a
-URL for either; when they exist they will be listed under Surfaces below.
+A score-drops feed is specified but NOT BUILT — it reports the composite,
+which is withheld. Do not construct a URL for it; when it exists it will be
+listed under Surfaces below.
 
 ## Surfaces
 
@@ -123,11 +124,13 @@ URL for either; when they exist they will be listed under Surfaces below.
 - [Index](https://mcpwatchman.com/api/index.json): every published server with its name, slug, package, repository and per-axis score and \`assessed_weight\`, no evidence. Use it to find a server by package name or repository URL.
 - [Full JSON](https://mcpwatchman.com/api/servers.json): every record with its evidence, in one multi-megabyte document. Prefer it over scraping HTML when you need everything.
 - CLI: \`mcpwatchman check <server>\` (from the PyPI package below) reads the same JSON; \`--format json\` for machines. It accepts a registry name, slug, npm or PyPI package name, or repository URL.
+- README badge: \`https://mcpwatchman.com/badge/<slug>.svg\`, one per published server, e.g. [this one](https://mcpwatchman.com/badge/${exampleSlug}.svg). It names the server's LOWEST-scoring axis with that axis's measured share when partly measured, "not scored" when no axis was, or "delisted" once the registry drops the server — never an overall score. Its SVG title lists all five axes.
 - [High-severity feed](https://mcpwatchman.com/feed/high-severity.xml): Atom 1.0. Critical and high findings that appeared on a server page already being tracked, newest first, each linked to the finding on its page. A page's findings at its first tracked scan are its baseline and are not announced, so an empty feed means nothing new, not nothing found.
 - [Homepage](https://mcpwatchman.com/): what the project is, how it scores, and what it cannot see.
 
 ## Documentation
 
+${DOC_PAGES.map((page) => `- [${page.title}](https://mcpwatchman.com${page.path}): ${page.summary}`).join("\n")}
 - [README](https://github.com/kVadrum/mcpwatchman#readme): the same in repository form, with the pipeline and the sourcing behind every cited figure.
 - [robots.txt](https://mcpwatchman.com/robots.txt): crawl policy. All crawlers are welcome, including AI agents.
 - [security.txt](https://mcpwatchman.com/.well-known/security.txt): how to report a vulnerability in mcpwatchman itself (RFC 9116).

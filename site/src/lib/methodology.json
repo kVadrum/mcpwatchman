@@ -1,0 +1,76 @@
+{
+  "_comment": "The scoring constants the methodology pages print, in ONE place. Astro cannot import Python, so these are copies of the engine's constants — and tests/test_site_methodology.py fails the moment any one of them disagrees with src/mcpwatchman/workers/scoring/ or the check module it names. Edit the Python first; this file follows.",
+  "methodology_version": "0.2.0",
+  "composite_published": false,
+  "ruleset_calibrated": false,
+  "confidence_ceiling": "medium",
+  "evidence_cap_per_axis": 50,
+  "axes": [
+    { "key": "code_safety", "label": "Code Safety", "slug": "code-safety", "weight": "0.30", "scored_by": "deduction" },
+    { "key": "auth_posture", "label": "Auth Posture", "slug": "auth-posture", "weight": "0.20", "scored_by": "subchecks" },
+    { "key": "dependency_health", "label": "Dependency Health", "slug": "dependency-health", "weight": "0.20", "scored_by": "deduction" },
+    { "key": "maintenance", "label": "Maintenance", "slug": "maintenance", "weight": "0.15", "scored_by": "subchecks" },
+    { "key": "transparency", "label": "Transparency", "slug": "transparency", "weight": "0.15", "scored_by": "subchecks" }
+  ],
+  "subcheck_weights": {
+    "auth_posture": [
+      { "key": "authentication_model", "label": "Authentication model", "weight": "0.40" },
+      { "key": "transport_security", "label": "Transport security", "weight": "0.25" },
+      { "key": "secret_handling", "label": "Secret handling", "weight": "0.20" },
+      { "key": "authorization_granularity", "label": "Authorization granularity", "weight": "0.15" }
+    ],
+    "maintenance": [
+      { "key": "recency", "label": "Recency of activity", "weight": "0.30" },
+      { "key": "issue_responsiveness", "label": "Issue responsiveness", "weight": "0.25" },
+      { "key": "release_cadence", "label": "Release cadence", "weight": "0.20" },
+      { "key": "bus_factor", "label": "Bus factor", "weight": "0.15" },
+      { "key": "repository_signals", "label": "Repository signals", "weight": "0.10" }
+    ],
+    "transparency": [
+      { "key": "license", "label": "License", "weight": "0.25" },
+      { "key": "readme_quality", "label": "README quality", "weight": "0.25" },
+      { "key": "declared_scopes", "label": "Declared scopes", "weight": "0.20" },
+      { "key": "changelog", "label": "Changelog", "weight": "0.15" },
+      { "key": "security_contact", "label": "Contact / security policy", "weight": "0.15" }
+    ]
+  },
+  "code_safety_deductions": [
+    { "severity": "critical", "high": 30, "medium": 20 },
+    { "severity": "high", "high": 20, "medium": 12 },
+    { "severity": "medium", "high": 8, "medium": 5 },
+    { "severity": "low", "any": 2 },
+    { "severity": "informational", "any": 0 }
+  ],
+  "dependency_deductions": [
+    { "severity": "critical", "cvss_min": "9.0", "direct": 25, "transitive": 15 },
+    { "severity": "high", "cvss_min": "7.0", "direct": 15, "transitive": 8 },
+    { "severity": "medium", "cvss_min": "4.0", "direct": 6, "transitive": 3 },
+    { "severity": "low", "cvss_min": "0", "direct": 2, "transitive": 1 }
+  ],
+  "stacking": ["1", "0.75", "0.50", "0.25"],
+  "stacking_tail": "0.10",
+  "maintenance_bands": {
+    "recency_days": [[30, 100], [90, 80], [180, 60], [365, 30]],
+    "release_gap_days": [[60, 100], [120, 80], [240, 60]],
+    "recent_release_days": 30,
+    "issue_response_days": [[3, 100], [7, 80], [21, 60], [60, 30]],
+    "issue_sample_min": 3,
+    "bus_factor_min_commits": 5,
+    "bus_factor_stale_days": 90
+  },
+  "forge_bounds": {
+    "issue_sample_size": 50,
+    "tag_sample_size": 100,
+    "commit_page_size": 100,
+    "max_commit_pages": 3
+  },
+  "readme_min_bytes": 500,
+  "readme_intro_words": 200,
+  "granularity_tool_threshold": 3,
+  "color_bands": [
+    { "min": 80, "name": "green" },
+    { "min": 60, "name": "yellow" },
+    { "min": 40, "name": "orange" },
+    { "min": 0, "name": "red" }
+  ]
+}

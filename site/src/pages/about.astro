@@ -1,0 +1,104 @@
+---
+import Doc from "../layouts/Doc.astro";
+import scans from "../data/scans.json";
+---
+
+<Doc
+  title="About — mcpwatchman"
+  description="mcpwatchman is an independent, free audit of the servers in the official Model Context Protocol registry: a safety layer over the registry, not a competitor to it."
+  canonical="https://mcpwatchman.com/about/"
+  heading="About mcpwatchman"
+>
+  <Fragment slot="lede">
+    <p>
+      An independent, continuous security and quality audit of the servers
+      listed in the official Model Context Protocol registry. Every server we
+      publish gets a page: a per-axis score with the evidence behind every
+      deduction, or a plain statement of what could not be assessed and why.
+    </p>
+  </Fragment>
+
+  <section class="doc-section" aria-labelledby="registry-heading">
+    <h2 id="registry-heading">A layer over the registry, not a rival to it</h2>
+    <p>
+      The <a href="https://registry.modelcontextprotocol.io">official MCP registry</a>{" "}
+      lists what servers exist and where to get them. It holds metadata by
+      design and makes no claim about whether a server is safe to run.
+      mcpwatchman reads that list and adds the missing layer: what the
+      published code, dependencies and repository actually show.
+    </p>
+    <p>
+      We keep no listings of our own. A server is here only if the registry
+      lists it, and we scan the version the registry names wherever that
+      version can be found in the source. When the registry
+      deprecates or drops a server, its page says so and keeps the last scan
+      taken while it was listed.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="independent-heading">
+    <h2 id="independent-heading">Independent, and free</h2>
+    <p>
+      mcpwatchman is not affiliated with Anthropic, with the Model Context
+      Protocol project or with the registry. Nobody pays for a score, and
+      there is nothing a maintainer can buy to change one; a finding changes
+      when the code does, or when we are shown it was wrong.
+    </p>
+    <p>
+      The site, the data, the API, the feed and the CLI are free, and the
+      methodology, rules and scoring engine are{" "}
+      <a href="https://github.com/kVadrum/mcpwatchman">public</a>, so any score
+      can be reproduced and argued with. It is run by{" "}
+      <a href="https://github.com/kVadrum">kVadrum</a>.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="how-heading">
+    <h2 id="how-heading">How it works</h2>
+    <p>
+      Each night the published servers are rescanned: source, manifests and
+      lockfiles are read, never executed, and no running server is contacted.
+      Five axes are scored independently — see{" "}
+      <a href="/methodology/">the methodology</a>. {scans.length} servers are
+      published today. The set is pinned and only grows: a page, once
+      published, keeps its URL. It is not a random sample of the registry, so
+      a server's absence is never a judgement.
+    </p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="not-heading">
+    <h2 id="not-heading">What it is not</h2>
+    <ul>
+      <li><strong>Not a registry.</strong> We score the servers the official registry lists.</li>
+      <li><strong>Not runtime monitoring.</strong> The analysis is static; behaviour at runtime is outside it.</li>
+      <li><strong>Not a verdict.</strong> A score summarises measurable signals at a point in time. Whether to install a server is the reader's call.</li>
+    </ul>
+  </section>
+
+  <section class="doc-section" aria-labelledby="licence-heading">
+    <h2 id="licence-heading">Licence</h2>
+    <ul>
+      <li>Code, the semgrep rules, the CLI, the API and the scan data: MIT.</li>
+      <li>The prose of this website, including the methodology and <a href="/llms.txt">llms.txt</a>: CC BY 4.0.</li>
+      <li>Excerpts of scanned servers' source, quoted as evidence, remain their authors'; no licence to them is granted.</li>
+      <li>The mcpwatchman name and mark are not licensed; all rights reserved.</li>
+    </ul>
+    <p>
+      The <a href="https://github.com/kVadrum/mcpwatchman/blob/main/LICENSE">LICENSE file</a>{" "}
+      is canonical for what falls where.
+    </p>
+    <p>KeMeK&nbsp;Network &copy; 2026</p>
+  </section>
+
+  <section class="doc-section" aria-labelledby="contact-heading">
+    <h2 id="contact-heading">Contact</h2>
+    <p>
+      To report a mistake in the methodology or a wrong number, open an{" "}
+      <a href="https://github.com/kVadrum/mcpwatchman/issues">issue</a> —
+      adversarial contributions are the most useful kind. To contest a
+      finding, see <a href="/disclosure/">disclosure and appeals</a>. To report
+      a vulnerability in mcpwatchman itself, use the{" "}
+      <a href="https://github.com/kVadrum/mcpwatchman/security/advisories/new">private advisory form</a>.
+    </p>
+  </section>
+</Doc>
