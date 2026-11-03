@@ -12,15 +12,16 @@
  *   - an UNASSESSED scan breaks it, and the span it breaks is hatched with the
  *     same pattern as the meters' never-measured region — absence, never a
  *     dip to zero (CLAUDE.md, "Unassessed is not zero");
- *   - a change of ruleset or methodology is a vertical seam, and the trace is
- *     not joined across it: the scores either side are different measurements.
+ *   - a change of scanner, ruleset or methodology is a vertical seam, and the
+ *     trace is not joined across it: the scores either side are different
+ *     measurements (`sameMeasurement`).
  *
  * SVG attributes only (no inline style — the CSP has no `unsafe-inline`), and
  * uniform scaling, as the meters use: a stretched viewBox would draw the hatch
  * at a different angle on every row. `vector-effect` keeps strokes one pixel.
  */
 import type { HistoryPoint } from "../lib/history";
-import { sameContract } from "../lib/history";
+import { sameMeasurement } from "../lib/history";
 
 interface Props {
   axis: string;
@@ -44,7 +45,7 @@ const score = (p: HistoryPoint) => p.axes[axis]?.score ?? null;
 const runs: HistoryPoint[][] = [];
 let run: HistoryPoint[] = [];
 points.forEach((p, i) => {
-  const seam = i > 0 && !sameContract(points[i - 1], p);
+  const seam = i > 0 && !sameMeasurement(points[i - 1], p);
   // A missed night is not joined either: a line across it would claim a
   // score was held on a night nothing measured it.
   const missed = i > 0 && day(p.date) - day(points[i - 1].date) > 1;
@@ -65,7 +66,7 @@ const voids = points.flatMap((p, i) => {
 });
 
 const seams = points.flatMap((p, i) =>
-  i > 0 && !sameContract(points[i - 1], p) ? [(x(points[i - 1]) + x(p)) / 2] : [],
+  i > 0 && !sameMeasurement(points[i - 1], p) ? [(x(points[i - 1]) + x(p)) / 2] : [],
 );
 
 const last = points.at(-1)!;
@@ -81,7 +82,7 @@ const summary =
     ? `${score(scoredPoints[0])} at the first scored scan, ${lastScore ?? "not assessed"} at the latest`
     : "never assessed") +
   (unassessed ? `; ${unassessed} not assessed` : "") +
-  (seams.length ? `; the ruleset or methodology changed ${seams.length} ${seams.length === 1 ? "time" : "times"}` : "") +
+  (seams.length ? `; the scanner, ruleset or methodology changed ${seams.length} ${seams.length === 1 ? "time" : "times"}` : "") +
   ".";
 ---
 

@@ -9,6 +9,13 @@ the published data. The second is the nightly's: it starts from IN, merges every
 data commit after the one IN was last brought up to (`through`), then tonight's
 not-yet-committed scans, so a night that never ran this — or ran it under a
 `main` that predated it — is filled from git the next time, not lost.
+
+    score_history.py ... --withhold-contract "ruleset 0.1.3, methodology 0.2.0"
+
+drops every point scored under that contract (the nightly passes `dev`'s under a
+contract mismatch, when it deploys `main`'s code and must not publish `dev`'s
+scores through the history either — `history.withhold`). The string is the
+nightly's own `contract()` output.
 History is derived data (`mcpwatchman.history`); a failure here costs the
 night's history update, never its scan.
 
@@ -19,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -29,6 +37,7 @@ from typing import Any
 from mcpwatchman import history as h
 
 DATA = "site/src/data/scans.json"
+_CONTRACT = re.compile(r"ruleset (\S+), methodology (\S+)")
 GIT = shutil.which("git") or "git"
 
 
@@ -91,7 +100,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--rebuild", action="store_true")
     ap.add_argument("--history", type=Path, help="the history to update (absent: start empty)")
     ap.add_argument("--scans", type=Path, help="tonight's scans.json, not yet committed")
+    ap.add_argument("--withhold-contract", metavar="'ruleset R, methodology M'",
+                    help="drop every point scored under this contract")
     a = ap.parse_args(argv)
+    withheld_contract = None
+    if a.withhold_contract is not None:
+        m = _CONTRACT.fullmatch(a.withhold_contract)
+        if m is None:
+            print(f"score_history: refused: unreadable contract {a.withhold_contract!r}",
+                  file=sys.stderr)
+            return 2
+        withheld_contract = (m.group(2), m.group(1))
 
     try:
         if a.rebuild or a.history is None or not a.history.exists():
@@ -114,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"score_history: refused: {exc}", file=sys.stderr)
         return 2
 
+    withheld = h.withhold(hist, *withheld_contract) if withheld_contract else 0
     names = {r["slug"]: r["name"] for r in latest if r.get("slug")}
     today = max((str(r.get("scanned_at", ""))[:10] for r in latest), default="") \
         or datetime.now(UTC).date().isoformat()
@@ -123,9 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     tmp.write_text(dump(hist), encoding="utf-8")
     tmp.replace(a.out)
     points = sum(len(s) for s in hist["servers"].values())
+    left_out = (f"; {withheld} point(s) under the withheld contract left out"
+                if withheld_contract else "")
     print(f"score_history: {len(commits)} data commit(s) read, "
           f"{merged} point(s) added or updated; {len(hist['servers'])} servers, "
-          f"{points} points, {len(hist['drops'])} drop(s) in the window")
+          f"{points} points, {len(hist['drops'])} drop(s) in the window{left_out}")
     return 0
 
 

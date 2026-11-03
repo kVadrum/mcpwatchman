@@ -268,25 +268,46 @@ stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_GIT[@]}" "$PY" "$REPO/ops/visibil
 # passed over. Tonight's scans join it only when they will be committed — under
 # a contract mismatch they are deployed but never recorded in git, and the
 # history records what git does.
+# ⚠ UNDER A MISMATCH the history is seeded from dev's, which carries dev's own
+# contract (the regeneration a ruleset bump ships with) — scores this night's
+# scans.json was composed to leave out. So dev's contract is WITHHELD from what
+# deploys, and every fallback is main's committed history, never dev's: a
+# history file is a published surface like the pages (Codex leg, 2026-11-03).
 HISTORY=unchanged
+hist_fallback="$DEV_SHA"
+[[ "$MAIN_CONTRACT" == "$DEV_CONTRACT" ]] || hist_fallback="$MAIN_SHA"
+keep_fallback_history() {
+  git -C "$REPO" show "$hist_fallback:site/src/data/history.json" > "$MAIN/site/src/data/history.json" 2>/dev/null \
+    || rm -f "$MAIN/site/src/data/history.json"
+}
 if [[ -f "$MAIN/ops/score_history.py" ]]; then
   hist_args=()
   if git -C "$REPO" cat-file -e "$DEV_SHA:site/src/data/history.json" 2>/dev/null; then
     git -C "$REPO" show "$DEV_SHA:site/src/data/history.json" > "$WORK/history.before.json"
     hist_args+=(--history "$WORK/history.before.json")
   fi
-  [[ "$MAIN_CONTRACT" == "$DEV_CONTRACT" ]] && hist_args+=(--scans "$MAIN/site/src/data/scans.json")
-  log "updating the score history"
-  if stage -- env PYTHONPATH="$MAIN/src" "$PY" "$MAIN/ops/score_history.py" \
-      --repo "$REPO" --ref "$DEV_SHA" "${hist_args[@]}" --out "$MAIN/site/src/data/history.json"; then
-    HISTORY=updated
+  hist_ok=1
+  if [[ "$MAIN_CONTRACT" == "$DEV_CONTRACT" ]]; then
+    hist_args+=(--scans "$MAIN/site/src/data/scans.json")
+  elif grep -q -- '--withhold-contract' "$MAIN/ops/score_history.py"; then
+    hist_args+=(--withhold-contract "$DEV_CONTRACT")
   else
-    # Our own defect, but in derived data the next run rebuilds from git: the
-    # night's scans still publish, and the journal says so in the loudest word
-    # it has rather than the unit going red over a recoverable view.
-    log "FAULT: score_history.py failed — history not updated tonight; the next run refills it from git"
-    git -C "$REPO" show "$DEV_SHA:site/src/data/history.json" > "$MAIN/site/src/data/history.json" 2>/dev/null \
-      || rm -f "$MAIN/site/src/data/history.json"
+    hist_ok=0
+    log "main's score_history.py cannot withhold dev's contract — main's own history deploys tonight"
+    keep_fallback_history
+  fi
+  if [[ $hist_ok -eq 1 ]]; then
+    log "updating the score history"
+    if stage -- env PYTHONPATH="$MAIN/src" "$PY" "$MAIN/ops/score_history.py" \
+        --repo "$REPO" --ref "$DEV_SHA" "${hist_args[@]}" --out "$MAIN/site/src/data/history.json"; then
+      HISTORY=updated
+    else
+      # Our own defect, but in derived data the next run rebuilds from git: the
+      # night's scans still publish, and the journal says so in the loudest word
+      # it has rather than the unit going red over a recoverable view.
+      log "FAULT: score_history.py failed — history not updated tonight; the next run refills it from git"
+      keep_fallback_history
+    fi
   fi
 else
   log "main has no ops/score_history.py yet — score history not updated (it fills from git after the sync)"

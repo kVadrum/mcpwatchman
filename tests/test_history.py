@@ -215,3 +215,33 @@ def test_the_committed_history_never_claims_a_scan_the_data_does_not_have() -> N
         series = hist["servers"].get(row["slug"], [])
         if series:
             assert series[-1][0] <= row["scanned_at"], row["slug"]
+
+
+def test_withholding_a_contract_removes_exactly_its_points() -> None:
+    """The nightly under a contract mismatch: dev's contract must not deploy
+    through the history when scans.json was composed to leave it out."""
+    hist = h.empty()
+    h.merge(hist, [
+        _report(scanned="2026-10-01T02:00:00Z", ruleset="0.1.2"),
+        _report(scanned="2026-10-02T02:00:00Z", ruleset="0.1.3"),
+        _report("only-dev", scanned="2026-10-02T02:00:00Z", ruleset="0.1.3"),
+    ])
+    assert h.withhold(hist, "0.2.0", "0.1.3") == 2
+    assert [p[2] for p in hist["servers"]["s"]] == ["0.1.2"]
+    assert "only-dev" not in hist["servers"]
+    assert h.withhold(hist, "0.2.0", "0.1.3") == 0
+
+
+@needs_git
+def test_the_script_withholds_a_contract_and_refuses_an_unreadable_one(tmp_path: Path) -> None:
+    repo = _repo(tmp_path)
+    out = tmp_path / "history.json"
+    done = _run("--repo", str(repo), "--ref", "HEAD", "--out", str(out), "--rebuild",
+                "--withhold-contract", "ruleset 0.1.2, methodology 0.2.0")
+    assert done.returncode == 0, done.stderr
+    assert "3 point(s) under the withheld contract left out" in done.stdout
+    assert json.loads(out.read_text())["servers"] == {}
+    out.unlink()
+    bad = _run("--repo", str(repo), "--ref", "HEAD", "--out", str(out), "--rebuild",
+               "--withhold-contract", "0.1.2")
+    assert bad.returncode == 2 and "unreadable contract" in bad.stderr and not out.exists()

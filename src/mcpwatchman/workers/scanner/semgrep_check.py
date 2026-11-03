@@ -1002,6 +1002,21 @@ def run_semgrep(
     )
 
 
+def _package_hooks(root: Path, inventory: Inventory) -> tuple[CodeFinding, ...]:
+    """The package's own npm install hooks, carried on a result the runner will
+    replace with the declared repository's scan (`runner._code_from_supplement`).
+
+    npm runs the hooks in the package a user installs, not the repository's, and
+    a hook can be added at publish time — so they are listed from the package
+    even when the score comes from the repository (Codex leg, 2026-11-03). An
+    unassessed axis shows no evidence, so riding on this result costs nothing
+    when no supplement is read.
+    """
+    from mcpwatchman.workers.scanner.install_scripts import install_script_findings
+
+    return tuple(install_script_findings(root, inventory))
+
+
 def assess_code_safety(
     root: Path,
     inventory: Inventory | None = None,
@@ -1049,6 +1064,7 @@ def assess_code_safety(
                 explicit_fault=Fault.PROJECT,
                 methodology_version=version,
                 build_output_only=True,
+                findings=_package_hooks(root, inventory),
             )
         if inventory.build_output_truncated:
             # Nothing covered FOUND, but the probe ran out of budget before it
@@ -1066,6 +1082,7 @@ def assess_code_safety(
                 explicit_fault=Fault.PROJECT,
                 methodology_version=version,
                 build_output_unfinished=True,
+                findings=_package_hooks(root, inventory),
             )
         reason, fault = _no_covered_source(inventory)
         return SemgrepResult(

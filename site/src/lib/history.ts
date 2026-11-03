@@ -11,9 +11,11 @@ import scans from "../data/scans.json";
  * draws it as a gap, never a line across it.
  *
  * ⚠ The committed history may LAG the data (until `main` carries the
- * derivation, the nightly commits scans without it), never lead it. So the
- * page's own current scan is appended here when the history has not caught up
- * — the page and its history then always end on the same scan.
+ * derivation, the nightly commits scans without it). So the page's own current
+ * scan is appended here when the history has not caught up — the page and its
+ * history then always end on the same scan. A point AFTER the page's scan is
+ * dropped: a kept page's history must not run past the scan it shows, and a
+ * point the page does not carry is not one this build vouches for.
  */
 
 export type AxisPoint = { score: number | null; assessed_weight: string; fault: string | null };
@@ -73,7 +75,9 @@ const fromReport = (r: Report): HistoryPoint => ({
 
 /** Every recorded scan of one server, oldest first, ending on the page's own scan. */
 export function seriesFor(report: Report): HistoryPoint[] {
-  const points = (SERIES[report.slug] ?? []).map(expand);
+  const points = (SERIES[report.slug] ?? [])
+    .map(expand)
+    .filter((p) => p.scanned_at <= report.scanned_at);
   const last = points.at(-1);
   if (!last || last.scanned_at < report.scanned_at) {
     // Same-day rescan: the latest scan of a day wins (`05` §3.7).
@@ -83,9 +87,18 @@ export function seriesFor(report: Report): HistoryPoint[] {
   return points;
 }
 
-/** Scores across a contract change are different measurements: a reader marks the seam. */
-export const sameContract = (a: HistoryPoint, b: HistoryPoint) =>
-  a.methodology_version === b.methodology_version && a.ruleset_version === b.ruleset_version;
+/**
+ * Scores under a different scanner, ruleset or methodology are different
+ * measurements — what the history endpoint tells its readers, and what
+ * `mcpwatchman.history`'s drops already refuse to compare. A chart joins
+ * points only within one measurement and marks the seam between two: a line
+ * drawn across a scanner release would show our detector change as the
+ * server's trend.
+ */
+export const sameMeasurement = (a: HistoryPoint, b: HistoryPoint) =>
+  a.scanner_version === b.scanner_version &&
+  a.methodology_version === b.methodology_version &&
+  a.ruleset_version === b.ruleset_version;
 
 export const drops: Drop[] = history.drops as Drop[];
 export const historyAxes = AXES;

@@ -60,20 +60,30 @@ def parse_points(history: dict[str, Any], url: str) -> list[dict[str, Any]]:
     return sorted(out, key=lambda p: p["date"])
 
 
-def _contract(point: dict[str, Any]) -> tuple[str, str]:
-    return (str(point.get("methodology_version") or ""), str(point.get("ruleset_version") or ""))
+def _contract(point: dict[str, Any]) -> tuple[str, str, str]:
+    """What produced a score. Scores under a different scanner, ruleset or
+    methodology are different measurements (the history endpoint's own note;
+    `mcpwatchman.history` never compares them for a drop), so a change in any
+    of the three is a seam."""
+    return (
+        str(point.get("methodology_version") or ""),
+        str(point.get("ruleset_version") or ""),
+        str(point.get("scanner_version") or ""),
+    )
 
 
 def contract_changes(points: list[dict[str, Any]]) -> list[str]:
-    """One phrase per change of scoring contract between consecutive points."""
+    """One phrase per change of scanner, ruleset or methodology between consecutive points."""
     changes = []
     for before, after in zip(points, points[1:], strict=False):
-        (m0, r0), (m1, r1) = _contract(before), _contract(after)
+        (m0, r0, s0), (m1, r1, s1) = _contract(before), _contract(after)
         parts = []
         if m0 != m1:
             parts.append(f"methodology {m0 or 'none'}→{m1 or 'none'}")
         if r0 != r1:
             parts.append(f"ruleset {r0 or 'none'}→{r1 or 'none'}")
+        if s0 != s1:
+            parts.append(f"scanner {s0 or 'none'}→{s1 or 'none'}")
         if parts:
             changes.append(f"{' and '.join(parts)} on {after['date'].isoformat()}")
     return [clean(c, one_line=True) for c in changes]
@@ -136,7 +146,7 @@ def render(name: str, points: list[dict[str, Any]], keys: list[str], days: int) 
     changes = contract_changes(points)
     if changes:
         lines.append(
-            f"{mark} = scoring contract changed ({'; '.join(changes)}): "
+            f"{mark} = scanner, ruleset or methodology changed ({'; '.join(changes)}): "
             "scores either side are not comparable."
         )
     return "\n".join(lines)

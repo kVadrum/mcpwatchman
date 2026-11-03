@@ -40,6 +40,7 @@ from mcpwatchman.workers.crawler.registry import (
 )
 from mcpwatchman.workers.scanner.auth_check import assess_auth
 from mcpwatchman.workers.scanner.forge import ForgeOutcome, fetch_signals
+from mcpwatchman.workers.scanner.install_scripts import RULE_ID as INSTALL_SCRIPT_RULE
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.maintenance_check import (
     MaintenanceSignals,
@@ -375,6 +376,11 @@ def _from_axis_result(
 # 4,000th entry of a list. 50 is a surface-size decision rather than a
 # methodological one: it is far past where a page stays readable and far past
 # where the stacking ladder is still moving the number materially.
+# Prefixed to the path of a finding read from the published package when the
+# rest of the axis was scored on the declared repository: the two trees
+# share relative paths, and the reader must know which one a line is in.
+PACKAGE_PATH_PREFIX = "published package: "
+
 MAX_EVIDENCE_PER_AXIS = 50
 
 # Derived from the enum's own declaration order, never a parallel list — a
@@ -570,6 +576,30 @@ def _wants_supplement(code: SemgrepResult) -> bool:
     return code.build_output_only or code.build_output_unfinished
 
 
+def _with_package_hooks(result: SemgrepResult, package_result: SemgrepResult) -> SemgrepResult:
+    """Add the published package's own install hooks to a repository's scan.
+
+    npm runs the hooks in the package, so a hook the repository does not carry
+    — added at publish time — would otherwise vanish when the score comes from
+    the repository. Listed, like every install hook, so the score is unchanged.
+    The path names the package, because the rest of the axis is the
+    repository's; a hook the repository declares identically is not listed
+    twice.
+    """
+    hooks = [f for f in package_result.findings if f.rule_id == INSTALL_SCRIPT_RULE]
+    if not hooks:
+        return result
+    seen = {(f.path, f.excerpt) for f in result.findings if f.rule_id == INSTALL_SCRIPT_RULE}
+    added = [
+        replace(f, path=f"{PACKAGE_PATH_PREFIX}{f.path}")
+        for f in hooks if (f.path, f.excerpt) not in seen
+    ]
+    if not added:
+        return result
+    findings = sorted((*result.findings, *added), key=lambda f: (f.path, f.line, f.rule_id))
+    return replace(result, findings=tuple(findings))
+
+
 def _code_from_supplement(
     package_result: SemgrepResult, supplement: str, workspace: Path, version: str,
     *, commit: str | None = None,
@@ -630,6 +660,7 @@ def _code_from_supplement(
         "not read as the server's own source"
     )
     note = f"scored on the declared repository at version {spec.version}, because {because}"
+    result = _with_package_hooks(result, package_result)
     if commit is not None:
         # Pinned: the version was never resolved, so "at version" would be false.
         note = f"scored on the declared repository at commit {commit}, because {because}"

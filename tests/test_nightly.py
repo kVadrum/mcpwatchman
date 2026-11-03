@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+from mcpwatchman.goldset import AXES
+
 SCRIPT = Path(__file__).resolve().parents[1] / "ops" / "nightly.sh"
 GIT = shutil.which("git") or "git"
 BASH = shutil.which("bash") or "bash"
@@ -274,6 +276,52 @@ def test_the_data_commit_carries_the_score_history(world: World) -> None:
     assert sorted(history["servers"]) == ["a", "b"]
     parent = world.git("--git-dir", str(world.origin), "rev-parse", "dev~1").strip()
     assert parent == history["through"]
+
+
+def _main_gains_history(world: World) -> None:
+    root = SCRIPT.parents[1]
+    seed = world.root / "seed"
+    world.git("checkout", "-q", "-B", "main", "origin/main")
+    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py",
+                "src/mcpwatchman/goldset.py", "src/mcpwatchman/workers/commits.py"):
+        (seed / rel).write_text((root / rel).read_text())
+        world.git("add", rel)
+    world.git("commit", "-qm", "main gains the history derivation")
+    world.git("push", "-q", "origin", "main")
+
+
+def test_a_contract_mismatch_never_deploys_devs_contract_through_the_history(world: World) -> None:
+    """Codex leg, 2026-11-03: under a mismatch the history was seeded from
+    dev's, which carries dev's regeneration — so the chart and the history
+    endpoint published the scores scans.json had been composed to leave out.
+    main's artifact tests run against what is about to deploy, so this one
+    reads the history main's build is handed."""
+    _main_gains_history(world)
+    world.commit_to("main", "tests/test_site_scans.py", (
+        "import json\n"
+        "def test_no_dev_contract_point_deploys():\n"
+        "    h = json.load(open('site/src/data/history.json'))\n"
+        "    points = [p for s in h['servers'].values() for p in s]\n"
+        "    assert points and all(p[2] != '0.1.2' for p in points)\n"
+    ))
+    seed = world.root / "seed"
+    world.git("checkout", "-q", "-B", "dev", "origin/dev")
+    (seed / "rules/_meta/changelog.md").write_text("## 0.1.2 — newer\n")
+    blank = [[None, "0", None] for _ in AXES]
+    hist = {"schema": 1, "axes": list(AXES), "through": None, "drops": [], "servers": {
+        "a": [["2026-10-19T02:00:00Z", "0.2.0", "0.1.1", "0.38.0", *blank],
+              ["2026-10-21T01:00:00Z", "0.2.0", "0.1.2", "0.43.0", *blank]],
+    }}
+    (seed / "site/src/data/history.json").write_text(json.dumps(hist))
+    world.git("add", "-A")
+    world.git("commit", "-qm", "dev: ruleset 0.1.2 and its regenerated history")
+    world.git("push", "-q", "origin", "dev")
+    world.git("checkout", "-q", "main")
+    rc, out = world.run(MCPW_PUBLISH="1", FAKE_SCAN="same")
+    assert rc == 0, out
+    assert "updating the score history" in out and "FAULT" not in out
+    assert "under the withheld contract left out" in out
+    assert world.deployed and not world.dev_log()[0].startswith("data")
 
 
 def test_matching_contracts_keep_devs_pages(world: World) -> None:

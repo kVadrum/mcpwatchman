@@ -3,7 +3,7 @@ import Report from "../../layouts/Report.astro";
 import AxisMeter from "../../components/AxisMeter.astro";
 import VoidHatch from "../../components/VoidHatch.astro";
 import ScoreTrace from "../../components/ScoreTrace.astro";
-import { seriesFor, sameContract } from "../../lib/history";
+import { seriesFor, sameMeasurement } from "../../lib/history";
 import scans from "../../data/scans.json";
 import { findingAnchor } from "../../lib/findings";
 
@@ -59,7 +59,7 @@ const appealUrl =
   );
 const scannedDate = report.scanned_at.slice(0, 10);
 const history = seriesFor(report);
-const contractChanges = history.filter((p, i) => i > 0 && !sameContract(history[i - 1], p)).length;
+const measurementChanges = history.filter((p, i) => i > 0 && !sameMeasurement(history[i - 1], p)).length;
 
 // When the source could not be read, every axis that needed it carries the
 // SAME sentence. Printed five times it becomes wallpaper and stops being read,
@@ -165,8 +165,8 @@ const sourceNote =
         {history.at(-1)!.date}, on a fixed 0–100 scale. A break hatched like the
         meters is a scan where the axis could not be assessed, not a fall to
         zero; a stretch with no line is a night we did not scan.{" "}
-        {contractChanges > 0 &&
-          "A vertical rule marks a change of ruleset or methodology: scores either side of it are different measurements, so the line is not joined across it."}
+        {measurementChanges > 0 &&
+          "A vertical rule marks a new release of the scanner, its ruleset or its methodology: scores either side of it are different measurements, so the line is not joined across it."}
       </p>
       <div class="traces">
         {AXES.map((axis) => (

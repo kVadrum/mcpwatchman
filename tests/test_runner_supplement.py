@@ -203,3 +203,54 @@ def test_an_unfinished_probe_scored_on_the_repository_says_why(
     assert note.startswith("scored on the declared repository at version 0.1.1")
     assert "stopped before it finished" in note
     assert "only as build output" not in note
+
+
+def _package_with_hook(tmp_path: Path, command: str = "node fetch-binary.js") -> SemgrepResult:
+    import json
+
+    from mcpwatchman.workers.scanner.inventory import enumerate_tree
+
+    pkg = tmp_path / "package"
+    (pkg / "dist").mkdir(parents=True)
+    (pkg / "dist/index.js").write_text("module.exports = 1;\n")
+    (pkg / "package.json").write_text(json.dumps(
+        {"name": "x", "scripts": {"postinstall": command}}, indent=2))
+    result = assess_code_safety(pkg, enumerate_tree(pkg))
+    assert result.build_output_only
+    return result
+
+
+def test_the_packages_own_install_hook_survives_scoring_on_the_repository(
+    tmp_path, monkeypatch
+) -> None:
+    """Codex leg, 2026-11-03: npm runs the PACKAGE's hooks, and a hook added
+    at publish time is absent from the repository — so when the score came
+    from the repository, the hook a user's install actually runs vanished."""
+    package = _package_with_hook(tmp_path)
+    _fake_fetch(monkeypatch, files={"src/index.ts": "export {}"})
+    _scored(monkeypatch)
+
+    result, _, _ = runner._code_from_supplement(package, SUPPLEMENT, tmp_path / "w", "0.2.0")
+
+    assert result.assessed and result.score == 90  # listed: the score is the repository's
+    (hook,) = result.findings
+    assert hook.listed and not hook.deducts
+    assert hook.path == "published package: package.json"
+    assert "fetch-binary.js" in hook.excerpt
+
+
+def test_a_hook_the_repository_declares_identically_is_listed_once(
+    tmp_path, monkeypatch
+) -> None:
+    package = _package_with_hook(tmp_path)
+    same = package.findings[0]
+    _fake_fetch(monkeypatch, files={"src/index.ts": "export {}"})
+    monkeypatch.setattr(
+        runner, "assess_code_safety",
+        lambda root, inv, version: SemgrepResult(
+            status=SemgrepStatus.OK, score=90, files_scanned=3, findings=(same,)),
+    )
+
+    result, _, _ = runner._code_from_supplement(package, SUPPLEMENT, tmp_path / "w", "0.2.0")
+
+    assert [f.path for f in result.findings] == ["package.json"]

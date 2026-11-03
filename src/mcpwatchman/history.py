@@ -109,6 +109,29 @@ def merge(history: dict[str, Any], reports: Iterable[Mapping[str, Any]]) -> int:
     return changed
 
 
+def withhold(history: dict[str, Any], methodology: str, ruleset: str) -> int:
+    """Remove, in place, every point scored under one contract; return how many.
+
+    For the nightly under a contract mismatch: `dev` carries data scored by its
+    own, unsynced scanner (a ruleset bump ships with a regeneration), and the
+    night publishes `main`'s code only — so the history it deploys must not
+    carry `dev`'s contract either, or the chart and the history endpoint would
+    publish the very scores `scans.json` was composed to leave out. A server
+    left with no point is dropped; the page's own scan still ends its series.
+    """
+    servers: dict[str, list[list[Any]]] = history["servers"]
+    removed = 0
+    for slug in list(servers):
+        kept = [p for p in servers[slug]
+                if (p[_METHOD], p[_RULES]) != (methodology, ruleset)]
+        removed += len(servers[slug]) - len(kept)
+        if kept:
+            servers[slug] = kept
+        else:
+            del servers[slug]
+    return removed
+
+
 def expand(slug: str, name: str, series: list[list[Any]]) -> dict[str, Any]:
     """The published shape of one server's history (`/api/servers/<slug>/history.json`)."""
     return {

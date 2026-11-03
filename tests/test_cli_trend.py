@@ -71,6 +71,15 @@ def test_a_null_is_a_gap_and_a_contract_change_is_marked(api) -> None:
     assert "4 scans, 2026-10-30 to 2026-11-02" in result.output
 
 
+def test_a_scanner_release_alone_is_a_seam() -> None:
+    """The endpoint says scanner releases are different measurements; the drop
+    feed refuses to compare across one; so the sparkline does not join one."""
+    second = {**_point("2026-11-02", 50), "scanner_version": "0.43.0"}
+    points = trend_mod.parse_points({"points": [_point("2026-11-01", 50), second]}, "u")
+    assert trend_mod.sparkline(points, "code_safety", unicode_ok=False) == "*|*"
+    assert trend_mod.contract_changes(points) == ["scanner 0.38.28→0.43.0 on 2026-11-02"]
+
+
 def test_the_latest_score_travels_with_its_coverage(api) -> None:
     result = run("io.example/tool", "--axis", "code_safety")
     line = _line(result.output, "Code Safety")
@@ -87,7 +96,7 @@ def test_default_draws_all_five_axes(api) -> None:
 def test_days_narrows_the_window(api) -> None:
     result = run("io.example/tool", "--days", "3", "--axis", "code")
     assert _line(result.output, "Code Safety").split()[2] == "▁▅"
-    assert "scoring contract changed" not in result.output  # no change inside the window
+    assert "not comparable" not in result.output  # no change inside the window
 
 
 def test_an_empty_window_says_so(api) -> None:
