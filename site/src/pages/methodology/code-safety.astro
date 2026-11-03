@@ -38,8 +38,8 @@ const RULES = "https://github.com/kVadrum/mcpwatchman/tree/main/rules";
     <p>
       An MCP-specific semgrep ruleset runs over the server's published source
       in Python, JavaScript and TypeScript, and Go. The categories are shell
-      execution, SSRF, deserialization and path traversal in every language,
-      SQL injection in Python and prototype pollution in JavaScript, plus rules
+      execution, SSRF, deserialization, path traversal and SQL built by string
+      in every language, and prototype pollution in JavaScript, plus rules
       keyed on the shape of an MCP tool handler. A tool argument is a value a
       language model was persuaded to produce, so “the caller is trusted” is
       not a mitigation. Every rule is public in the{" "}
@@ -146,11 +146,15 @@ const RULES = "https://github.com/kVadrum/mcpwatchman/tree/main/rules";
       because how often they are right has not been measured. They are: text
       in a tool's description shaped like an instruction to the model (how a
       tool-poisoning attack is carried); a string naming the cloud
-      instance-metadata endpoint; an npm install script, which runs code when
-      the package is installed; and a CI workflow an outsider can steer
-      (event text interpolated into a script, or a <code>pull_request_target</code>
-      workflow that runs a contributor's code with the repository's secrets).
-      Making one deduct is a methodology change, announced as one.
+      instance-metadata endpoint; SQL built by string in JavaScript,
+      TypeScript and Go (Python's rule predates the listing and deducts); an
+      npm install script, which runs code when the package is installed — read
+      from the published package even when the axis is scored on the
+      repository, because the package's are the ones npm runs; and a CI
+      workflow an outsider can steer (event text interpolated into a script,
+      or a <code>pull_request_target</code> workflow that runs a contributor's
+      code with the repository's secrets). Making one deduct is a methodology
+      change, announced as one.
     </p>
     <p>
       An axis is unassessed — never 0 — when there is no source in a language
