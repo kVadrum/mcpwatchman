@@ -1,0 +1,133 @@
+---
+/**
+ * One axis over time — the strip-chart record of the meter above it.
+ *
+ * The scale is FIXED at 0–100 and the x axis is calendar time, not scan
+ * count, so neither the shape nor a missed night is exaggerated away: a night
+ * we did not measure is a stretch with no point in it.
+ *
+ * Three things are drawn differently on purpose, each because the data says
+ * a different thing:
+ *   - a scored scan joins the trace;
+ *   - an UNASSESSED scan breaks it, and the span it breaks is hatched with the
+ *     same pattern as the meters' never-measured region — absence, never a
+ *     dip to zero (CLAUDE.md, "Unassessed is not zero");
+ *   - a change of ruleset or methodology is a vertical seam, and the trace is
+ *     not joined across it: the scores either side are different measurements.
+ *
+ * SVG attributes only (no inline style — the CSP has no `unsafe-inline`), and
+ * uniform scaling, as the meters use: a stretched viewBox would draw the hatch
+ * at a different angle on every row. `vector-effect` keeps strokes one pixel.
+ */
+import type { HistoryPoint } from "../lib/history";
+import { sameContract } from "../lib/history";
+
+interface Props {
+  axis: string;
+  label: string;
+  points: HistoryPoint[];
+}
+const { axis, label, points } = Astro.props;
+
+const W = 600;
+const H = 40;
+const PAD = 3;
+const day = (d: string) => Date.parse(`${d}T00:00:00Z`) / 86_400_000;
+const first = day(points[0].date);
+const span = Math.max(1, day(points.at(-1)!.date) - first);
+const x = (p: HistoryPoint) => ((day(p.date) - first) / span) * W;
+const y = (score: number) => PAD + ((100 - score) / 100) * (H - 2 * PAD);
+
+const score = (p: HistoryPoint) => p.axes[axis]?.score ?? null;
+
+// Runs of joinable scored points: broken by an unassessed scan or a seam.
+const runs: HistoryPoint[][] = [];
+let run: HistoryPoint[] = [];
+points.forEach((p, i) => {
+  const seam = i > 0 && !sameContract(points[i - 1], p);
+  // A missed night is not joined either: a line across it would claim a
+  // score was held on a night nothing measured it.
+  const missed = i > 0 && day(p.date) - day(points[i - 1].date) > 1;
+  if (score(p) === null || seam || missed) {
+    if (run.length) runs.push(run);
+    run = [];
+  }
+  if (score(p) !== null) run.push(p);
+});
+if (run.length) runs.push(run);
+
+// The span each unassessed scan stands for: halfway to each neighbour.
+const voids = points.flatMap((p, i) => {
+  if (score(p) !== null) return [];
+  const left = i > 0 ? (x(points[i - 1]) + x(p)) / 2 : x(p) - 3;
+  const right = i < points.length - 1 ? (x(p) + x(points[i + 1])) / 2 : x(p) + 3;
+  return [{ x: Math.max(0, left), w: Math.max(4, Math.min(W, right) - Math.max(0, left)) }];
+});
+
+const seams = points.flatMap((p, i) =>
+  i > 0 && !sameContract(points[i - 1], p) ? [(x(points[i - 1]) + x(p)) / 2] : [],
+);
+
+const last = points.at(-1)!;
+const lastScore = score(last);
+const lastWeight = Number(last.axes[axis]?.assessed_weight ?? 0);
+const scoredPoints = points.filter((p) => score(p) !== null);
+const unassessed = points.length - scoredPoints.length;
+const measuredShare = (w: number) => `${Math.floor(w * 100)}%`;
+
+const summary =
+  `${label}, ${points.length} recorded scans from ${points[0].date} to ${last.date}: ` +
+  (scoredPoints.length
+    ? `${score(scoredPoints[0])} at the first scored scan, ${lastScore ?? "not assessed"} at the latest`
+    : "never assessed") +
+  (unassessed ? `; ${unassessed} not assessed` : "") +
+  (seams.length ? `; the ruleset or methodology changed ${seams.length} ${seams.length === 1 ? "time" : "times"}` : "") +
+  ".";
+---
+
+<div class="trace" data-axis={axis}>
+  <span class="trace-name">{label}</span>
+  <svg
+    class="trace-plot"
+    viewBox={`0 0 ${W} ${H}`}
+    role="img"
+    aria-label={summary}
+  >
+    <line class="t-ceiling" x1="0" y1={y(100)} x2={W} y2={y(100)} vector-effect="non-scaling-stroke" />
+    <line class="t-scale" x1="0" y1={y(0)} x2={W} y2={y(0)} vector-effect="non-scaling-stroke" />
+    {voids.map((v) => (
+      <rect class="t-void" x={v.x} y={PAD} width={v.w} height={H - 2 * PAD} fill="url(#void-hatch)" />
+    ))}
+    {seams.map((sx) => (
+      <line class="t-seam" x1={sx} y1="0" x2={sx} y2={H} vector-effect="non-scaling-stroke" />
+    ))}
+    {runs.map((r) =>
+      r.length === 1 ? (
+        <line
+          class="t-line"
+          x1={x(r[0]) - 1.5}
+          y1={y(score(r[0])!)}
+          x2={x(r[0]) + 1.5}
+          y2={y(score(r[0])!)}
+          vector-effect="non-scaling-stroke"
+        />
+      ) : (
+        <polyline
+          class="t-line"
+          points={r.map((p) => `${x(p).toFixed(1)},${y(score(p)!).toFixed(1)}`).join(" ")}
+          vector-effect="non-scaling-stroke"
+        />
+      ),
+    )}
+  </svg>
+  <span class="trace-now">
+    {lastScore === null ? (
+      <span class="trace-none">not assessed</span>
+    ) : (
+      <>
+        <span class="trace-score">{lastScore}</span>
+        {lastWeight < 1 && <span class="trace-cover">measured {measuredShare(lastWeight)}</span>}
+      </>
+    )}
+  </span>
+</div>

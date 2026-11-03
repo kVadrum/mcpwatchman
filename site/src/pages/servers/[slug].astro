@@ -2,6 +2,8 @@
 import Report from "../../layouts/Report.astro";
 import AxisMeter from "../../components/AxisMeter.astro";
 import VoidHatch from "../../components/VoidHatch.astro";
+import ScoreTrace from "../../components/ScoreTrace.astro";
+import { seriesFor, sameContract } from "../../lib/history";
 import scans from "../../data/scans.json";
 import { findingAnchor } from "../../lib/findings";
 
@@ -56,6 +58,8 @@ const appealUrl =
     "Are you the maintainer, or filing as a third party?\n"
   );
 const scannedDate = report.scanned_at.slice(0, 10);
+const history = seriesFor(report);
+const contractChanges = history.filter((p, i) => i > 0 && !sameContract(history[i - 1], p)).length;
 
 // When the source could not be read, every axis that needed it carries the
 // SAME sentence. Printed five times it becomes wallpaper and stops being read,
@@ -150,6 +154,64 @@ const sourceNote =
             )}
         </AxisMeter>
       ))}
+    </section>
+  )}
+
+  {history.length > 1 && (
+    <section class="record" aria-labelledby="record-heading">
+      <h2 id="record-heading">The record</h2>
+      <p class="record-lede">
+        Every scan we have recorded of this server, from {history[0].date} to{" "}
+        {history.at(-1)!.date}, on a fixed 0–100 scale. A break hatched like the
+        meters is a scan where the axis could not be assessed, not a fall to
+        zero; a stretch with no line is a night we did not scan.{" "}
+        {contractChanges > 0 &&
+          "A vertical rule marks a change of ruleset or methodology: scores either side of it are different measurements, so the line is not joined across it."}
+      </p>
+      <div class="traces">
+        {AXES.map((axis) => (
+          <ScoreTrace axis={axis.key} label={axis.label} points={history} />
+        ))}
+      </div>
+      <details class="record-table">
+        <summary>Scan-by-scan values</summary>
+        <div class="record-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Scan</th>
+                {AXES.map((axis) => <th scope="col">{axis.label}</th>)}
+                <th scope="col">Ruleset</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...history].reverse().map((p) => (
+                <tr>
+                  <th scope="row">{p.date}</th>
+                  {AXES.map((axis) => {
+                    const a = p.axes[axis.key];
+                    const w = Number(a.assessed_weight);
+                    return (
+                      <td>
+                        {a.score === null
+                          ? "not assessed"
+                          : w < 1
+                            ? `${a.score} (${Math.floor(w * 100)}%)`
+                            : String(a.score)}
+                      </td>
+                    );
+                  })}
+                  <td>{p.ruleset_version ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <p class="record-data">
+        As data:{" "}
+        <a href={`/api/servers/${report.slug}/history.json`}>history.json</a>
+      </p>
     </section>
   )}
 

@@ -113,10 +113,6 @@ remote configuration, code fetched at runtime, or a deployment that differs from
 the repository it declares. Bus factor counts commit identities, so an AI agent
 committing under its own identity counts as an author like a person does.
 
-A score-drops feed is specified but NOT BUILT — it reports the composite,
-which is withheld. Do not construct a URL for it; when it exists it will be
-listed under Surfaces below.
-
 ## Surfaces
 
 - [Scanned servers](https://mcpwatchman.com/servers/): the index, with per-axis scores and coverage.
@@ -126,6 +122,8 @@ listed under Surfaces below.
 - CLI: \`mcpwatchman check <server>\` (from the PyPI package below) reads the same JSON; \`--format json\` for machines. It accepts a registry name, slug, npm or PyPI package name, or repository URL.
 - README badge: \`https://mcpwatchman.com/badge/<slug>.svg\`, one per published server, e.g. [this one](https://mcpwatchman.com/badge/${exampleSlug}.svg). It names the server's LOWEST-scoring axis with that axis's measured share when partly measured, "not scored" when no axis was, or "delisted" once the registry drops the server — never an overall score. Its SVG title lists all five axes.
 - [High-severity feed](https://mcpwatchman.com/feed/high-severity.xml): Atom 1.0. Critical and high findings that appeared on a server page already being tracked, newest first, each linked to the finding on its page. A page's findings at its first tracked scan are its baseline and are not announced, so an empty feed means nothing new, not nothing found.
+- [Score history](https://mcpwatchman.com/api/servers/${exampleSlug}/history.json): \`/api/servers/<slug>/history.json\`, one point per recorded scan, oldest first, each with its scanner, ruleset and methodology versions and every axis's score, \`assessed_weight\` and fault. A day with no point is a night the server was not measured, not a day its score held; scores under different versions are different measurements.
+- [Score-drops feed](https://mcpwatchman.com/feed/score-drops.xml): Atom 1.0. Falls of 10 points or more on ONE AXIS between two consecutive scans under the same scanner, ruleset, methodology and measured share, over 90 days — per axis because no composite is published. Maintenance is left out: it decays with time.
 - [Homepage](https://mcpwatchman.com/): what the project is, how it scores, and what it cannot see.
 
 ## Documentation

@@ -14,8 +14,8 @@ import { findingAnchor, type FindingLike } from "../../lib/findings";
  * `first_seen` is a page's baseline — there when tracking began — and is
  * never announced.
  *
- * `06` §4's second feed, score drops, is keyed on the composite, which is
- * withheld until calibration, so it is not built.
+ * `06` §4's second feed, score drops, is per axis while the composite is
+ * withheld: `feed/score-drops.xml.ts`.
  */
 const BASE = "https://mcpwatchman.com";
 const SELF = `${BASE}/feed/high-severity.xml`;

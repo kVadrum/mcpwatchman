@@ -21,6 +21,13 @@
   # still looking fine in a browser.
   Content-Type: text/plain; charset=utf-8
 
+/feed/*
+  # Atom, not the application/xml an .xml extension is served as by default.
+  # A static build drops headers set in an endpoint's Response, so the type is
+  # pinned here, where Workers reads it.
+  Content-Type: application/atom+xml; charset=utf-8
+  Cache-Control: public, max-age=3600
+
 /badge/*
   # `06` §2: the badge follows the nightly rescan, so it may be cached for an
   # hour and no longer. Type pinned rather than inferred, as above.
