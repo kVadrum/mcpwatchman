@@ -79,7 +79,9 @@ const historyShape = `{
     <h2 id="endpoints-heading">Endpoints</h2>
     <p>
       All under <code>{BASE}</code>, all <code>GET</code>, all{" "}
-      <code>application/json</code>. Axis keys are {axisKeys}.
+      <code>application/json</code>. Axis keys are {axisKeys}. No key and no
+      cookie: every response is public, so a page on any origin may call it
+      from a browser (<code>Access-Control-Allow-Origin: *</code>).
     </p>
 
     <h3><code>/api/index.json</code></h3>
