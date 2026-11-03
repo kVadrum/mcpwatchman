@@ -249,6 +249,33 @@ def test_a_contract_mismatch_keeps_mains_pages_not_devs(world: World) -> None:
     assert not world.dev_log()[0].startswith("data")
 
 
+def test_a_main_without_the_history_script_still_publishes(world: World) -> None:
+    rc, out = world.run(MCPW_PUBLISH="1")
+    assert rc == 0, out
+    assert "score history not updated" in out
+    assert world.deployed and world.dev_log()[0].startswith("data")
+
+
+def test_the_data_commit_carries_the_score_history(world: World) -> None:
+    root = SCRIPT.parents[1]
+    seed = world.root / "seed"
+    world.git("checkout", "-q", "-B", "main", "origin/main")
+    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py",
+                "src/mcpwatchman/goldset.py", "src/mcpwatchman/workers/commits.py"):
+        (seed / rel).write_text((root / rel).read_text())
+        world.git("add", rel)
+    world.git("commit", "-qm", "main gains the history derivation")
+    world.git("push", "-q", "origin", "main")
+    rc, out = world.run(MCPW_PUBLISH="1")
+    assert rc == 0, out
+    assert "updating the score history" in out and "FAULT" not in out
+    shown = world.git("--git-dir", str(world.origin), "show", "dev:site/src/data/history.json")
+    history = json.loads(shown)
+    assert sorted(history["servers"]) == ["a", "b"]
+    parent = world.git("--git-dir", str(world.origin), "rev-parse", "dev~1").strip()
+    assert parent == history["through"]
+
+
 def test_matching_contracts_keep_devs_pages(world: World) -> None:
     rows = json.loads(FILES["site/src/data/scans.json"])
     for row in rows:

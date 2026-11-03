@@ -261,6 +261,37 @@ stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_GIT[@]}" "$PY" "$REPO/ops/visibil
     | tee "$WORK/visibility.txt" \
   || die 22 "the visibility gate refused this run — nothing committed or deployed"
 
+# Score history (`mcpwatchman.history`) — derived from the committed data, so a
+# night that skips it loses nothing: the next run reads every data commit since
+# the one the file was last brought up to. main's code derives it, like the
+# scan; a main that predates it is the ordinary between-syncs state, logged and
+# passed over. Tonight's scans join it only when they will be committed — under
+# a contract mismatch they are deployed but never recorded in git, and the
+# history records what git does.
+HISTORY=unchanged
+if [[ -f "$MAIN/ops/score_history.py" ]]; then
+  hist_args=()
+  if git -C "$REPO" cat-file -e "$DEV_SHA:site/src/data/history.json" 2>/dev/null; then
+    git -C "$REPO" show "$DEV_SHA:site/src/data/history.json" > "$WORK/history.before.json"
+    hist_args+=(--history "$WORK/history.before.json")
+  fi
+  [[ "$MAIN_CONTRACT" == "$DEV_CONTRACT" ]] && hist_args+=(--scans "$MAIN/site/src/data/scans.json")
+  log "updating the score history"
+  if stage -- env PYTHONPATH="$MAIN/src" "$PY" "$MAIN/ops/score_history.py" \
+      --repo "$REPO" --ref "$DEV_SHA" "${hist_args[@]}" --out "$MAIN/site/src/data/history.json"; then
+    HISTORY=updated
+  else
+    # Our own defect, but in derived data the next run rebuilds from git: the
+    # night's scans still publish, and the journal says so in the loudest word
+    # it has rather than the unit going red over a recoverable view.
+    log "FAULT: score_history.py failed — history not updated tonight; the next run refills it from git"
+    git -C "$REPO" show "$DEV_SHA:site/src/data/history.json" > "$MAIN/site/src/data/history.json" 2>/dev/null \
+      || rm -f "$MAIN/site/src/data/history.json"
+  fi
+else
+  log "main has no ops/score_history.py yet — score history not updated (it fills from git after the sync)"
+fi
+
 log "building the site"
 ( cd "$MAIN/site" && stage -- npm ci --no-audit --no-fund --loglevel=error \
     && stage -- npm run build --silent ) \
@@ -287,6 +318,7 @@ else
 log "committing the data to dev"
 git -C "$REPO" worktree add -q --detach "$WORK/dev" "$DEV_SHA"
 cp "$MAIN/site/src/data/scans.json" "$WORK/dev/site/src/data/scans.json"
+[[ "$HISTORY" == updated ]] && cp "$MAIN/site/src/data/history.json" "$WORK/dev/site/src/data/history.json"
 # The subshell reports its outcome by exit code: 0 committed, 30 nothing to
 # commit, 31 dev's contract moved during the run; anything else is a fault.
 rc=0
@@ -312,6 +344,7 @@ EOF
   # detached $DEV_SHA, the push then answered "Everything up-to-date" with
   # exit 0, and the run logged "committed" and went on to deploy.
   git add site/src/data/scans.json || exit 17
+  if [[ "$HISTORY" == updated ]]; then git add site/src/data/history.json || exit 17; fi
   git commit -q -m "data — nightly rescan ${STAMP}: ${summary}" \
     -m "Scanned with main at ${MAIN_SHA:0:9}. Code from main, data from dev (ops/nightly.sh)." \
     -m "$(<"$WORK/visibility.txt")" \
