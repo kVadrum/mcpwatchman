@@ -178,11 +178,54 @@ git -C "$REPO" grep -q 'def systemic_staleness' "$MAIN_SHA" -- src/mcpwatchman/c
 PYTHONPATH="$MAIN/src" "$PY" -c 'import mcpwatchman.cohort, mcpwatchman.workers.scanner.runner' \
   || die 19 "main's code does not import under $PY — the venv needs rebuilding"
 
-for f in site/src/data/scans.json ops/cohort.json; do
-  git -C "$REPO" show "$DEV_SHA:$f" > "$MAIN/$f"
-done
-log "code at main ${MAIN_SHA:0:9}, data from dev ${DEV_SHA:0:9}"
+# The scoring CONTRACT each ref publishes under: ruleset version (the first
+# release heading of the rules changelog) and methodology version.
+# Fails rather than printing an empty field: a parse that stopped matching (an
+# annotation on the constant, a moved file) is not a version, and an empty one
+# on one side reads as "the contracts differ" — a quiet skip every night.
+contract() {
+  local rules method
+  rules=$(git -C "$REPO" show "$1:rules/_meta/changelog.md" | sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' | head -1)
+  method=$(git -C "$REPO" show "$1:src/mcpwatchman/workers/scoring/weights.py" \
+    | sed -n 's/^CURRENT_METHODOLOGY_VERSION = "\(.*\)"/\1/p')
+  [[ -n "$rules" && -n "$method" ]] || return 1
+  printf 'ruleset %s, methodology %s' "$rules" "$method"
+}
+MAIN_CONTRACT="$(contract "$MAIN_SHA")" || die 20 "could not read main's scoring contract"
+DEV_CONTRACT="$(contract "$DEV_SHA")" || die 20 "could not read dev's scoring contract"
 
+# The pins are always dev's — main's lack unsynced ones, and a pin's page is
+# already live. The PREVIOUS PAGES are dev's too, unless the contracts differ:
+# then dev's rows were scored under a contract main cannot vouch for (a ruleset
+# bump ships with a regeneration under dev's code), and any row kept tonight —
+# one server's timeout — would carry a scanner stamp main never declared into
+# main's publication gates. On 2026-10-29 that failed the night (13) for an
+# ordinary between-syncs state, and had the gate passed, the site would have
+# mixed two contracts. So under a mismatch a kept page comes from main's own
+# data, and dev's row is used only for a pin main has no page for yet.
+git -C "$REPO" show "$DEV_SHA:ops/cohort.json" > "$MAIN/ops/cohort.json"
+if [[ "$MAIN_CONTRACT" == "$DEV_CONTRACT" ]]; then
+  git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$MAIN/site/src/data/scans.json"
+  log "code at main ${MAIN_SHA:0:9}, data from dev ${DEV_SHA:0:9}"
+else
+  git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$WORK/scans.dev.json"
+  git -C "$REPO" show "$MAIN_SHA:site/src/data/scans.json" > "$WORK/scans.main.json"
+  "$PY" - "$WORK/scans.dev.json" "$WORK/scans.main.json" "$MAIN/site/src/data/scans.json" <<'PY' \
+    || die 24 "could not compose the previous pages from main's and dev's data"
+import json, sys
+dev, main, out = sys.argv[1:]
+dev_rows = json.load(open(dev, encoding="utf-8"))
+mains = {row["slug"]: row for row in json.load(open(main, encoding="utf-8"))}
+rows = [mains.get(row["slug"], row) for row in dev_rows]
+with open(out, "w", encoding="utf-8") as f:
+    json.dump(rows, f, ensure_ascii=False, indent=1)
+    f.write("\n")
+print(sum(row["slug"] in mains for row in dev_rows), len(dev_rows))
+PY
+  log "code at main ${MAIN_SHA:0:9}; contracts differ ($MAIN_CONTRACT vs dev's $DEV_CONTRACT), so previous pages come from main ${MAIN_SHA:0:9}, pins from dev ${DEV_SHA:0:9}"
+fi
+
+cp "$MAIN/site/src/data/scans.json" "$WORK/scans.before.json"
 log "scanning the pinned cohort"
 # The scan's git never sees the operator's git config. That config carries a
 # `gh` credential helper, and the scan clones URLs that third parties put in
@@ -210,7 +253,6 @@ set -e
 # its previous page, labelled — and the night goes on; only a refusal of the
 # whole run, too many withheld at once, stops it here.
 log "checking that every repository scored this run is publicly readable"
-git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$WORK/scans.before.json"
 # It keeps the GitHub token: a repository the public cannot read is asked about
 # with it, because "private" and "deleted" fail the same anonymous probe. Its
 # report goes into the data commit, so what was withheld is on the record.
@@ -230,21 +272,6 @@ log "running the publication gates"
     tests/test_site_scans.py tests/test_site_example.py tests/test_cohort.py ) \
   || die 13 "publication gates failed on the new data"
 
-# The scoring CONTRACT each ref publishes under: ruleset version (the first
-# release heading of the rules changelog) and methodology version.
-# Fails rather than printing an empty field: a parse that stopped matching (an
-# annotation on the constant, a moved file) is not a version, and an empty one
-# on one side reads as "the contracts differ" — a quiet skip every night.
-contract() {
-  local rules method
-  rules=$(git -C "$REPO" show "$1:rules/_meta/changelog.md" | sed -n 's/^## \([0-9][0-9.]*\).*/\1/p' | head -1)
-  method=$(git -C "$REPO" show "$1:src/mcpwatchman/workers/scoring/weights.py" \
-    | sed -n 's/^CURRENT_METHODOLOGY_VERSION = "\(.*\)"/\1/p')
-  [[ -n "$rules" && -n "$method" ]] || return 1
-  printf 'ruleset %s, methodology %s' "$rules" "$method"
-}
-MAIN_CONTRACT="$(contract "$MAIN_SHA")" || die 20 "could not read main's scoring contract"
-DEV_CONTRACT="$(contract "$DEV_SHA")" || die 20 "could not read dev's scoring contract"
 
 # committed | unchanged | contract — what happened to the data, so every log
 # line below reports what was DONE rather than what was attempted.

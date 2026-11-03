@@ -222,6 +222,48 @@ def test_a_contract_mismatch_with_publishing_on_deploys_mains_pair(world: World)
     assert not world.dev_log()[0].startswith("data")
 
 
+def test_a_contract_mismatch_keeps_mains_pages_not_devs(world: World) -> None:
+    """The 2026-10-29 failure (13): dev's data came from a regeneration under a
+    newer ruleset, one server's scan failed so its page was KEPT, and the kept
+    row carried a scanner stamp main had never declared into main's
+    provenance gate. Under a mismatch a kept page now comes from main's data;
+    a pin main has no page for yet keeps dev's, so no live page is dropped."""
+    rows = json.loads(FILES["site/src/data/scans.json"])
+    rows.append({**rows[0], "name": "c", "slug": "c"})
+    for row in rows:
+        row["stamp"] = "dev-only"
+    world.commit_to("dev", "site/src/data/scans.json", json.dumps(rows) + "\n")
+    world.commit_to("dev", "rules/_meta/changelog.md", "## 0.1.2 — newer\n")
+    world.commit_to("main", "tests/test_site_scans.py", (
+        "import json\n"
+        "def test_every_kept_row_is_one_main_can_vouch_for():\n"
+        "    rows = {r['slug']: r for r in json.load(open('site/src/data/scans.json'))}\n"
+        "    assert sorted(rows) == ['a', 'b', 'c']\n"
+        "    assert 'stamp' not in rows['a'] and 'stamp' not in rows['b']\n"
+        "    assert rows['c']['stamp'] == 'dev-only'\n"
+    ))
+    rc, out = world.run(MCPW_PUBLISH="1", FAKE_SCAN="same")
+    assert rc == 0, out
+    assert "previous pages come from main" in out
+    assert world.deployed
+    assert not world.dev_log()[0].startswith("data")
+
+
+def test_matching_contracts_keep_devs_pages(world: World) -> None:
+    rows = json.loads(FILES["site/src/data/scans.json"])
+    for row in rows:
+        row["stamp"] = "dev"
+    world.commit_to("dev", "site/src/data/scans.json", json.dumps(rows) + "\n")
+    world.commit_to("main", "tests/test_site_scans.py", (
+        "import json\n"
+        "def test_rows_are_devs():\n"
+        "    assert all(r['stamp'] == 'dev' for r in json.load(open('site/src/data/scans.json')))\n"
+    ))
+    rc, out = world.run(FAKE_SCAN="same")
+    assert rc in (0, 11), out
+    assert "data from dev" in out
+
+
 def test_a_contract_change_mid_run_ends_like_one_at_start(world: World) -> None:
     """It failed the unit (exit 14) where the same state found at start is the
     quiet between-syncs skip (base.md § Signal design)."""
