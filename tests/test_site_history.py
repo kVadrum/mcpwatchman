@@ -82,3 +82,17 @@ def test_every_page_with_two_scans_draws_one_trace_per_axis_with_a_reading() -> 
         assert len(labels) == len(h.AXES), row["slug"]
         assert all(f"{len(doc['points'])} recorded scans" in label for label in labels)
         assert f'/api/servers/{row["slug"]}/history.json' in section
+
+
+def _block(path: str) -> str:
+    headers = (ROOT / "site/public/_headers").read_text()
+    return headers.split(f"\n{path}\n", 1)[1].split("\n\n", 1)[0]
+
+
+def test_the_public_api_and_feeds_are_readable_from_any_origin_without_credentials() -> None:
+    headers = (ROOT / "site/public/_headers").read_text()
+    for path in ("/api/*", "/feed/*"):
+        assert "Access-Control-Allow-Origin: *" in _block(path), path
+    rules = [line.strip() for line in headers.splitlines() if not line.strip().startswith("#")]
+    assert not [r for r in rules if r.lower().startswith("access-control-allow-credentials")]
+    assert "Cross-Origin-Resource-Policy: cross-origin" in _block("/badge/*")

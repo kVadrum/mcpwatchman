@@ -6,6 +6,8 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+  # No page of ours is ever opened by, or opens, another origin's window.
+  Cross-Origin-Opener-Policy: same-origin
   # Self-hosted fonts and no third-party anything, so the CSP can be strict.
   # No inline script and no inline style survive the build (the page script is
   # a real file in public/, and astro.config pins inlineStylesheets:'never'), so
@@ -21,18 +23,31 @@
   # still looking fine in a browser.
   Content-Type: text/plain; charset=utf-8
 
+/api/*
+  # The JSON API is public, read-only and carries no credentials, so any
+  # origin may read it from a browser — a page checking a server before its
+  # user installs it, an agent running in one. No Allow-Credentials, ever:
+  # nothing here is behind a cookie, and `*` with credentials is refused by
+  # browsers anyway.
+  Access-Control-Allow-Origin: *
+
 /feed/*
   # Atom, not the application/xml an .xml extension is served as by default.
   # A static build drops headers set in an endpoint's Response, so the type is
   # pinned here, where Workers reads it.
   Content-Type: application/atom+xml; charset=utf-8
   Cache-Control: public, max-age=3600
+  # Public, like the API: a browser-based feed reader may fetch it.
+  Access-Control-Allow-Origin: *
 
 /badge/*
   # `06` §2: the badge follows the nightly rescan, so it may be cached for an
   # hour and no longer. Type pinned rather than inferred, as above.
   Content-Type: image/svg+xml; charset=utf-8
   Cache-Control: public, max-age=3600
+  # A badge is MEANT to be embedded in other sites' READMEs: say so, so a
+  # page that requires Cross-Origin-Embedder-Policy can still show it.
+  Cross-Origin-Resource-Policy: cross-origin
 
 /_astro/*
   # Astro fingerprints these filenames, so they are safe to cache forever.
