@@ -1080,20 +1080,24 @@ def _deps_axis(result, availability) -> AxisScore:
             notes.append(
                 f"the dependencies in {n} requirements file{'' if n == 1 else 's'} "
                 f"({', '.join(requirements_files[:3])}) were not measured — "
-                f"{'it pins' if n == 1 else 'they pin'} no exact version, or could "
-                "not be read whole"
+                # Not "pins no exact version": a loose file can pin some.
+                f"{'it does' if n == 1 else 'they do'} not pin every requirement "
+                "to one exact version, or could not be read whole"
             )
         if result.nested_lockfiles:
+            # "dependency file", not "lockfile": osv-scanner also reports a
+            # nested module's bare `go.mod`. "each sits": two can share one
+            # sub-project, so the plural never claims a project apiece.
             n = len(result.nested_lockfiles)
             notes.append(
-                f"{n} lockfile{'' if n == 1 else 's'} "
+                f"{n} dependency file{'' if n == 1 else 's'} "
                 f"({', '.join(result.nested_lockfiles[:3])}) "
-                + ("sits inside a nested sub-project with its own package "
-                   "manifest and was" if n == 1 else
-                   "sit inside nested sub-projects, each with its own package "
-                   "manifest, and were")
-                + " not read as this server's — whether one also covers it "
-                "cannot be told from the tree"
+                f"{'was' if n == 1 else 'were'} not read as this server's — "
+                f"{'it sits' if n == 1 else 'each sits'} inside a nested "
+                "sub-project, a directory below this one with its own package "
+                "manifest, and whether "
+                + ("it" if n == 1 else "any of them")
+                + " also covers the server cannot be told from the tree"
             )
         note = (
             "; ".join(notes) + f" — so the score covers the {measured} "

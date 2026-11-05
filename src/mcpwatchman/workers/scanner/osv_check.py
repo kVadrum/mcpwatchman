@@ -521,12 +521,24 @@ def run_osv(
     every = sorted(
         f.path for f in inventory.files if f.role is Role.LOCKFILE
     ) if inventory is not None else []
-    nested_candidates = tuple(p for p in every if nested(p))
-    candidates = [p for p in every if p not in nested_candidates]
-    txt = {p: pins_of(p) for p in candidates if p.endswith(".txt")}
-    unreadable = tuple(p for p, got in txt.items() if got is None)
+    txt = {p: pins_of(p) for p in every if p.endswith(".txt")}
+    # A requirements file is a lockfile only when it pins — NESTED OR NOT. One
+    # that pins nothing is loose wherever it sits (the publisher's, as it was
+    # before this rule), so it can never make the axis read "the only lockfile
+    # is a nested project's": a nested `mcp>=1.0` beside no lockfile at all
+    # would have flipped a no-lockfile server's fault to ours under a false
+    # "pins" (review, 2026-11-05).
     loose = tuple(p for p, got in txt.items() if got is not None and not got[1])
-    lockfiles = tuple(p for p in candidates if p not in loose and p not in unreadable)
+    # Sets, here and for `nested_dirs` below, never a scan of a tuple: the file
+    # count is the scanned repository's choice (up to `MAX_FILES`), and with
+    # per-path scans this function took 4.4 s at 10,000 nested projects and
+    # grew with the square; 0.5 s with sets (measured, osv-scanner stubbed).
+    loose_set = frozenset(loose)
+    nested_candidates = tuple(p for p in every if nested(p) and p not in loose_set)
+    candidates = [p for p in every if not nested(p)]
+    unreadable = tuple(p for p in candidates if p in txt and txt[p] is None)
+    not_locked = loose_set | frozenset(unreadable)
+    lockfiles = tuple(p for p in candidates if p not in not_locked)
     if inventory is not None and not lockfiles and unreadable:
         return OsvResult(
             status=OsvStatus.UNAVAILABLE,
@@ -544,18 +556,22 @@ def run_osv(
         )
     if inventory is not None and not lockfiles and nested_candidates:
         n = len(nested_candidates)
+        # "each sit": two lockfiles can share one sub-project, so the plural
+        # never claims a project apiece.
         return OsvResult(
             status=OsvStatus.UNAVAILABLE,
             reason=(
                 f"the only lockfile{'' if n == 1 else 's'} "
                 f"({', '.join(nested_candidates[:3])}) "
-                + ("sits inside a nested sub-project with its own package "
-                   "manifest — it pins that project" if n == 1 else
-                   "sit inside nested sub-projects, each with its own package "
-                   "manifest — each pins its own project")
-                + ", and whether it also covers this server cannot be told "
-                "from the tree, so no vulnerability can be attributed"
-                + (f"; {', '.join(loose[:3])} pins no exact version" if loose else "")
+                + ("sits" if n == 1 else "each sit")
+                + " inside a nested sub-project — a directory below this one "
+                "with its own package manifest — and whether "
+                + ("it" if n == 1 else "any of them")
+                + " also covers this server cannot be told from the tree, so "
+                "no vulnerability can be attributed"
+                + (f"; {', '.join(loose[:3])} "
+                   f"{'does' if len(loose) == 1 else 'do'} not pin every "
+                   "requirement to one exact version" if loose else "")
             ),
             loose_requirements=loose,
             nested_lockfiles=nested_candidates,
@@ -651,6 +667,7 @@ def run_osv(
     unreadable_seen: set[str] = set(unreadable)
     withheld: set[str] = set()
     nested_seen: set[str] = set(nested_candidates)
+    nested_dirs = {p.rsplit("/", 1)[0] for p in nested_candidates}
     for result in payload.get("results", []):
         source = result.get("source", {}) or {}
         path = source.get("path", "")
@@ -662,10 +679,16 @@ def run_osv(
         # sub-projects whatever the inventory classified — `requirements-dev.txt`
         # or a nested module's `go.mod` included. One unit per nested
         # directory: a module's `go.mod` beside its `go.sum` is one project.
+        # A nested requirements file that does not pin is loose, as above.
         if inside and nested(rel):
-            here = rel.rsplit("/", 1)[0]
-            if not any(p.rsplit("/", 1)[0] == here for p in nested_seen):
-                nested_seen.add(rel)
+            got = pins_of(rel) if rel.endswith(".txt") else None
+            if got is not None and not got[1]:
+                loose_seen.add(rel)
+            else:
+                here = rel.rsplit("/", 1)[0]
+                if here not in nested_dirs:
+                    nested_dirs.add(here)
+                    nested_seen.add(rel)
             continue
         # Every `.txt` osv-scanner extracts is pip requirements, including
         # names our inventory never classifies (`requirements_local_models.txt`).

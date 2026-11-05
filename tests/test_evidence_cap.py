@@ -301,8 +301,10 @@ def test_a_nested_sub_projects_lockfile_narrows_coverage_as_our_gap() -> None:
     assert axis.score == 100
     assert axis.assessed_weight == "0.33"  # one measured of three, rounded down
     assert axis.unmeasured_faults == ("project",)
-    assert "2 lockfiles (docs/research/backend/poetry.lock" in axis.reason
-    assert "sit inside nested sub-projects, each with its own package manifest" in axis.reason
+    assert "2 dependency files (docs/research/backend/poetry.lock" in axis.reason
+    # "each sits", never "sub-projects, each with its own": two can share one.
+    assert "were not read as this server's — each sits inside a nested sub-project" in axis.reason
+    assert "whether any of them also covers the server" in axis.reason
     assert "requirements file" not in axis.reason
     assert axis.reason.endswith("the 1 lockfile that was")
 
@@ -316,7 +318,8 @@ def test_loose_and_nested_units_are_each_named_with_their_own_fault() -> None:
     assert axis.assessed_weight == "0.5"  # two measured of four
     assert axis.unmeasured_faults == ("project", "publisher")
     assert "1 requirements file (tools/requirements.txt)" in axis.reason
-    assert "1 lockfile (examples/app/package-lock.json) sits inside" in axis.reason
+    assert ("1 dependency file (examples/app/package-lock.json) was not read as "
+            "this server's — it sits inside") in axis.reason
     assert axis.reason.endswith("the 2 lockfiles that were")
 
 

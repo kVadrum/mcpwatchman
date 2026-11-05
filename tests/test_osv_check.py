@@ -407,6 +407,9 @@ def test_a_nested_projects_lock_alone_abstains_as_our_gap(tmp_path: Path, monkey
     `assessed_weight`. It is not "no lockfile" (there is one) and not the
     publisher's gap (the tree cannot say whose it is)."""
     monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    # It abstains BEFORE osv-scanner runs; a regression fails here, never execs.
+    monkeypatch.setattr(oc, "run_bounded",
+                        lambda *a, **k: pytest.fail("osv-scanner should not run"))
     inv = _inventory(
         ("pyproject.toml", Role.PACKAGE_MANIFEST),
         ("kinocut/revideo_template/package.json", Role.PACKAGE_MANIFEST),
@@ -417,8 +420,67 @@ def test_a_nested_projects_lock_alone_abstains_as_our_gap(tmp_path: Path, monkey
     assert result.score is None
     assert result.fault is Fault.PROJECT
     assert result.nested_lockfiles == ("kinocut/revideo_template/package-lock.json",)
-    assert "inside a nested sub-project" in result.reason
+    assert result.reason.startswith(
+        "the only lockfile (kinocut/revideo_template/package-lock.json) sits inside "
+        "a nested sub-project — a directory below this one with its own package "
+        "manifest — and whether it also covers this server")
     assert "no lockfile in the fetched source" not in result.reason
+
+
+def test_a_nested_requirements_file_that_pins_nothing_is_no_lockfile(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """A requirements file is a lockfile only when it pins, nested or not. A
+    nested `mcp>=1.0` beside no lockfile at all once read as "the only lockfile
+    sits inside a nested sub-project … it pins that project" — a false claim,
+    and the publisher's gap (no lockfile anywhere) relabelled as ours."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    monkeypatch.setattr(oc, "run_bounded",
+                        lambda *a, **k: pytest.fail("osv-scanner should not run"))
+    (tmp_path / "examples" / "client").mkdir(parents=True)
+    (tmp_path / "examples" / "client" / "requirements.txt").write_text("mcp>=1.0\n")
+    inv = _inventory(
+        ("pyproject.toml", Role.PACKAGE_MANIFEST),
+        ("examples/client/pyproject.toml", Role.PACKAGE_MANIFEST),
+        ("examples/client/requirements.txt", Role.LOCKFILE),
+    )
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.UNAVAILABLE
+    assert result.fault is Fault.PUBLISHER
+    assert result.reason.startswith("no lockfile in the fetched source")
+    assert result.loose_requirements == ("examples/client/requirements.txt",)
+    assert result.nested_lockfiles == ()
+
+
+def test_nested_lockfiles_sharing_a_project_and_loose_files_read_true(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Two lockfiles can share ONE sub-project, so the plural says "each sit
+    inside a nested sub-project", never "each pins its own project"; and a
+    loose file that pins some requirements does not "pin no exact version"."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    monkeypatch.setattr(oc, "run_bounded",
+                        lambda *a, **k: pytest.fail("osv-scanner should not run"))
+    (tmp_path / "tools").mkdir()
+    (tmp_path / "requirements.txt").write_text("requests==2.19.1\npillow>=9\n")
+    (tmp_path / "tools" / "requirements.txt").write_text("rich\n")
+    inv = _inventory(
+        ("pyproject.toml", Role.PACKAGE_MANIFEST),
+        ("requirements.txt", Role.LOCKFILE),
+        ("tools/requirements.txt", Role.LOCKFILE),
+        ("web/package.json", Role.PACKAGE_MANIFEST),
+        ("web/package-lock.json", Role.LOCKFILE),
+        ("web/yarn.lock", Role.LOCKFILE),
+    )
+    result = oc.run_osv(tmp_path, inv)
+    assert result.fault is Fault.PROJECT
+    assert result.reason.startswith(
+        "the only lockfiles (web/package-lock.json, web/yarn.lock) each sit inside "
+        "a nested sub-project")
+    assert "whether any of them also covers this server" in result.reason
+    assert result.reason.endswith(
+        "; requirements.txt, tools/requirements.txt do not pin every requirement "
+        "to one exact version")
 
 
 def test_a_nested_projects_findings_are_not_the_servers(tmp_path: Path, monkeypatch) -> None:
@@ -466,13 +528,19 @@ def test_a_nested_file_the_inventory_never_classified_is_still_set_aside(
         ("tools/gen/go.sum", Role.LOCKFILE),
         ("examples/py/pyproject.toml", Role.PACKAGE_MANIFEST),
     )
+    (tmp_path / "examples" / "py").mkdir(parents=True)
+    (tmp_path / "examples" / "py" / "requirements-dev.txt").write_text("pytest==8.0.0\n")
+    # Pins nothing, so it is loose like any other — not a nested lockfile.
+    (tmp_path / "examples" / "py" / "requirements-docs.txt").write_text("sphinx>=7\n")
     _fake_run(monkeypatch, _vulnerable(
-        tmp_path, "go.mod", "tools/gen/go.mod", "examples/py/requirements-dev.txt"),
+        tmp_path, "go.mod", "tools/gen/go.mod", "examples/py/requirements-dev.txt",
+        "examples/py/requirements-docs.txt"),
         returncode=1)
     result = oc.run_osv(tmp_path, inv)
     assert [f.lockfile for f in result.findings] == ["go.mod"]
     assert result.nested_lockfiles == (
         "examples/py/requirements-dev.txt", "tools/gen/go.sum")
+    assert result.loose_requirements == ("examples/py/requirements-docs.txt",)
 
 
 @needs_osv
