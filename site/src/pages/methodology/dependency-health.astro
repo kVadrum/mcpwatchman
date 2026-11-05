@@ -50,6 +50,15 @@ const cvss = (i: number) =>
       much. With no lockfile at all the axis is unassessed — not 0, and not
       100.
     </p>
+    <p>
+      <strong>A nested project's lockfile is not the server's.</strong> When
+      the source is itself a project and a directory below it carries its own
+      package manifest — a bundled template, a vendored research tree — that
+      directory's lockfile pins that project. It is not scored, and it counts
+      as part of the axis that was not measured, our gap rather than the
+      publisher's: the tree cannot say whether such a lockfile also covers the
+      server. The same rule already applies to licence and changelog files.
+    </p>
   </section>
 
   <section class="paper doc-paper" aria-labelledby="table-heading">

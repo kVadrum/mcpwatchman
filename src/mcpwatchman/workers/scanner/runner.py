@@ -1052,7 +1052,10 @@ def _deps_axis(result, availability) -> AxisScore:
     # coverage when the loose file repeats a lockfile, which is the direction a
     # coverage claim is allowed to err in. Theirs when the requirements pin
     # nothing; ours when a file was too large for us to read.
-    unmeasured_files = result.loose_requirements + result.unreadable_requirements
+    # A nested sub-project's lockfile is a unit too (`OsvResult.nested_lockfiles`)
+    # — ours, because whether it also covers the server cannot be told.
+    requirements_files = result.loose_requirements + result.unreadable_requirements
+    unmeasured_files = requirements_files + result.nested_lockfiles
     if unmeasured_files:
         measured = len(result.lockfiles)
         share = dec(measured) / dec(measured + len(unmeasured_files))
@@ -1069,15 +1072,33 @@ def _deps_axis(result, availability) -> AxisScore:
         weight = _fmt(narrowed)
         if result.loose_requirements:
             faults.add(Fault.PUBLISHER.value)
-        if result.unreadable_requirements:
+        if result.unreadable_requirements or result.nested_lockfiles:
             faults.add(Fault.PROJECT.value)
-        n = len(unmeasured_files)
+        notes = []
+        if requirements_files:
+            n = len(requirements_files)
+            notes.append(
+                f"the dependencies in {n} requirements file{'' if n == 1 else 's'} "
+                f"({', '.join(requirements_files[:3])}) were not measured — "
+                f"{'it pins' if n == 1 else 'they pin'} no exact version, or could "
+                "not be read whole"
+            )
+        if result.nested_lockfiles:
+            n = len(result.nested_lockfiles)
+            notes.append(
+                f"{n} lockfile{'' if n == 1 else 's'} "
+                f"({', '.join(result.nested_lockfiles[:3])}) "
+                + ("sits inside a nested sub-project with its own package "
+                   "manifest and was" if n == 1 else
+                   "sit inside nested sub-projects, each with its own package "
+                   "manifest, and were")
+                + " not read as this server's — whether one also covers it "
+                "cannot be told from the tree"
+            )
         note = (
-            f"the dependencies in {n} requirements file{'' if n == 1 else 's'} "
-            f"({', '.join(unmeasured_files[:3])}) were not measured — "
-            f"{'it pins' if n == 1 else 'they pin'} no exact version, or could "
-            f"not be read whole — so the score covers the {measured} "
-            f"lockfile{'' if measured == 1 else 's'} that were"
+            "; ".join(notes) + f" — so the score covers the {measured} "
+            f"lockfile{'' if measured == 1 else 's'} that "
+            f"{'was' if measured == 1 else 'were'}"
         )
         reason = f"{reason}; {note}" if reason else note
     return AxisScore(

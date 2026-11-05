@@ -174,6 +174,11 @@ class OsvResult:
     # Requirements files too large to read whole (`MANIFEST_MAX_BYTES`): their
     # pins could not be checked, which is OUR bound, never the publisher's.
     unreadable_requirements: tuple[str, ...] = ()
+    # Lockfiles inside a nested sub-project (`Inventory.nested_project_of`):
+    # not read as this server's, and counted as units the score did not
+    # measure — OUR gap, since whether one also covers the server cannot be
+    # told from the tree.
+    nested_lockfiles: tuple[str, ...] = ()
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
 
@@ -497,9 +502,27 @@ def run_osv(
             pins[rel] = None if unread else requirement_pins(text)
         return pins[rel]
 
-    candidates = sorted(
+    # ⚠ **A NESTED SUB-PROJECT'S LOCKFILE PINS THAT PROJECT, NOT THIS SERVER.**
+    # The licence and documentation checks have abstained on nested
+    # sub-project files since the 2026-10-07 ruling; this check never applied
+    # it, so osv-scanner's recursive walk attributed a research tree's locks
+    # under `docs/` to the server (`io.github.tlkc888-Jenkins/joy`, Dependency
+    # Health 0) and a bundled video template's to a Python package
+    # (`io.github.KyaniteLabs/kinocut`, 50 at a full `assessed_weight`).
+    # Abstain, as the ruling says — neither credit nor zero: such a file is a
+    # unit the score did not measure (withholding its findings without
+    # narrowing coverage would turn a false 0 into an over-claimed 100), and
+    # the gap is OURS, because a workspace member can be the server.
+    projects = inventory.sub_projects() if inventory is not None else frozenset()
+
+    def nested(rel: str) -> bool:
+        return Inventory.nested_project_of(rel, projects) is not None
+
+    every = sorted(
         f.path for f in inventory.files if f.role is Role.LOCKFILE
     ) if inventory is not None else []
+    nested_candidates = tuple(p for p in every if nested(p))
+    candidates = [p for p in every if p not in nested_candidates]
     txt = {p: pins_of(p) for p in candidates if p.endswith(".txt")}
     unreadable = tuple(p for p, got in txt.items() if got is None)
     loose = tuple(p for p, got in txt.items() if got is not None and not got[1])
@@ -513,7 +536,31 @@ def run_osv(
                     "checked and no vulnerability can be attributed"),
             unreadable_requirements=unreadable,
             loose_requirements=loose,
+            nested_lockfiles=nested_candidates,
             # OURS: the bound is a limit of this scanner, disclosed site-wide.
+            explicit_fault=Fault.PROJECT,
+            transitive_coverage=False,
+            methodology_version=version,
+        )
+    if inventory is not None and not lockfiles and nested_candidates:
+        n = len(nested_candidates)
+        return OsvResult(
+            status=OsvStatus.UNAVAILABLE,
+            reason=(
+                f"the only lockfile{'' if n == 1 else 's'} "
+                f"({', '.join(nested_candidates[:3])}) "
+                + ("sits inside a nested sub-project with its own package "
+                   "manifest — it pins that project" if n == 1 else
+                   "sit inside nested sub-projects, each with its own package "
+                   "manifest — each pins its own project")
+                + ", and whether it also covers this server cannot be told "
+                "from the tree, so no vulnerability can be attributed"
+                + (f"; {', '.join(loose[:3])} pins no exact version" if loose else "")
+            ),
+            loose_requirements=loose,
+            nested_lockfiles=nested_candidates,
+            # OURS, like the licence and changelog abstentions on the same
+            # ruling: the tree cannot tell us whose lockfile it is.
             explicit_fault=Fault.PROJECT,
             transitive_coverage=False,
             methodology_version=version,
@@ -603,6 +650,7 @@ def run_osv(
     loose_seen: set[str] = set(loose)
     unreadable_seen: set[str] = set(unreadable)
     withheld: set[str] = set()
+    nested_seen: set[str] = set(nested_candidates)
     for result in payload.get("results", []):
         source = result.get("source", {}) or {}
         path = source.get("path", "")
@@ -610,6 +658,15 @@ def run_osv(
         # Never a scratch path on a page: a source outside the root is named
         # by what it is, not where our worker put it.
         rel = str(Path(path).relative_to(root)) if inside else "a file outside the scan root"
+        # osv-scanner walks the tree itself (`-r`), so it reaches nested
+        # sub-projects whatever the inventory classified — `requirements-dev.txt`
+        # or a nested module's `go.mod` included. One unit per nested
+        # directory: a module's `go.mod` beside its `go.sum` is one project.
+        if inside and nested(rel):
+            here = rel.rsplit("/", 1)[0]
+            if not any(p.rsplit("/", 1)[0] == here for p in nested_seen):
+                nested_seen.add(rel)
+            continue
         # Every `.txt` osv-scanner extracts is pip requirements, including
         # names our inventory never classifies (`requirements_local_models.txt`).
         # ⚠ ONLY WHAT THE FILE PINS IS ATTRIBUTED — every package, every time.
@@ -685,6 +742,7 @@ def run_osv(
         unattributed_findings=unattributed,
         withheld_from=tuple(sorted(withheld)),
         unreadable_requirements=tuple(sorted(unreadable_seen)),
+        nested_lockfiles=tuple(sorted(nested_seen)),
         methodology_version=version,
     )
 

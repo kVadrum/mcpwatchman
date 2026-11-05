@@ -388,6 +388,121 @@ def test_a_source_outside_the_root_never_names_a_scratch_path(
                    for p in result.withheld_from + result.loose_requirements)
 
 
+# --- a nested sub-project's lockfile pins that project, not the server ----
+
+
+def _vulnerable(root: Path, *rels: str) -> str:
+    """An osv-scanner payload with one critical group per named lockfile."""
+    return json.dumps({"results": [{
+        "source": {"path": str(root / rel), "type": "lockfile"},
+        "packages": [{"package": {"name": f"p{i}", "version": "1", "ecosystem": "npm"},
+                      "vulnerabilities": [], "groups": [
+                          {"ids": [f"GHSA-{i}"], "aliases": [], "max_severity": "9.8"}]}],
+    } for i, rel in enumerate(rels)]})
+
+
+def test_a_nested_projects_lock_alone_abstains_as_our_gap(tmp_path: Path, monkeypatch) -> None:
+    """`io.github.KyaniteLabs/kinocut`: a Python package whose only lockfile is
+    a bundled video template's, which published Dependency Health 50 at a full
+    `assessed_weight`. It is not "no lockfile" (there is one) and not the
+    publisher's gap (the tree cannot say whose it is)."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    inv = _inventory(
+        ("pyproject.toml", Role.PACKAGE_MANIFEST),
+        ("kinocut/revideo_template/package.json", Role.PACKAGE_MANIFEST),
+        ("kinocut/revideo_template/package-lock.json", Role.LOCKFILE),
+    )
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.UNAVAILABLE
+    assert result.score is None
+    assert result.fault is Fault.PROJECT
+    assert result.nested_lockfiles == ("kinocut/revideo_template/package-lock.json",)
+    assert "inside a nested sub-project" in result.reason
+    assert "no lockfile in the fetched source" not in result.reason
+
+
+def test_a_nested_projects_findings_are_not_the_servers(tmp_path: Path, monkeypatch) -> None:
+    """`io.github.tlkc888-Jenkins/joy` scored 0 from research-tree locks under
+    `docs/`; the root's own lock keeps its finding and the nested one is
+    named, not scored."""
+    inv = _inventory(
+        ("package.json", Role.PACKAGE_MANIFEST),
+        ("package-lock.json", Role.LOCKFILE),
+        ("docs/research/frontend/package.json", Role.PACKAGE_MANIFEST),
+        ("docs/research/frontend/pnpm-lock.yaml", Role.LOCKFILE),
+    )
+    _fake_run(monkeypatch, _vulnerable(
+        tmp_path, "package-lock.json", "docs/research/frontend/pnpm-lock.yaml"), returncode=1)
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.OK
+    assert [f.lockfile for f in result.findings] == ["package-lock.json"]
+    assert result.lockfiles == ("package-lock.json",)
+    assert result.nested_lockfiles == ("docs/research/frontend/pnpm-lock.yaml",)
+
+
+def test_a_root_without_a_manifest_has_no_nested_projects(tmp_path: Path, monkeypatch) -> None:
+    """The ruling's other half: a root with no manifest is not a project, so
+    the server may simply live in a subdirectory, and its lock is read."""
+    inv = _inventory(
+        ("server/package.json", Role.PACKAGE_MANIFEST),
+        ("server/package-lock.json", Role.LOCKFILE),
+    )
+    _fake_run(monkeypatch, _vulnerable(tmp_path, "server/package-lock.json"), returncode=1)
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.OK
+    assert [f.lockfile for f in result.findings] == ["server/package-lock.json"]
+    assert result.nested_lockfiles == ()
+
+
+def test_a_nested_file_the_inventory_never_classified_is_still_set_aside(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """osv-scanner walks the tree itself, so it reads nested files our
+    inventory has no role for; each nested directory is one unmeasured unit."""
+    inv = _inventory(
+        ("go.mod", Role.PACKAGE_MANIFEST),
+        ("go.sum", Role.LOCKFILE),
+        ("tools/gen/go.mod", Role.PACKAGE_MANIFEST),
+        ("tools/gen/go.sum", Role.LOCKFILE),
+        ("examples/py/pyproject.toml", Role.PACKAGE_MANIFEST),
+    )
+    _fake_run(monkeypatch, _vulnerable(
+        tmp_path, "go.mod", "tools/gen/go.mod", "examples/py/requirements-dev.txt"),
+        returncode=1)
+    result = oc.run_osv(tmp_path, inv)
+    assert [f.lockfile for f in result.findings] == ["go.mod"]
+    assert result.nested_lockfiles == (
+        "examples/py/requirements-dev.txt", "tools/gen/go.sum")
+
+
+@needs_osv
+def test_the_real_scanner_reaches_a_nested_lock_and_we_set_it_aside(tmp_path: Path) -> None:
+    """Kept live against the real binary, with its control: the same nested
+    lock IS read once the root stops being a project — so the absence of the
+    finding is our filter, not osv-scanner failing to look."""
+    from mcpwatchman.workers.scanner.inventory import enumerate_tree
+
+    (tmp_path / "package-lock.json").write_text(
+        '{"name":"x","lockfileVersion":3,"packages":{"":{"name":"x"}}}')
+    research = tmp_path / "docs" / "research"
+    research.mkdir(parents=True)
+    (research / "pyproject.toml").write_text('[project]\nname = "r"\nversion = "0"\n')
+    (research / "requirements.txt").write_text("jinja2==2.10\n")
+
+    (tmp_path / "package.json").write_text('{"name": "x"}')
+    result = oc.run_osv(tmp_path, enumerate_tree(tmp_path))
+    assert result.status is oc.OsvStatus.OK, result.reason
+    assert not any(f.package == "jinja2" for f in result.findings)
+    assert result.nested_lockfiles == ("docs/research/requirements.txt",)
+
+    (tmp_path / "package.json").unlink()
+    control = oc.run_osv(tmp_path, enumerate_tree(tmp_path))
+    assert control.status is oc.OsvStatus.OK, control.reason
+    assert any(f.package == "jinja2" for f in control.findings), (
+        "osv-scanner no longer reads the nested lock, so the test above proves nothing"
+    )
+
+
 def test_a_pre_release_sorts_with_its_release_not_above_it() -> None:
     assert oc._version_key("1.0.0-rc1") == oc._version_key("1.0.0") == (1, 0, 0, 0)
     assert oc._version_key("v2.3") == (2, 3, 0, 0)

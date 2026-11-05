@@ -44,12 +44,13 @@ class _DepsResult:
     unscored_findings = 0
 
     def __init__(self, findings, unattributed=0, loose=(), *,
-                 lockfiles=("package-lock.json",), unreadable=()) -> None:
+                 lockfiles=("package-lock.json",), unreadable=(), nested=()) -> None:
         self.findings = findings
         self.unattributed_findings = unattributed
         self.loose_requirements = loose
         self.withheld_from = loose if unattributed else ()
         self.unreadable_requirements = unreadable
+        self.nested_lockfiles = nested
         self.lockfiles = lockfiles
 
 
@@ -285,6 +286,38 @@ def test_a_loose_file_beside_a_pinned_one_still_narrows_coverage() -> None:
     axis = _deps_axis(result, READABLE)
     assert axis.assessed_weight == "0.5"
     assert axis.unmeasured_faults == ("publisher",)
+
+
+def test_a_nested_sub_projects_lockfile_narrows_coverage_as_our_gap() -> None:
+    """`io.github.tlkc888-Jenkins/joy` scored 0 from three lockfiles under
+    `docs/autogpt_research/` that pin a research tree, not the server. Set
+    aside, they are units the score did not measure — never silently dropped,
+    which would publish the root lock's number at full coverage — and the gap
+    is ours, since the tree cannot say whether such a lock is the server's."""
+    nested = ("docs/research/backend/poetry.lock", "templates/site/package-lock.json")
+    result = _DepsResult([], nested=nested, lockfiles=("package-lock.json",))
+    result.score = 100
+    axis = _deps_axis(result, READABLE)
+    assert axis.score == 100
+    assert axis.assessed_weight == "0.33"  # one measured of three, rounded down
+    assert axis.unmeasured_faults == ("project",)
+    assert "2 lockfiles (docs/research/backend/poetry.lock" in axis.reason
+    assert "sit inside nested sub-projects, each with its own package manifest" in axis.reason
+    assert "requirements file" not in axis.reason
+    assert axis.reason.endswith("the 1 lockfile that was")
+
+
+def test_loose_and_nested_units_are_each_named_with_their_own_fault() -> None:
+    result = _DepsResult([], loose=("tools/requirements.txt",),
+                         nested=("examples/app/package-lock.json",),
+                         lockfiles=("package-lock.json", "uv.lock"))
+    result.score = 90
+    axis = _deps_axis(result, READABLE)
+    assert axis.assessed_weight == "0.5"  # two measured of four
+    assert axis.unmeasured_faults == ("project", "publisher")
+    assert "1 requirements file (tools/requirements.txt)" in axis.reason
+    assert "1 lockfile (examples/app/package-lock.json) sits inside" in axis.reason
+    assert axis.reason.endswith("the 2 lockfiles that were")
 
 
 def test_a_finding_listed_but_not_scored_does_not_claim_to_deduct() -> None:
