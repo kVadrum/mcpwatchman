@@ -371,6 +371,31 @@ def test_a_lock_too_large_to_read_is_our_gap_not_the_publishers(
     assert "does not pin" not in result.reason
 
 
+def test_a_nested_requirements_file_too_large_to_read_is_not_a_lockfile(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Over the read bound, no pin was established, so it is unreadable — our
+    bound, named as such — and never "the only lockfile … inside a nested
+    sub-project", a claim about a file nobody read (Codex leg, 2026-11-05)."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    monkeypatch.setattr(oc, "run_bounded",
+                        lambda *a, **k: pytest.fail("osv-scanner should not run"))
+    monkeypatch.setattr(oc, "read_manifest", lambda *_: "")
+    big = oc.MANIFEST_MAX_BYTES + 1
+    inv = Inventory(files=tuple(
+        FileRecord(path=p, language=Language.UNKNOWN, role=r, size_bytes=n, sha256="0")
+        for p, r, n in (
+            ("pyproject.toml", Role.PACKAGE_MANIFEST, 10),
+            ("examples/py/pyproject.toml", Role.PACKAGE_MANIFEST, 10),
+            ("examples/py/requirements.txt", Role.LOCKFILE, big),
+        )))
+    result = oc.run_osv(tmp_path, inv)
+    assert result.fault is Fault.PROJECT
+    assert result.reason.startswith("examples/py/requirements.txt is larger than the 1 MB")
+    assert result.unreadable_requirements == ("examples/py/requirements.txt",)
+    assert result.nested_lockfiles == ()
+
+
 def test_a_source_outside_the_root_never_names_a_scratch_path(
     tmp_path: Path, monkeypatch
 ) -> None:

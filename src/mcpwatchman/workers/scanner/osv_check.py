@@ -529,15 +529,16 @@ def run_osv(
     # would have flipped a no-lockfile server's fault to ours under a false
     # "pins" (review, 2026-11-05).
     loose = tuple(p for p, got in txt.items() if got is not None and not got[1])
+    # Likewise one too large to read whole is unreadable wherever it sits — no
+    # pin was established, so it is never named a nested "lockfile" (Codex leg).
+    unreadable = tuple(p for p, got in txt.items() if got is None)
     # Sets, here and for `nested_dirs` below, never a scan of a tuple: the file
     # count is the scanned repository's choice (up to `MAX_FILES`), and with
     # per-path scans this function took 4.4 s at 10,000 nested projects and
     # grew with the square; 0.5 s with sets (measured, osv-scanner stubbed).
-    loose_set = frozenset(loose)
-    nested_candidates = tuple(p for p in every if nested(p) and p not in loose_set)
+    not_locked = frozenset(loose) | frozenset(unreadable)
+    nested_candidates = tuple(p for p in every if nested(p) and p not in not_locked)
     candidates = [p for p in every if not nested(p)]
-    unreadable = tuple(p for p in candidates if p in txt and txt[p] is None)
-    not_locked = loose_set | frozenset(unreadable)
     lockfiles = tuple(p for p in candidates if p not in not_locked)
     if inventory is not None and not lockfiles and unreadable:
         return OsvResult(
@@ -679,10 +680,13 @@ def run_osv(
         # sub-projects whatever the inventory classified — `requirements-dev.txt`
         # or a nested module's `go.mod` included. One unit per nested
         # directory: a module's `go.mod` beside its `go.sum` is one project.
-        # A nested requirements file that does not pin is loose, as above.
+        # A nested requirements file that does not pin, or cannot be read
+        # whole, is loose or unreadable, as above — never a nested lockfile.
         if inside and nested(rel):
             got = pins_of(rel) if rel.endswith(".txt") else None
-            if got is not None and not got[1]:
+            if rel.endswith(".txt") and got is None:
+                unreadable_seen.add(rel)
+            elif got is not None and not got[1]:
                 loose_seen.add(rel)
             else:
                 here = rel.rsplit("/", 1)[0]
