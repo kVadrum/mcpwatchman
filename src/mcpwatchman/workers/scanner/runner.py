@@ -40,6 +40,8 @@ from mcpwatchman.workers.crawler.registry import (
 )
 from mcpwatchman.workers.scanner.auth_check import assess_auth
 from mcpwatchman.workers.scanner.forge import ForgeOutcome, fetch_signals
+from mcpwatchman.workers.scanner.install_resolution import InstallResolution
+from mcpwatchman.workers.scanner.install_resolution import resolve as resolve_install
 from mcpwatchman.workers.scanner.install_scripts import RULE_ID as INSTALL_SCRIPT_RULE
 from mcpwatchman.workers.scanner.inventory import enumerate_tree
 from mcpwatchman.workers.scanner.maintenance_check import (
@@ -248,6 +250,10 @@ class ServerReport:
     files_scanned: int = 0
     files_pruned: int = 0
     axes: dict[str, AxisScore] = field(default_factory=dict)
+    # What an install of a registry-published npm/PyPI package would resolve,
+    # from deps.dev (`install_resolution`). LISTED, never scored, never an
+    # axis: None for a repository source, or a record that predates it.
+    install_resolution: dict[str, Any] | None = None
 
     @property
     def assessed_axes(self) -> int:
@@ -571,6 +577,29 @@ def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
         )
 
 
+def _install_resolution(
+    resolution, artifact: str, scanned_at: str, workspace: Path | None
+) -> dict[str, Any]:
+    """The listed deps.dev block for a published package (ruling 2026-11-06, 1a).
+
+    ⚠ **Never raises**, as `_forge_signals` does not: a defect of ours in this
+    path must cost this block, never the server's report. Nothing here is
+    scored, so no fault on it can reach a publication gate; an unexpected
+    exception is still attributed `environment`, never to the publisher.
+    """
+    try:
+        spec = SourceSpec.parse(resolution.primary)
+        return resolve_install(
+            artifact, spec.identifier, spec.version, fetched_at=scanned_at,
+            workdir=workspace or Path(tempfile.gettempdir()),
+        ).to_dict()
+    except Exception as exc:  # noqa: BLE001 - one block, attributed to us
+        return InstallResolution(
+            status="unavailable", fault=Fault.ENVIRONMENT.value, fetched_at=scanned_at,
+            reason=f"the resolution failed unexpectedly ({type(exc).__name__})",
+        ).to_dict()
+
+
 def _wants_supplement(code: SemgrepResult) -> bool:
     """Whether the package's Code Safety gap is one the declared repository can fill."""
     return code.build_output_only or code.build_output_unfinished
@@ -731,6 +760,10 @@ def _assemble(
         assess_dependency_health(root, inventory, version=version, artifact=artifact)
         if root else None
     )
+    install = (
+        _install_resolution(resolution, artifact, scanned_at, workspace)
+        if artifact and root else None
+    )
 
     axes: dict[str, AxisScore] = {
         # These three abstain only when there was nothing of the publisher's
@@ -782,6 +815,7 @@ def _assemble(
         files_scanned=(code.files_scanned if code else 0),
         files_pruned=(code.pruned if code else 0),
         axes={k: axes[k] for k in AXES},
+        install_resolution=install,
     )
 
 

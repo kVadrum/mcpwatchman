@@ -65,6 +65,18 @@ const cvss = (i: number) =>
       ordinary reason in place.
     </p>
     <p>
+      <strong>What an install would resolve is listed beside the axis, never in
+      it.</strong>{" "}
+      For a package published to npm or PyPI, the server's page also shows the
+      dependency graph deps.dev resolves for that version, and the known
+      vulnerabilities in it. None of those versions was pinned by the
+      publisher, so none of it changes a score. No package manager is run to
+      produce it: deps.dev's resolver picked the versions, which can differ
+      from what a real install picks, and it records no resolution time. The
+      graph is read by the same vulnerability check the axis uses. Its data
+      is deps.dev's, under CC BY 4.0.
+    </p>
+    <p>
       <strong>A nested project's lockfile is not the server's.</strong> When
       the source is itself a project and a directory below it carries its own
       package manifest — a bundled template, a vendored research tree — that

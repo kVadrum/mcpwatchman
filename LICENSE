@@ -18,7 +18,15 @@ Code (MIT):
   * the published scan data (site/src/data/, the JSON API at
     https://mcpwatchman.com/api/) — EXCEPT the excerpts it quotes from
     scanned servers' source, which remain their authors' and are quoted
-    for analysis; no licence to them is granted here
+    for analysis; no licence to them is granted here — AND EXCEPT each
+    record's `install_resolution` block (below)
+
+Third-party data (CC BY 4.0, not ours to relicense):
+  * each record's `install_resolution` block is derived from the
+    dependency graphs published by deps.dev (Open Source Insights,
+    https://deps.dev/), which are licensed under CC BY 4.0. That block
+    stays under CC BY 4.0 and must be attributed to deps.dev wherever it
+    is reused; the page and the data name the source beside it.
   * README.md and the other repository documentation
 
 Content (CC BY 4.0):

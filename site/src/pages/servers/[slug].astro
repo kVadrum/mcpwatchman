@@ -23,6 +23,16 @@ export function getStaticPaths() {
 }
 
 const { report } = Astro.props;
+// Absent from every record a scanner before 0.46.0 wrote, and from every
+// repository source: only a registry-published npm or PyPI package has one.
+type Resolution = {
+  status: string; reason: string; label: string; package: string; version: string;
+  fetched_at: string; nodes: number; direct: number; skipped_nodes: number;
+  findings_total: number;
+  findings: { package: string; version: string; osv_id: string; cvss: string;
+              relation: string; fixed_version: string; url: string }[];
+};
+const resolution = (report as { install_resolution?: Resolution | null }).install_resolution ?? null;
 const scored = AXES.filter((a) => report.axes[a.key].score !== null);
 const withEvidence = AXES.filter((a) => report.axes[a.key].evidence.length > 0);
 // The high-severity feed links here. First use wins: two hits of one rule on
@@ -265,6 +275,54 @@ const sourceNote =
             </ul>
           </>
         ))
+      )}
+    </section>
+  )}
+
+  {/* What an install would resolve (operator ruling 2026-11-06, 1a). Its own
+    record on the paper, after the evidence and never inside it: nothing here
+    deducts, and nothing here was pinned by the publisher, so it must not read
+    as a finding about them. The label is the module's own (`install_resolution
+    .LABEL`), so what it may claim is decided once, in Python. */}
+  {resolution && (
+    <section class="paper" aria-labelledby="resolution-heading">
+      <h2 id="resolution-heading">What an install would resolve</h2>
+      <p>{resolution.label}</p>
+      {resolution.status === "ok" ? (
+        <>
+          <p>
+            For {resolution.package} {resolution.version}, deps.dev resolved{" "}
+            {resolution.nodes} {resolution.nodes === 1 ? "package" : "packages"}
+            {" "}({resolution.direct} direct), fetched{" "}
+            <time datetime={resolution.fetched_at}>{resolution.fetched_at.slice(0, 10)}</time>.
+            {resolution.findings_total === 0
+              ? " No known vulnerability was found among them."
+              : ` ${resolution.findings_total} known ${resolution.findings_total === 1 ? "vulnerability was" : "vulnerabilities were"} found among them${resolution.findings_total > resolution.findings.length ? `; the ${resolution.findings.length} most severe are listed` : ""}.`}
+            {resolution.skipped_nodes > 0 &&
+              ` ${resolution.skipped_nodes} resolved ${resolution.skipped_nodes === 1 ? "entry was" : "entries were"} not read, so this list is incomplete.`}
+          </p>
+          {resolution.findings.length > 0 && (
+            <ul class="findings">
+              {resolution.findings.map((f) => (
+                <li class="finding">
+                  <span class="finding-where">{f.package} {f.version}</span>
+                  <span class="finding-rule">{f.osv_id}</span>
+                  <p class="finding-why">
+                    {f.relation}{f.cvss ? `, CVSS ${f.cvss}` : ", no CVSS published"}
+                    {f.fixed_version ? `, fixed in ${f.fixed_version}` : ""} — listed, not scored
+                  </p>
+                  {f.url && (
+                    <span class="finding-rule">
+                      <a href={f.url} rel="nofollow noopener">{f.url}</a>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <p>Not available for this scan: {resolution.reason}.</p>
       )}
     </section>
   )}
