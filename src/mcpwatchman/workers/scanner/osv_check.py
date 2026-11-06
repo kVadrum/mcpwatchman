@@ -59,6 +59,7 @@ from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import (
     MANIFEST_MAX_BYTES,
+    FileRecord,
     Inventory,
     Role,
     read_manifest,
@@ -368,9 +369,31 @@ _MANIFEST_ECOSYSTEM: dict[str, str] = {
 }
 
 
+def _servers_own(inventory: Inventory) -> tuple[FileRecord, ...]:
+    """The inventory minus every file inside a nested sub-project.
+
+    ⚠ **A nested sub-project's manifest declares THAT project's dependencies**
+    (`Inventory.nested_project_of`, operator rulings 2026-10-07 and
+    2026-11-06). Read as the server's, a name a side package declares made the
+    root lock's same-named TRANSITIVE package deduct at the direct rate, and a
+    side package's ecosystem made directness "known" for a root lock no
+    manifest of the server's describes — so unscored findings became scored
+    ones. Both readers of the manifests take their records from here; in a
+    workspace whose members are the server, excluding them errs toward the
+    smaller deduction, the direction the ruling chose.
+    """
+    projects = inventory.sub_projects()
+    if not projects:
+        return inventory.files
+    return tuple(
+        f for f in inventory.files
+        if Inventory.nested_project_of(f.path, projects) is None
+    )
+
+
 def parsed_ecosystems(inventory: Inventory) -> set[str]:
     """OSV ecosystems whose direct-dependency set this module can recover."""
-    names = {Path(f.path).name for f in inventory.files}
+    names = {Path(f.path).name for f in _servers_own(inventory)}
     return {eco for name, eco in _MANIFEST_ECOSYSTEM.items() if name in names}
 
 
@@ -403,7 +426,7 @@ def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
     a shared package name to bite.
     """
     names: set[str] = set()
-    for record in inventory.files:
+    for record in _servers_own(inventory):
         if record.role not in (Role.PACKAGE_MANIFEST, Role.LOCKFILE):
             continue
         name = Path(record.path).name

@@ -527,6 +527,55 @@ def test_a_nested_projects_findings_are_not_the_servers(tmp_path: Path, monkeypa
     assert result.nested_lockfiles == ("docs/research/frontend/pnpm-lock.yaml",)
 
 
+def test_a_nested_projects_declaration_does_not_make_a_root_package_direct(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Ruling 2026-11-06: a name a side package declares is that package's.
+
+    Read as the server's, it made the root lock's same-named TRANSITIVE
+    package deduct as direct — 25 for a critical where `03` §6 says 15.
+    """
+    (tmp_path / "package.json").write_text(json.dumps({"dependencies": {"express": "^4"}}))
+    nested = tmp_path / "tools" / "demo"
+    nested.mkdir(parents=True)
+    (nested / "package.json").write_text(json.dumps({"dependencies": {"p0": "^1"}}))
+    inv = _inventory(
+        ("package.json", Role.PACKAGE_MANIFEST),
+        ("package-lock.json", Role.LOCKFILE),
+        ("tools/demo/package.json", Role.PACKAGE_MANIFEST),
+    )
+    assert oc.direct_dependencies(tmp_path, inv) == {"express"}
+    _fake_run(monkeypatch, _vulnerable(tmp_path, "package-lock.json"), returncode=1)
+    [finding] = oc.run_osv(tmp_path, inv).findings
+    assert finding.package == "p0"
+    assert finding.direct is False
+    assert finding.deduction() == 15
+
+
+def test_a_nested_projects_ecosystem_does_not_make_directness_known() -> None:
+    """A `www/` demo's `package.json` must not make npm "parsed" for a Python
+    server: a root npm lock no manifest of the server's describes stays of
+    unknown directness, listed and not scored."""
+    inv = _inventory(
+        ("pyproject.toml", Role.PACKAGE_MANIFEST),
+        ("www/package.json", Role.PACKAGE_MANIFEST),
+    )
+    assert oc.parsed_ecosystems(inv) == {"PyPI"}
+
+
+def test_a_root_without_a_manifest_reads_every_manifest_for_directness(
+    tmp_path: Path,
+) -> None:
+    """With no root manifest nothing is nested, so a server living in a
+    subdirectory keeps its declarations."""
+    server = tmp_path / "server"
+    server.mkdir()
+    (server / "package.json").write_text(json.dumps({"dependencies": {"zod": "^3"}}))
+    inv = _inventory(("server/package.json", Role.PACKAGE_MANIFEST))
+    assert oc.direct_dependencies(tmp_path, inv) == {"zod"}
+    assert oc.parsed_ecosystems(inv) == {"npm"}
+
+
 def test_a_root_without_a_manifest_has_no_nested_projects(tmp_path: Path, monkeypatch) -> None:
     """The ruling's other half: a root with no manifest is not a project, so
     the server may simply live in a subdirectory, and its lock is read."""
