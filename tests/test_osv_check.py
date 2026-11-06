@@ -944,3 +944,222 @@ def test_a_budget_timeout_is_ours_and_accidental_not_a_product_limit(
         oc.OsvResult(status=oc.OsvStatus.UNAVAILABLE, explicit_fault=Fault.PUBLISHER).fault
         is Fault.PUBLISHER
     )
+
+
+# --- why a tree with no lockfile is unassessed (ruling 2026-11-06, 1b) -----
+
+
+def _no_osv_run(monkeypatch) -> None:
+    """These cases abstain BEFORE osv-scanner runs; a regression fails here."""
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+    monkeypatch.setattr(oc, "run_bounded",
+                        lambda *a, **k: pytest.fail("osv-scanner should not run"))
+
+
+def _tree(root: Path, files: dict[str, str]) -> Inventory:
+    from mcpwatchman.workers.scanner.inventory import enumerate_tree
+    for rel, text in files.items():
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(text)
+    return enumerate_tree(root)
+
+
+_BIN = json.dumps({"name": "relay", "version": "1.0.0", "bin": {"relay": "cli.js"}})
+
+
+def test_a_package_declaring_no_dependencies_is_not_told_versions_are_unresolved(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """@pipeworx relays, chinese-history-mcp: "dependency versions are
+    unresolved", blamed on the publisher, said something false about them."""
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {"package.json": _BIN, "cli.js": "console.log(1)\n"})
+    result = oc.run_osv(tmp_path, inv, artifact="npm")
+    assert result.status is oc.OsvStatus.UNAVAILABLE
+    assert result.fault is Fault.PROJECT
+    assert result.reason.startswith(
+        "package.json declares no runtime dependencies, so there is no dependency "
+        "version to check")
+    assert "unresolved" not in result.reason
+
+
+def test_an_install_hook_on_a_dependency_free_package_is_named(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """@dinglebear's `postinstall` downloads the real binary at install time."""
+    _no_osv_run(monkeypatch)
+    manifest = json.dumps({"name": "x", "version": "1", "scripts": {
+        "postinstall": "node scripts/install.js", "build": "tsc"}})
+    inv = _tree(tmp_path, {"package.json": manifest, "index.js": "1\n"})
+    result = oc.run_osv(tmp_path, inv, artifact="npm")
+    assert result.fault is Fault.PROJECT
+    assert "but its `postinstall` install hook runs when the package is installed" in (
+        result.reason)
+
+
+def test_a_repositorys_dev_dependencies_are_dependencies(tmp_path: Path, monkeypatch) -> None:
+    """A repository installs its devDependencies; a published package's
+    consumers never do. Only the second is dependency-free."""
+    _no_osv_run(monkeypatch)
+    manifest = json.dumps({"name": "x", "devDependencies": {"typescript": "^5"}})
+    inv = _tree(tmp_path, {"package.json": manifest, "index.ts": "export {}\n"})
+    repo = oc.run_osv(tmp_path, inv)
+    assert repo.fault is Fault.PUBLISHER
+    assert repo.reason.startswith("no lockfile in the fetched source; dependency versions")
+    package = oc.run_osv(tmp_path, inv, artifact="npm")
+    assert package.fault is Fault.PROJECT
+
+
+@pytest.mark.parametrize(("files", "why"), [
+    ({"pyproject.toml": '[project]\nname = "x"\ndynamic = ["dependencies"]\n'},
+     "a dynamic dependency list is declared somewhere we do not read"),
+    ({"pyproject.toml": '[project]\nname = "x"\n', "setup.py": "setup()\n"},
+     "setup.py can declare install_requires"),
+    ({"pyproject.toml": '[project]\nname = "x"\n',
+      "setup.cfg": "[options]\ninstall_requires =\n    httpx\n"},
+     "setup.cfg declares install_requires"),
+    ({"pyproject.toml": '[project]\nname = "x"\n',
+      "setup.cfg": "[options.extras_require]\ncli = click\n"},
+     "setup.cfg declares an extra"),
+    ({"pyproject.toml": '[project]\nname = "x"\n', "setup.cfg": "not [an ini\n= x"},
+     "an unreadable setup.cfg establishes nothing"),
+    ({"pyproject.toml": '[project]\nname = "x"\n',
+      "src/x.egg-info/requires.txt": "httpx\n"},
+     "setuptools' own record of the requirements"),
+    ({"pyproject.toml": '[project]\nname = "x"\n',
+      "PKG-INFO": "Metadata-Version: 2.1\nName: x\nRequires-Dist: httpx\n"},
+     "the sdist's own metadata names a dependency"),
+    ({"pyproject.toml": '[tool.poetry]\nname = "x"\n'},
+     "no PEP 621 table, so nothing establishes an empty set"),
+    ({"package.json": json.dumps({"name": "x", "workspaces": ["packages/*"]})},
+     "a workspace root's members declare the dependencies"),
+    ({"Cargo.toml": '[package]\nname = "x"\n'},
+     "a manifest kind this check does not parse"),
+    ({"go.mod": "module example.com/x\n\ngo 1.22\n\nrequire example.com/y v1.0.0\n"},
+     "a go.mod that requires something"),
+    ({"package.json": _BIN, "tools/x/package.json": json.dumps(
+        {"name": "t", "dependencies": {"zod": "^3"}})},
+     "a nested sub-project: the tree cannot say which project is the server"),
+])
+def test_declaring_nothing_is_claimed_only_when_established(
+    tmp_path: Path, monkeypatch, files, why
+) -> None:
+    """Fails toward silence: the ordinary reason stands whenever "declares no
+    runtime dependencies" cannot be established from what we read."""
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {**files, "main.py": "print(1)\n"})
+    result = oc.run_osv(tmp_path, inv, artifact="pypi")
+    assert "declares no runtime dependencies" not in result.reason, why
+    assert "declare no runtime dependencies" not in result.reason, why
+
+
+def test_a_go_module_with_no_require_declares_nothing(tmp_path: Path, monkeypatch) -> None:
+    """io-github-wildsurfer-cnnfag: Go writes no go.sum when nothing is required,
+    so "no lockfile" was never the publisher's to fix."""
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {"go.mod": "module github.com/x/y/v2\n\ngo 1.21\n",
+                           "main.go": "package main\n"})
+    result = oc.run_osv(tmp_path, inv)
+    assert result.fault is Fault.PROJECT
+    assert result.reason.startswith("go.mod declares no runtime dependencies")
+
+
+def test_a_repository_holding_no_code_has_no_dependency_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {"README.md": "# x\n", "server.json": "{}"})
+    result = oc.run_osv(tmp_path, inv)
+    assert result.fault is Fault.PUBLISHER
+    assert result.reason == (
+        "the source this server declares holds no code and no dependency manifest, "
+        "so there is no dependency to check")
+
+
+def test_code_without_a_manifest_keeps_the_no_lockfile_reason(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """A Java tree's pom.xml is a manifest this check does not read, so "no
+    dependency manifest" would be false about it."""
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {"pom.xml": "<project/>", "src/Main.java": "class Main {}\n"})
+    result = oc.run_osv(tmp_path, inv)
+    assert "no dependency manifest" not in result.reason
+
+
+@pytest.mark.parametrize(("artifact", "names"), [
+    ("npm", ("no lockfile in the published package", "npm-shrinkwrap.json")),
+    ("pypi", ("no lockfile in the published source distribution", "uv.lock")),
+    (None, ("no lockfile in the fetched source;",)),
+])
+def test_no_lockfile_names_the_lock_the_publisher_could_have_shipped(
+    tmp_path: Path, monkeypatch, artifact, names
+) -> None:
+    """npm never publishes a package's package-lock.json, so naming it would be
+    false; a source distribution can carry one, and 13 published ones did."""
+    _no_osv_run(monkeypatch)
+    manifest = json.dumps({"name": "x", "dependencies": {"zod": "^3"}})
+    inv = _tree(tmp_path, {"package.json": manifest, "index.js": "1\n"})
+    result = oc.run_osv(tmp_path, inv, artifact=artifact)
+    assert result.fault is Fault.PUBLISHER
+    for name in names:
+        assert name in result.reason
+    if artifact != "npm":
+        assert "npm-shrinkwrap" not in result.reason
+
+
+@pytest.mark.parametrize("name", [
+    "npm-shrinkwrap.json", "pdm.lock", "Pipfile.lock", "pylock.toml", "pylock.dev.toml",
+])
+def test_every_lock_kind_osv_scanner_reads_is_a_lockfile(tmp_path: Path, name: str) -> None:
+    """Each was positive-controlled against osv-scanner 2.6.0 (2026-11-06).
+    Unrecognised, a published one read as "no lockfile", the publisher's
+    fault, about a publisher who shipped exactly the lock we ask for."""
+    inv = _tree(tmp_path, {name: "{}", "package.json": "{}"})
+    assert {f.path for f in inv.files if f.role is Role.LOCKFILE} == {name}
+
+
+def test_a_name_merely_like_a_pylock_is_not_one(tmp_path: Path) -> None:
+    inv = _tree(tmp_path, {"pylock.toml.bak": "x", "mypylock.toml": "x"})
+    assert not [f for f in inv.files if f.role is Role.LOCKFILE]
+
+
+@pytest.mark.parametrize(("files", "expected"), [
+    ({"README.md": "# x\n", "server.json": "{}"}, True),
+    ({"README.md": "# x\n", "Dockerfile": "FROM scratch\n"}, True),
+    ({"README.md": "# x\n", "src/main.c": "int main(){}\n"}, False),
+    ({"README.md": "# x\n", "index.js": "1\n"}, False),
+    ({"README.md": "# x\n", "src/lib.rs": "fn f(){}\n"}, False),
+    ({"tests/test_x.py": "def test(): pass\n"}, True),
+])
+def test_holds_no_code_has_one_definition(tmp_path: Path, files, expected) -> None:
+    """Code Safety and Dependency Health both publish "holds no code" about a
+    named publisher, so both ask the inventory, which counts read, unread and
+    built code and ignores a Dockerfile and the test tree."""
+    assert _tree(tmp_path, files).holds_no_code() is expected
+
+
+def test_build_output_or_an_unfinished_probe_is_never_no_code() -> None:
+    from dataclasses import replace
+    base = _inventory(("README.md", Role.DOCS))
+    assert base.holds_no_code()
+    assert not replace(base, build_output={"javascript": 3}).holds_no_code()
+    assert not replace(base, build_output_truncated=True).holds_no_code()
+
+
+def test_a_setuptools_sdist_declaring_nothing_is_recognised(tmp_path: Path, monkeypatch) -> None:
+    """chinese-history-mcp (PyPI requires_dist: None): setuptools writes a
+    `setup.cfg` into every sdist it builds, holding only `[egg_info]`, so its
+    presence alone must not hide a dependency-free package."""
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {
+        "pyproject.toml": '[build-system]\nrequires = ["setuptools>=61"]\n\n'
+                          '[project]\nname = "x"\nversion = "0.3.0"\n',
+        "setup.cfg": "[egg_info]\ntag_build = \ntag_date = 0\n\n",
+        "PKG-INFO": "Metadata-Version: 2.4\nName: x\nVersion: 0.3.0\n",
+        "src/x.egg-info/requires.txt": "",
+        "src/x/server.py": "print(1)\n",
+    })
+    result = oc.run_osv(tmp_path, inv, artifact="pypi")
+    assert result.fault is Fault.PROJECT
+    assert result.reason.startswith("pyproject.toml declares no runtime dependencies")

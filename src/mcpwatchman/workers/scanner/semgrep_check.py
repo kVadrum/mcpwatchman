@@ -55,6 +55,7 @@ import yaml
 from mcpwatchman.workers.bounded import run_bounded, untrusted_env
 from mcpwatchman.workers.excluded import EXCLUDED_DIRS, HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.inventory import (
+    UNREAD_CODE_SUFFIXES,
     Inventory,
     Language,
     Role,
@@ -579,13 +580,6 @@ def _scannable_source_files(inventory: Inventory) -> int:
 
 _COVERS = "the ruleset covers python, javascript, typescript and go"
 _UNCOVERED_CODE = (Language.RUST, Language.RUBY, Language.JAVA, Language.CSHARP)
-# Extensions of languages the inventory does not classify: present, they mean
-# code we did not read, so "no code" would be a false statement about them.
-_UNREAD_CODE_SUFFIXES = frozenset({
-    ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".m", ".mm", ".swift", ".kt", ".kts",
-    ".scala", ".php", ".fs", ".fsx", ".ex", ".exs", ".erl", ".hs", ".lua", ".dart",
-    ".zig", ".nim", ".clj", ".jl", ".pl", ".pm", ".r", ".vb", ".cr", ".sol", ".groovy",
-})
 
 
 def _no_covered_source(inventory: Inventory) -> tuple[str, Fault]:
@@ -605,7 +599,7 @@ def _no_covered_source(inventory: Inventory) -> tuple[str, Fault]:
     unread = sorted({
         PurePosixPath(f.path).suffix.lower() for f in inventory.files
         if f.language is Language.UNKNOWN and f.role is not Role.TEST
-        and PurePosixPath(f.path).suffix.lower() in _UNREAD_CODE_SUFFIXES
+        and PurePosixPath(f.path).suffix.lower() in UNREAD_CODE_SUFFIXES
     })
     if unread:
         return (f"it carries code in a language this scanner does not read "
@@ -613,7 +607,7 @@ def _no_covered_source(inventory: Inventory) -> tuple[str, Fault]:
     if any(f.language is Language.SHELL for f in code):
         return (f"its only code is shell scripts, which the ruleset does not cover "
                 f"({_COVERS})", Fault.PROJECT)
-    if inventory.files and not inventory.build_output:
+    if inventory.holds_no_code():
         # "Declares", not "repository": a registry entry may name a subfolder,
         # and only that is read (measured: io.usefulapi/youcanbookme's
         # subfolder holds a README and server.json in a 3,033-file repository).

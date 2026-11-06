@@ -721,7 +721,16 @@ def _assemble(
             code, resolution.supplement, workspace, version, commit=supplement_pin
         )
         repository_commit = read or repository_commit
-    deps = assess_dependency_health(root, inventory, version=version) if root else None
+    # What was fetched decides only what a no-lockfile reason may say the
+    # publisher could have shipped (`osv_check._PUBLISHABLE`).
+    artifact = (
+        resolution.kind.value
+        if resolution.kind in (SourceKind.NPM, SourceKind.PYPI) else None
+    )
+    deps = (
+        assess_dependency_health(root, inventory, version=version, artifact=artifact)
+        if root else None
+    )
 
     axes: dict[str, AxisScore] = {
         # These three abstain only when there was nothing of the publisher's

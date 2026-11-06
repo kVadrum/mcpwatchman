@@ -53,10 +53,11 @@ import tomllib
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
+from mcpwatchman.workers.scanner.install_scripts import INSTALL_HOOKS
 from mcpwatchman.workers.scanner.inventory import (
     MANIFEST_MAX_BYTES,
     FileRecord,
@@ -489,14 +490,243 @@ def direct_dependencies(root: Path, inventory: Inventory) -> set[str]:
     return names
 
 
+# What a publisher could have shipped, by what was fetched (ruling 2026-11-06,
+# 1b): "no lockfile" stays THEIR fact only while the reason names a lock they
+# could publish. npm never publishes a package's `package-lock.json`, so
+# naming it would be false; a source distribution can carry a lock, and 13
+# published PyPI servers' did (measured 2026-11-03).
+_WHERE = {"npm": "the published package", "pypi": "the published source distribution"}
+_PUBLISHABLE = {
+    "npm": " (npm does not publish a package's package-lock.json; "
+           "npm-shrinkwrap.json is the lockfile a published package can carry)",
+    "pypi": " (a lockfile shipped in it, such as uv.lock or pdm.lock, would be read)",
+}
+# Workspace and build-config files that can declare what a manifest does not.
+# Present, "declares no dependencies" cannot be established from the manifest.
+_DECLARES_ELSEWHERE = frozenset({
+    "setup.py", "Pipfile", "pnpm-workspace.yaml", "lerna.json", "go.work",
+})
+
+
+def _setup_cfg_declares(text: str) -> bool:
+    """Whether a `setup.cfg` declares requirements — True when it cannot be read.
+
+    setuptools writes a `setup.cfg` into every sdist it builds (`[egg_info]`
+    tags), so its mere presence says nothing; only `[options]`
+    `install_requires` / `[options.extras_require]` declare anything. Read
+    with no interpolation: this is attacker input, and `%(x)s` must stay text.
+    """
+    import configparser
+
+    parser = configparser.ConfigParser(interpolation=None, strict=False)
+    try:
+        parser.read_string(text)
+    except (configparser.Error, ValueError, RecursionError):
+        return True
+    if parser.has_option("options", "install_requires") and parser.get(
+        "options", "install_requires"
+    ).strip():
+        return True
+    return parser.has_section("options.extras_require") and any(
+        v.strip() for v in parser["options.extras_require"].values()
+    )
+
+
+def _declares_nothing(
+    root: Path, inventory: Inventory, artifact: str | None
+) -> tuple[tuple[str, ...], tuple[str, ...]] | None:
+    """(manifests, install hooks) when the server provably declares no runtime
+    dependency — or None whenever that cannot be ESTABLISHED.
+
+    ⚠ **A claim about a named publisher, so it fails toward silence.** Any
+    manifest kind this does not parse, any parse failure, any workspace or
+    nested sub-project, any file that can declare dependencies elsewhere
+    (`setup.py`, a `dynamic` dependency list, an sdist's `Requires-Dist`)
+    returns None and the ordinary no-lockfile reason stands. A detector that
+    read only `pyproject.toml` would publish "declares no runtime dependencies"
+    about every setuptools project (refuter, 2026-11-03). Development
+    dependencies count for a repository, which installs them; a published
+    package's consumers never do.
+    """
+    if inventory.sub_projects():
+        return None
+    files = inventory.files
+    if any(f.role is Role.LOCKFILE for f in files):
+        return None
+    if any(PurePosixPath(f.path).name in _DECLARES_ELSEWHERE for f in files):
+        return None
+    manifests = [f.path for f in files if f.role is Role.PACKAGE_MANIFEST]
+    if not manifests:
+        return None
+    repo = artifact is None
+    hooks: list[str] = []
+    for rel in manifests:
+        name = PurePosixPath(rel).name
+        text = read_manifest(root, rel)
+        if not text:
+            return None
+        if name == "package.json":
+            try:
+                doc = json.loads(text)
+            except (ValueError, RecursionError):
+                return None
+            if not isinstance(doc, dict) or "workspaces" in doc:
+                return None
+            tables = ["dependencies", "optionalDependencies", "peerDependencies",
+                      "bundleDependencies", "bundledDependencies"]
+            if repo:
+                tables.append("devDependencies")
+            if any(doc.get(t) for t in tables):
+                return None
+            scripts = doc.get("scripts")
+            if isinstance(scripts, dict):
+                hooks.extend(h for h in INSTALL_HOOKS if scripts.get(h))
+        elif name == "pyproject.toml":
+            try:
+                doc = tomllib.loads(text)
+            except (ValueError, RecursionError):
+                return None
+            project = doc.get("project")
+            if not isinstance(project, dict):
+                return None
+            dynamic = project.get("dynamic", [])
+            if not isinstance(dynamic, list) or {
+                "dependencies", "optional-dependencies"
+            } & {d for d in dynamic if isinstance(d, str)}:
+                return None
+            if project.get("dependencies") or project.get("optional-dependencies"):
+                return None
+            tool = _mapping(doc.get("tool"))
+            poetry = _mapping(tool.get("poetry"))
+            if _keys(poetry.get("dependencies")) - {"python"}:
+                return None
+            if _mapping(tool.get("uv")).get("workspace"):
+                return None
+            if repo and (
+                doc.get("dependency-groups")
+                or poetry.get("group") or poetry.get("dev-dependencies")
+                or _mapping(tool.get("uv")).get("dev-dependencies")
+                or _mapping(tool.get("pdm")).get("dev-dependencies")
+            ):
+                return None
+        elif name == "go.mod":
+            if any(line.strip().startswith("require") for line in text.splitlines()):
+                return None
+        else:
+            # setup.py, Cargo.toml, Gemfile: not parsed here, so not claimed.
+            return None
+    for f in files:
+        path = PurePosixPath(f.path)
+        if path.name == "PKG-INFO":
+            meta = read_manifest(root, f.path)
+            if not meta or any(
+                line.startswith("Requires-Dist:") for line in meta.splitlines()
+            ):
+                return None
+        elif path.name == "setup.cfg":
+            cfg = read_manifest(root, f.path)
+            if not cfg or _setup_cfg_declares(cfg):
+                return None
+        elif path.name == "requires.txt" and path.parent.name.endswith(".egg-info"):
+            # setuptools' own record of what the package requires.
+            if read_manifest(root, f.path).strip() or f.size_bytes:
+                return None
+    return tuple(manifests), tuple(dict.fromkeys(hooks))
+
+
+def _no_lockfile(
+    root: Path,
+    inventory: Inventory,
+    loose: tuple[str, ...],
+    unreadable: tuple[str, ...],
+    artifact: str | None,
+    version: str,
+) -> OsvResult:
+    """Why a tree with no lockfile is unassessed — each case stated as what it is.
+
+    `04` §5's lockfile-generation fallback is NOT implemented: it would mean
+    running npm/pip against an untrusted manifest, which `04` §7 forbids
+    outright ("no code execution from scanned source"). Measured: a bare
+    package.json with no lockfile makes osv-scanner 2.6.0 exit 128 with empty
+    stdout, so there is nothing to parse either.
+
+    ⚠ "Dependency versions are unresolved" was the reason for EVERY such tree,
+    with the publisher's fault — false for a package that declares no
+    dependency at all (39 npm, 3 PyPI, a Go module with no `require`; measured
+    2026-11-03) and vacuous for a repository holding no code (ruling
+    2026-11-06, 1b).
+    """
+    def unassessed(reason: str, fault: Fault, loose_seen: tuple[str, ...] = ()) -> OsvResult:
+        return OsvResult(
+            status=OsvStatus.UNAVAILABLE, reason=reason, explicit_fault=fault,
+            loose_requirements=loose_seen, lockfiles=(), transitive_coverage=False,
+            methodology_version=version,
+        )
+
+    any_manifest = any(
+        f.role in (Role.PACKAGE_MANIFEST, Role.LOCKFILE) for f in inventory.files
+    )
+    if not any_manifest and inventory.holds_no_code():
+        # THEIRS, as Code Safety's "holds no code" is: what they published.
+        return unassessed(
+            "the source this server declares holds no code and no dependency "
+            "manifest, so there is no dependency to check",
+            Fault.PUBLISHER,
+        )
+    nothing = None if (loose or unreadable) else _declares_nothing(root, inventory, artifact)
+    if nothing is not None:
+        manifests, hooks = nothing
+        named = ", ".join(manifests[:3])
+        verb = "declares" if len(manifests) == 1 else "declare"
+        if hooks:
+            hook_names = ", ".join(f"`{h}`" for h in hooks)
+            reason = (
+                f"{named} {verb} no runtime dependencies, but its {hook_names} "
+                f"install hook{'s run' if len(hooks) > 1 else ' runs'} when the "
+                "package is installed, and whatever that fetches is outside the "
+                "source that was scanned"
+            )
+        else:
+            reason = (
+                f"{named} {verb} no runtime dependencies, so there is no "
+                "dependency version to check — the axis is left unscored rather "
+                "than credited with a 100 for nothing measured"
+            )
+        # OURS: nothing about what they shipped is missing; the axis has no
+        # measurement to make, and says so in our voice.
+        return unassessed(reason, Fault.PROJECT)
+    where = _WHERE.get(artifact or "", "the fetched source")
+    could = _PUBLISHABLE.get(artifact or "", "")
+    # THEIRS — the absence is a property of what they published, and the
+    # reason names a lock they could have shipped. Our decision not to
+    # GENERATE one is a safety stance (`04` §7), not a capability gap.
+    return unassessed(
+        f"no lockfile in {where}{could}; dependency versions are "
+        "unresolved, so no vulnerability can be attributed"
+        if not loose else
+        f"no lockfile in {where}{could}: {', '.join(loose[:3])} "
+        "does not pin every requirement to one exact version, so "
+        "dependency versions are unresolved and no vulnerability can "
+        "be attributed",
+        Fault.PUBLISHER,
+        loose,
+    )
+
+
 def run_osv(
     root: Path,
     inventory: Inventory | None = None,
     *,
     version: str = CURRENT_METHODOLOGY_VERSION,
     timeout_s: int = OSV_TIMEOUT_S,
+    artifact: str | None = None,
 ) -> OsvResult:
-    """Scan one fetched tree for vulnerable dependencies."""
+    """Scan one fetched tree for vulnerable dependencies.
+
+    `artifact` is what was fetched: `"npm"` or `"pypi"` for a published
+    package, None for a repository. It changes only what a reason may say the
+    publisher could have shipped, never a score.
+    """
     binary = shutil.which("osv-scanner")
     if binary is None:
         return OsvResult(
@@ -606,33 +836,7 @@ def run_osv(
             methodology_version=version,
         )
     if inventory is not None and not lockfiles:
-        # `04` §5's lockfile-generation fallback is NOT implemented: it would
-        # mean running npm/pip against an untrusted manifest, which `04` §7
-        # forbids outright ("no code execution from scanned source"). Measured:
-        # a bare package.json with no lockfile makes osv-scanner 2.6.0 exit 128
-        # with empty stdout, so there is nothing to parse either.
-        return OsvResult(
-            status=OsvStatus.UNAVAILABLE,
-            reason=(
-                "no lockfile in the fetched source; dependency versions are "
-                "unresolved, so no vulnerability can be attributed"
-                if not loose else
-                f"no lockfile in the fetched source: {', '.join(loose[:3])} "
-                "does not pin every requirement to one exact version, so "
-                "dependency versions are unresolved and no vulnerability can "
-                "be attributed"
-            ),
-            loose_requirements=loose,
-            # THEIRS — the absence is a property of what they
-            # published. Our decision not to GENERATE one is a
-            # safety stance (`04` §7 forbids running a package
-            # manager on untrusted input), not a capability gap,
-            # and the reason above states the fact either way.
-            explicit_fault=Fault.PUBLISHER,
-            lockfiles=(),
-            transitive_coverage=False,
-            methodology_version=version,
-        )
+        return _no_lockfile(root, inventory, loose, unreadable, artifact, version)
 
     # A scanned repository can suppress its own vulnerabilities: osv-scanner
     # discovers an `osv-scanner.toml` in the tree it is scanning and honours
@@ -884,9 +1088,10 @@ def assess_dependency_health(
     inventory: Inventory | None = None,
     *,
     version: str = CURRENT_METHODOLOGY_VERSION,
+    artifact: str | None = None,
 ) -> OsvResult:
     """Dependency Health for one server — the entry point a scan runner calls."""
-    return run_osv(root, inventory, version=version)
+    return run_osv(root, inventory, version=version, artifact=artifact)
 
 
 __all__ = [

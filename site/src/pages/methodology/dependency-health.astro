@@ -51,6 +51,20 @@ const cvss = (i: number) =>
       100.
     </p>
     <p>
+      <strong>"No lockfile" names the lock that could have been shipped.</strong>{" "}
+      npm never publishes a package's <code>package-lock.json</code>, so for an
+      npm package the lock it could carry is <code>npm-shrinkwrap.json</code>;
+      a PyPI source distribution can carry its own, and a lock found in one is
+      read. The gap is the publisher's. A server whose manifests declare no
+      runtime dependency at all has nothing for this axis to measure: it is
+      left unscored, as our limit, rather than credited with a 100, and when
+      such a package runs an install hook the reason says so, because what
+      the hook fetches is outside the source that was read. That is claimed
+      only when the manifests establish it — a <code>setup.py</code>, a
+      dynamic dependency list, a workspace or a nested project leaves the
+      ordinary reason in place.
+    </p>
+    <p>
       <strong>A nested project's lockfile is not the server's.</strong> When
       the source is itself a project and a directory below it carries its own
       package manifest — a bundled template, a vendored research tree — that

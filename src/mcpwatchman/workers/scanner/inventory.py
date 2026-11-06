@@ -31,10 +31,11 @@ import contextlib
 import hashlib
 import json
 import os
+import re
 import tomllib
 from dataclasses import dataclass, field
 from enum import StrEnum
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from mcpwatchman.workers.excluded import BUILD_OUTPUT_DIRS, EXCLUDED_DIRS
 
@@ -138,13 +139,21 @@ _MCP_MANIFEST_NAMES = frozenset({"server.json", "mcp.json", ".mcp.json"})
 _PACKAGE_MANIFESTS = frozenset(
     {"package.json", "pyproject.toml", "setup.py", "go.mod", "Cargo.toml", "Gemfile"}
 )
+# Every name here was positive-controlled against osv-scanner 2.6.0 the way
+# `run_osv` invokes it (a lock pinning a version with known advisories, read
+# from outside any git tree): a name osv-scanner does not read would be counted
+# as scored with zero findings, a vacuous 100. `npm-shrinkwrap.json` is the lock
+# an npm package can publish; `pdm.lock`, `Pipfile.lock` and PEP 751's
+# `pylock.toml` / `pylock.<name>.toml` can ride in a source distribution
+# (ruling 2026-11-06, 1b; measured the same day).
 _LOCKFILES = frozenset(
     {
-        "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "bun.lock", "bun.lockb",
-        "poetry.lock", "uv.lock", "Cargo.lock", "go.sum", "Gemfile.lock",
-        "requirements.txt",
+        "package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock",
+        "bun.lock", "bun.lockb", "poetry.lock", "uv.lock", "pdm.lock", "Pipfile.lock",
+        "pylock.toml", "Cargo.lock", "go.sum", "Gemfile.lock", "requirements.txt",
     }
 )
+_PYLOCK_NAMED = re.compile(r"^pylock\.[A-Za-z0-9._-]+\.toml$")
 # ⚠ `transparency_check._find` searches Role.DOCS for `CHANGELOG_PREFIXES`
 # (below, now the one home for those names). "changes", "history" and "news"
 # reached DOCS only when the file happened to be `.md` — so a Python project shipping
@@ -186,6 +195,14 @@ _CODE_LANGUAGES = frozenset(
     }
 )
 _LICENSE_PREFIXES = ("license", "licence", "copying", "notice")
+# Extensions of languages this inventory does not classify: present, they mean
+# code nobody read, so "holds no code" would be a false statement about them.
+# One home for Code Safety and Dependency Health, which both make that claim.
+UNREAD_CODE_SUFFIXES = frozenset({
+    ".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".m", ".mm", ".swift", ".kt", ".kts",
+    ".scala", ".php", ".fs", ".fsx", ".ex", ".exs", ".erl", ".hs", ".lua", ".dart",
+    ".zig", ".nim", ".clj", ".jl", ".pl", ".pm", ".r", ".vb", ".cr", ".sol", ".groovy",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +250,26 @@ class Inventory:
 
     def by_role(self, role: Role) -> tuple[FileRecord, ...]:
         return tuple(f for f in self.files if f.role is role)
+
+    def holds_no_code(self) -> bool:
+        """True when the tree carries no code at all — read, unread or built.
+
+        The claim Code Safety and Dependency Health both publish about a named
+        publisher ("holds no code"), so it has one definition. A Dockerfile is
+        a build recipe, not the server's code; test files are not the served
+        artifact. Build output counts as code, and a build-output probe that
+        ran out of budget may not assert an absence (CLAUDE.md).
+        """
+        if not self.files or self.build_output or self.build_output_truncated:
+            return False
+        return not any(
+            (f.role in (Role.SOURCE, Role.ENTRY_POINT) and f.language is not Language.DOCKERFILE)
+            or (
+                f.language is Language.UNKNOWN and f.role is not Role.TEST
+                and PurePosixPath(f.path).suffix.lower() in UNREAD_CODE_SUFFIXES
+            )
+            for f in self.files
+        )
 
     def sub_projects(self) -> frozenset[str]:
         """Directories below a root PROJECT that hold their own package manifest.
@@ -358,7 +395,7 @@ def _role_of(rel: Path, language: Language) -> Role:
 
     if name in _MCP_MANIFEST_NAMES:
         return Role.MCP_MANIFEST
-    if name in _LOCKFILES:
+    if name in _LOCKFILES or _PYLOCK_NAMED.match(name):
         return Role.LOCKFILE
     if name in _PACKAGE_MANIFESTS:
         return Role.PACKAGE_MANIFEST
