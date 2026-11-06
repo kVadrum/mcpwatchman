@@ -1163,3 +1163,39 @@ def test_a_setuptools_sdist_declaring_nothing_is_recognised(tmp_path: Path, monk
     result = oc.run_osv(tmp_path, inv, artifact="pypi")
     assert result.fault is Fault.PROJECT
     assert result.reason.startswith("pyproject.toml declares no runtime dependencies")
+
+
+# --- the scanned tree's .gitignore is attacker input (2026-11-06) ----------
+
+_LODASH_LOCK = json.dumps({
+    "name": "x", "version": "1.0.0", "lockfileVersion": 3, "requires": True,
+    "packages": {"": {"name": "x", "version": "1.0.0", "dependencies": {"lodash": "4.17.15"}},
+                 "node_modules/lodash": {"version": "4.17.15"}}})
+
+
+def test_osv_scanner_is_told_to_ignore_the_scanned_trees_gitignore(
+    tmp_path: Path, monkeypatch
+) -> None:
+    seen: list[list[str]] = []
+    monkeypatch.setattr(oc.shutil, "which", lambda _: "/usr/bin/osv-scanner")
+
+    def fake(cmd, **kw):
+        seen.append(cmd)
+        return types.SimpleNamespace(returncode=0, stdout='{"results": []}', stderr="",
+                                     timed_out=False)
+    monkeypatch.setattr(oc, "run_bounded", fake)
+    inv = _tree(tmp_path, {"package.json": '{"name": "x"}', "package-lock.json": _LODASH_LOCK})
+    oc.run_osv(tmp_path, inv)
+    assert "--no-ignore" in seen[0]
+
+
+@needs_osv
+def test_a_gitignore_listing_the_lockfile_cannot_hide_it(tmp_path: Path) -> None:
+    """Measured: without `--no-ignore` this tree exits 128 with no JSON — a
+    FAILED scan that freezes the page as stale, chosen by the publisher."""
+    inv = _tree(tmp_path, {"package.json": '{"name": "x", "dependencies": {"lodash": "4"}}',
+                           "package-lock.json": _LODASH_LOCK,
+                           ".gitignore": "package-lock.json\n"})
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.OK, result.reason
+    assert any(f.package == "lodash" for f in result.findings)

@@ -845,7 +845,15 @@ def run_osv(
     # rather than restated. `root` is a scratch copy we own.
     neutralised = _neutralise_hostile_config(root)
 
-    cmd = [binary, "scan", "source", "--format", "json", "-r", str(root)]
+    # ⚠ `--no-ignore`, because osv-scanner honours the SCANNED tree's own
+    # `.gitignore` — with or without a `.git` directory (measured 2026-11-06,
+    # osv-scanner 2.6.0). A publisher listing their lockfile there made it
+    # invisible: their only lock gave exit 128 and a FAILED scan (the page
+    # frozen as stale), and one of several lost its findings while `lockfiles`
+    # still counted it as read. The same class as the in-tree
+    # `osv-scanner.toml` neutralised above: scanner configuration supplied by
+    # the scanned repository is attacker input (CLAUDE.md).
+    cmd = [binary, "scan", "source", "--no-ignore", "--format", "json", "-r", str(root)]
     # `run_bounded`, for the reason `semgrep_check` documents: the stdlib
     # timeout orphans grandchildren, and a leaked scanner starves every server
     # scanned after it.
