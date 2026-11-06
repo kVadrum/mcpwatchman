@@ -1,0 +1,21 @@
+{
+  "note": "Announced methodology changes (03 §11). One home for the methodology page, /feed/methodology.xml and tests/test_methodology_changes.py, which refuses a minor change announced under 14 days ahead, a major one under 30, and a version that becomes current before its not_before date.",
+  "changes": [
+    {
+      "version": "0.3.0",
+      "level": "minor",
+      "status": "announced",
+      "announced": "2026-11-06",
+      "not_before": "2026-11-20",
+      "title": "The repository-signals sub-check of Maintenance is retired",
+      "summary": "Methodology 0.3.0 removes Maintenance's repository-signals sub-check, which has never been scored. No score changes; the share of Maintenance a page says it measured rises.",
+      "points": [
+        "What changes: the repository-signals sub-check, 10% of Maintenance, is removed. It was meant to rank a server by quartile within its category on stars, forks and dependents. It has never been scored: the registry records no category, and on the servers published here a ranking would not hold still. Measured on 2026-11-03, between 47% and 60% of them have no stars at all, and one more star would move 56.5% of them into a different quartile.",
+        "No score changes. The four remaining sub-checks keep their weights (recency 30, issue responsiveness 25, release cadence 20, bus factor 15) and are divided by their total. That is already how every Maintenance score has been computed, since repository signals were never scored.",
+        "What a page says it measured does change. A server whose four remaining sub-checks are all measured goes from 90% to 100% of Maintenance measured. That is by definition: nothing new is read.",
+        "No star count is shown in its place. The repository a server links to is the publisher's own claim. A server published from one folder of a large repository would show the whole repository's stars, and a printed count rewards bought stars. Each page links the repository instead.",
+        "The methodology's versioning rule asks three things of a minor version. This notice is the announcement, at least 14 days ahead. Every server is rescanned under 0.3.0 the night it lands, as every server is every night. The gold set cannot be recalibrated, because no gold-set entry has been ratified. Nothing is calibrated before this change or after it, and the composite score stays unpublished."
+      ]
+    }
+  ]
+}

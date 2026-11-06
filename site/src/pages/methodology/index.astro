@@ -5,6 +5,7 @@ import MethodFacts from "../../components/MethodFacts.astro";
 import AxisMeter from "../../components/AxisMeter.astro";
 import VoidHatch from "../../components/VoidHatch.astro";
 import { AXES, M, EVIDENCE_CAP, percent, stackingPercents, stackingTailPercent } from "../../lib/methodology";
+import announced from "../../data/methodology-changes.json";
 
 const howScored: Record<string, string> = {
   code_safety: "Opens at 100; each semgrep finding deducts by severity and confidence.",
@@ -14,6 +15,7 @@ const howScored: Record<string, string> = {
   transparency: "Weighted sub-checks: licence, README, declared scopes, changelog, security contact.",
 };
 const critical = M.code_safety_deductions[0];
+const changes = [...announced.changes].sort((a, b) => b.announced.localeCompare(a.announced));
 ---
 
 <Doc
@@ -249,6 +251,47 @@ const critical = M.code_safety_deductions[0];
       versioned separately, and every change to it is recorded, with the
       measurement behind it, in the{" "}
       <a href="https://github.com/kvadrum/mcpwatchman/blob/main/rules/_meta/changelog.md">ruleset changelog</a>.
+    </p>
+  </section>
+
+  <section class="paper doc-paper" aria-labelledby="announced-heading">
+    <h2 id="announced-heading">Announced changes</h2>
+    <p>
+      A minor version is announced here at least 14 days before it takes
+      effect, and a major one at least 30. Until then every score is computed
+      under {M.methodology_version}.
+    </p>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th scope="col">Version</th>
+            <th scope="col">Kind</th>
+            <th scope="col">Announced</th>
+            <th scope="col">Takes effect no earlier than</th>
+          </tr>
+        </thead>
+        <tbody>
+          {changes.map((c) => (
+            <tr>
+              <th scope="row"><a href={`#change-${c.version}`}>{c.version}</a></th>
+              <td>{c.level}</td>
+              <td><time datetime={c.announced}>{c.announced}</time></td>
+              <td><time datetime={c.not_before}>{c.not_before}</time></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {changes.map((c) => (
+      <Fragment>
+        <h3 id={`change-${c.version}`}>{c.version}: {c.title}</h3>
+        {c.points.map((p) => <p>{p}</p>)}
+      </Fragment>
+    ))}
+    <p>
+      Each announcement is also published in the{" "}
+      <a href="/feed/methodology.xml">methodology feed</a> (Atom).
     </p>
   </section>
 

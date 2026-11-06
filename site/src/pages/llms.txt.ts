@@ -124,6 +124,7 @@ committing under its own identity counts as an author like a person does.
 - [High-severity feed](https://mcpwatchman.com/feed/high-severity.xml): Atom 1.0. Critical and high findings that appeared on a server page already being tracked, newest first, each linked to the finding on its page. A page's findings at its first tracked scan are its baseline and are not announced, so an empty feed means nothing new, not nothing found.
 - [Score history](https://mcpwatchman.com/api/servers/${exampleSlug}/history.json): \`/api/servers/<slug>/history.json\`, one point per recorded scan, oldest first, each with its scanner, ruleset and methodology versions and every axis's score, \`assessed_weight\` and fault. A day with no point is a night the server was not measured, not a day its score held; scores under different versions are different measurements.
 - [Score-drops feed](https://mcpwatchman.com/feed/score-drops.xml): Atom 1.0. Falls of 10 points or more on ONE AXIS between two consecutive scans under the same scanner, ruleset, methodology and measured share, over 90 days — per axis because no composite is published. Maintenance is left out: it decays with time.
+- [Methodology feed](https://mcpwatchman.com/feed/methodology.xml): Atom 1.0. Each announced change to the scoring methodology, with its version, the date it was announced and the date it takes effect no earlier than: 14 days after announcement for a minor version, 30 for a major one.
 - [Homepage](https://mcpwatchman.com/): what the project is, how it scores, and what it cannot see.
 
 ## Documentation

@@ -45,6 +45,9 @@ const signalsShare = percent(M.subcheck_weights.maintenance.find((s) => s.key ==
       A repository on another forge, or one that cannot be read, leaves the
       axis unassessed. Because repository signals are never scored today, the
       axis is measured on at most {100 - Number(signalsShare)}% of itself.
+      Methodology 0.3.0 retires that sub-check, with no score changing;{" "}
+      <a href="/methodology/#change-0.3.0">it is announced</a> on the
+      methodology page.
     </p>
     <SubcheckTable axis="maintenance" caption="Maintenance sub-checks" notes={notes} />
 
