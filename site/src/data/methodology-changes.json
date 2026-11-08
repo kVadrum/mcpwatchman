@@ -5,8 +5,8 @@
       "version": "0.3.0",
       "level": "minor",
       "status": "announced",
-      "announced": "2026-11-06",
-      "not_before": "2026-11-20",
+      "announced": "2026-11-08",
+      "not_before": "2026-11-22",
       "title": "The repository-signals sub-check of Maintenance is retired",
       "summary": "Methodology 0.3.0 removes Maintenance's repository-signals sub-check, which has never been scored. No score changes; the share of Maintenance a page says it measured rises.",
       "points": [
