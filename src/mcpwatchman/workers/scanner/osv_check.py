@@ -56,7 +56,7 @@ from enum import StrEnum
 from pathlib import Path, PurePosixPath
 
 from mcpwatchman.workers.bounded import run_bounded
-from mcpwatchman.workers.excluded import HOSTILE_CONFIG_FILES
+from mcpwatchman.workers.excluded import EXCLUDED_DIRS, HOSTILE_CONFIG_FILES
 from mcpwatchman.workers.scanner.install_scripts import INSTALL_HOOKS
 from mcpwatchman.workers.scanner.inventory import (
     MANIFEST_MAX_BYTES,
@@ -181,6 +181,13 @@ class OsvResult:
     # measure — OUR gap, since whether one also covers the server cannot be
     # told from the tree.
     nested_lockfiles: tuple[str, ...] = ()
+    # Sources the default-closed chokepoint (`_set_aside`) did not read as this
+    # server's. A test tree's or an excluded directory's are not the server's by
+    # rulings that already stand (Code Safety's test code, `EXCLUDED_DIRS`), so
+    # they cost no coverage. One of a kind this scanner does not count, or one
+    # the inventory never listed, MAY be the server's: an unmeasured unit, OURS.
+    set_aside: tuple[str, ...] = ()
+    unrecognised_lockfiles: tuple[str, ...] = ()
     methodology_version: str = CURRENT_METHODOLOGY_VERSION
     reason: str = ""
 
@@ -738,6 +745,46 @@ def _no_lockfile(
     )
 
 
+NOT_THE_SERVERS = "not the server's"   # a test tree or an excluded directory
+UNMEASURED = "unmeasured"              # may be the server's; we cannot tell
+
+
+def _set_aside(rel: str | None, roles: dict[str, Role], lockfiles: frozenset[str]) -> str | None:
+    """Why an osv-scanner source is NOT read as this server's, or None to read it.
+
+    ⚠ **DEFAULT-CLOSED.** osv-scanner walks the tree itself (`-r`), so it reads
+    files no other part of this check ever counted: a test tree's lockfile
+    (`Role.TEST` outranks `Role.LOCKFILE`, so `tests/e2e/mcp/bun.lock` was
+    scored as com.nlqdb/nlqdb's while its reason counted only the root lock),
+    lockfiles under `vendor/` or `node_modules/`, and whatever kind osv learns
+    to parse next. An allowlist names what IS the server's; everything else is
+    set aside and counted, so a new kind costs a disclosed gap, never a
+    deduction nobody decided on.
+
+    Read: a lockfile this check counted (`lockfiles`), and in the server's own
+    tree a `go.mod` (Go's minimal version selection makes it the pinning file;
+    `go.sum` holds checksums) or a `.txt` (pip requirements, held to their pins
+    in the loop below). `rel` is None for a source outside the scan root.
+    """
+    if rel is None:
+        return UNMEASURED
+    if rel in lockfiles:
+        return None
+    path = PurePosixPath(rel)
+    if any(part in EXCLUDED_DIRS for part in path.parts[:-1]):
+        return NOT_THE_SERVERS
+    role = roles.get(rel)
+    if role is Role.TEST:
+        return NOT_THE_SERVERS
+    if role is None:
+        # Not under an excluded directory, yet never listed: the inventory is
+        # bounded, so this may be the server's own file past our bound.
+        return UNMEASURED
+    if path.name == "go.mod" or path.suffix == ".txt":
+        return None
+    return UNMEASURED
+
+
 def run_osv(
     root: Path,
     inventory: Inventory | None = None,
@@ -929,6 +976,10 @@ def run_osv(
     withheld: set[str] = set()
     nested_seen: set[str] = set(nested_candidates)
     nested_dirs = {p.rsplit("/", 1)[0] for p in nested_candidates}
+    roles = {f.path: f.role for f in inventory.files} if inventory is not None else {}
+    counted = frozenset(lockfiles)
+    not_servers: set[str] = set()
+    unmeasured: set[str] = set()
     for result in payload.get("results", []):
         source = result.get("source", {}) or {}
         path = source.get("path", "")
@@ -954,6 +1005,14 @@ def run_osv(
                     nested_dirs.add(here)
                     nested_seen.add(rel)
             continue
+        # The chokepoint: nothing below is attributed unless `_set_aside` says
+        # it is the server's (no inventory: a caller with nothing to check
+        # against, which keeps the reading it always had).
+        if inventory is not None:
+            why = _set_aside(rel if inside else None, roles, counted)
+            if why is not None:
+                (not_servers if why == NOT_THE_SERVERS else unmeasured).add(rel)
+                continue
         # Every `.txt` osv-scanner extracts is pip requirements, including
         # names our inventory never classifies (`requirements_local_models.txt`).
         # ⚠ ONLY WHAT THE FILE PINS IS ATTRIBUTED — every package, every time.
@@ -1030,6 +1089,8 @@ def run_osv(
         withheld_from=tuple(sorted(withheld)),
         unreadable_requirements=tuple(sorted(unreadable_seen)),
         nested_lockfiles=tuple(sorted(nested_seen)),
+        set_aside=tuple(sorted(not_servers)),
+        unrecognised_lockfiles=tuple(sorted(unmeasured)),
         methodology_version=version,
     )
 

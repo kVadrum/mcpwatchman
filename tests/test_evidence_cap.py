@@ -44,13 +44,16 @@ class _DepsResult:
     unscored_findings = 0
 
     def __init__(self, findings, unattributed=0, loose=(), *,
-                 lockfiles=("package-lock.json",), unreadable=(), nested=()) -> None:
+                 lockfiles=("package-lock.json",), unreadable=(), nested=(),
+                 set_aside=(), unrecognised=()) -> None:
         self.findings = findings
         self.unattributed_findings = unattributed
         self.loose_requirements = loose
         self.withheld_from = loose if unattributed else ()
         self.unreadable_requirements = unreadable
         self.nested_lockfiles = nested
+        self.set_aside = set_aside
+        self.unrecognised_lockfiles = unrecognised
         self.lockfiles = lockfiles
 
 
@@ -321,6 +324,34 @@ def test_loose_and_nested_units_are_each_named_with_their_own_fault() -> None:
     assert ("1 dependency file (examples/app/package-lock.json) was not read as "
             "this server's — it sits inside") in axis.reason
     assert axis.reason.endswith("the 2 lockfiles that were")
+
+
+def test_a_test_or_vendored_lockfile_is_named_and_costs_no_coverage() -> None:
+    """com.nlqdb/nlqdb's `tests/e2e/mcp/bun.lock` is not the server's (Code
+    Safety's test-code ruling; `EXCLUDED_DIRS` for vendored trees), so the
+    score's coverage is untouched, but what was left out is still said."""
+    result = _DepsResult([], set_aside=("tests/e2e/mcp/bun.lock",))
+    result.score = 100
+    axis = _deps_axis(result, READABLE)
+    assert axis.score == 100 and axis.assessed_weight == "1"
+    assert axis.unmeasured_faults == ()
+    assert axis.reason == (
+        "1 dependency file in a test or excluded directory (tests/e2e/mcp/bun.lock) "
+        "was not read as this server's")
+
+
+def test_an_unrecognised_dependency_file_narrows_coverage_as_our_gap() -> None:
+    """A kind this check does not count (composer.lock, an SBOM) may be the
+    server's: an unmeasured unit, never a deduction nobody decided on, and
+    never silently dropped at full coverage."""
+    result = _DepsResult([], unrecognised=("composer.lock",))
+    result.score = 100
+    axis = _deps_axis(result, READABLE)
+    assert axis.assessed_weight == "0.5"
+    assert axis.unmeasured_faults == ("project",)
+    assert ("1 dependency file (composer.lock) was not read as this server's — it is "
+            "of a kind this check does not count as a lockfile") in axis.reason
+    assert axis.reason.endswith("the 1 lockfile that was")
 
 
 def test_a_finding_listed_but_not_scored_does_not_claim_to_deduct() -> None:

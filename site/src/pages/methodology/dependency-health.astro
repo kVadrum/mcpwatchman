@@ -85,6 +85,17 @@ const cvss = (i: number) =>
       publisher's: the tree cannot say whether such a lockfile also covers the
       server. The same rule already applies to licence and changelog files.
     </p>
+    <p>
+      <strong>Only what this check counts is read.</strong> The vulnerability
+      scanner walks the whole tree on its own, so it can find dependency files
+      nothing else here counted. One under a test directory, or under a
+      vendored or build directory the scan already excludes, is not the
+      server's: it is not scored, costs no coverage, and the axis's reason
+      names it. One of a kind this check does not count as a lockfile, or
+      outside the files it listed, might be the server's, so it is not scored
+      either and counts as part of the axis that was not measured, our gap
+      rather than the publisher's.
+    </p>
   </section>
 
   <section class="paper doc-paper" aria-labelledby="table-heading">

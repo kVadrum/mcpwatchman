@@ -303,7 +303,9 @@ def test_a_version_osv_resolved_from_a_range_is_not_attributed(
     (tmp_path / "package-lock.json").write_text("{}")
     (tmp_path / "requirements_local_models.txt").write_text(
         "requests==2.19.1\npillow>=9\n")
-    inv = _inventory(("package-lock.json", Role.LOCKFILE))
+    # `other` is the role `enumerate_tree` gives it: listed, never classified.
+    inv = _inventory(("package-lock.json", Role.LOCKFILE),
+                     ("requirements_local_models.txt", Role.OTHER))
     src = str(tmp_path / "requirements_local_models.txt")
     payload = json.dumps({"results": [
         {"source": {"path": src, "type": "lockfile"}, "packages": [
@@ -408,9 +410,13 @@ def test_a_source_outside_the_root_never_names_a_scratch_path(
                           {"ids": ["X"], "aliases": [], "max_severity": "9"}]}]}]})
     _fake_run(monkeypatch, payload, returncode=1)
     result = oc.run_osv(tmp_path, _inventory(("package-lock.json", Role.LOCKFILE)))
-    assert result.unattributed_findings == 1
+    # Not the server's as far as anything here can tell: set aside, counted as
+    # an unmeasured unit (the chokepoint), and named by what it is.
+    assert not result.findings
+    assert result.unrecognised_lockfiles == ("a file outside the scan root",)
     assert not any(str(tmp_path.parent) in p
-                   for p in result.withheld_from + result.loose_requirements)
+                   for p in (result.withheld_from + result.loose_requirements
+                             + result.unrecognised_lockfiles + result.set_aside))
 
 
 # --- a nested sub-project's lockfile pins that project, not the server ----
@@ -424,6 +430,49 @@ def _vulnerable(root: Path, *rels: str) -> str:
                       "vulnerabilities": [], "groups": [
                           {"ids": [f"GHSA-{i}"], "aliases": [], "max_severity": "9.8"}]}],
     } for i, rel in enumerate(rels)]})
+
+
+# --- the default-closed chokepoint: only what this check counted is read ----
+
+
+def test_only_the_servers_own_dependency_files_are_attributed(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """osv-scanner walks the tree itself, so it reads files nothing else here
+    counted. A real inventory (`_tree`), one critical vulnerability per file:
+    the counted lock, an own-tree `go.mod` and an own-tree `.txt` are read; a
+    test tree's lock and a vendored lock are not the server's; a kind this
+    check does not count is an unmeasured unit (2026-11-09)."""
+    inv = _tree(tmp_path, {
+        "package-lock.json": "{}", "go.mod": "module x\n", "go.sum": "",
+        "requirements_local_models.txt": "p2==1\n",
+        "tests/e2e/mcp/bun.lock": "", "vendor/x/package-lock.json": "{}",
+        "composer.lock": "{}",
+    })
+    rels = ("package-lock.json", "go.mod", "requirements_local_models.txt",
+            "tests/e2e/mcp/bun.lock", "vendor/x/package-lock.json", "composer.lock")
+    _fake_run(monkeypatch, _vulnerable(tmp_path, *rels), returncode=1)
+    result = oc.run_osv(tmp_path, inv)
+    assert result.status is oc.OsvStatus.OK
+    assert sorted(f.lockfile for f in result.findings) == sorted(
+        ["package-lock.json", "go.mod", "requirements_local_models.txt"])
+    assert result.set_aside == ("tests/e2e/mcp/bun.lock", "vendor/x/package-lock.json")
+    assert result.unrecognised_lockfiles == ("composer.lock",)
+
+
+def test_a_source_the_bounded_inventory_never_listed_is_unmeasured(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Not under an excluded directory and not listed: past the inventory's
+    bound, so possibly the server's own. A bounded read may not assert it is
+    not; the file is an unmeasured unit, never a deduction or a silence."""
+    (tmp_path / "package-lock.json").write_text("{}")
+    inv = _inventory(("package-lock.json", Role.LOCKFILE))
+    _fake_run(monkeypatch, _vulnerable(tmp_path, "package-lock.json", "deep/pnpm-lock.yaml"),
+              returncode=1)
+    result = oc.run_osv(tmp_path, inv)
+    assert [f.lockfile for f in result.findings] == ["package-lock.json"]
+    assert result.unrecognised_lockfiles == ("deep/pnpm-lock.yaml",)
 
 
 def test_a_nested_projects_lock_alone_abstains_as_our_gap(tmp_path: Path, monkeypatch) -> None:

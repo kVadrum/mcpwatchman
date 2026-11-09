@@ -1103,7 +1103,9 @@ def _deps_axis(result, availability) -> AxisScore:
     # A nested sub-project's lockfile is a unit too (`OsvResult.nested_lockfiles`)
     # — ours, because whether it also covers the server cannot be told.
     requirements_files = result.loose_requirements + result.unreadable_requirements
-    unmeasured_files = requirements_files + result.nested_lockfiles
+    unmeasured_files = (
+        requirements_files + result.nested_lockfiles + result.unrecognised_lockfiles
+    )
     if unmeasured_files:
         measured = len(result.lockfiles)
         share = dec(measured) / dec(measured + len(unmeasured_files))
@@ -1120,7 +1122,8 @@ def _deps_axis(result, availability) -> AxisScore:
         weight = _fmt(narrowed)
         if result.loose_requirements:
             faults.add(Fault.PUBLISHER.value)
-        if result.unreadable_requirements or result.nested_lockfiles:
+        if (result.unreadable_requirements or result.nested_lockfiles
+                or result.unrecognised_lockfiles):
             faults.add(Fault.PROJECT.value)
         notes = []
         if requirements_files:
@@ -1147,12 +1150,34 @@ def _deps_axis(result, availability) -> AxisScore:
                 + ("it" if n == 1 else "any of them")
                 + " also covers the server cannot be told from the tree"
             )
+        if result.unrecognised_lockfiles:
+            n = len(result.unrecognised_lockfiles)
+            notes.append(
+                f"{n} dependency file{'' if n == 1 else 's'} "
+                f"({', '.join(result.unrecognised_lockfiles[:3])}) "
+                f"{'was' if n == 1 else 'were'} not read as this server's — "
+                f"{'it is' if n == 1 else 'they are'} of a kind this check does "
+                "not count as a lockfile, or outside the files it listed, so "
+                "whether " + ("it belongs" if n == 1 else "any of them belongs")
+                + " to the server was not established"
+            )
         note = (
             "; ".join(notes) + f" — so the score covers the {measured} "
             f"lockfile{'' if measured == 1 else 's'} that "
             f"{'was' if measured == 1 else 'were'}"
         )
         reason = f"{reason}; {note}" if reason else note
+    if result.set_aside:
+        # No coverage cost — a test tree's or a vendored directory's lockfile
+        # is not the server's (`osv_check._set_aside`) — but never silent:
+        # findings left out of a score are named, here as everywhere.
+        n = len(result.set_aside)
+        aside = (
+            f"{n} dependency file{'' if n == 1 else 's'} in a test or excluded "
+            f"directory ({', '.join(result.set_aside[:3])}) "
+            f"{'was' if n == 1 else 'were'} not read as this server's"
+        )
+        reason = f"{reason}; {aside}" if reason else aside
     return AxisScore(
         "dependency_health", result.score, reason, weight,
         unmeasured_faults=tuple(sorted(faults)),
