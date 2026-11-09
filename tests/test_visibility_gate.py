@@ -10,6 +10,8 @@ from pathlib import Path
 import ops.visibility_gate as gate
 import pytest
 
+from mcpwatchman import store
+
 GIT = shutil.which("git") or "git"
 
 
@@ -163,7 +165,7 @@ def test_the_published_data_carries_every_field_the_gate_reads() -> None:
     """The positive control for the test above, against the real records: every
     row is readable, and the gate finds repositories to ask about in them."""
     data = Path(__file__).resolve().parents[1] / "site" / "src" / "data" / "scans.json"
-    urls, unaskable = gate.to_check([], json.loads(data.read_text()))
+    urls, unaskable = gate.to_check([], store.read_reports(data))
     assert unaskable == []
     assert len(urls) > 100
 

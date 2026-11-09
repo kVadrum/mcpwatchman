@@ -23,6 +23,7 @@ from xml.etree import ElementTree
 
 import pytest
 
+from mcpwatchman import store
 from mcpwatchman.workers.scanner import (
     auth_check,
     forge,
@@ -66,7 +67,7 @@ def m() -> dict:
 
 @pytest.fixture(scope="module")
 def reports() -> list[dict]:
-    return json.loads(DATA.read_text())
+    return store.read_reports(DATA)
 
 
 # ── methodology.json equals the engine ─────────────────────────────────────

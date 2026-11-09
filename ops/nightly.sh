@@ -204,28 +204,34 @@ DEV_CONTRACT="$(contract "$DEV_SHA")" || die 20 "could not read dev's scoring co
 # mixed two contracts. So under a mismatch a kept page comes from main's own
 # data, and dev's row is used only for a pin main has no page for yet.
 git -C "$REPO" show "$DEV_SHA:ops/cohort.json" > "$MAIN/ops/cohort.json"
+# ⚠ EVERY MOVE OF THE DATA GOES THROUGH `mcpwatchman.store`, in THIS repo's
+# interpreter ("$PY", no PYTHONPATH), never main's: the store is one
+# `scans.json` or one file per server (ruling D2a, 2026-11-09), and this
+# wrapper is live the moment it is saved, while main's code may predate the
+# store. Each command keeps dev's layout, byte for byte, removing the other.
 if [[ "$MAIN_CONTRACT" == "$DEV_CONTRACT" ]]; then
-  git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$MAIN/site/src/data/scans.json"
+  "$PY" -m mcpwatchman.store checkout --repo "$REPO" --ref "$DEV_SHA" --into "$MAIN" >/dev/null \
+    || die 24 "could not put dev's data in place"
   log "code at main ${MAIN_SHA:0:9}, data from dev ${DEV_SHA:0:9}"
 else
-  git -C "$REPO" show "$DEV_SHA:site/src/data/scans.json" > "$WORK/scans.dev.json"
-  git -C "$REPO" show "$MAIN_SHA:site/src/data/scans.json" > "$WORK/scans.main.json"
-  "$PY" - "$WORK/scans.dev.json" "$WORK/scans.main.json" "$MAIN/site/src/data/scans.json" <<'PY' \
+  "$PY" - "$REPO" "$DEV_SHA" "$MAIN_SHA" "$MAIN/site/src/data/scans.json" <<'PY' \
     || die 24 "could not compose the previous pages from main's and dev's data"
-import json, sys
-dev, main, out = sys.argv[1:]
-dev_rows = json.load(open(dev, encoding="utf-8"))
-mains = {row["slug"]: row for row in json.load(open(main, encoding="utf-8"))}
+import sys
+from pathlib import Path
+from mcpwatchman import store
+repo, dev, main, out = Path(sys.argv[1]), sys.argv[2], sys.argv[3], Path(sys.argv[4])
+DATA = "site/src/data/scans.json"
+dev_rows = store.read_reports_at(repo, dev, DATA)
+mains = {row["slug"]: row for row in store.read_reports_at(repo, main, DATA)}
 rows = [mains.get(row["slug"], row) for row in dev_rows]
-with open(out, "w", encoding="utf-8") as f:
-    json.dump(rows, f, ensure_ascii=False, indent=1)
-    f.write("\n")
+store.write_reports(out, rows, layout_=store.layout_at(repo, dev, DATA))
 print(sum(row["slug"] in mains for row in dev_rows), len(dev_rows))
 PY
   log "code at main ${MAIN_SHA:0:9}; contracts differ ($MAIN_CONTRACT vs dev's $DEV_CONTRACT), so previous pages come from main ${MAIN_SHA:0:9}, pins from dev ${DEV_SHA:0:9}"
 fi
 
-cp "$MAIN/site/src/data/scans.json" "$WORK/scans.before.json"
+"$PY" -m mcpwatchman.store dump "$MAIN/site/src/data/scans.json" "$WORK/scans.before.json" \
+  || die 24 "could not snapshot the pages this run starts from"
 log "scanning the pinned cohort"
 # The scan's git never sees the operator's git config. That config carries a
 # `gh` credential helper, and the scan clones URLs that third parties put in
@@ -338,20 +344,26 @@ if [[ "$MAIN_CONTRACT" != "$DEV_CONTRACT" ]]; then
 else
 log "committing the data to dev"
 git -C "$REPO" worktree add -q --detach "$WORK/dev" "$DEV_SHA"
-cp "$MAIN/site/src/data/scans.json" "$WORK/dev/site/src/data/scans.json"
+"$PY" -m mcpwatchman.store copy "$MAIN/site/src/data/scans.json" "$WORK/dev/site/src/data/scans.json" >/dev/null \
+  || die 24 "could not carry the data to dev's worktree"
 [[ "$HISTORY" == updated ]] && cp "$MAIN/site/src/data/history.json" "$WORK/dev/site/src/data/history.json"
 # The subshell reports its outcome by exit code: 0 committed, 30 nothing to
 # commit, 31 dev's contract moved during the run; anything else is a fault.
 rc=0
 (
   cd "$WORK/dev"
-  if git diff --quiet; then
+  # `status`, never `diff --quiet`: one file per server means a newly pinned
+  # server is an UNTRACKED file, which `diff` cannot see — a night that grew
+  # the cohort would have read "unchanged". Checked by hand (see below).
+  changed="$(git status --porcelain)" || exit 17
+  if [[ -z "$changed" ]]; then
     log "data unchanged — nothing to commit"
     exit 30
   fi
-  summary="$(PYTHONPATH="$MAIN/src" "$PY" - <<'EOF'
-import json
-rows = json.load(open("site/src/data/scans.json"))
+  summary="$("$PY" - <<'EOF'
+from pathlib import Path
+from mcpwatchman import store
+rows = store.read_reports(Path("site/src/data/scans.json"))
 states = [r.get("registry_state") for r in rows]
 print(f"{len(rows)} servers, {states.count('stale')} kept an older scan")
 EOF
@@ -364,7 +376,7 @@ EOF
   # rejected commit (the pre-commit telemetry guard, say) left HEAD at the
   # detached $DEV_SHA, the push then answered "Everything up-to-date" with
   # exit 0, and the run logged "committed" and went on to deploy.
-  git add site/src/data/scans.json || exit 17
+  git add -A -- site/src/data || exit 17  # either layout, and a move between them
   if [[ "$HISTORY" == updated ]]; then git add site/src/data/history.json || exit 17; fi
   git commit -q -m "data — nightly rescan ${STAMP}: ${summary}" \
     -m "Scanned with main at ${MAIN_SHA:0:9}. Code from main, data from dev (ops/nightly.sh)." \
@@ -377,7 +389,7 @@ EOF
     # dev moved during the run. Rebase only if nobody else touched the data:
     # two writers of the published record is a conflict to surface, not merge.
     git fetch -q origin dev || exit 15
-    if ! git diff --quiet "$DEV_SHA" origin/dev -- site/src/data/scans.json ops/cohort.json; then
+    if ! git diff --quiet "$DEV_SHA" origin/dev -- site/src/data/scans.json site/src/data/reports ops/cohort.json; then
       log "dev's data changed during the run — not overwriting it"
       exit 14
     fi

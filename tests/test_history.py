@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 from mcpwatchman import history as h
+from mcpwatchman import store
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -209,7 +210,7 @@ def test_the_committed_history_never_claims_a_scan_the_data_does_not_have() -> N
     nobody published."""
     data = ROOT / "site/src/data"
     hist = json.loads((data / "history.json").read_text())
-    rows = json.loads((data / "scans.json").read_text())
+    rows = store.read_reports(data / "scans.json")
     assert hist["schema"] == h.SCHEMA and hist["axes"] == list(h.AXES)
     for row in rows:
         series = hist["servers"].get(row["slug"], [])

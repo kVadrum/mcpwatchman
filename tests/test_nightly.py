@@ -639,3 +639,82 @@ def test_a_withheld_row_keeps_its_page_and_the_night_publishes(world: World) -> 
     assert (rows["a"]["v"], rows["a"]["registry_state"]) == (1, "stale")
     assert "could not be confirmed as publicly readable" in rows["a"]["registry_note"]
     assert (rows["b"]["v"], rows["b"]["registry_state"]) == (2, "listed"), "the rest published"
+
+
+# --- the store as one file per server (ruling D2a): the night after the flip --
+
+# main's scanner after the sync: it reads and writes through the real store,
+# in whatever layout it is handed (`mcpwatchman.store.write_reports`).
+SHARDED_SCAN = '''\
+import argparse, json, os
+from pathlib import Path
+from mcpwatchman import store
+ap = argparse.ArgumentParser()
+ap.add_argument("--out"); ap.add_argument("--cohort")
+a = ap.parse_args()
+knobs = json.load(open(os.path.join(os.path.dirname(os.getcwd()), "knobs.json")))
+out = Path(a.out)
+rows = store.read_reports(out)
+if knobs.get("FAKE_SCAN") != "same":
+    for row in rows:
+        row["v"] += 1
+if knobs.get("FAKE_GROW"):
+    rows.append(dict(rows[0], name="c", slug="c"))
+store.write_reports(out, rows)
+'''
+STORE_SRC = (SCRIPT.parents[1] / "src" / "mcpwatchman" / "store.py").read_text()
+
+
+def _commit_tree(world: World, branch: str, write: dict[str, str] | None = None,
+                 split: bool = False) -> None:
+    """Like `commit_to`, but adds and deletes files: a move between layouts."""
+    from mcpwatchman import store
+    seed = world.root / "seed"
+    world.git("checkout", "-q", "-B", branch, f"origin/{branch}")
+    for rel, body in (write or {}).items():
+        (seed / rel).parent.mkdir(parents=True, exist_ok=True)
+        (seed / rel).write_text(body)
+    if split:
+        data = seed / "site/src/data/scans.json"
+        store.write_reports(data, store.read_reports(data), layout_=store.SHARDS)
+    world.git("add", "-A")
+    world.git("commit", "-qm", f"edit {branch}")
+    world.git("push", "-q", "origin", branch)
+    world.git("checkout", "-q", "main")
+
+
+def _dev_data(world: World) -> dict[str, dict]:
+    names = world.git("--git-dir", str(world.origin), "ls-tree", "-r", "--name-only",
+                      "dev", "--", "site/src/data").split()
+    return {n: json.loads(world.git("--git-dir", str(world.origin), "show", f"dev:{n}"))
+            for n in names if n.endswith(".json")}
+
+
+@pytest.fixture
+def sharded(world: World) -> World:
+    _commit_tree(world, "main", {"src/mcpwatchman/store.py": STORE_SRC,
+                                 "ops/scan_cohort.py": SHARDED_SCAN})
+    _commit_tree(world, "dev", split=True)
+    return world
+
+
+def test_a_sharded_store_is_scanned_and_committed_in_its_own_layout(sharded: World) -> None:
+    rc, out = sharded.run()
+    assert rc == 0, out
+    assert "committed to dev" in out
+    data = _dev_data(sharded)
+    assert "site/src/data/scans.json" not in data
+    assert {n: d["v"] for n, d in data.items()} == {
+        "site/src/data/reports/a.json": 2, "site/src/data/reports/b.json": 2}
+
+
+def test_a_server_new_to_a_sharded_store_is_committed_not_read_as_unchanged(
+    sharded: World,
+) -> None:
+    """A new server is an UNTRACKED file, which `git diff --quiet` cannot see:
+    a night that grew the cohort and changed nothing else read "unchanged" and
+    left the new page uncommitted (the nightly's check is `git status`)."""
+    rc, out = sharded.run(FAKE_SCAN="same", FAKE_GROW="1")  # the new file ONLY
+    assert rc == 0, out
+    assert "committed to dev" in out
+    assert "site/src/data/reports/c.json" in _dev_data(sharded)

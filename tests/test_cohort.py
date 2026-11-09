@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pytest
 
+from mcpwatchman import store
 from mcpwatchman.cohort import (
     CARRIED_STATES,
     Cohort,
@@ -382,9 +383,9 @@ def cohort() -> Cohort:
 
 @pytest.fixture(scope="module")
 def published() -> list[dict]:
-    if not DATA.is_file():
+    if not store.exists(DATA):  # never `is_file()`: one file per server has none
         pytest.skip("no published scan data in this checkout")
-    return json.loads(DATA.read_text())
+    return store.read_reports(DATA)
 
 
 def test_the_committed_cohort_is_valid(cohort: Cohort) -> None:

@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from mcpwatchman import history as h
+from mcpwatchman import store
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "site/src/data"
@@ -20,7 +21,7 @@ needs_dist = pytest.mark.skipif(not DIST.is_dir(), reason="site not built")
 
 
 def _rows() -> list[dict]:
-    return json.loads((DATA / "scans.json").read_text())
+    return store.read_reports(DATA / "scans.json")
 
 
 @needs_dist

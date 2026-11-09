@@ -23,6 +23,7 @@ other's without saying so.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -156,5 +157,158 @@ def data_paths(data: str) -> tuple[str, str]:
     return data, str(PurePosixPath(data).parent / SHARD_DIR)
 
 
-__all__ = ["SHARD_DIR", "StoreError", "data_paths", "exists", "read_reports",
-           "read_reports_at", "shard_dir", "shard_name"]
+# --- writing: every writer KEEPS the layout it found -------------------------
+#
+# So the flip is one deliberate data commit (`split`), never a side effect of a
+# code change: until it lands, everything writes the monolith it read.
+
+MONOLITH, SHARDS = "monolith", "shards"
+
+
+def layout(path: Path) -> str | None:
+    mono, split = path.exists(), shard_dir(path).exists()
+    if mono and split:
+        raise StoreError(f"both {path.name} and {SHARD_DIR}/ exist beside it")
+    return MONOLITH if mono else SHARDS if split else None
+
+
+def layout_at(repo: Path, ref: str, data: str) -> str:
+    shards = str(PurePosixPath(data).parent / SHARD_DIR)
+    mono = _git(repo, "cat-file", "-e", f"{ref}:{data}", check=False).returncode == 0
+    split = _git(repo, "cat-file", "-e", f"{ref}:{shards}", check=False).returncode == 0
+    if mono == split:
+        raise StoreError(f"{ref} holds {'both layouts' if mono else 'neither layout'}")
+    return MONOLITH if mono else SHARDS
+
+
+def _replace_dir(staged: Path, target: Path) -> None:
+    """Swap a fully written directory in: a reader sees the old set or the new."""
+    old = target.with_name(target.name + ".old")
+    shutil.rmtree(old, ignore_errors=True)
+    if target.exists():
+        os.replace(target, old)
+    os.replace(staged, target)
+    shutil.rmtree(old, ignore_errors=True)
+
+
+def _write_shards(path: Path, blobs: dict[str, bytes]) -> None:
+    staged = shard_dir(path).with_name(SHARD_DIR + ".new")
+    shutil.rmtree(staged, ignore_errors=True)
+    staged.mkdir()
+    for name, blob in blobs.items():
+        (staged / name).write_bytes(blob)
+    _replace_dir(staged, shard_dir(path))
+    path.unlink(missing_ok=True)
+
+
+def _atomic_bytes(path: Path, blob: bytes) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_bytes(blob)
+    os.replace(tmp, path)
+
+
+def _write_monolith(path: Path, blob: bytes) -> None:
+    _atomic_bytes(path, blob)
+    shutil.rmtree(shard_dir(path), ignore_errors=True)
+
+
+def write_reports(path: Path, rows: list[dict[str, Any]], *, layout_: str | None = None) -> None:
+    """Write `rows` in `layout_`, else in the layout already at `path`, else as
+    the monolith. The formatting is `scan_cohort`'s and the gate's own
+    (`indent=1`, ASCII), so a writer moved onto this changes no byte."""
+    target = layout_ or layout(path) or MONOLITH
+    if target == MONOLITH:
+        _write_monolith(path, (json.dumps(rows, indent=1) + "\n").encode())
+        return
+    blobs = {}
+    for row in rows:
+        name = shard_name(str(row.get("slug")))
+        if name in blobs:
+            raise StoreError(f"two reports share the slug {row.get('slug')!r}")
+        blobs[name] = (json.dumps(row, indent=1) + "\n").encode()
+    _write_shards(path, blobs)
+
+
+def raw_text(path: Path) -> str:
+    """Every published byte, for checks over the text itself (a field name
+    that must never appear): the monolith, or each shard in name order."""
+    if layout(path) == MONOLITH:
+        return path.read_text()
+    return "".join(f.read_text() for f in sorted(shard_dir(path).glob("*.json")))
+
+
+# --- the nightly's file moves, as commands (`ops/nightly.sh`) ----------------
+
+
+def checkout(repo: Path, ref: str, data: str, root: Path) -> str:
+    """Put the data at `ref` under `root`, BYTE FOR BYTE, in its own layout,
+    removing the other: `git show` did this for the monolith alone."""
+    path = root / data
+    if layout_at(repo, ref, data) == MONOLITH:
+        _write_monolith(path, _git_bytes(repo, "show", f"{ref}:{data}"))
+        return MONOLITH
+    shards = str(PurePosixPath(data).parent / SHARD_DIR)
+    _write_shards(path, dict(_blobs(repo, f"{ref}:{shards}")))
+    return SHARDS
+
+
+def copy(src: Path, dst: Path) -> str:
+    """`cp` for either layout, byte for byte, removing the other at `dst`."""
+    kind = layout(src)
+    if kind == MONOLITH:
+        _write_monolith(dst, src.read_bytes())
+    elif kind == SHARDS:
+        _write_shards(dst, {f.name: f.read_bytes() for f in shard_dir(src).glob("*.json")})
+    else:
+        raise FileNotFoundError(src)
+    return kind
+
+
+def _git_bytes(repo: Path, *args: str) -> bytes:
+    return subprocess.run(  # noqa: S603 - argument list, fixed executable
+        [GIT, "-C", str(repo), *args], check=True, capture_output=True,
+    ).stdout
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="python -m mcpwatchman.store")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    c = sub.add_parser("checkout", help="the data at a ref, under a root, in its layout")
+    c.add_argument("--repo", type=Path, required=True)
+    c.add_argument("--ref", required=True)
+    c.add_argument("--data", default="site/src/data/scans.json")
+    c.add_argument("--into", type=Path, required=True)
+    p = sub.add_parser("copy", help="copy the data at SRC to DST, layout kept")
+    p.add_argument("src", type=Path)
+    p.add_argument("dst", type=Path)
+    d = sub.add_parser("dump", help="SRC as one monolith file at OUT (a snapshot)")
+    d.add_argument("src", type=Path)
+    d.add_argument("out", type=Path)
+    s = sub.add_parser("split", help="THE FLIP: rewrite the monolith at PATH as shards")
+    s.add_argument("path", type=Path)
+    a = ap.parse_args(argv)
+    if a.cmd == "checkout":
+        print(checkout(a.repo, a.ref, a.data, a.into))
+    elif a.cmd == "copy":
+        print(copy(a.src, a.dst))
+    elif a.cmd == "dump":
+        _atomic_bytes(a.out, (json.dumps(read_reports(a.src), indent=1) + "\n").encode())
+    elif a.cmd == "split":
+        if layout(a.path) != MONOLITH:
+            raise StoreError(f"{a.path} is not a monolith to split")
+        rows = read_reports(a.path)
+        write_reports(a.path, rows, layout_=SHARDS)
+        if read_reports(a.path) != sorted(rows, key=lambda r: r["name"]):
+            raise StoreError("the shards do not read back as the monolith they replaced")
+        print(f"{len(rows)} reports -> {SHARD_DIR}/")
+    return 0
+
+
+__all__ = ["MONOLITH", "SHARDS", "SHARD_DIR", "StoreError", "checkout", "copy",
+           "data_paths", "exists", "layout", "layout_at", "raw_text", "read_reports",
+           "read_reports_at", "shard_dir", "shard_name", "write_reports"]
+
+if __name__ == "__main__":
+    raise SystemExit(main())

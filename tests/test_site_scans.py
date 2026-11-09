@@ -23,6 +23,7 @@ from pathlib import Path
 
 import pytest
 
+from mcpwatchman import store
 from mcpwatchman.workers.scanner.runner import AXES, slugify
 from mcpwatchman.workers.scoring.weights import composite_published
 
@@ -31,14 +32,16 @@ SITE = ROOT / "site"
 DATA = SITE / "src" / "data" / "scans.json"
 DIST = SITE / "dist"
 
+# `store.exists`, never `DATA.is_file()`: once the store is one file per server
+# there is no `scans.json`, and a gate that SKIPS on that passes the night.
 pytestmark = pytest.mark.skipif(
-    not DATA.is_file(), reason="no published scan data in this checkout"
+    not store.exists(DATA), reason="no published scan data in this checkout"
 )
 
 
 @pytest.fixture(scope="module")
 def reports() -> list[dict]:
-    return json.loads(DATA.read_text())
+    return store.read_reports(DATA)
 
 
 def test_there_is_data_to_check(reports) -> None:
@@ -54,7 +57,7 @@ def test_no_composite_reaches_the_published_data(reports) -> None:
     methodology is arranged to refuse.
     """
     assert composite_published() is False
-    blob = DATA.read_text()
+    blob = store.raw_text(DATA)
     assert "composite" not in blob.lower(), "a composite field reached the site data"
     for report in reports:
         assert set(report["axes"]) == set(AXES)

@@ -58,8 +58,8 @@ from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
-from mcpwatchman.cohort import atomic_write, carry_forward, systemic_staleness
-from mcpwatchman.store import read_reports
+from mcpwatchman.cohort import carry_forward, systemic_staleness
+from mcpwatchman.store import read_reports, write_reports
 from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.scanner.forge import (
     GITHUB_GRAPHQL_URL,
@@ -282,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     if systemic:
         print(f"REFUSED: {systemic}")
         return 1
-    atomic_write(a.after, json.dumps(published, indent=1) + "\n")
+    write_reports(a.after, published)  # the layout it found, same bytes
     return 0
 
 

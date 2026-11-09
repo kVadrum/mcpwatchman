@@ -5,7 +5,6 @@ not zero": the script lists it last in both directions)."""
 
 from __future__ import annotations
 
-import json
 import re
 from html import unescape
 from pathlib import Path
@@ -13,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from mcpwatchman import history as h
+from mcpwatchman import store
 
 ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "site/dist"
@@ -20,7 +20,7 @@ needs_dist = pytest.mark.skipif(not DIST.is_dir(), reason="site not built")
 
 
 def _rows() -> list[dict]:
-    return json.loads((ROOT / "site/src/data/scans.json").read_text())
+    return store.read_reports(ROOT / "site/src/data/scans.json")
 
 
 @needs_dist

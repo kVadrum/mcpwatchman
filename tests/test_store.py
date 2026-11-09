@@ -153,3 +153,61 @@ def test_no_page_imports_the_monolith_directly() -> None:
     ]
     assert direct == [], f"import from lib/reports instead: {direct}"
     assert "reports.ts" in {p.name for p in (SITE_SRC / "lib").iterdir()}
+
+
+# --- writing keeps the layout; the flip is one deliberate command ------------
+
+
+def test_a_writer_keeps_the_layout_it_found_and_the_monolith_bytes(tmp_path: Path) -> None:
+    """`scan_cohort` and the visibility gate moved onto `write_reports`; on the
+    monolith they must write exactly what they wrote before."""
+    (tmp_path / "m").mkdir()
+    (tmp_path / "s").mkdir()
+    mono, split = _monolith(tmp_path / "m"), _shards(tmp_path / "s")
+    rows = store.read_reports(mono)
+    store.write_reports(mono, rows)
+    assert mono.read_text() == json.dumps(rows, indent=1) + "\n"
+    assert store.layout(mono) == store.MONOLITH
+    store.write_reports(split, store.read_reports(split))
+    assert store.layout(split) == store.SHARDS and not split.exists()
+
+
+def test_the_split_reads_back_as_the_monolith_it_replaced(tmp_path: Path) -> None:
+    path = _monolith(tmp_path)
+    before = store.read_reports(path)
+    assert store.main(["split", str(path)]) == 0
+    assert store.layout(path) == store.SHARDS
+    assert store.read_reports(path) == before
+    with pytest.raises(store.StoreError, match="not a monolith"):
+        store.main(["split", str(path)])
+
+
+def test_two_reports_with_one_slug_are_refused_as_shards(tmp_path: Path) -> None:
+    with pytest.raises(store.StoreError, match="share the slug"):
+        store.write_reports(tmp_path / "scans.json", [ROWS[0], dict(ROWS[0], name="x")],
+                            layout_=store.SHARDS)
+
+
+@pytest.mark.parametrize("split", [False, True])
+def test_checkout_and_copy_move_either_layout_byte_for_byte(tmp_path: Path, split: bool) -> None:
+    """`ops/nightly.sh` moves the data with these; `git show` and `cp` did it
+    for the monolith alone, byte for byte, and so must they."""
+    repo = tmp_path / "repo"
+    data = repo / "site" / "src" / "data"
+    data.mkdir(parents=True)
+    _git(repo, "init", "-q")
+    path = _shards(data) if split else _monolith(data)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "data")
+    into = tmp_path / "main"
+    (into / "site" / "src" / "data").mkdir(parents=True)
+    _monolith(into / "site" / "src" / "data", ROWS[:1])  # main's own, to be replaced
+    kind = store.checkout(repo, "HEAD", DATA, into)
+    assert kind == (store.SHARDS if split else store.MONOLITH)
+    got = into / DATA
+    assert store.layout(got) == kind
+    assert store.raw_text(got) == store.raw_text(path)
+    dst = tmp_path / "dev" / "scans.json"
+    dst.parent.mkdir()
+    assert store.copy(got, dst) == kind
+    assert store.raw_text(dst) == store.raw_text(path)

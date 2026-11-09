@@ -42,7 +42,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import shutil
 import sys
 import time
@@ -53,7 +52,6 @@ from mcpwatchman import store
 from mcpwatchman.cohort import (
     Cohort,
     CohortError,
-    atomic_write,
     carry_forward,
     load,
     mark_status,
@@ -585,7 +583,9 @@ def main() -> int:
     if growth:
         save(args.cohort, grown)
         print(f"cohort grown to {len(grown)} — commit {args.cohort.name}")
-    atomic_write(args.out, json.dumps(ordered, indent=1) + "\n")
+    # In the layout already there (`mcpwatchman.store`): the move to one file
+    # per server is a deliberate data commit, never a side effect of a run.
+    store.write_reports(args.out, ordered)
     print(
         f"\n{len(ordered)} servers -> {args.out} "
         f"({len(to_scan) + len(to_flag)} scanned, {len(growth)} new, "
