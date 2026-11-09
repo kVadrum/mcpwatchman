@@ -379,6 +379,37 @@ def test_real_detect_secrets_finds_a_planted_credential(tmp_path: Path) -> None:
     assert {"AWS Access Key", "Private Key"} <= kinds
 
 
+@pytest.mark.skipif(
+    __import__("shutil").which("detect-secrets") is None,
+    reason="detect-secrets lives in the `workers` extra; CI installs only `dev`",
+)
+def test_a_gitignored_but_committed_credential_is_still_found(tmp_path: Path) -> None:
+    """The commonest leak: a credential file committed, then listed in
+    `.gitignore` (which does not untrack it). On a repository clone
+    detect-secrets runs BEFORE Code Safety prunes `.git`, so it scans a real
+    work tree, where a git-aware walk would skip exactly that file. osv-scanner
+    honoured `.gitignore` (fixed v0.45.1); detect-secrets with `--all-files`
+    does not. Measured 2026-11-09 on 1.5.0, and pinned here. A nested `*` covers
+    the plain-tree shape (a fetched archive) too.
+    """
+    import subprocess
+    leak = 'password = "Tr0ub4dor-and-3-horses-9183"\n'
+    for d in ("kept", "listed", "starred"):
+        (tmp_path / d).mkdir()
+        (tmp_path / d / "settings.py").write_text(leak)
+    (tmp_path / ".gitignore").write_text("listed/\n")
+    (tmp_path / "starred" / ".gitignore").write_text("*\n")
+    # Fixed argv over this test's own tmp_path: no untrusted input reaches it.
+    for args in (["init", "-q"], ["add", "-f", "-A"], ["commit", "-qm", "x"]):
+        subprocess.run(  # noqa: S603
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", *args],  # noqa: S607
+            cwd=tmp_path, check=True, capture_output=True,
+        )
+    found = {f.path for f in (scan_secrets(tmp_path) or [])}
+    assert "kept/settings.py" in found, "the detector itself does not fire — control failed"
+    assert {"listed/settings.py", "starred/settings.py"} <= found, found
+
+
 def test_a_relative_PATH_entry_still_finds_the_scanner_from_the_scan_root(
     tmp_path: Path, monkeypatch
 ) -> None:

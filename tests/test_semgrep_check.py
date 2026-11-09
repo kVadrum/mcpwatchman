@@ -585,6 +585,34 @@ def test_an_inline_nosemgrep_comment_cannot_suppress_a_finding(tmp_path: Path) -
     assert "suppressed.py" in flagged, "a comment suppressed a finding"
 
 
+@pytest.mark.skipif(
+    __import__("shutil").which("semgrep") is None,
+    reason="semgrep lives in the `workers` extra",
+)
+def test_a_scanned_gitignore_cannot_hide_a_file_from_semgrep(tmp_path: Path) -> None:
+    """osv-scanner honoured the scanned tree's `.gitignore` (fixed v0.45.1), so
+    semgrep is held to the same question. `_prune_unscannable` removes `.git`
+    before semgrep runs, so a plain tree is the only shape it ever sees, and
+    there semgrep 1.181.0 reads past a root `.gitignore` and a nested `*` WITH
+    OR WITHOUT `--no-git-ignore` (mutation-checked 2026-11-09). So this pins
+    semgrep's behaviour, not our flag: osv-scanner honoured `.gitignore` with
+    no `.git` at all, and a semgrep release that starts doing so turns this red.
+    """
+    shell = ("import subprocess\n"
+             "def run(user_arg):\n"
+             '    subprocess.run(f"cat {user_arg}", shell=True)\n')
+    for d in ("kept", "listed", "starred"):
+        (tmp_path / d).mkdir()
+        (tmp_path / d / "app.py").write_text(shell)
+    (tmp_path / ".gitignore").write_text("listed/\n")
+    (tmp_path / "starred" / ".gitignore").write_text("*\n")
+    result = sc.run_semgrep(tmp_path, rules=RULES)
+    assert result.status is sc.SemgrepStatus.OK, result.reason
+    flagged = {f.path for f in result.findings}
+    assert "kept/app.py" in flagged, "the rule itself does not fire — control failed"
+    assert {"listed/app.py", "starred/app.py"} <= flagged, flagged
+
+
 @pytest.mark.parametrize("name", [
     "tools-deadbeef.py",      # a hex tail is a bundler hash only on a web asset
     "handler-abcdef12.go",

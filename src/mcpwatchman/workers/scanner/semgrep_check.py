@@ -26,6 +26,11 @@ PyPI sdist) has no `.git`, so everything is scanned; a fetched *clone* has one,
 so the repository's own `.gitignore` gets a vote on what we audit. Two fetch
 kinds scoring by different rules — with no signal saying which you got — is not
 a defensible methodology, so we take the same superset in both cases.
+`_prune_unscannable` now removes `.git` before semgrep runs, so this flag is the
+second layer, not the only one: with `.git` gone, semgrep 1.181.0 reads past a
+`.gitignore` either way (mutation-checked 2026-11-09; pinned by
+`test_a_scanned_gitignore_cannot_hide_a_file_from_semgrep`, since osv-scanner
+honoured one with no `.git` at all).
 
 **3. semgrep will not give us the evidence excerpt.** `extra.lines` comes back
 as the literal string `requires login` for anonymous runs. `03` §3 commits us to
