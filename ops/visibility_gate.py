@@ -59,6 +59,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from mcpwatchman.cohort import atomic_write, carry_forward, systemic_staleness
+from mcpwatchman.store import read_reports
 from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.scanner.forge import (
     GITHUB_GRAPHQL_URL,
@@ -253,8 +254,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--after", type=Path, required=True,
                     help="the scans.json this run wrote; rewritten when a row is withheld")
     a = ap.parse_args(argv)
-    before = json.loads(a.before.read_text())
-    after = json.loads(a.after.read_text())
+    before = read_reports(a.before)
+    after = read_reports(a.after)
     urls, unaskable = to_check(before, after)
     bad, invisible = refused(urls)
     why = dict(unaskable)

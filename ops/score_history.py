@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 from mcpwatchman import history as h
+from mcpwatchman.store import data_paths, read_reports, read_reports_at
 
 DATA = "site/src/data/scans.json"
 _CONTRACT = re.compile(r"ruleset (\S+), methodology (\S+)")
@@ -58,15 +59,10 @@ def _commits(repo: Path, ref: str, since: str | None) -> list[str]:
         ).returncode == 0
         if ok:
             rng = f"{since}..{ref}"
-    out = _git(repo, "log", "--format=%H", "--reverse", rng, "--", DATA)
+    # Either layout's path: after the store moved (`mcpwatchman.store`) a data
+    # commit touches `reports/`, not `scans.json`.
+    out = _git(repo, "log", "--format=%H", "--reverse", rng, "--", *data_paths(DATA))
     return out.split()
-
-
-def _load_reports(text: str) -> list[dict[str, Any]]:
-    rows = json.loads(text)
-    if not isinstance(rows, list):
-        raise ValueError("scans.json is not a list of reports")
-    return rows
 
 
 def dump(history: dict[str, Any]) -> str:
@@ -121,14 +117,14 @@ def main(argv: list[str] | None = None) -> int:
         latest: list[dict[str, Any]] = []
         commits = _commits(a.repo, a.ref, None if a.rebuild else hist.get("through"))
         for sha in commits:
-            latest = _load_reports(_git(a.repo, "show", f"{sha}:{DATA}"))
+            latest = read_reports_at(a.repo, sha, DATA)
             merged += h.merge(hist, latest)
         hist["through"] = _git(a.repo, "rev-parse", a.ref).strip()
         if a.scans:
-            latest = _load_reports(a.scans.read_text(encoding="utf-8"))
+            latest = read_reports(a.scans)
             merged += h.merge(hist, latest)
         elif not latest:
-            latest = _load_reports(_git(a.repo, "show", f"{a.ref}:{DATA}"))
+            latest = read_reports_at(a.repo, a.ref, DATA)
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
         print(f"score_history: refused: {exc}", file=sys.stderr)
         return 2

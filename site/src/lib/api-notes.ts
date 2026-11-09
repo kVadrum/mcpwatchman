@@ -1,4 +1,4 @@
-import scans from "../data/scans.json";
+import scans from "./reports";
 
 /**
  * The reading instructions every JSON surface carries — ONE home.

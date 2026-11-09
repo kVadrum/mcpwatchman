@@ -36,6 +36,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from mcpwatchman.goldset import DEFAULT_ROOT, GoldEntry, entry_files, load, parse
+from mcpwatchman.store import StoreError, read_reports_at
 from mcpwatchman.workers.bounded import run_bounded
 from mcpwatchman.workers.commits import valid_commit
 from mcpwatchman.workers.crawler.registry import SourceKind, resolve_source
@@ -151,12 +152,16 @@ def main() -> int:
     ap.add_argument("--write", action="store_true", help="add the recovered pins to the entries")
     args = ap.parse_args()
 
-    blob = subprocess.run(  # noqa: S603 - argument list, never a shell string
-        ["git", "show", f"{args.data_ref}:{DATA}"],  # noqa: S607
-        cwd=REPO_ROOT, capture_output=True, text=True, check=True,
-    ).stdout
-    data = json.loads(blob)
-    rows = {r["name"]: r for r in (data if isinstance(data, list) else data["servers"])}
+    try:
+        reports = read_reports_at(REPO_ROOT, args.data_ref, DATA)
+    except StoreError:
+        # An early ref held `{"servers": [...]}`, before the list shape.
+        blob = subprocess.run(  # noqa: S603 - argument list, never a shell string
+            ["git", "show", f"{args.data_ref}:{DATA}"],  # noqa: S607
+            cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+        ).stdout
+        reports = json.loads(blob)["servers"]
+    rows = {r["name"]: r for r in reports}
 
     failed = 0
     for path in entry_files(args.root, include_drafts=True):

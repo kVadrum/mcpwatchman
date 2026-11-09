@@ -262,7 +262,7 @@ def test_the_data_commit_carries_the_score_history(world: World) -> None:
     root = SCRIPT.parents[1]
     seed = world.root / "seed"
     world.git("checkout", "-q", "-B", "main", "origin/main")
-    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py",
+    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py", "src/mcpwatchman/store.py",
                 "src/mcpwatchman/goldset.py", "src/mcpwatchman/workers/commits.py"):
         (seed / rel).write_text((root / rel).read_text())
         world.git("add", rel)
@@ -282,7 +282,7 @@ def _main_gains_history(world: World) -> None:
     root = SCRIPT.parents[1]
     seed = world.root / "seed"
     world.git("checkout", "-q", "-B", "main", "origin/main")
-    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py",
+    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py", "src/mcpwatchman/store.py",
                 "src/mcpwatchman/goldset.py", "src/mcpwatchman/workers/commits.py"):
         (seed / rel).write_text((root / rel).read_text())
         world.git("add", rel)

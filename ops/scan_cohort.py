@@ -49,6 +49,7 @@ import time
 import traceback
 from pathlib import Path
 
+from mcpwatchman import store
 from mcpwatchman.cohort import (
     Cohort,
     CohortError,
@@ -355,8 +356,8 @@ def main() -> int:
     )
 
     previous: dict[str, dict] = {}
-    if args.out.is_file():
-        previous = {r["name"]: r for r in json.loads(args.out.read_text())}
+    if store.exists(args.out):
+        previous = {r["name"]: r for r in store.read_reports(args.out)}
 
     today = time.strftime("%Y-%m-%d", time.gmtime())
     to_scan: list[RegistryEntry] = []

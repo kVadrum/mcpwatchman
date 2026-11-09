@@ -1,5 +1,5 @@
 import history from "../data/history.json";
-import scans from "../data/scans.json";
+import scans from "./reports";
 
 /**
  * Score history, read from `history.json` — derived from the committed data by

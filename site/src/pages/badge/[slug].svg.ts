@@ -1,5 +1,5 @@
 import type { APIRoute, GetStaticPaths } from "astro";
-import scans from "../../data/scans.json";
+import scans from "../../lib/reports";
 import { badgeFor, renderBadge } from "../../lib/badge";
 
 /**

@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import scans from "../../data/scans.json";
+import scans from "../../lib/reports";
 import { indexNotes } from "../../lib/api-notes";
 
 /**
