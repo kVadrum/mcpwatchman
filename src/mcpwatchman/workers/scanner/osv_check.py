@@ -508,6 +508,19 @@ _DECLARES_ELSEWHERE = frozenset({
 })
 
 
+def _can_declare(rel: str) -> bool:
+    """A file that can declare dependencies though the inventory gives it no
+    manifest role. Presence only — whether it does is `_declares_nothing`'s
+    question; this one only stops "no dependency manifest" being said."""
+    path = PurePosixPath(rel)
+    return (
+        path.name in _DECLARES_ELSEWHERE
+        or path.name in ("setup.cfg", "PKG-INFO")
+        or (path.name == "METADATA" and path.parent.name.endswith(".dist-info"))
+        or (path.name == "requires.txt" and path.parent.name.endswith(".egg-info"))
+    )
+
+
 def _setup_cfg_declares(text: str) -> bool:
     """Whether a `setup.cfg` declares requirements — True when it cannot be read.
 
@@ -580,7 +593,13 @@ def _declares_nothing(
                 return None
             scripts = doc.get("scripts")
             if isinstance(scripts, dict):
-                hooks.extend(h for h in INSTALL_HOOKS if scripts.get(h))
+                # A published claim that a hook RUNS, so the value must be a
+                # command: `install_script_findings`' own test, not truthiness
+                # (`"postinstall": 1` is malformed, not a hook; Codex leg).
+                hooks.extend(
+                    h for h in INSTALL_HOOKS
+                    if isinstance(scripts.get(h), str) and scripts[h].strip()
+                )
         elif name == "pyproject.toml":
             try:
                 doc = tomllib.loads(text)
@@ -663,8 +682,14 @@ def _no_lockfile(
             methodology_version=version,
         )
 
+    # "No dependency manifest" is an absence claim about a named publisher, so
+    # every file that can DECLARE dependencies counts, not only the roles the
+    # inventory parses: a code-free wheel's METADATA, an sdist's PKG-INFO or
+    # setup.cfg, a Pipfile (Codex leg, 2026-11-09). With one present the tree
+    # falls through to the ordinary no-lockfile reason.
     any_manifest = any(
-        f.role in (Role.PACKAGE_MANIFEST, Role.LOCKFILE) for f in inventory.files
+        f.role in (Role.PACKAGE_MANIFEST, Role.LOCKFILE) or _can_declare(f.path)
+        for f in inventory.files
     )
     if not any_manifest and inventory.holds_no_code():
         # THEIRS, as Code Safety's "holds no code" is: what they published.

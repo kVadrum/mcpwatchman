@@ -159,6 +159,7 @@ The full methodology document that code implements is not published yet.
   A server is published here only if the official registry lists it, or listed it — a server the registry later drops keeps its last page, marked as delisted.
 - **Free, and staying that way.**
   The scanner, ruleset, published data, JSON API, feed and CLI are MIT-licensed; the site's text is CC BY 4.0.
+  The one exception in the data is each record's install-resolution block, which is deps.dev's and stays CC BY 4.0.
 
 ## Disclosure
 
@@ -313,6 +314,7 @@ This repository is dual-licensed:
 
 - **Code** — the scanner, the scoring engine, the semgrep ruleset, the CLI, the website's source and the published scan data — [MIT](https://github.com/kVadrum/mcpwatchman/blob/main/LICENSE).
   Excerpts the scan data quotes from scanned servers' source remain their authors'.
+  Each record's `install_resolution` block is derived from deps.dev (Open Source Insights) and stays under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), attributed to deps.dev.
 - **The website's prose** — the text of [mcpwatchman.com](https://mcpwatchman.com), its worked example of how a score is built included — [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 - **Names and marks** — the "mcpwatchman" name and mark are not licensed; see below.
 

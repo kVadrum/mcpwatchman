@@ -578,7 +578,7 @@ def _forge_signals(entry, scanned_at: str) -> ForgeOutcome:
 
 
 def _install_resolution(
-    resolution, artifact: str, scanned_at: str, workspace: Path | None
+    resolution, artifact: str, workspace: Path | None
 ) -> dict[str, Any]:
     """The listed deps.dev block for a published package (ruling 2026-11-06, 1a).
 
@@ -586,16 +586,21 @@ def _install_resolution(
     path must cost this block, never the server's report. Nothing here is
     scored, so no fault on it can reach a publication gate; an unexpected
     exception is still attributed `environment`, never to the publisher.
+
+    `fetched_at` is stamped here, when deps.dev is asked, not at scan start:
+    the page and the API say it is when we asked, and a long scan can cross
+    a UTC midnight first (Codex leg, 2026-11-09).
     """
+    asked = datetime.now(UTC).isoformat(timespec="seconds")
     try:
         spec = SourceSpec.parse(resolution.primary)
         return resolve_install(
-            artifact, spec.identifier, spec.version, fetched_at=scanned_at,
+            artifact, spec.identifier, spec.version, fetched_at=asked,
             workdir=workspace or Path(tempfile.gettempdir()),
         ).to_dict()
     except Exception as exc:  # noqa: BLE001 - one block, attributed to us
         return InstallResolution(
-            status="unavailable", fault=Fault.ENVIRONMENT.value, fetched_at=scanned_at,
+            status="unavailable", fault=Fault.ENVIRONMENT.value, fetched_at=asked,
             reason=f"the resolution failed unexpectedly ({type(exc).__name__})",
         ).to_dict()
 
@@ -761,7 +766,7 @@ def _assemble(
         if root else None
     )
     install = (
-        _install_resolution(resolution, artifact, scanned_at, workspace)
+        _install_resolution(resolution, artifact, workspace)
         if artifact and root else None
     )
 

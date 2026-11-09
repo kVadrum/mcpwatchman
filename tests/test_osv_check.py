@@ -997,6 +997,21 @@ def test_an_install_hook_on_a_dependency_free_package_is_named(
         result.reason)
 
 
+@pytest.mark.parametrize("value", [1, True, "", "   ", ["node x.js"]])
+def test_a_malformed_install_hook_is_not_said_to_run(
+    tmp_path: Path, monkeypatch, value
+) -> None:
+    """The scanned manifest is attacker input, and "its `postinstall` install
+    hook runs" is a published claim: only a non-empty string is a command,
+    `install_script_findings`' own test (Codex leg, 2026-11-09)."""
+    _no_osv_run(monkeypatch)
+    manifest = json.dumps({"name": "x", "version": "1", "scripts": {"postinstall": value}})
+    inv = _tree(tmp_path, {"package.json": manifest, "index.js": "1\n"})
+    result = oc.run_osv(tmp_path, inv, artifact="npm")
+    assert "install hook" not in result.reason
+    assert result.reason.startswith("package.json declares no runtime dependencies")
+
+
 def test_a_repositorys_dev_dependencies_are_dependencies(tmp_path: Path, monkeypatch) -> None:
     """A repository installs its devDependencies; a published package's
     consumers never do. Only the second is dependency-free."""
@@ -1074,6 +1089,28 @@ def test_a_repository_holding_no_code_has_no_dependency_manifest(
     assert result.reason == (
         "the source this server declares holds no code and no dependency manifest, "
         "so there is no dependency to check")
+
+
+@pytest.mark.parametrize("files", [
+    {"x-1.0.dist-info/METADATA": "Name: x\nRequires-Dist: y[mcp]\n"},
+    {"PKG-INFO": "Name: x\nRequires-Dist: y\n"},
+    {"setup.cfg": "[options]\ninstall_requires = y\n"},
+    {"Pipfile": "[packages]\ny = \"*\"\n"},
+    {"x.egg-info/requires.txt": "y\n"},
+], ids=["wheel-METADATA", "PKG-INFO", "setup.cfg", "Pipfile", "egg-info"])
+def test_a_code_free_tree_that_can_declare_dependencies_is_not_said_to_have_no_manifest(
+    tmp_path: Path, monkeypatch, files
+) -> None:
+    """A code-free meta-package's only declaration can be a file the inventory
+    gives no manifest role: "no dependency manifest, so there is no dependency
+    to check" would be false about it (Codex leg, 2026-11-09). It keeps the
+    ordinary no-lockfile reason instead."""
+    _no_osv_run(monkeypatch)
+    inv = _tree(tmp_path, {"README.md": "# x\n", **files})
+    assert inv.holds_no_code(), "control: the tree must hold no code"
+    result = oc.run_osv(tmp_path, inv, artifact="pypi")
+    assert "no dependency manifest" not in result.reason
+    assert "no lockfile in" in result.reason
 
 
 def test_code_without_a_manifest_keeps_the_no_lockfile_reason(

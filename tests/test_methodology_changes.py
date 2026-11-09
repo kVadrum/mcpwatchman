@@ -31,11 +31,34 @@ def _changes() -> list[dict]:
     return json.loads(CHANGES.read_text())["changes"]
 
 
+def _level_of(version: str) -> str:
+    """`03` §11's level, read off the version itself: 0.x → 1.0 is major,
+    0.2 → 0.3 minor, 0.2 → 0.2.1 patch."""
+    major, minor, patch = (*_version(version), 0, 0)[:3]
+    if minor == 0 and patch == 0:
+        return "major"
+    return "minor" if patch == 0 else "patch"
+
+
 @pytest.mark.parametrize("change", _changes(), ids=lambda c: c["version"])
 def test_an_announced_change_gives_the_notice_its_level_requires(change: dict) -> None:
+    """The notice is owed by the VERSION, not by the hand-entered `level`: a
+    minor change labelled `patch` would otherwise pass with no notice at all
+    (Codex leg, 2026-11-09)."""
+    assert change["level"] == _level_of(change["version"]), (
+        f"{change['version']} is a {_level_of(change['version'])} change by `03` §11, "
+        f"but is labelled {change['level']}")
     announced = date.fromisoformat(change["announced"])
     not_before = date.fromisoformat(change["not_before"])
-    assert (not_before - announced).days >= NOTICE_DAYS[change["level"]]
+    assert (not_before - announced).days >= NOTICE_DAYS[_level_of(change["version"])]
+
+
+@pytest.mark.parametrize(("version", "level"), [
+    ("0.2.1", "patch"), ("0.3.0", "minor"), ("0.3", "minor"), ("1.0.0", "major"),
+    ("1.0", "major"), ("2.0.0", "major"), ("1.4.0", "minor"),
+])
+def test_the_level_is_read_off_the_version(version: str, level: str) -> None:
+    assert _level_of(version) == level
 
 
 @pytest.mark.parametrize("change", _changes(), ids=lambda c: c["version"])

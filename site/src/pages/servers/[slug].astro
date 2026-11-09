@@ -28,6 +28,8 @@ const { report } = Astro.props;
 type Resolution = {
   status: string; reason: string; label: string; package: string; version: string;
   fetched_at: string; nodes: number; direct: number; skipped_nodes: number;
+  // Absent before 0.46.3: an older record never counted it, so absent is not 0.
+  unresolved?: number;
   findings_total: number;
   findings: { package: string; version: string; osv_id: string; cvss: string;
               relation: string; fixed_version: string; url: string }[];
@@ -281,7 +283,7 @@ const sourceNote =
 
   {/* What an install would resolve (operator ruling 2026-11-06, 1a). Its own
     record on the paper, after the evidence and never inside it: nothing here
-    deducts, and nothing here was pinned by the publisher, so it must not read
+    deducts, and nothing here was read from a lockfile the publisher shipped, so it must not read
     as a finding about them. The label is the module's own (`install_resolution
     .LABEL`), so what it may claim is decided once, in Python. */}
   {resolution && (
@@ -300,6 +302,8 @@ const sourceNote =
               : ` ${resolution.findings_total} known ${resolution.findings_total === 1 ? "vulnerability was" : "vulnerabilities were"} found among them${resolution.findings_total > resolution.findings.length ? `; the ${resolution.findings.length} most severe are listed` : ""}.`}
             {resolution.skipped_nodes > 0 &&
               ` ${resolution.skipped_nodes} resolved ${resolution.skipped_nodes === 1 ? "entry was" : "entries were"} not read, so this list is incomplete.`}
+            {(resolution.unresolved ?? 0) > 0 &&
+              ` deps.dev could not resolve ${resolution.unresolved} ${resolution.unresolved === 1 ? "requirement" : "requirements"}, so whatever ${resolution.unresolved === 1 ? "it pulls" : "they pull"} in is missing from the graph and from this list.`}
           </p>
           {resolution.findings.length > 0 && (
             <ul class="findings">

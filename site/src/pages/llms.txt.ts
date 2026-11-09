@@ -136,7 +136,7 @@ ${DOC_PAGES.map((page) => `- [${page.title}](https://mcpwatchman.com${page.path}
 
 ## Source and packages
 
-- [Repository](https://github.com/kVadrum/mcpwatchman): code and scan data MIT, the site's prose CC BY 4.0 (quoted excerpts of scanned servers' source remain their authors'). The semgrep ruleset, the scoring engine and the methodology are all public.
+- [Repository](https://github.com/kVadrum/mcpwatchman): code and scan data MIT, the site's prose CC BY 4.0 (quoted excerpts of scanned servers' source remain their authors'; each record's install_resolution block is deps.dev's data, under CC BY 4.0). The semgrep ruleset, the scoring engine and the methodology are all public.
 - [PyPI package](https://pypi.org/project/mcpwatchman/): \`pip install mcpwatchman\`. Python 3.12+.
 - [npm package](https://www.npmjs.com/package/mcpwatchman): a pointer. \`npx mcpwatchman\` prints where the real tool is and exits; there is no npm distribution of the scanner itself.
 

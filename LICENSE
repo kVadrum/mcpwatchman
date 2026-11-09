@@ -20,6 +20,7 @@ Code (MIT):
     scanned servers' source, which remain their authors' and are quoted
     for analysis; no licence to them is granted here — AND EXCEPT each
     record's `install_resolution` block (below)
+  * README.md and the other repository documentation
 
 Third-party data (CC BY 4.0, not ours to relicense):
   * each record's `install_resolution` block is derived from the
@@ -27,7 +28,6 @@ Third-party data (CC BY 4.0, not ours to relicense):
     https://deps.dev/), which are licensed under CC BY 4.0. That block
     stays under CC BY 4.0 and must be attributed to deps.dev wherever it
     is reused; the page and the data name the source beside it.
-  * README.md and the other repository documentation
 
 Content (CC BY 4.0):
   * the prose of the website at https://mcpwatchman.com — the text of

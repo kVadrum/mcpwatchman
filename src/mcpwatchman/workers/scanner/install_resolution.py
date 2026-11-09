@@ -58,6 +58,7 @@ _ECOSYSTEM = {"npm": "npm", "pypi": "PyPI"}
 # is a consequence of what the publisher declared. A wall-clock deadline as
 # well as a byte cap, for the reason `source._download` documents.
 FETCH_TIMEOUT_S = 30
+READ_TIMEOUT_S = 10
 MAX_GRAPH_BYTES = 8 * 1024 * 1024
 MAX_NODES = 5_000
 MAX_LISTED = 50
@@ -70,7 +71,8 @@ _PYPI_NAME = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$")
 _VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.+_!-]{0,63}$")
 
 LABEL = (
-    "Resolved by deps.dev, not pinned by the publisher: these are the versions "
+    "Resolved by deps.dev, not read from a lockfile the publisher shipped: these "
+    "are the versions "
     "deps.dev's resolver picked for an install of this package, which can "
     "differ from what a real install picks. deps.dev records no resolution "
     "time and has been measured lagging the npm registry by up to about 30 "
@@ -98,6 +100,10 @@ class InstallResolution:
     nodes: int = 0
     direct: int = 0
     skipped_nodes: int = 0
+    # Requirements deps.dev itself could not resolve. The subtree under each
+    # is missing from the graph, so the list is incomplete however clean it
+    # reads (measured 2026-11-09: 1 of 226 cohort graphs, on its SELF node).
+    unresolved: int = 0
     findings: tuple[dict, ...] = field(default_factory=tuple)
     findings_total: int = 0
     label: str = LABEL
@@ -109,6 +115,7 @@ class InstallResolution:
             "fetched_at": self.fetched_at, "system": self.system,
             "package": self.package, "version": self.version, "nodes": self.nodes,
             "direct": self.direct, "skipped_nodes": self.skipped_nodes,
+            "unresolved": self.unresolved,
             "findings": list(self.findings), "findings_total": self.findings_total,
             "label": self.label,
         }
@@ -123,16 +130,24 @@ def fetch_graph(artifact: str, package: str, version: str) -> tuple[dict | None,
     url = ENDPOINT.format(
         system=_SYSTEMS[artifact], name=quote(package, safe=""), version=quote(version, safe="")
     )
+    # ⚠ The deadline is checked at EVERY network read, so the wall clock is
+    # bounded by FETCH_TIMEOUT_S plus one READ_TIMEOUT_S. `iter_bytes(64 * 1024)`
+    # was here, and httpx's chunker yields nothing until a whole chunk has
+    # arrived, so a response trickling in under the per-read timeout never
+    # reached the check and one server could stall the sequential nightly
+    # (Codex leg, 2026-11-09). `identity` keeps each read a yield: a compressed
+    # trickle can decode to nothing for many reads.
+    deadline = time.monotonic() + FETCH_TIMEOUT_S
     try:
-        with httpx.stream("GET", url, timeout=FETCH_TIMEOUT_S, follow_redirects=False,
-                          headers={"User-Agent": "mcpwatchman"}) as response:
+        with httpx.stream("GET", url, timeout=READ_TIMEOUT_S, follow_redirects=False,
+                          headers={"User-Agent": "mcpwatchman",
+                                   "Accept-Encoding": "identity"}) as response:
             if response.status_code == 404:
                 return None, "deps.dev holds no resolved graph for this version", Fault.PROJECT
             if response.status_code != 200:
                 return None, f"deps.dev answered HTTP {response.status_code}", Fault.ENVIRONMENT
             body = bytearray()
-            deadline = time.monotonic() + FETCH_TIMEOUT_S
-            for chunk in response.iter_bytes(64 * 1024):
+            for chunk in response.iter_bytes():
                 if time.monotonic() > deadline:
                     return None, f"deps.dev did not answer within {FETCH_TIMEOUT_S}s", (
                         Fault.ENVIRONMENT)
@@ -184,6 +199,21 @@ def _nodes(doc: dict, artifact: str) -> tuple[list[tuple[str, str, str]], int, s
     return out, skipped, ""
 
 
+def _unresolved(doc: dict) -> int:
+    """How many requirements deps.dev reports it could not resolve, on any
+    node, SELF included. `_nodes` reads the graph that WAS resolved; this
+    counts what is missing from it, so a clean list is never read as complete.
+    """
+    raw = doc.get("nodes")
+    if not isinstance(raw, list):
+        return 0
+    return sum(
+        sum(1 for e in node["errors"] if e)
+        for node in raw[:MAX_NODES]
+        if isinstance(node, dict) and isinstance(node.get("errors"), list)
+    )
+
+
 def _key(name: str) -> str:
     """PEP 503 normalisation (a no-op for npm's lowercase names), so a name
     osv-scanner reports matches the one deps.dev resolved."""
@@ -233,12 +263,12 @@ def resolve(
     system = _ECOSYSTEM[artifact]
 
     def block(status: str, reason: str = "", fault: Fault | None = None, *,
-              nodes: int = 0, direct: int = 0, skipped: int = 0,
+              nodes: int = 0, direct: int = 0, skipped: int = 0, unresolved: int = 0,
               findings: tuple[dict, ...] = (), total: int = 0) -> InstallResolution:
         return InstallResolution(
             status=status, reason=reason, fault=fault.value if fault else None,
             fetched_at=fetched_at, system=system, package=package, version=version,
-            nodes=nodes, direct=direct, skipped_nodes=skipped,
+            nodes=nodes, direct=direct, skipped_nodes=skipped, unresolved=unresolved,
             findings=findings, findings_total=total,
         )
 
@@ -249,8 +279,16 @@ def resolve(
     if error:
         return block("unavailable", f"deps.dev could not resolve this version: {error[:160]}",
                      Fault.PROJECT)
+    unresolved = _unresolved(doc)
     n_nodes, n_direct = len(nodes), sum(1 for *_, r in nodes if r == "DIRECT")
     if not nodes:
+        if unresolved:
+            # Not "resolves no dependencies": it could not resolve the ones
+            # declared. deps.dev's own gap, so ours to disclose.
+            return block("unavailable",
+                         f"deps.dev could not resolve {unresolved} of this version's "
+                         f"requirement{'' if unresolved == 1 else 's'}",
+                         Fault.PROJECT, skipped=skipped, unresolved=unresolved)
         return block("ok", "deps.dev resolves no dependencies for this version",
                      skipped=skipped)
     scratch = Path(tempfile.mkdtemp(prefix="mcpw-resolve-", dir=workdir))
@@ -261,7 +299,8 @@ def resolve(
         shutil.rmtree(scratch, ignore_errors=True)
     if result.status is not OsvStatus.OK:
         return block("unavailable", f"the resolved graph could not be checked: {result.reason}",
-                     Fault.ENVIRONMENT, nodes=n_nodes, direct=n_direct, skipped=skipped)
+                     Fault.ENVIRONMENT, nodes=n_nodes, direct=n_direct, skipped=skipped,
+                     unresolved=unresolved)
     # Directness per (name, version) from deps.dev itself: the synthetic
     # manifest can only name packages, so a name resolved both directly and
     # underneath something at two versions would read "direct" twice.
@@ -271,9 +310,12 @@ def resolve(
         r = relation.get((_key(f.package), f.version))
         return (r == "DIRECT") if r is not None else bool(f.direct)
 
+    # Severity first: the page lists "the N most severe". Directness leads
+    # Dependency Health's ranking only because `03` §6 deducts more for it,
+    # and nothing here deducts (Codex leg, 2026-11-09).
     ranked = sorted(
         result.findings,
-        key=lambda f: (0 if direct_of(f) else 1, -(f.cvss or 0), f.package, f.osv_id),
+        key=lambda f: (-(f.cvss or 0), 0 if direct_of(f) else 1, f.package, f.osv_id),
     )
     listed = tuple(
         {
@@ -287,7 +329,7 @@ def resolve(
         }
         for f in ranked[:MAX_LISTED]
     )
-    return block("ok", nodes=n_nodes, direct=n_direct, skipped=skipped,
+    return block("ok", nodes=n_nodes, direct=n_direct, skipped=skipped, unresolved=unresolved,
                  findings=listed, total=len(ranked))
 
 
