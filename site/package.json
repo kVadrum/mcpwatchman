@@ -20,7 +20,7 @@
   "private": true,
   "description": "Public site for mcpwatchman — static Astro, deployed to Cloudflare Pages.",
   "devDependencies": {
-    "wrangler": "4.152.0"
+    "wrangler": "4.156.0"
   },
   "overrides": {
     "miniflare": {
