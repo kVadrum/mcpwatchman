@@ -24,16 +24,14 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import shutil
 import subprocess
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from mcpwatchman.slug import slugify
+
 SHARD_DIR = "reports"
-# Our own `slugify` output. A file name is built from it, so anything else is
-# refused rather than written or read: a slug is not a path.
-_SLUG = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 GIT = shutil.which("git") or "git"
 
 
@@ -46,7 +44,13 @@ def shard_dir(path: Path) -> Path:
 
 
 def shard_name(slug: str) -> str:
-    if not _SLUG.match(slug):
+    """A file name is built from the slug, so only `slugify`'s own output is
+    accepted: its fixed points. `slugify` is idempotent and emits nothing but
+    alphanumerics and single hyphens, so a fixed point is never a path — and,
+    unlike an ASCII pattern, it refuses no slug the cohort can pin. `slugify`
+    keeps Unicode letters (`é/server` → `é-server`), and one such pin refused
+    here would stop every write of the store, i.e. every night."""
+    if not slug or slugify(slug) != slug:
         raise StoreError(f"not a slug: {slug!r}")
     return f"{slug}.json"
 

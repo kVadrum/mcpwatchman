@@ -9,12 +9,14 @@ them change underneath it.
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
 
 from mcpwatchman import store
+from mcpwatchman.slug import slugify
 
 ROWS = [
     {"name": "io.github.b/two", "slug": "io-github-b-two", "axes": {}},
@@ -59,10 +61,40 @@ def test_neither_layout_is_not_an_empty_store(tmp_path: Path) -> None:
         store.read_reports(tmp_path / "scans.json")
 
 
-@pytest.mark.parametrize("bad", ["../escape", "a/b", "", "UPPER", "-lead", "x.json"])
+@pytest.mark.parametrize("bad", ["../escape", "a/b", "", "UPPER", "-lead", "x.json",
+                                 "a--b", "trail-", "é/x", "a\\b", "a\x00b"])
 def test_a_slug_is_never_a_path(bad: str) -> None:
     with pytest.raises(store.StoreError):
         store.shard_name(bad)
+
+
+# Names the cohort accepts (`PinnedServer.validate` asks only for no space)
+# whose slugs `slugify` keeps non-ASCII.
+UNICODE_ROWS = [
+    {"name": n, "slug": slugify(n), "axes": {}}
+    for n in ("io.github.é/server", "io.github.x/ser٠ver", "com.例え/サーバー")
+]
+
+
+def test_every_slug_the_cohort_can_pin_can_be_a_shard(tmp_path: Path) -> None:
+    """An ASCII-only shard name refused `é-server`, which `slugify` produces and
+    the cohort pins — and one refused row fails the whole write, so one such
+    pin would have stopped every night after the flip (Codex, 2026-11-16)."""
+    assert all(not r["slug"].isascii() for r in UNICODE_ROWS)
+    path = tmp_path / "scans.json"
+    store.write_reports(path, [*ROWS, *UNICODE_ROWS], layout_=store.SHARDS)
+    assert store.read_reports(path) == sorted([*ROWS, *UNICODE_ROWS], key=lambda r: r["name"])
+
+
+def test_a_non_ascii_shard_reads_back_at_a_git_ref(tmp_path: Path) -> None:
+    data = tmp_path / "site" / "src" / "data"
+    data.mkdir(parents=True)
+    _git(tmp_path, "init", "-q")
+    store.write_reports(data / "scans.json", UNICODE_ROWS, layout_=store.SHARDS)
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-qm", "shards")
+    assert store.read_reports_at(tmp_path, "HEAD", DATA) == \
+        sorted(UNICODE_ROWS, key=lambda r: r["name"])
 
 
 def test_a_shard_must_hold_the_report_its_name_says(tmp_path: Path) -> None:
@@ -153,6 +185,50 @@ def test_no_page_imports_the_monolith_directly() -> None:
     ]
     assert direct == [], f"import from lib/reports instead: {direct}"
     assert "reports.ts" in {p.name for p in (SITE_SRC / "lib").iterdir()}
+
+
+SITE = SITE_SRC.parent
+ASTRO = SITE / "node_modules" / ".bin" / "astro"
+
+
+@pytest.mark.skipif(not ASTRO.exists(), reason="needs the site's installed deps (CI's `site` job)")
+@pytest.mark.parametrize("state", ["one layout", "neither", "both"])
+def test_the_site_builds_only_from_exactly_one_layout(tmp_path: Path, state: str) -> None:
+    """`npm run build` is the only gate a sync passes before Workers Builds
+    deploys it, and two empty globs are an empty list: without the loader's
+    throw, a store with neither layout built a site with no server pages and
+    deployed it (Codex, 2026-11-16). A real build of a copy, because the claim
+    is about what the build DOES; "one layout" is the control that the copy
+    itself builds, so a refusal below is the loader's and not the harness's."""
+    # The site reads beyond `site/` (`rules/_meta/changelog.md`, for one), so
+    # the copy sits in the repo's shape: every other top-level entry linked.
+    for entry in SITE.parent.iterdir():
+        if entry.name not in {"site", ".git"}:
+            (tmp_path / entry.name).symlink_to(entry)
+    site = tmp_path / "site"
+    shutil.copytree(SITE, site, symlinks=True,
+                    ignore=shutil.ignore_patterns("node_modules", "dist", ".astro", ".wrangler"))
+    (site / "node_modules").symlink_to(SITE / "node_modules")
+    data = site / "src" / "data" / "scans.json"
+    rows = store.read_reports(data)
+    if state == "neither":
+        data.unlink(missing_ok=True)
+        shutil.rmtree(store.shard_dir(data), ignore_errors=True)
+    elif state == "both":
+        store.write_reports(data, rows, layout_=store.SHARDS)
+        data.write_text(json.dumps(rows, indent=1) + "\n")
+
+    proc = subprocess.run(  # noqa: S603 - fixed executable, this test's own copy
+        [str(ASTRO), "build"], cwd=site, capture_output=True, text=True, timeout=600,
+    )
+    out = proc.stdout + proc.stderr
+    if state == "one layout":
+        assert proc.returncode == 0, out[-2000:]
+        assert (site / "dist" / "servers").is_dir()
+    else:
+        assert proc.returncode != 0
+        assert {"neither": "neither scans.json nor reports/",
+                "both": "both scans.json and reports/"}[state] in out
 
 
 # --- writing keeps the layout; the flip is one deliberate command ------------

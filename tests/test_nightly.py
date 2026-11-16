@@ -24,6 +24,10 @@ import pytest
 from mcpwatchman.goldset import AXES
 
 SCRIPT = Path(__file__).resolve().parents[1] / "ops" / "nightly.sh"
+# `mcpwatchman.store` and every in-package module it imports. A test that seeds
+# a fake `main` with the store seeds all of these: a list per test went one
+# import out of date, and its nightly failed to import the store.
+STORE_MODULES = ("src/mcpwatchman/store.py", "src/mcpwatchman/slug.py")
 GIT = shutil.which("git") or "git"
 BASH = shutil.which("bash") or "bash"
 
@@ -262,7 +266,7 @@ def test_the_data_commit_carries_the_score_history(world: World) -> None:
     root = SCRIPT.parents[1]
     seed = world.root / "seed"
     world.git("checkout", "-q", "-B", "main", "origin/main")
-    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py", "src/mcpwatchman/store.py",
+    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py", *STORE_MODULES,
                 "src/mcpwatchman/goldset.py", "src/mcpwatchman/workers/commits.py"):
         (seed / rel).write_text((root / rel).read_text())
         world.git("add", rel)
@@ -282,7 +286,7 @@ def _main_gains_history(world: World) -> None:
     root = SCRIPT.parents[1]
     seed = world.root / "seed"
     world.git("checkout", "-q", "-B", "main", "origin/main")
-    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py", "src/mcpwatchman/store.py",
+    for rel in ("ops/score_history.py", "src/mcpwatchman/history.py", *STORE_MODULES,
                 "src/mcpwatchman/goldset.py", "src/mcpwatchman/workers/commits.py"):
         (seed / rel).write_text((root / rel).read_text())
         world.git("add", rel)
@@ -662,7 +666,6 @@ if knobs.get("FAKE_GROW"):
     rows.append(dict(rows[0], name="c", slug="c"))
 store.write_reports(out, rows)
 '''
-STORE_SRC = (SCRIPT.parents[1] / "src" / "mcpwatchman" / "store.py").read_text()
 
 
 def _commit_tree(world: World, branch: str, write: dict[str, str] | None = None,
@@ -690,9 +693,31 @@ def _dev_data(world: World) -> dict[str, dict]:
             for n in names if n.endswith(".json")}
 
 
+def test_the_seeded_store_modules_are_the_stores_whole_import_closure() -> None:
+    """`STORE_MODULES` is what a fake `main` gets; this keeps it complete."""
+    import ast
+
+    src = SCRIPT.parents[1] / "src"
+    seen: set[str] = set()
+    todo = ["mcpwatchman.store"]
+    while todo:
+        mod = todo.pop()
+        if mod in seen:
+            continue
+        seen.add(mod)
+        tree = ast.parse((src / (mod.replace(".", "/") + ".py")).read_text())
+        todo += [n.module for n in ast.walk(tree)
+                 if isinstance(n, ast.ImportFrom) and n.module
+                 and n.module.startswith("mcpwatchman.")]
+    seeded = {rel.removeprefix("src/").removesuffix(".py").replace("/", ".")
+              for rel in STORE_MODULES}
+    assert seen == seeded
+
+
 @pytest.fixture
 def sharded(world: World) -> World:
-    _commit_tree(world, "main", {"src/mcpwatchman/store.py": STORE_SRC,
+    _commit_tree(world, "main", {**{rel: (SCRIPT.parents[1] / rel).read_text()
+                                    for rel in STORE_MODULES},
                                  "ops/scan_cohort.py": SHARDED_SCAN})
     _commit_tree(world, "dev", split=True)
     return world

@@ -24,6 +24,14 @@ if (mono.length > 0 && split.length > 0) {
   // Either answer would publish one layout's pages over the other's silently.
   throw new Error("both scans.json and reports/ exist: a half-finished move between layouts");
 }
+if (mono.length === 0 && split.length === 0) {
+  // Two empty globs are an empty list, and an empty list builds: an index, an
+  // API and a sitemap with nothing in them, and no server pages — every
+  // published URL unpublished by a build that succeeds. Workers Builds deploys
+  // a sync with no gate but `npm run build`, so this throw is that gate.
+  // Neither layout is malformed data, as it is for `mcpwatchman.store`.
+  throw new Error("neither scans.json nor reports/ exists: refusing to build a site with no reports");
+}
 
 // Shards in the monolith's own order (by name, as `ops/scan_cohort.py` writes
 // it), compared by code unit, never by locale, so the pages cannot tell which
