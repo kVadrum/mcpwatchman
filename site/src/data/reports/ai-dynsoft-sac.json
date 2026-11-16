@@ -1,0 +1,415 @@
+{
+ "name": "ai.dynsoft/sac",
+ "version": "0.1.2",
+ "slug": "ai-dynsoft-sac",
+ "scanned_at": "2026-11-16T02:18:01+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/Software-As-Content/software-as-content-sdk",
+ "package": "pypi:sac-sdk@0.1.2",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": true,
+ "ref_matched_version": null,
+ "repository_commit": null,
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 47,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 84,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "src/sac/renderer/design-systems/default/shim.js",
+     "line": 84,
+     "excerpt": "  React.forwardRef(({ className, ...p }, ref) => {\n    const clean = {};\n    for (const k in p) { if (!_strip.has(k)) clean[k] = p[k]; }\n    return e(tag, { ref, className: cn(base, className), ...clean });\n  });",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/sac/cli.py",
+     "line": 679,
+     "excerpt": "            headers={\"Content-Type\": \"application/json\"},\n        )\n        resp = urllib.request.urlopen(req, timeout=300)\n        result = json.loads(resp.read().decode(\"utf-8\"))\n    except urllib.error.URLError as exc:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/sac/server/http/http.py",
+     "line": 1053,
+     "excerpt": "        import urllib.request\n\n        with urllib.request.urlopen(\n            f\"http://127.0.0.1:{port}/health\", timeout=1.5\n        ) as resp:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/sac/server/http/static/index.js",
+     "line": 500,
+     "excerpt": "    // New App version pushed by an agent \u2014 fetch latest code and re-render.\n    try {\n      const res = await fetch('/conversations/' + convId);\n      const { conversation, events = [] } = await res.json();\n      if (conversation && conversation.latest_code) {",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/sac/server/http/static/index.js",
+     "line": 708,
+     "excerpt": "  if (!conversationId || !pendingAction) return;\n  try {\n    const res = await fetch('/conversations/' + conversationId);\n    if (!res.ok) return;\n    const { events = [] } = await res.json();",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/sac/server/http/static/index.js",
+     "line": 1595,
+     "excerpt": "window.loadConv = async function(id) {\n  try {\n    const res = await fetch('/conversations/' + id);\n    const data = await res.json();\n    const conv = data.conversation;",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/sac/server/http/static/index.js",
+     "line": 1692,
+     "excerpt": "  if (!title) return;\n  try {\n    await fetch('/conversations/' + id, {\n      method: 'PATCH',\n      headers: { 'Content-Type': 'application/json' },",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/sac/server/http/static/index.js",
+     "line": 1707,
+     "excerpt": "  if (!confirm('Delete this conversation?')) return;\n  try {\n    await fetch('/conversations/' + id, { method: 'DELETE' });\n    if (conversationId === id) {\n      conversationId = null;",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/sac/server/mcp/mcp.py",
+     "line": 110,
+     "excerpt": "        import json\n        import urllib.request\n        with urllib.request.urlopen(\n            f\"http://127.0.0.1:{port}/health\", timeout=1.5\n        ) as resp:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/sac/server/mcp/mcp.py",
+     "line": 254,
+     "excerpt": "    )\n    # /inbox can take 60-120s for LLM generation\n    with urllib.request.urlopen(req, timeout=300) as resp:\n        return json.loads(resp.read().decode(\"utf-8\"))\n",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/sac/server/mcp/mcp.py",
+     "line": 403,
+     "excerpt": "        try:\n            def _poll(u=url, t=chunk_timeout):\n                with urllib.request.urlopen(u, timeout=t + 5) as resp:\n                    return json.loads(resp.read().decode(\"utf-8\"))\n            result = await loop.run_in_executor(None, _poll)",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/sac/server/mcp/mcp.py",
+     "line": 448,
+     "excerpt": "    import urllib.request\n    base_url = _ensure_http_server()\n    with urllib.request.urlopen(f\"{base_url}{path}\", timeout=10) as resp:\n        return json.loads(resp.read().decode(\"utf-8\"))\n",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 93,
+   "reason": "",
+   "assessed_weight": "0.85",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "credentials are read from the environment (SAC_API_KEY, SAC_SEARCH_API_KEY), but the README does not document which",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "6 tool registrations and no conditional access logic found \u2014 `03` \u00a74 calls this case 'needs human review' and assigns it no score band, so it is not scored here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 74,
+   "reason": "",
+   "assessed_weight": "0.9",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 66 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 11.0 day(s) to first maintainer comment",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "median release gap 1 days (by releases), last release 175 day(s) ago",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the published source distribution (a lockfile shipped in it, such as uv.lock or pdm.lock, would be read); dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 36,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'Apache-2.0' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:18:05+00:00",
+  "system": "PyPI",
+  "package": "sac-sdk",
+  "version": "0.1.2",
+  "nodes": 39,
+  "direct": 6,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [],
+  "findings_total": 0,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

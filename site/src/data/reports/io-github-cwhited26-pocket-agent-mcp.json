@@ -1,0 +1,284 @@
+{
+ "name": "io.github.cwhited26/pocket-agent-mcp",
+ "version": "0.1.1",
+ "slug": "io-github-cwhited26-pocket-agent-mcp",
+ "scanned_at": "2026-11-16T02:40:29+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/cwhited26/pocket-agent-mcp",
+ "package": "npm:@pocket-agent/mcp-server@0.1.1",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": "697277b664c2c9ae8a2f8b417e03310bde499e93",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 9,
+ "files_pruned": 1,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 95,
+   "reason": "scored on the declared repository, because the published package carries its code only as build output, which is not read as the server's own source; no tag matched this version, so the repository's default branch was read and the findings describe that code, not necessarily the release; 1 vendored or minified path was excluded before scanning; machine-generated bundles are not the server's own code",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/proxy.ts",
+     "line": 40,
+     "excerpt": "  let res: Response;\n  try {\n    res = await fetch(endpoint, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/json\", Accept: \"application/json\" },",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 80,
+   "reason": "",
+   "assessed_weight": "0.25",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "source was fetched but every file in it was oversized, unreadable or excluded, so no source text could be read, and no credential header is declared. An undeclared header is not an absent one \u2014 measured 2026-09-15, only 10 of 100 remotes declare one at all \u2014 so `03` \u00a74's \"no authentication\" band is not established.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared endpoint(s) are HTTPS: https://aipocketagent.com/api/mcp; scored 80, not 100: `03` \u00a74 reserves 100 for HTTPS *with HSTS*, and an HSTS header can only be seen by connecting, which `04` \u00a79 does not do. This is an unverifiable band, not an observed absence.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "source was fetched but every file in it was oversized, unreadable or excluded, so no source text could be read, so there is nothing to scan for committed credentials",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "source was fetched but every file in it was oversized, unreadable or excluded, so no source text could be read, so neither the tool count nor any access-control logic can be read",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 50,
+   "reason": "",
+   "assessed_weight": "0.45",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 111 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "this repository publishes neither releases nor version tags",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "no author reached `03` \u00a75's 5-commit bar in the last 12 months (1 contributor(s) with fewer) \u2014 scored at \u00a75's weakest described band, which the section defines for a quiet sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "package.json declares no runtime dependencies, so there is no dependency version to check \u2014 the axis is left unscored rather than credited with a 100 for nothing measured",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 44,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "deps.dev resolves no dependencies for this version",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:40:35+00:00",
+  "system": "npm",
+  "package": "@pocket-agent/mcp-server",
+  "version": "0.1.1",
+  "nodes": 0,
+  "direct": 0,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [],
+  "findings_total": 0,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

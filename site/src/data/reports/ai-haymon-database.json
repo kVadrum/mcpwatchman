@@ -1,0 +1,496 @@
+{
+ "name": "ai.haymon/database",
+ "version": "0.7.0",
+ "slug": "ai-haymon-database",
+ "scanned_at": "2026-11-16T02:58:40+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/haymon-ai/database",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": true,
+ "repository_commit": "54f40caed164f1677c7d96ceb860dc1d448bd2f8",
+ "registry_state": "deprecated",
+ "registry_note": "The registry lists this server with status deprecated (observed 2026-11-16). That is the publisher's own label, not a finding of ours, and no axis scores it. The scan below is current.",
+ "files_scanned": 21,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 100,
+   "reason": "1 finding from checks whose precision is not yet measured is listed but not deducted",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-npm-install-script (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. This package.json declares an npm `postinstall` script, which npm runs automatically when the package is installed \u2014 for an MCP server started with npx, before any client has run it. Install scripts are how several npm supply-chain compromises executed, and also how many packages build native code; the command is in the excerpt.",
+     "path": "docs/package.json",
+     "line": 10,
+     "excerpt": "\"postinstall\": \"fumadocs-mdx\"",
+     "url": "",
+     "finding": "mcp-npm-install-script",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 30,
+   "reason": "",
+   "assessed_weight": "0.4",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "network transport, and no authentication middleware, credential-header read, or inbound token verification appears anywhere in the source we fetched \u2014 `03` \u00a74's \"no authentication; HTTP transport\" band",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "transport is streamable-http but the entry declares no endpoint URL to read a scheme from",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 4 credential-shaped string(s), every one from a keyword or entropy heuristic (Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at .github/workflows/ci.yml:72; Secret Keyword at README.md:63; Secret Keyword at docs/content/docs/configuration.mdx:106; Secret Keyword at tests/compose.yml:10",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 88,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 2 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "only 0 issue(s) from outside the project fall inside `03` \u00a75's 6-month window, which is under \u00a75's floor of 3, and \u00a75's lifetime-median fallback needs this repository's whole issue history \u2014 more of it than `04` \u00a77's bounded fetch reads. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 5 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "19 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "rmcp 1.5.0 \u2014 GHSA-33f5-2c5q-wgwj",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 8.2, fixed in 2.0.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-33f5-2c5q-wgwj",
+     "finding": "rmcp:GHSA-33f5-2c5q-wgwj",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rmcp 1.5.0 \u2014 GHSA-9pj6-vhgr-3mwh",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 2.0.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-9pj6-vhgr-3mwh",
+     "finding": "rmcp:GHSA-9pj6-vhgr-3mwh",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls-webpki 0.103.12 \u2014 RUSTSEC-2026-0104",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 0.103.13",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0104",
+     "finding": "rustls-webpki:RUSTSEC-2026-0104",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "libsqlite3-sys 0.30.1 \u2014 RUSTSEC-2026-0459",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.8, fixed in 0.39.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0459",
+     "finding": "libsqlite3-sys:RUSTSEC-2026-0459",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rmcp 1.5.0 \u2014 GHSA-9g45-5xwm-f3wc",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.8, fixed in 2.1.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-9g45-5xwm-f3wc",
+     "finding": "rmcp:GHSA-9g45-5xwm-f3wc",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rmcp 1.5.0 \u2014 RUSTSEC-2026-0462",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.5, fixed in 3.9.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0462",
+     "finding": "rmcp:RUSTSEC-2026-0462",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rmcp 1.5.0 \u2014 GHSA-c9xm-49cp-xcr9",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.3, fixed in 2.0.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-c9xm-49cp-xcr9",
+     "finding": "rmcp:GHSA-c9xm-49cp-xcr9",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rsa 0.9.10 \u2014 RUSTSEC-2023-0071",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 5.9, fixed in 0.10.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2023-0071",
+     "finding": "rsa:RUSTSEC-2023-0071",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.38 \u2014 RUSTSEC-2026-0285",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 5.3, fixed in 0.23.45",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0285",
+     "finding": "rustls:RUSTSEC-2026-0285",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.38 \u2014 RUSTSEC-2026-0346",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 4.0, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0346",
+     "finding": "rustls:RUSTSEC-2026-0346",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.38 \u2014 RUSTSEC-2026-0348",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 3.7, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0348",
+     "finding": "rustls:RUSTSEC-2026-0348",
+     "severity": "low",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.38 \u2014 RUSTSEC-2026-0349",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 3.7, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0349",
+     "finding": "rustls:RUSTSEC-2026-0349",
+     "severity": "low",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "anyhow 1.0.102 \u2014 RUSTSEC-2026-0190",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.0.103",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0190",
+     "finding": "anyhow:RUSTSEC-2026-0190",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "crossbeam-epoch 0.9.18 \u2014 RUSTSEC-2026-0204",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.9.20",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0204",
+     "finding": "crossbeam-epoch:RUSTSEC-2026-0204",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "event-listener 5.4.1 \u2014 RUSTSEC-2026-0221",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 5.4.2",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0221",
+     "finding": "event-listener:RUSTSEC-2026-0221",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustix 1.1.4 \u2014 RUSTSEC-2026-0486",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.1.6",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0486",
+     "finding": "rustix:RUSTSEC-2026-0486",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls-webpki 0.103.12 \u2014 RUSTSEC-2026-0382",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.103.16",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0382",
+     "finding": "rustls-webpki:RUSTSEC-2026-0382",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "tokio 1.52.1 \u2014 RUSTSEC-2026-0386",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.53.3",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0386",
+     "finding": "tokio:RUSTSEC-2026-0386",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "webpki-roots 1.0.7 \u2014 RUSTSEC-2026-0381",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.0.10",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0381",
+     "finding": "webpki-roots:RUSTSEC-2026-0381",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 91,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "SECURITY.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

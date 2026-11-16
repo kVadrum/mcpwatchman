@@ -1,0 +1,331 @@
+{
+ "name": "io.github.KyaniteLabs/kinocut",
+ "version": "1.16.1",
+ "slug": "io-github-kyanitelabs-kinocut",
+ "scanned_at": "2026-11-16T02:58:53+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/KyaniteLabs/kinocut",
+ "package": "pypi:kinocut@1.16.1",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": null,
+ "registry_state": "deprecated",
+ "registry_note": "The registry lists this server with status deprecated (observed 2026-11-16). That is the publisher's own label, not a finding of ours, and no axis scores it. The scan below is current.",
+ "files_scanned": 670,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 87,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "kinocut/_crush_shader/render_frames.mjs",
+     "line": 53,
+     "excerpt": "    // Read effect GLSL sources\n    const commonGLSL = readFileSync(join(CRUSH_JS_SRC, 'common.glsl'), 'utf-8');\n    const effectGLSL = readFileSync(join(CRUSH_JS_SRC, 'effects', `${effect}.glsl`), 'utf-8');\n\n    // Create headless canvas at first frame's dimensions",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "kinocut/_crush_shader/render_frames.mjs",
+     "line": 199,
+     "excerpt": "\n            const outBuf = outCanvas.toBuffer('image/png');\n            writeFileSync(join(outputDir, `frame_${frameNum}.png`), outBuf);\n\n            if ((i + 1) % 30 === 0) {",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "kinocut/ai_engine/upscale.py",
+     "line": 132,
+     "excerpt": "        with model_download_stage(model_path) as tmp_model:\n            with (\n                urllib.request.urlopen(req, timeout=120, context=ssl_context) as resp,  # noqa: S310\n                open_staged_writer(str(tmp_model)) as fh,\n            ):",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "kinocut/font_download_worker.py",
+     "line": 68,
+     "excerpt": "    deadline = time.monotonic() + DEFAULT_FONT_DOWNLOAD_DEADLINE\n    total = 0\n    with urllib.request.urlopen(url, timeout=DEFAULT_FONT_DOWNLOAD_TIMEOUT) as response:  # noqa: S310 \u2014 static HTTPS allowlist\n        expected = _declared_font_size(response)\n        while True:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "kinocut/object_matte/weights.py",
+     "line": 67,
+     "excerpt": "    with model_download_stage(dest) as tmp_path:\n        with (\n            urllib.request.urlopen(  # noqa: S310\n                req, timeout=DEFAULT_OBJECT_MATTE_TIMEOUT, context=context\n            ) as resp,",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 4 credential-shaped string(s), every one from a keyword or entropy heuristic (Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at kinocut/ai_engine/upscale.py:35; Hex High Entropy String at kinocut/ai_engine/upscale.py:36; Hex High Entropy String at kinocut/validation.py:157; Hex High Entropy String at kinocut/validation.py:158",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "90 tool registrations with conditional access logic present in the same source",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 77,
+   "reason": "",
+   "assessed_weight": "0.75",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 4 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "median over 8 issue(s) in the last 6 months: 49.5 day(s) to first maintainer comment",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 6 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "the only lockfile (kinocut/revideo_template/package-lock.json) sits inside a nested sub-project \u2014 a directory below this one with its own package manifest \u2014 and whether it also covers this server cannot be told from the tree, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 72,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'Apache-2.0' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:58:59+00:00",
+  "system": "PyPI",
+  "package": "kinocut",
+  "version": "1.16.1",
+  "nodes": 33,
+  "direct": 10,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [],
+  "findings_total": 0,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

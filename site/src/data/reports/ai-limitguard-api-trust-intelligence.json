@@ -1,0 +1,265 @@
+{
+ "name": "ai.limitguard.api/trust-intelligence",
+ "version": "2.9.1",
+ "slug": "ai-limitguard-api-trust-intelligence",
+ "scanned_at": "2026-10-11T02:26:14+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.38.3",
+ "ruleset_version": "0.1.1",
+ "repository_url": "https://github.com/jwconsultancyteam/limitguard-mcp",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": true,
+ "repository_commit": "836aa64c184ccc451ba0e62cb63c581506dba3c1",
+ "registry_state": "delisted",
+ "registry_note": "The registry no longer lists this server (last checked 2026-11-16). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-10-11, and have not been recomputed, because there is no current entry to scan.",
+ "files_scanned": 2,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 95,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-python-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a value that is not a literal and opened without confinement. os.path.join discards the base entirely when the second component is absolute, and neither join nor `/` resolves `..`.",
+     "path": "scripts/off-argv-login.py",
+     "line": 308,
+     "excerpt": "                        # material has left the machine, so from here the\n                        # /proc-visible copies can go.\n                        with open(f\"/proc/{pid}/mem\", \"r+b\", buffering=0) as mem:\n                            scrubbed = scrub_stack(\n                                mem, stack_ranges(pid), needle",
+     "url": "",
+     "finding": "mcp-python-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 80,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "credential requirement present; enforcement partially evidenced",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared endpoint(s) are HTTPS: https://api.limitguard.ai/mcp; scored 80, not 100: `03` \u00a74 reserves 100 for HTTPS *with HSTS*, and an HSTS header can only be seen by connecting, which `04` \u00a79 does not do. This is an unverifiable band, not an observed absence.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 1 credential-shaped string(s), every one from a keyword or entropy heuristic (Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at .github/workflows/release.yml:44",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "10 tool registrations and no conditional access logic found \u2014 `03` \u00a74 calls this case 'needs human review' and assigns it no score band, so it is not scored here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 81,
+   "reason": "",
+   "assessed_weight": "0.9",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 2 day(s) before 2026-10-11",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 15.1 day(s) to first maintainer comment",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the fetched source; dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 72,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "findings_tracked_since": "2026-10-10"
+}

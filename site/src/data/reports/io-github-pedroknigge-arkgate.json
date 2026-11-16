@@ -1,0 +1,463 @@
+{
+ "name": "io.github.pedroknigge/arkgate",
+ "version": "4.8.24",
+ "slug": "io-github-pedroknigge-arkgate",
+ "scanned_at": "2026-11-16T02:48:11+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/pedroknigge/arkgate",
+ "package": "npm:arkgate@4.8.24",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": null,
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 167,
+ "files_pruned": 5,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 82,
+   "reason": "5 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 3 files could not be parsed and were not scanned",
+   "assessed_weight": "0.98",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "bin/lib/ark-order-invariants.mjs",
+     "line": 48,
+     "excerpt": "            throw new ArkOrderError('ARKORDER_NESTED_XI', `${label} key ${JSON.stringify(key)} is not a slow primitive (nested values are microstate)`);\n        }\n        out[key] = Object.is(value, -0) ? 0 : value;\n    }\n    return Object.freeze(out);",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "bin/lib/write-path-capabilities.mjs",
+     "line": 516,
+     "excerpt": "  }\n  for (const capability of WRITE_CAPABILITY_NAMES) {\n    evidence[capability] = unique(evidence[capability]);\n  }\n",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "bin/ark-dashboard.mjs",
+     "line": 96,
+     "excerpt": "  const timer = setTimeout(() => controller.abort(), fetchTimeoutMs);\n  try {\n    const res = await fetch(url, { signal: controller.signal });\n    if (!res.ok) {\n      return { ok: false, kind: 'failure', error: `HTTP ${res.status}` };",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/ci-and-commands.mjs",
+     "line": 560,
+     "excerpt": "    let text;\n    try {\n      text = fs.readFileSync(path.join(dir, name), 'utf8');\n    } catch {\n      continue;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/flat-parent-importers.mjs",
+     "line": 94,
+     "excerpt": "function readText(root, rel) {\n  try {\n    return fs.readFileSync(path.join(root, rel), 'utf8');\n  } catch {\n    return '';",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/gate-files.mjs",
+     "line": 731,
+     "excerpt": "    let content = '';\n    try {\n      content = fs.readFileSync(path.join(workflowsDir, file), 'utf8');\n    } catch {\n      continue;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/github-enforcement.mjs",
+     "line": 285,
+     "excerpt": "    return fs.readdirSync(directory)\n      .filter((file) => /\\.ya?ml$/i.test(file))\n      .map((file) => ({ file, text: fs.readFileSync(path.join(directory, file), 'utf8') }));\n  } catch {\n    return [];",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/html-report.mjs",
+     "line": 39,
+     "excerpt": "  const fileIncludes = (rel, needle) => {\n    try {\n      return fs.readFileSync(path.join(root, rel), 'utf8').includes(needle);\n    } catch {\n      return false;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/html-report.mjs",
+     "line": 373,
+     "excerpt": "  if (!noArchive) {\n    const stamp = new Date().toISOString().replace(/[:.]/g, '-');\n    fs.writeFileSync(path.join(historyDir, `${stamp}.json`), `${JSON.stringify(snapshot, null, 2)}\\n`);\n    // Cap history: keep newest ARK_REPORT_HISTORY_MAX JSON files.\n    try {",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/install-migrate.mjs",
+     "line": 104,
+     "excerpt": "    let text;\n    try {\n      text = fs.readFileSync(path.join(root, rel), 'utf8');\n    } catch {\n      continue;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/install-migrate.mjs",
+     "line": 120,
+     "excerpt": "    let json;\n    try {\n      json = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));\n    } catch {\n      continue;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/install-migrate.mjs",
+     "line": 549,
+     "excerpt": "      let existing = '';\n      try {\n        existing = fs.readFileSync(path.join(root, relativePath), 'utf8');\n      } catch {\n        // Missing file \u2192 write the generated Ark template.",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/mcp-adoption.mjs",
+     "line": 124,
+     "excerpt": "    let json;\n    try {\n      json = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));\n    } catch {\n      continue;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/mcp-adoption.mjs",
+     "line": 403,
+     "excerpt": "        for (const f of fs.readdirSync(wfDir)) {\n          if (!/\\.ya?ml$/i.test(f)) continue;\n          const text = fs.readFileSync(path.join(wfDir, f), 'utf8');\n          if (text.includes('--baseline') && (text.includes('ark-check') || text.includes('arkgate-check'))) {\n            primaryPathUsesBaseline = true;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/skill-install.mjs",
+     "line": 588,
+     "excerpt": "    .map((entry) => entry.name)\n    .sort()\n    .map((name) => [path.basename(name, '.md'), fs.readFileSync(path.join(dir, name), 'utf8')]);\n}\n",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and read or written without confinement. path.join does not resolve away `..`, and path.resolve discards the base entirely on an absolute second component.",
+     "path": "bin/lib/weakest-link.mjs",
+     "line": 133,
+     "excerpt": "    let text = '';\n    try {\n      text = fs.readFileSync(path.join(wfDir, f), 'utf8');\n    } catch {\n      continue;",
+     "url": "",
+     "finding": "mcp-js-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.85",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "no committed credential found, and no environment variable with a credential-shaped name is read anywhere in the source",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it. A tool-list handler IS present, so the tools are built in a shape this counter could not enumerate.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.5",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 2 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "only 0 issue(s) from outside the project fall inside `03` \u00a75's 6-month window, which is under \u00a75's floor of 3, and \u00a75's lifetime-median fallback needs this repository's whole issue history \u2014 more of it than `04` \u00a77's bounded fetch reads. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the published package (npm does not publish a package's package-lock.json; npm-shrinkwrap.json is the lockfile a published package can carry); dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 68,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "SECURITY.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:48:18+00:00",
+  "system": "npm",
+  "package": "arkgate",
+  "version": "4.8.24",
+  "nodes": 1,
+  "direct": 1,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [],
+  "findings_total": 0,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

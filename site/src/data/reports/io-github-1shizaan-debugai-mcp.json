@@ -1,0 +1,297 @@
+{
+ "name": "io.github.1shizaan/debugai-mcp",
+ "version": "2.10.0",
+ "slug": "io-github-1shizaan-debugai-mcp",
+ "scanned_at": "2026-11-16T02:34:34+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/1shizaan/debugai-mcp",
+ "package": "npm:@debugai/mcp@2.10.0",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": "042b6e3e432ecf627de72b66d49540270701d31d",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 36,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 91,
+   "reason": "scored on the declared repository, because the published package carries its code only as build output, which is not read as the server's own source; no tag matched this version, so the repository's default branch was read and the findings describe that code, not necessarily the release",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "src/gatherWorkspaceFacts.ts",
+     "line": 443,
+     "excerpt": "            const block = pkg[field];\n            if (!block || typeof block !== 'object' || Array.isArray(block)) { continue; }\n            merged[field] = { ...block, ...(merged[field] || {}) };   // first file wins\n          }\n        }",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": "2026-10-28",
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "src/workspaceFacts.ts",
+     "line": 906,
+     "excerpt": "    const keptVersions: Record<string, string> = {};\n    for (const name of keptDeps) {\n        if (name in versions) { keptVersions[name] = versions[name]; }\n    }\n",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": "2026-10-28",
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 4 credential-shaped string(s), every one from a keyword or entropy heuristic (Basic Auth Credentials, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at dist/config.js:4; Secret Keyword at dist/index.js:75; Basic Auth Credentials at dist/workspaceFacts.d.ts:253; Basic Auth Credentials at dist/workspaceFacts.js:654",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "source was fetched but every file in it was oversized, unreadable or excluded, so no source text could be read, so neither the tool count nor any access-control logic can be read",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 83,
+   "reason": "",
+   "assessed_weight": "0.45",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 10 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "a release exists but fewer than two fall inside `03` \u00a75's 12-month window, so no median gap can be taken \u2014 and \u00a75's remaining bands are all defined on that median. A limit of the methodology, not of this repository.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the published package (npm does not publish a package's package-lock.json; npm-shrinkwrap.json is the lockfile a published package can carry); dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 53,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "unavailable",
+  "reason": "deps.dev holds no resolved graph for this version",
+  "fault": "project",
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:34:39+00:00",
+  "system": "npm",
+  "package": "@debugai/mcp",
+  "version": "2.10.0",
+  "nodes": 0,
+  "direct": 0,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [],
+  "findings_total": 0,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

@@ -1,0 +1,496 @@
+{
+ "name": "io.github.jrullan/ducklab",
+ "version": "0.7.0",
+ "slug": "io-github-jrullan-ducklab",
+ "scanned_at": "2026-11-16T02:43:16+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/jrullan/ducklab",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": true,
+ "ref_matched_version": true,
+ "repository_commit": "6055099da51e3bb65be63c4b11ab0037badcf7dd",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 253,
+ "files_pruned": 3,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 61,
+   "reason": "1 finding from checks whose precision is not yet measured is listed but not deducted; 3 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 1 file could not be parsed and was not scanned",
+   "assessed_weight": "0.99",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "mcp-go-shell-exec-interpreter (critical/medium)",
+     "detail": "A shell interpreter is invoked with a constructed command string. Go's exec.Command is safe by default precisely because it takes an argument vector; routing through `sh -c` gives that safety away.",
+     "path": "internal/xplat/xplat.go",
+     "line": 157,
+     "excerpt": "\t\tc = exec.Command(\"cmd\", \"/C\", cmd)\n\t} else {\n\t\tc = exec.Command(\"/bin/sh\", \"-c\", cmd)\n\t}\n\tc.Dir = workdir",
+     "url": "",
+     "finding": "mcp-go-shell-exec-interpreter",
+     "severity": "critical",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "frontend/src/lib/colors.ts",
+     "line": 189,
+     "excerpt": "    // Past eight the palette stops clearing the colour-vision floor, so a ninth\n    // is muted rather than a colour that only looks distinct.\n    out[id] = slot <= SERIES_SLOTS ? `var(--series-${slot})` : \"var(--text-muted)\";\n    taken.add(slot);\n    slot++;",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "frontend/src/views/Settings.tsx",
+     "line": 300,
+     "excerpt": "    const r: Record<string, string> = {};\n    for (const mode of Object.keys(v.script_rounds ?? {})) {\n      r[mode] = v.rounds[mode] ? String(v.rounds[mode]) : \"\";\n    }\n    setRounds(r);",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "frontend/src/views/Settings.tsx",
+     "line": 305,
+     "excerpt": "    const rt: Record<string, string> = {};\n    for (const role of Object.keys(v.script_role_turns ?? {})) {\n      rt[role] = v.role_turns?.[role] ? String(v.role_turns[role]) : \"\";\n    }\n    setRoleTurns(rt);",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/engineclt/engineclt.go",
+     "line": 53,
+     "excerpt": "\t\t\tbodyReader = bytes.NewReader(data)\n\t\t}\n\t\treq, err := http.NewRequest(method, c.BaseURL+path, bodyReader)\n\t\tif err != nil {\n\t\t\treturn nil, err",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/engineclt/engineclt.go",
+     "line": 846,
+     "excerpt": "\nfunc (c *Client) streamEvents(ctx context.Context, url string, fn func(SSEEvent) bool) error {\n\treq, err := http.NewRequestWithContext(ctx, \"GET\", url, nil)\n\tif err != nil {\n\t\treturn err",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/provider/openaicompat.go",
+     "line": 144,
+     "excerpt": "// silently running on a 32k default that starves a 200k model.\nfunc (p *OpenAICompat) ModelInfo(ctx context.Context, model string) (*ModelInfo, error) {\n\treq, err := http.NewRequestWithContext(ctx, \"GET\", p.baseURL+\"/models\", nil)\n\tif err != nil {\n\t\treturn nil, err",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/provider/openaicompat.go",
+     "line": 194,
+     "excerpt": "\nfunc (p *OpenAICompat) Models(ctx context.Context) ([]string, error) {\n\treq, err := http.NewRequestWithContext(ctx, \"GET\", p.baseURL+\"/models\", nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"create request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/provider/openaicompat.go",
+     "line": 238,
+     "excerpt": "\t\treturn ChatResponse{}, fmt.Errorf(\"marshal request: %w\", err)\n\t}\n\thttpReq, err := http.NewRequestWithContext(ctx, \"POST\", p.baseURL+\"/chat/completions\", strings.NewReader(string(body)))\n\tif err != nil {\n\t\treturn ChatResponse{}, fmt.Errorf(\"create request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/provider/openaicompat.go",
+     "line": 410,
+     "excerpt": "\t}\n\n\thttpReq, err := http.NewRequestWithContext(ctx, \"POST\", p.baseURL+\"/chat/completions\", strings.NewReader(string(body)))\n\tif err != nil {\n\t\treturn ChatResponse{}, fmt.Errorf(\"create request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/provider/openaicompat.go",
+     "line": 781,
+     "excerpt": "\t\treturn ChatResponse{}, fmt.Errorf(\"marshal request: %w\", err)\n\t}\n\thttpReq, err := http.NewRequestWithContext(ctx, \"POST\", p.baseURL+\"/v1/messages\", strings.NewReader(string(jsonBody)))\n\tif err != nil {\n\t\treturn ChatResponse{}, fmt.Errorf(\"create request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/bugattach.go",
+     "line": 56,
+     "excerpt": "\t\treturn nil, err\n\t}\n\tif err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {\n\t\treturn nil, err\n\t}",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/bugattach.go",
+     "line": 116,
+     "excerpt": "\t\t\tcontinue\n\t\t}\n\t\tdata, err := os.ReadFile(filepath.Join(attachmentsDir(projectPath, bugID), name))\n\t\tif err != nil {\n\t\t\tcontinue",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/release.go",
+     "line": 590,
+     "excerpt": "\t\t\tcontinue\n\t\t}\n\t\tbody, err := os.ReadFile(filepath.Join(release.Dir(entry.Path), n.Name()))\n\t\tif err != nil {\n\t\t\tcontinue",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/review.go",
+     "line": 291,
+     "excerpt": "\t\t\tcontinue\n\t\t}\n\t\tbody, err := os.ReadFile(filepath.Join(review.Dir(entry.Path), n.Name()))\n\t\tif err != nil {\n\t\t\tcontinue",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/runview.go",
+     "line": 137,
+     "excerpt": "\t\t\tcontinue\n\t\t}\n\t\tdata, err := os.ReadFile(filepath.Join(candDir, e.Name()))\n\t\tif err != nil {\n\t\t\tcontinue",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/runview.go",
+     "line": 164,
+     "excerpt": "\t\treturn \"\", fmt.Errorf(\"run %q not found\", id)\n\t}\n\tdata, err := os.ReadFile(filepath.Join(dir, name))\n\tif err != nil {\n\t\tif os.IsNotExist(err) {",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "internal/service/scorecard.go",
+     "line": 153,
+     "excerpt": "\t\t\t\tcontinue\n\t\t\t}\n\t\t\traw, e := os.ReadFile(filepath.Join(root, sd.Name(), f.Name()))\n\t\t\tif e != nil {\n\t\t\t\tcontinue",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "internal/store/store.go",
+     "line": 213,
+     "excerpt": "func (d *DB) NextSequence(table, prefix string) (int, error) {\n\tvar maxNum int\n\terr := d.db.QueryRow(fmt.Sprintf(\n\t\t\"SELECT COALESCE(MAX(CAST(SUBSTR(id, ?) AS INTEGER)), 0) FROM %s WHERE id LIKE ?\",\n\t\ttable), len(prefix)+2, prefix+\"-%\").Scan(&maxNum)",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 16 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Base64 High Entropy String at cmd/ducklab-desktop/frontend/dist/assets/index-ls-N76SS.js:57; Hex High Entropy String at cmd/fake-engine/main.go:409; Secret Keyword at docs/spec/02-DATA-MODEL.md:130; Secret Keyword at docs/spec/02-DATA-MODEL.md:140; Secret Keyword at docs/spec/02-DATA-MODEL.md:146; Base64 High Entropy String at frontend/src/lib/attention.ts:103; Hex High Entropy String at frontend/src/lib/format.test.ts:50; Hex High Entropy String at frontend/src/lib/runview.test.ts:666; Secret Keyword at frontend/src/views/ducklings.test.tsx:40; Hex High Entropy String at frontend/src/views/views.test.tsx:58; \u2026and 6 more matches",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.5",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 17 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "every issue read was filed by the project itself (4 by its maintainers or bots), so none is someone outside waiting for an answer, and `03` \u00a75's question \u2014 will anyone read an issue I file? \u2014 has nothing to measure.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "median release gap 1 days (by releases), last release 68 day(s) ago",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "1 vulnerability was found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "golang.org/x/sys 0.43.0 \u2014 GO-2026-5024",
+     "detail": "transitive, no CVSS published, fixed in 0.44.0",
+     "path": "go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-5024",
+     "finding": "golang.org/x/sys:GO-2026-5024",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 35,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'Apache-2.0' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

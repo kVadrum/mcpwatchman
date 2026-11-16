@@ -1,0 +1,314 @@
+{
+ "name": "ai.mcpjunction/directory",
+ "version": "1.0.0",
+ "slug": "ai-mcpjunction-directory",
+ "scanned_at": "2026-11-16T02:27:47+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/rickstek/mcpjunction",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": false,
+ "repository_commit": "7dc6715386e1464a290cd4362e36b6e048618d0f",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 11,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 91,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "scripts/pipeline.py",
+     "line": 230,
+     "excerpt": "        req.add_header(\"Authorization\", f\"Bearer {TOKEN}\")\n    try:\n        with urllib.request.urlopen(req, timeout=45) as resp:\n            return json.loads(resp.read().decode(\"utf-8\"))\n    except urllib.error.HTTPError as e:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "scripts/verify_edge_rules.py",
+     "line": 94,
+     "excerpt": "    )\n    try:\n        with urllib.request.urlopen(req, timeout=30) as resp:\n            payload = json.loads(resp.read().decode(\"utf-8\"))\n    except urllib.error.HTTPError as exc:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 68,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "source reads a credential header but no enforcing middleware or rejection path was found \u2014 `03` \u00a74's \"present but optional or trivially bypassable\" band",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared endpoint(s) are HTTPS: https://mcpjunction.ai/mcp; scored 80, not 100: `03` \u00a74 reserves 100 for HTTPS *with HSTS*, and an HSTS header can only be seen by connecting, which `04` \u00a79 does not do. This is an unverifiable band, not an observed absence.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 1828 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Base64 High Entropy String at public/data/mcp_servers.json:58108; Base64 High Entropy String at public/data/mcp_servers.json:58877; Base64 High Entropy String at public/data/mcp_servers.json:60313; Base64 High Entropy String at public/data/mcp_servers.json:61964; Hex High Entropy String at state/lastmod.json:6; Hex High Entropy String at state/lastmod.json:10; Hex High Entropy String at state/lastmod.json:14; Hex High Entropy String at state/lastmod.json:18; Hex High Entropy String at state/lastmod.json:22; Hex High Entropy String at state/lastmod.json:26; \u2026and 1818 more matches",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 64,
+   "reason": "",
+   "assessed_weight": "0.7",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 2 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 40.5 day(s) to first maintainer comment",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "this repository publishes neither releases nor version tags",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": 84,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "sharp 0.35.4 \u2014 GHSA-wq5f-xc86-pv6w",
+     "detail": "transitive, CVSS 8.9, fixed in 0.35.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-wq5f-xc86-pv6w",
+     "finding": "sharp:GHSA-wq5f-xc86-pv6w",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "astro 7.4.2 \u2014 GHSA-r3h5-4585-7x3w",
+     "detail": "direct, CVSS 6.3, fixed in 7.4.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-r3h5-4585-7x3w",
+     "finding": "astro:GHSA-r3h5-4585-7x3w",
+     "severity": "medium",
+     "first_seen": "2026-11-14",
+     "deducts": true
+    },
+    {
+     "label": "astro 7.4.2 \u2014 GHSA-mh32-jxcr-mh9f",
+     "detail": "direct, CVSS 2.3, fixed in 7.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-mh32-jxcr-mh9f",
+     "finding": "astro:GHSA-mh32-jxcr-mh9f",
+     "severity": "low",
+     "first_seen": "2026-11-14",
+     "deducts": true
+    }
+   ]
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 29,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: configuration documented (+25), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

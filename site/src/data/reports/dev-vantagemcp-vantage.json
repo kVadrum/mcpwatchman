@@ -1,0 +1,302 @@
+{
+ "name": "dev.vantagemcp/vantage",
+ "version": "1.14.0",
+ "slug": "dev-vantagemcp-vantage",
+ "scanned_at": "2026-11-16T02:34:17+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/vantagemcp/vantage-mcp",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": false,
+ "repository_commit": "fbf6d4949d2b73bfc372f9b3037243ee091a9c35",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 9,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 88,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-python-sql-string-built (medium/medium)",
+     "detail": "A SQL statement is assembled by string building rather than passed as a parameterised query. Every driver here accepts parameters as a second argument; building the string is never necessary.",
+     "path": "src/vantage_mcp/store.py",
+     "line": 51,
+     "excerpt": "    ):\n        if column not in existing:\n            conn.execute(f\"ALTER TABLE api_keys ADD COLUMN {column} {ddl_type}\")\n\n",
+     "url": "",
+     "finding": "mcp-python-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-sql-string-built (medium/medium)",
+     "detail": "A SQL statement is assembled by string building rather than passed as a parameterised query. Every driver here accepts parameters as a second argument; building the string is never necessary.",
+     "path": "src/vantage_mcp/store.py",
+     "line": 493,
+     "excerpt": "    account page).\"\"\"\n    with closing(_connect()) as conn:\n        rows = conn.execute(\n            f\"SELECT {', '.join(_CHECK_COLS)} FROM checks WHERE client_id = ? ORDER BY checked_at DESC LIMIT ?\",\n            (client_id, limit)).fetchall()",
+     "url": "",
+     "finding": "mcp-python-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/vantage_mcp/dataforseo_client.py",
+     "line": 89,
+     "excerpt": "    )\n    try:\n        with urllib.request.urlopen(req, timeout=timeout) as r:\n            return json.load(r)\n    except urllib.error.HTTPError as e:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/vantage_mcp/dataforseo_client.py",
+     "line": 104,
+     "excerpt": "    )\n    try:\n        with urllib.request.urlopen(req, timeout=20) as r:\n            d = json.load(r)\n        return float(d[\"tasks\"][0][\"result\"][0][\"money\"][\"balance\"])",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 80,
+   "reason": "",
+   "assessed_weight": "0.25",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "no authentication appears in the source we fetched, but this server's network endpoint is a hosted remote, whose authentication can be enforced in front of its code \u2014 and no credential header is declared. An undeclared header is not an absent one, so `03` \u00a74's \"no authentication\" band is not established.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared endpoint(s) are HTTPS: https://vantagemcp.dev/mcp; scored 80, not 100: `03` \u00a74 reserves 100 for HTTPS *with HSTS*, and an HSTS header can only be seen by connecting, which `04` \u00a79 does not do. This is an unverifiable band, not an observed absence.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 2 credential-shaped string(s), every one from a keyword or entropy heuristic (Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at README.md:128; Secret Keyword at npm/README.md:29",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "11 tool registrations and no conditional access logic found \u2014 `03` \u00a74 calls this case 'needs human review' and assigns it no score band, so it is not scored here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 88,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 28 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 28 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the fetched source; dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 73,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "SECURITY.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

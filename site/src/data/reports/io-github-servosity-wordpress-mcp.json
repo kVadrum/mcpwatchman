@@ -1,0 +1,507 @@
+{
+ "name": "io.github.Servosity/wordpress-mcp",
+ "version": "0.1.13",
+ "slug": "io-github-servosity-wordpress-mcp",
+ "scanned_at": "2026-11-16T02:37:47+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/servosity/msp-skills",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": true,
+ "ref_matched_version": false,
+ "repository_commit": "37ab86bda727625ec4391325ee3135309f87e5df",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 144,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 86,
+   "reason": "11 findings from checks whose precision is not yet measured are listed but not deducted",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "cli/internal/cli/deliver.go",
+     "line": 164,
+     "excerpt": "\t_ = compact\n\tcontentType := \"application/json\"\n\treq, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))\n\tif err != nil {\n\t\treturn fmt.Errorf(\"building webhook request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "cli/internal/cli/feedback.go",
+     "line": 79,
+     "excerpt": "\t\treturn err\n\t}\n\treq, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))\n\tif err != nil {\n\t\treturn fmt.Errorf(\"building feedback request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "cli/internal/cli/media_upload.go",
+     "line": 182,
+     "excerpt": "// header WordPress requires to name the upload.\nfunc mediaDoUpload(ctx context.Context, timeout time.Duration, base, auth, filename, contentType string, data []byte) (json.RawMessage, int, error) {\n\treq, err := http.NewRequestWithContext(ctx, http.MethodPost, base+\"/media\", bytes.NewReader(data))\n\tif err != nil {\n\t\treturn nil, 0, fmt.Errorf(\"creating request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "cli/internal/cli/media_upload.go",
+     "line": 208,
+     "excerpt": "\t\treturn nil, 0, err\n\t}\n\treq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))\n\tif err != nil {\n\t\treturn nil, 0, err",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "cli/internal/client/client.go",
+     "line": 1212,
+     "excerpt": "\t\t}\n\n\t\treq, err := http.NewRequestWithContext(ctx, method, targetURL, bodyReader)\n\t\tif err != nil {\n\t\t\treturn nil, 0, fmt.Errorf(\"creating request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "cli/internal/cliutil/probe.go",
+     "line": 75,
+     "excerpt": "\t\tclient = &http.Client{Timeout: defaultProbeTimeout}\n\t}\n\treq, reqErr := http.NewRequestWithContext(ctx, \"GET\", url, nil)\n\tif reqErr != nil {\n\t\treturn ReachabilityUnreachable, 0, fmt.Errorf(\"building request: %w\", reqErr)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "cli/internal/learn/derive.go",
+     "line": 330,
+     "excerpt": "\t\t\tcontinue\n\t\t}\n\t\tdata, err := os.ReadFile(filepath.Join(dir, seg.name)) // #nosec G304 -- listed from state dir\n\t\tif err != nil {\n\t\t\tcontinue",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-path-join-unvalidated (medium/low)",
+     "detail": "A filesystem path is assembled from a non-literal and opened without confinement. filepath.Join cleans `..` but does not confine: a component of \"../../etc/passwd\" still resolves outside the base.",
+     "path": "cli/internal/learn/journal.go",
+     "line": 410,
+     "excerpt": "\t\t\tcontinue\n\t\t}\n\t\tdata, err := os.ReadFile(filepath.Join(dir, s.name)) // #nosec G304 -- listed from state dir\n\t\tif err != nil {\n\t\t\tif os.IsNotExist(err) {",
+     "url": "",
+     "finding": "mcp-go-path-join-unvalidated",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 384,
+     "excerpt": "\t}\n\n\tif _, err := conn.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE \"%s\" ADD COLUMN \"%s\" %s`, table, column, decl)); err != nil {\n\t\t// A concurrent Open() may have added the column between our\n\t\t// PRAGMA check and this ALTER. SQLite returns SQLITE_ERROR with",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 1318,
+     "excerpt": "\t}\n\tvar typedCount, genericCount int\n\tif err := s.db.QueryRow(fmt.Sprintf(`SELECT COUNT(*) FROM \"%s\"`, table)).Scan(&typedCount); err != nil {\n\t\treturn false, table, nil\n\t}",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 1353,
+     "excerpt": "\t}\n\tvar dummy string\n\tif err := s.db.QueryRow(fmt.Sprintf(`SELECT name FROM pragma_table_info(\"%s\") WHERE name = 'data'`, table)).Scan(&dummy); err != nil {\n\t\treturn nil, false, nil\n\t}",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 1400,
+     "excerpt": "\t}\n\tvar dummy string\n\tif err := s.db.QueryRow(fmt.Sprintf(`SELECT name FROM pragma_table_info(\"%s\") WHERE name = 'data'`, table)).Scan(&dummy); err != nil {\n\t\treturn false, nil\n\t}",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 1407,
+     "excerpt": "\t\treturn false, nil\n\t}\n\trs, err := s.db.Query(fmt.Sprintf(`SELECT id, data FROM \"%s\"%s`, table, order))\n\tif err != nil {\n\t\treturn false, err",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 3743,
+     "excerpt": "\tvar rows *sql.Rows\n\tif err == nil && table != \"\" {\n\t\trows, err = s.db.Query(fmt.Sprintf(`SELECT id FROM \"%s\"`, strings.ReplaceAll(table, `\"`, `\"\"`)))\n\t}\n\tif err != nil || table == \"\" {",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 3797,
+     "excerpt": "\t\tqTable := strings.ReplaceAll(table, `\"`, `\"\"`)\n\t\tqCol := strings.ReplaceAll(colName, `\"`, `\"\"`)\n\t\trows, qerr := s.db.Query(\n\t\t\tfmt.Sprintf(`SELECT id FROM \"%s\" WHERE \"%s\" = ?`, qTable, qCol), scopeValue)\n\t\tif qerr != nil {",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 3814,
+     "excerpt": "\t}\n\t// No typed table: filter the generic resources table by body field.\n\trows, qerr := s.db.Query(\n\t\tfmt.Sprintf(`SELECT id FROM resources WHERE resource_type = ? AND (CASE WHEN json_valid(data) THEN json_extract(data, '$.%s') END) = ?`, scopeColumn),\n\t\tresourceType, scopeValue,",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 3873,
+     "excerpt": "\t\t\t// key_field value (legal for non-PK fields) would otherwise\n\t\t\t// cause the child endpoint to be fetched once per duplicate row.\n\t\t\trows, err = s.db.Query(fmt.Sprintf(\n\t\t\t\t`SELECT DISTINCT \"%s\" FROM \"%s\" WHERE \"%s\" IS NOT NULL AND \"%s\" != ''`,\n\t\t\t\tqCol, qTable, qCol, qCol,",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 4146,
+     "excerpt": "\tfor _, id := range victims {\n\t\tif typedTable != \"\" {\n\t\t\tif _, err := tx.Exec(fmt.Sprintf(`DELETE FROM \"%s\" WHERE id = ?`, typedTable), id); err != nil {\n\t\t\t\treturn 0, fmt.Errorf(\"reconcile %s: typed delete: %w\", resourceType, err)\n\t\t\t}",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "mcp-go-sql-string-built (medium/low)",
+     "detail": "Listed, not deducted: this check is new and its precision has not been measured, so it is shown for review and scores nothing. A SQL statement is assembled by string building \u2014 fmt.Sprintf, or concatenation with something that is not a constant \u2014 and passed straight to a query method. A value built in can always be sent as an argument after the statement instead (database/sql, pgx and sqlx all take them), and a caller-supplied one is SQL injection; an identifier (a table or column name) cannot be an argument and must be validated or quoted. This check cannot tell which the built part is, so it is listed for review, not deducted.",
+     "path": "cli/internal/store/store.go",
+     "line": 4159,
+     "excerpt": "\t\t// storage key, so strip the suffix before matching (no-op for plain ids).\n\t\tfor _, c := range cascades {\n\t\t\tif _, err := tx.Exec(fmt.Sprintf(`DELETE FROM \"%s\" WHERE \"%s\" = ?`, c.Table, c.FKColumn), BareResourceID(id)); err != nil {\n\t\t\t\treturn 0, fmt.Errorf(\"reconcile %s: cascade %s: %w\", resourceType, c.Table, err)\n\t\t\t}",
+     "url": "",
+     "finding": "mcp-go-sql-string-built",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 9 credential-shaped string(s), every one from a keyword or entropy heuristic (Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at cli/internal/cli/doctor.go:592; Secret Keyword at cli/internal/cli/platform_cli_test.go:427; Secret Keyword at cli/internal/cliutil/secret_funnel.go:148; Secret Keyword at cli/internal/cliutil/secret_funnel_test.go:139; Secret Keyword at cli/internal/config/config.go:516; Secret Keyword at cli/internal/config/config.go:660; Secret Keyword at cli/internal/config/config.go:809; Secret Keyword at cli/internal/config/config_perms_test.go:30; Hex High Entropy String at cli/internal/platform/testdata/receipt-status-golden.json:2",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 87,
+   "reason": "",
+   "assessed_weight": "0.75",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 2 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "median over 45 issue(s) in the last 6 months: 17.1 day(s) to first maintainer comment",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "2 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "github.com/mark3labs/mcp-go 0.57.0 \u2014 GO-2026-6911",
+     "detail": "direct, no CVSS published",
+     "path": "cli/go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-6911",
+     "finding": "github.com/mark3labs/mcp-go:GO-2026-6911",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "golang.org/x/text 0.39.0 \u2014 GO-2026-6629",
+     "detail": "transitive, no CVSS published, fixed in 0.41.0",
+     "path": "cli/go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-6629",
+     "finding": "golang.org/x/text:GO-2026-6629",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 72,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "cli/LICENSE present with no SPDX-License-Identifier tag; identified as 'Apache-2.0' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

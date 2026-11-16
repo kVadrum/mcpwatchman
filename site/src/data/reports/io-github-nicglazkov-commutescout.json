@@ -1,0 +1,520 @@
+{
+ "name": "io.github.nicglazkov/commutescout",
+ "version": "2.134.0",
+ "slug": "io-github-nicglazkov-commutescout",
+ "scanned_at": "2026-11-16T02:47:08+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/nicglazkov/commutescout",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": true,
+ "repository_commit": "7d56fb2fda5b28d7a1305f0848423f340b690df2",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 129,
+ "files_pruned": 1,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 79,
+   "reason": "1 vendored or minified path was excluded before scanning; machine-generated bundles are not the server's own code; 1 file could not be parsed and was not scanned",
+   "assessed_weight": "0.99",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 1500,
+     "excerpt": "  }\n  const counts = {};\n  for (const g of groups) { ambient[g].clearLayers(); items[g] = []; }\n  if (groups.includes('camera')) { cameraCache = []; signCache = []; }\n  if (groups.some((g) => g.startsWith('clo_') || g === 'toll')) {",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "scripts/build_mapstyles.mjs",
+     "line": 68,
+     "excerpt": "\nfor (const name of [\"positron\", \"bright\"]) {\n  const style = await (await fetch(\"https://tiles.openfreemap.org/styles/\" + name)).json();\n  style.name = \"commutescout-\" + name;\n  style.layers = style.layers.filter((l) => !/^poi/.test(l.id) && l[\"source-layer\"] !== \"poi\");",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "site/components/marketplace.tsx",
+     "line": 136,
+     "excerpt": "    );\n    const extra = wanted\n      ? fetch(\"/api/flare/sources?id=\" + encodeURIComponent(wanted), { headers })\n          .then((r) => (r.ok ? r.json() : { sources: [] }))\n          .catch(() => ({ sources: [] }))",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "site/components/turnstile-widget.tsx",
+     "line": 128,
+     "excerpt": "      let next: Status;\n      try {\n        const resp = await fetch(form.action, { method: \"POST\", body });\n        if (resp.ok) {\n          form.reset();",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 1241,
+     "excerpt": "  await Promise.all(cells.map(async ([k, la, lo]) => {\n    try {\n      const res = await fetch('/api/mapdata?bbox=' + la + ',' + lo + ',' +\n        (la + 2) + ',' + (lo + 2) + '&kinds=closure,toll&fields=geo',\n        { cache: 'no-cache' });",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 1716,
+     "excerpt": "  const b = SNAP_BUNDLES[key];\n  try {\n    const res = await fetch(SNAP_BASE + '/' + b.file, { cache: 'no-cache' });\n    if (res.ok) return await res.json();\n  } catch (e) { /* snapshot host unreachable: fall back below */ }",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 1720,
+     "excerpt": "  } catch (e) { /* snapshot host unreachable: fall back below */ }\n  try {\n    const res = await fetch('/api/mapdata?bbox=-85,-180,85,180&kinds=' +\n      b.kinds + '&slim=1', { cache: 'no-cache' });\n    if (!res.ok) return null;",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 1917,
+     "excerpt": "\nasync function fetchPluginBox(bbox) {\n  const res = await fetch('/api/mapdata?bbox=' + bbox + '&kinds=plugin&slim=1', { cache: 'no-cache' });\n  if (!res.ok) return null;\n  return (await res.json()).markers || [];",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 2404,
+     "excerpt": "  const mid = pts[Math.floor(pts.length / 2)];\n  try {\n    const res = await fetch('/api/flow?pts=' +\n      mid[0].toFixed(4) + ',' + mid[1].toFixed(4));\n    if (!res.ok) return;",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 2593,
+     "excerpt": "    btn.textContent = 'Loading\u2026'; btn.disabled = true;\n    try {\n      const res = await fetch('/api/incident/' + encodeURIComponent(btn.dataset.inc));\n      if (!res.ok) throw new Error('unavailable');\n      const d = await res.json();",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-json-merge (medium/low)",
+     "detail": "A parsed JSON document is merged into an existing object. JSON.parse preserves a literal \"__proto__\" key, so a caller-supplied document can reach Object.prototype through Object.assign.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 2963,
+     "excerpt": "  KEY: 'cs.places.v1',\n  load() {\n    try { return Object.assign({ home: null, work: null, saved: [], recents: [] }, JSON.parse(store.get(this.KEY) || '{}')); }\n    catch (_) { return { home: null, work: null, saved: [], recents: [] }; }\n  },",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-json-merge",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 3021,
+     "excerpt": "      // upgrade the coordinates in place. The street point stays as the\n      // fallback if interpolation finds nothing.\n      fetch('/api/geocode?q=' + encodeURIComponent(c.name))\n        .then(r => r.json())\n        .then(d => {",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 3109,
+     "excerpt": "    try {\n      const c = map.getCenter();\n      const res = await fetch('/api/suggest?q=' + encodeURIComponent(q) +\n        '&lat=' + c.lat.toFixed(2) + '&lon=' + c.lng.toFixed(2),\n        { signal: aborter.signal });",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 3152,
+     "excerpt": "    val.className = 'val'; val.textContent = 'Checking address\\u2026';\n    try {\n      const res = await fetch('/api/geocode?q=' + encodeURIComponent(q));\n      const data = await res.json();\n      if (mine !== vseq) return;",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 3714,
+     "excerpt": "  const token = await authToken();\n  if (!token) return { error: 'signin' };\n  const res = await fetch(path, { method: 'POST',\n    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },\n    body: JSON.stringify(body) });",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 3726,
+     "excerpt": "async function snapForReport(latlng) {\n  try {\n    const r = await fetch('/api/snap?lat=' + latlng.lat.toFixed(6) + '&lon=' + latlng.lng.toFixed(6));\n    const d = await r.json();\n    if (d && d.snapped) return Object.assign(L.latLng(d.lat, d.lon), { road: d.road || null });",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/map-app.js",
+     "line": 3880,
+     "excerpt": "  }\n  try {\n    const res = await fetch('/api/flow?pts=' + mids.join('|'));\n    if (!res.ok) return;\n    const data = await res.json();",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/sw.js",
+     "line": 53,
+     "excerpt": "  const cache = await caches.open(SNAP_CACHE);\n  try {\n    const res = await fetch(request);\n    if (res && res.ok) cache.put(request, res.clone());\n    return res;",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/sw.js",
+     "line": 81,
+     "excerpt": "    const hit = await cache.match(e.request);\n    if (hit) return hit;\n    const res = await fetch(e.request);\n    if (res.ok) {\n      // A new version replaces the old ones of the same file.",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/watch-app.js",
+     "line": 52,
+     "excerpt": "  async function api(path, options = {}) {\n    const token = await user.getIdToken();\n    const res = await fetch(path, {\n      ...options,\n      headers: { Authorization: 'Bearer ' + token,",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/ca_roads_demo/static/watch-app.js",
+     "line": 370,
+     "excerpt": "\n  async function geocodeOne(q) {\n    const res = await fetch('/api/geocode?q=' + encodeURIComponent(q));\n    if (!res.ok) throw new Error('address lookup failed');\n    const c = ((await res.json()).candidates || [])[0];",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "src/ca_roads_demo/watch.py",
+     "line": 701,
+     "excerpt": "        \"apns\": {\"payload\": {\"aps\": {\"sound\": \"default\"}}},\n    }\n    r = httpx.post(FCM_URL.format(project=PROJECT), json={\"message\": msg},\n                   headers={\"Authorization\": f\"Bearer {bearer}\"}, timeout=15)\n    if r.status_code == 404 or (r.status_code == 400 and \"UNREGISTERED\" in r.text):",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 74,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "source reads a credential header but no enforcing middleware or rejection path was found \u2014 `03` \u00a74's \"present but optional or trivially bypassable\" band",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared endpoint(s) are HTTPS: https://mcp.commutescout.com/mcp; scored 80, not 100: `03` \u00a74 reserves 100 for HTTPS *with HSTS*, and an HSTS header can only be seen by connecting, which `04` \u00a79 does not do. This is an unverifiable band, not an observed absence.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 12 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at evals/results/history.jsonl:1; Hex High Entropy String at site/app/layout.tsx:98; Base64 High Entropy String at src/ca_roads_demo/states.py:1397; Hex High Entropy String at src/ca_roads_demo/static/admin.html:562; Hex High Entropy String at src/ca_roads_demo/static/map.html:516; Hex High Entropy String at src/ca_roads_demo/static/trip.html:244; Hex High Entropy String at src/ca_roads_demo/static/watch.html:408; Base64 High Entropy String at src/ca_roads_demo/watch.py:49; Base64 High Entropy String at src/ca_roads_mcp/rest.py:164; Secret Keyword at tests/test_contact.py:162; \u2026and 2 more matches",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "21 tool registrations with conditional access logic present in the same source",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 77,
+   "reason": "",
+   "assessed_weight": "0.75",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 10 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 22.5 day(s) to first maintainer comment",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 10 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "the only lockfile (site/package-lock.json) sits inside a nested sub-project \u2014 a directory below this one with its own package manifest \u2014 and whether it also covers this server cannot be told from the tree, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 55,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "SECURITY.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

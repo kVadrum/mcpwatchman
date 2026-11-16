@@ -1,0 +1,332 @@
+{
+ "name": "io.github.API-Disk-Integrations/agent-mandate",
+ "version": "0.1.1",
+ "slug": "io-github-api-disk-integrations-agent-mandate",
+ "scanned_at": "2026-11-16T02:34:42+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/API-Disk-Integrations/agent-mandate-mcp",
+ "package": "npm:@api-disk-integrations/agent-mandate-mcp@0.1.1",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": "2439302b7d18d4f2585d0c21814e9d1c9f635153",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 5,
+ "files_pruned": 1,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 100,
+   "reason": "scored on the declared repository at version 0.1.1, because the published package carries its code only as build output, which is not read as the server's own source; 1 vendored or minified path was excluded before scanning; machine-generated bundles are not the server's own code",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.85",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "no committed credential found, and no environment variable with a credential-shaped name is read anywhere in the source",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 70,
+   "reason": "",
+   "assessed_weight": "0.45",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 61 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "a release exists but fewer than two fall inside `03` \u00a75's 12-month window, so no median gap can be taken \u2014 and \u00a75's remaining bands are all defined on that median. A limit of the methodology, not of this repository.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the published package (npm does not publish a package's package-lock.json; npm-shrinkwrap.json is the lockfile a published package can carry); dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 66,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md, but README.md documents a disclosure route \u2014 `03` \u00a77 accepts either",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:34:46+00:00",
+  "system": "npm",
+  "package": "@api-disk-integrations/agent-mandate-mcp",
+  "version": "0.1.1",
+  "nodes": 3,
+  "direct": 2,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [
+   {
+    "package": "zod",
+    "version": "4.5.4",
+    "osv_id": "GHSA-mrhx-c7xc-m3w5",
+    "cve_id": "CVE-2023-54404",
+    "severity": "high",
+    "cvss": "8.2",
+    "relation": "direct",
+    "fixed_version": "4.6.6",
+    "url": "https://osv.dev/vulnerability/GHSA-mrhx-c7xc-m3w5",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.0.0",
+    "osv_id": "GHSA-jm63-cq47-j5jp",
+    "cve_id": "CVE-2026-111770",
+    "severity": "high",
+    "cvss": "7.7",
+    "relation": "direct",
+    "fixed_version": "2.3.0",
+    "url": "https://osv.dev/vulnerability/GHSA-jm63-cq47-j5jp",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.0.0",
+    "osv_id": "GHSA-46jr-4wx8-v453",
+    "cve_id": "CVE-2026-111768",
+    "severity": "high",
+    "cvss": "7.5",
+    "relation": "direct",
+    "fixed_version": "2.3.0",
+    "url": "https://osv.dev/vulnerability/GHSA-46jr-4wx8-v453",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.0.0",
+    "osv_id": "GHSA-f897-62hf-6gxq",
+    "cve_id": "",
+    "severity": "high",
+    "cvss": "7.5",
+    "relation": "direct",
+    "fixed_version": "2.1.0",
+    "url": "https://osv.dev/vulnerability/GHSA-f897-62hf-6gxq",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.0.0",
+    "osv_id": "GHSA-rvq5-wwqv-78pq",
+    "cve_id": "CVE-2026-111771",
+    "severity": "medium",
+    "cvss": "6.8",
+    "relation": "direct",
+    "fixed_version": "2.3.0",
+    "url": "https://osv.dev/vulnerability/GHSA-rvq5-wwqv-78pq",
+    "deducts": false
+   }
+  ],
+  "findings_total": 5,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

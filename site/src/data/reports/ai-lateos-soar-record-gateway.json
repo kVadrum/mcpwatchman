@@ -1,0 +1,254 @@
+{
+ "name": "ai.lateos/soar-record-gateway",
+ "version": "1.0.0",
+ "slug": "ai-lateos-soar-record-gateway",
+ "scanned_at": "2026-11-16T02:26:37+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "",
+ "repository_url": "https://github.com/lateos-ai/website",
+ "package": "",
+ "source_state": "unreachable",
+ "source_subject": "repository",
+ "source_reason": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+ "transport": "streamable-http",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": null,
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 0,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": null,
+   "reason": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 80,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "registry declares required credential header(s): Authorization; scored 80, not 100: `03` \u00a74's top band also requires that the server REFUSE an uncredentialed request, which cannot be established without connecting (`04` \u00a79). The requirement is declared; its enforcement is unverified.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared endpoint(s) are HTTPS: https://soar-api.nevada-f99.workers.dev/mcp; scored 80, not 100: `03` \u00a74 reserves 100 for HTTPS *with HSTS*, and an HSTS header can only be seen by connecting, which `04` \u00a79 does not do. This is an unverifiable band, not an observed absence.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "no source was fetched, so there is nothing to scan for committed credentials",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no source was fetched, so neither the tool count nor any access-control logic can be read",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": null,
+   "reason": "this server's declared repository could not be read through the GitHub API, so `03` \u00a75's maintenance signals were not retrieved \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "no last-commit date was retrieved for this repository",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "no issue-response median was retrieved. An unanswered issue scores 0 under `03` \u00a75, but an absent measurement is not an unanswered issue.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "no release history was retrieved for this repository",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "no contributor history was retrieved for this repository",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": null,
+   "reason": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "the repository this server declares (https://github.com/lateos-ai/website) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

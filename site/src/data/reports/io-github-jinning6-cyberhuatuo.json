@@ -1,0 +1,427 @@
+{
+ "name": "io.github.JinNing6/cyberhuatuo",
+ "version": "0.2.5",
+ "slug": "io-github-jinning6-cyberhuatuo",
+ "scanned_at": "2026-11-16T02:37:04+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/JinNing6/CyberHuaTuo-Plugin",
+ "package": "pypi:cyberhuatuo@0.2.5",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": true,
+ "ref_matched_version": null,
+ "repository_commit": null,
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 42,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 85,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/case_sync.py",
+     "line": 212,
+     "excerpt": "        req = urllib.request.Request(url, headers=headers)\n        try:\n            with urllib.request.urlopen(req, timeout=10) as resp:\n                # \u4fdd\u5b58\u65b0 ETag\n                new_etag = resp.headers.get(\"ETag\")",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/case_sync.py",
+     "line": 305,
+     "excerpt": "        req = urllib.request.Request(url, headers=headers)\n        try:\n            with urllib.request.urlopen(req, timeout=15) as resp:\n                data = json.loads(resp.read().decode(\"utf-8\"))\n        except Exception as e:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/case_sync.py",
+     "line": 376,
+     "excerpt": "            try:\n                req = urllib.request.Request(raw_url, headers=headers)\n                with urllib.request.urlopen(req, timeout=10) as resp:\n                    content = resp.read()\n                with local_path.open(\"xb\") as output:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/config.py",
+     "line": 145,
+     "excerpt": "\n    req = urllib.request.Request(api_url, headers=headers)\n    with urllib.request.urlopen(req, timeout=30) as resp:\n        tree_data = json.loads(resp.read().decode(\"utf-8\"))\n",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/config.py",
+     "line": 165,
+     "excerpt": "            if github_token:\n                req.add_header(\"Authorization\", f\"Bearer {github_token}\")\n            with urllib.request.urlopen(req, timeout=15) as resp:\n                local_path.write_bytes(resp.read())\n            downloaded += 1",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/github_bot.py",
+     "line": 47,
+     "excerpt": "\n    try:\n        with urllib.request.urlopen(req, timeout=30) as resp:\n            return json.loads(resp.read().decode(\"utf-8\"))\n    except urllib.error.HTTPError as e:",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/traction.py",
+     "line": 129,
+     "excerpt": "        request_headers.update(headers)\n    request = Request(url, headers=request_headers, method=\"GET\")\n    with urlopen(request, timeout=timeout) as response:  # noqa: S310\n        body = response.read().decode(\"utf-8\")\n    return json.loads(body)",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/version_check.py",
+     "line": 30,
+     "excerpt": "        req = urllib.request.Request(url, headers={\"Accept\": \"application/json\"})\n        # \u8bbe\u7f6e 3 \u79d2\u8d85\u65f6\uff0c\u7edd\u4e0d\u963b\u585e\u542f\u52a8\n        with urllib.request.urlopen(req, timeout=3) as resp:\n            data = json.loads(resp.read().decode(\"utf-8\"))\n",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
+     "path": "cyberhuatuo/version_check.py",
+     "line": 63,
+     "excerpt": "            url = \"https://pypi.org/pypi/cyberhuatuo/json\"\n            req = urllib.request.Request(url, headers={\"Accept\": \"application/json\"})\n            with urllib.request.urlopen(req, timeout=3) as resp:\n                data = json.loads(resp.read().decode(\"utf-8\"))\n            latest = data.get(\"info\", {}).get(\"version\", \"\")",
+     "url": "",
+     "finding": "mcp-python-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 80,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "Private Key at tests/test_agent_guard.py:383; \u2026and 14 more matches",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "64 tool registrations with conditional access logic present in the same source",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 65,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 123 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "every issue read was filed by the project itself (4 by its maintainers or bots), so none is someone outside waiting for an answer, and `03` \u00a75's question \u2014 will anyone read an issue I file? \u2014 has nothing to measure.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "median release gap 1 days (by releases), last release 123 day(s) ago",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer, and no commit in over 90 days",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the published source distribution (a lockfile shipped in it, such as uv.lock or pdm.lock, would be read); dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 72,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'Apache-2.0' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "SECURITY.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:37:09+00:00",
+  "system": "PyPI",
+  "package": "cyberhuatuo",
+  "version": "0.2.5",
+  "nodes": 111,
+  "direct": 12,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [
+   {
+    "package": "chromadb",
+    "version": "1.5.9",
+    "osv_id": "PYSEC-2026-311",
+    "cve_id": "CVE-2026-45829",
+    "severity": "critical",
+    "cvss": "10.0",
+    "relation": "direct",
+    "fixed_version": "",
+    "url": "https://osv.dev/vulnerability/PYSEC-2026-311",
+    "deducts": false
+   },
+   {
+    "package": "chromadb",
+    "version": "1.5.9",
+    "osv_id": "PYSEC-2026-3814",
+    "cve_id": "CVE-2026-45833",
+    "severity": "critical",
+    "cvss": "9.4",
+    "relation": "direct",
+    "fixed_version": "",
+    "url": "https://osv.dev/vulnerability/PYSEC-2026-3814",
+    "deducts": false
+   },
+   {
+    "package": "chromadb",
+    "version": "1.5.9",
+    "osv_id": "PYSEC-2026-3813",
+    "cve_id": "CVE-2026-45830",
+    "severity": "high",
+    "cvss": "8.8",
+    "relation": "direct",
+    "fixed_version": "",
+    "url": "https://osv.dev/vulnerability/PYSEC-2026-3813",
+    "deducts": false
+   },
+   {
+    "package": "chromadb",
+    "version": "1.5.9",
+    "osv_id": "PYSEC-2026-3815",
+    "cve_id": "CVE-2026-45831",
+    "severity": "high",
+    "cvss": "8.8",
+    "relation": "direct",
+    "fixed_version": "",
+    "url": "https://osv.dev/vulnerability/PYSEC-2026-3815",
+    "deducts": false
+   }
+  ],
+  "findings_total": 4,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}

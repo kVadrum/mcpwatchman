@@ -1,0 +1,472 @@
+{
+ "name": "io.github.ECD5A/tkach-security",
+ "version": "0.1.2",
+ "slug": "io-github-ecd5a-tkach-security",
+ "scanned_at": "2026-11-16T02:35:49+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/ECD5A/Tkach-Security",
+ "package": "",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": true,
+ "ref_matched_version": true,
+ "repository_commit": "d773070adefe5ac53b6459ed223bedfc32afa4c8",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 14,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 95,
+   "reason": "",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "sdk/go/tkachclient/client.go",
+     "line": 247,
+     "excerpt": "\n\turl := \"http://\" + net.JoinHostPort(host, strconv.Itoa(port)) + path\n\trequest, err := http.NewRequest(method, url, bytes.NewReader(body))\n\tif err != nil {\n\t\treturn Response{}, &Error{Code: ErrorInvalidRequest}",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 100,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "detect-secrets matched 2 credential-shaped string(s), every one from a keyword or entropy heuristic (Basic Auth Credentials, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at .github/workflows/publish-mcp.yml:33; Basic Auth Credentials at crates/tkach-provider-openai/src/config.rs:223",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "no tool registration was recognised anywhere in the source. An MCP server registers tools by definition, so this is a gap in our detection rather than a server with none, and `03` \u00a74's threshold cannot be applied to it.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 79,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 58 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "median release gap 4 days (by releases), last release 58 day(s) ago",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "17 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "assessed_weight": "0",
+   "fault": "project",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "quinn-proto 0.11.17 \u2014 RUSTSEC-2026-0340",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 0.11.18",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0340",
+     "finding": "quinn-proto:RUSTSEC-2026-0340",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "quinn-proto 0.11.17 \u2014 RUSTSEC-2026-0343",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 0.11.18",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0343",
+     "finding": "quinn-proto:RUSTSEC-2026-0343",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.45 \u2014 RUSTSEC-2026-0346",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 4.0, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0346",
+     "finding": "rustls:RUSTSEC-2026-0346",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.45 \u2014 RUSTSEC-2026-0348",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 3.7, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0348",
+     "finding": "rustls:RUSTSEC-2026-0348",
+     "severity": "low",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.45 \u2014 RUSTSEC-2026-0349",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 3.7, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0349",
+     "finding": "rustls:RUSTSEC-2026-0349",
+     "severity": "low",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "lru 0.12.5 \u2014 RUSTSEC-2026-0002",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 2.7, fixed in 0.16.3",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0002",
+     "finding": "lru:RUSTSEC-2026-0002",
+     "severity": "low",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls 0.23.45 \u2014 RUSTSEC-2026-0347",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 2.3, fixed in 0.23.46",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0347",
+     "finding": "rustls:RUSTSEC-2026-0347",
+     "severity": "low",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "lru 0.12.5 \u2014 RUSTSEC-2026-0253",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.18.2",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0253",
+     "finding": "lru:RUSTSEC-2026-0253",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "paste 1.0.15 \u2014 RUSTSEC-2024-0436",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2024-0436",
+     "finding": "paste:RUSTSEC-2024-0436",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "quinn-proto 0.11.17 \u2014 RUSTSEC-2026-0338",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.11.18",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0338",
+     "finding": "quinn-proto:RUSTSEC-2026-0338",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "quinn-proto 0.11.17 \u2014 RUSTSEC-2026-0523",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.11.19",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0523",
+     "finding": "quinn-proto:RUSTSEC-2026-0523",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "quinn-proto 0.11.17 \u2014 RUSTSEC-2026-0524",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.11.19",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0524",
+     "finding": "quinn-proto:RUSTSEC-2026-0524",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "quinn-udp 0.5.15 \u2014 RUSTSEC-2026-0538",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.5.16",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0538",
+     "finding": "quinn-udp:RUSTSEC-2026-0538",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustix 1.1.4 \u2014 RUSTSEC-2026-0486",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.1.6",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0486",
+     "finding": "rustix:RUSTSEC-2026-0486",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "rustls-webpki 0.103.15 \u2014 RUSTSEC-2026-0382",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.103.16",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0382",
+     "finding": "rustls-webpki:RUSTSEC-2026-0382",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "tokio 1.53.1 \u2014 RUSTSEC-2026-0386",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.53.3",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0386",
+     "finding": "tokio:RUSTSEC-2026-0386",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "webpki-roots 1.0.9 \u2014 RUSTSEC-2026-0381",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 1.0.10",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0381",
+     "finding": "webpki-roots:RUSTSEC-2026-0381",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    }
+   ]
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 67,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'Apache-2.0' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: configuration documented (+25)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "CHANGELOG.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "SECURITY.md present",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": null,
+ "findings_tracked_since": "2026-10-10"
+}

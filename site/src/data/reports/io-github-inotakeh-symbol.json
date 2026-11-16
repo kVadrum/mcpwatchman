@@ -1,0 +1,357 @@
+{
+ "name": "io.github.inotakeh/symbol",
+ "version": "0.10.2",
+ "slug": "io-github-inotakeh-symbol",
+ "scanned_at": "2026-11-16T02:42:58+00:00",
+ "methodology_version": "0.2.0",
+ "scanner_version": "0.46.6",
+ "ruleset_version": "0.1.4",
+ "repository_url": "https://github.com/inotakeh/symbol-mcp-server",
+ "package": "npm:symbol-mcp-server@0.10.2",
+ "source_state": "fetched",
+ "source_subject": "",
+ "source_reason": "",
+ "transport": "stdio",
+ "transport_mismatch": false,
+ "ref_matched_version": null,
+ "repository_commit": "846c3c496cf9e8837614748ad80c546fc503f510",
+ "registry_state": "listed",
+ "registry_note": "",
+ "files_scanned": 82,
+ "files_pruned": 0,
+ "axes": {
+  "code_safety": {
+   "axis": "code_safety",
+   "score": 89,
+   "reason": "scored on the declared repository at version 0.10.2, because the published package carries its code only as build output, which is not read as the server's own source",
+   "assessed_weight": "1",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": [
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "scripts/release-definitions.mjs",
+     "line": 144,
+     "excerpt": "  }\n  for (const key of ['inputSchema', 'outputSchema']) {\n    if (Object.hasOwn(shape, key)) shape[key] = splitSchema(shape[key], `${path}/${key}`, texts);\n  }\n  return shape;",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "scripts/capture-fixtures.mjs",
+     "line": 111,
+     "excerpt": "async function main() {\n  const { baseUrl, force, account } = parseArgs(process.argv.slice(2));\n  const get = (path) => request(baseUrl, 'GET', path);\n  const post = (path, body) => request(baseUrl, 'POST', path, body);\n",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "scripts/capture-fixtures.mjs",
+     "line": 112,
+     "excerpt": "  const { baseUrl, force, account } = parseArgs(process.argv.slice(2));\n  const get = (path) => request(baseUrl, 'GET', path);\n  const post = (path, body) => request(baseUrl, 'POST', path, body);\n\n  const nodeInfo = await get('/node/info');",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "auth_posture": {
+   "axis": "auth_posture",
+   "score": 76,
+   "reason": "",
+   "assessed_weight": "0.85",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "authentication_model",
+     "detail": "stdio transport: the client launches the server as a subprocess, so the OS process boundary is the auth boundary \u2014 `03` \u00a74 does not penalise absent auth here",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "transport_security",
+     "detail": "declared transport: stdio \u2014 launched as a subprocess by the client, so the security boundary is the client process, not a network port (`03` \u00a74)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "secret_handling",
+     "detail": "AWS Access Key at dist/domain/network.js:10; \u2026and 6 more matches",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "authorization_granularity",
+     "detail": "source was fetched but every file in it was oversized, unreadable or excluded, so no source text could be read, so neither the tool count nor any access-control logic can be read",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "maintenance": {
+   "axis": "maintenance",
+   "score": 88,
+   "reason": "",
+   "assessed_weight": "0.65",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project",
+    "publisher"
+   ],
+   "evidence": [
+    {
+     "label": "recency",
+     "detail": "last commit 6 day(s) before 2026-11-16",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "issue_responsiveness",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "release_cadence",
+     "detail": "released 29 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "bus_factor",
+     "detail": "sole maintainer",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "repository_signals",
+     "detail": "`03` \u00a75 scores this by quartile WITHIN the server's category, which needs a distribution across every scanned server and so cannot be computed while scanning one. It is a post-pass over the crawl and that pass does not exist yet.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  },
+  "dependency_health": {
+   "axis": "dependency_health",
+   "score": null,
+   "reason": "no lockfile in the published package (npm does not publish a package's package-lock.json; npm-shrinkwrap.json is the lockfile a published package can carry); dependency versions are unresolved, so no vulnerability can be attributed",
+   "assessed_weight": "0",
+   "fault": "publisher",
+   "evidence_omitted": 0,
+   "unmeasured_faults": [],
+   "evidence": []
+  },
+  "transparency": {
+   "axis": "transparency",
+   "score": 72,
+   "reason": "",
+   "assessed_weight": "0.8",
+   "fault": null,
+   "evidence_omitted": 0,
+   "unmeasured_faults": [
+    "project"
+   ],
+   "evidence": [
+    {
+     "label": "license",
+     "detail": "LICENSE present with no SPDX-License-Identifier tag; identified as 'MIT' from its text",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "readme_quality",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "declared_scopes",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "changelog",
+     "detail": "no CHANGELOG in the fetched source. `03` \u00a77's partial credit for tagged releases carrying release notes is not applied here \u2014 that needs the forge API, which this check does not call",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "security_contact",
+     "detail": "no SECURITY.md, but README.md documents a disclosure route \u2014 `03` \u00a77 accepts either",
+     "path": "",
+     "line": 0,
+     "excerpt": "",
+     "url": "",
+     "finding": "",
+     "severity": "",
+     "first_seen": null,
+     "deducts": true
+    }
+   ]
+  }
+ },
+ "install_resolution": {
+  "status": "ok",
+  "reason": "",
+  "fault": null,
+  "source": "deps.dev",
+  "source_url": "https://deps.dev/",
+  "fetched_at": "2026-11-16T02:43:03+00:00",
+  "system": "npm",
+  "package": "symbol-mcp-server",
+  "version": "0.10.2",
+  "nodes": 3,
+  "direct": 2,
+  "skipped_nodes": 0,
+  "unresolved": 0,
+  "findings": [
+   {
+    "package": "zod",
+    "version": "4.6.5",
+    "osv_id": "GHSA-mrhx-c7xc-m3w5",
+    "cve_id": "CVE-2023-54404",
+    "severity": "high",
+    "cvss": "8.2",
+    "relation": "direct",
+    "fixed_version": "4.6.6",
+    "url": "https://osv.dev/vulnerability/GHSA-mrhx-c7xc-m3w5",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.1.0",
+    "osv_id": "GHSA-jm63-cq47-j5jp",
+    "cve_id": "CVE-2026-111770",
+    "severity": "high",
+    "cvss": "7.7",
+    "relation": "direct",
+    "fixed_version": "2.3.0",
+    "url": "https://osv.dev/vulnerability/GHSA-jm63-cq47-j5jp",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.1.0",
+    "osv_id": "GHSA-46jr-4wx8-v453",
+    "cve_id": "CVE-2026-111768",
+    "severity": "high",
+    "cvss": "7.5",
+    "relation": "direct",
+    "fixed_version": "2.3.0",
+    "url": "https://osv.dev/vulnerability/GHSA-46jr-4wx8-v453",
+    "deducts": false
+   },
+   {
+    "package": "@modelcontextprotocol/server",
+    "version": "2.1.0",
+    "osv_id": "GHSA-rvq5-wwqv-78pq",
+    "cve_id": "CVE-2026-111771",
+    "severity": "medium",
+    "cvss": "6.8",
+    "relation": "direct",
+    "fixed_version": "2.3.0",
+    "url": "https://osv.dev/vulnerability/GHSA-rvq5-wwqv-78pq",
+    "deducts": false
+   }
+  ],
+  "findings_total": 4,
+  "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
+ },
+ "findings_tracked_since": "2026-10-10"
+}
