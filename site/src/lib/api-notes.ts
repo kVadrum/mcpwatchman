@@ -1,4 +1,21 @@
 import scans from "./reports";
+import apiChanges from "../data/api-changes.json";
+
+/**
+ * Announced API changes, IN BAND: a program reading these files never reads
+ * `/api/`, so the notice travels in every JSON response (operator ruling
+ * 2026-11-16). Same home as the page and `/feed/api.xml`.
+ */
+export const api_changes = apiChanges.changes.map((c) => ({
+  id: c.id,
+  level: c.level,
+  status: c.status,
+  announced: c.announced,
+  not_before: c.not_before,
+  title: c.title,
+  summary: c.summary,
+  url: `https://mcpwatchman.com/api/#api-change-${c.id}`,
+}));
 
 /**
  * The reading instructions every JSON surface carries — ONE home.
@@ -30,6 +47,9 @@ const trackedPages = scans.filter(
 
 export const notes = {
   generator: "mcpwatchman",
+  api_changes,
+  pages_note:
+    "`/api/servers.json` is page 1 of the full records; `next` names the following page and is null on the last, and `count` is the number of servers published in total, on every page. To read every record, follow `next` until it is null, and read `page_size` rather than assuming one. `/api/index.json` stays a single document of every server, without evidence.",
   composite_published: false,
   composite_note:
     "No composite score is published. The five axes are weighted 30/20/20/15/15 and the weighted score is computed, but it stays withheld until a hand-audited gold set validates those weights.",
@@ -72,6 +92,7 @@ export const notes = {
 // a lookup, and never a score without its coverage.
 export const indexNotes = {
   generator: notes.generator,
+  api_changes,
   composite_published: notes.composite_published,
   composite_note: notes.composite_note,
   coverage_note: notes.coverage_note,

@@ -1,6 +1,7 @@
 import type { APIRoute, GetStaticPaths } from "astro";
 import scans from "../../../../lib/reports";
 import { seriesFor } from "../../../../lib/history";
+import { api_changes } from "../../../../lib/api-notes";
 
 /**
  * One server's score history — `05` §3.7's relation, `06` §3.1's history
@@ -20,6 +21,7 @@ export const GET: APIRoute = ({ props }) =>
           "Each point is one recorded scan; a day with no point is a night this server was not measured, never a day its score held. " +
           "Scores under different scanner, ruleset or methodology versions are different measurements. " +
           "A score is the share of what could be measured — read it with its assessed_weight; null means not assessed, never zero.",
+        api_changes,
         slug: props.server.slug,
         name: props.server.name,
         url: `https://mcpwatchman.com/servers/${props.server.slug}/`,

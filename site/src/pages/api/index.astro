@@ -2,6 +2,10 @@
 import Doc from "../../layouts/Doc.astro";
 import scans from "../../lib/reports";
 import { AXES, EVIDENCE_CAP } from "../../lib/methodology";
+import { PAGE_SIZE } from "../../lib/api-pages";
+import apiChanges from "../../data/api-changes.json";
+
+const changes = [...apiChanges.changes].sort((a, b) => b.announced.localeCompare(a.announced));
 
 // A real slug, so every example URL on this page resolves.
 const example = scans[0]?.slug ?? "";
@@ -106,9 +110,16 @@ const historyShape = `{
 
     <h3><code>/api/servers.json</code></h3>
     <p>
-      Every full record in one document, several megabytes. Prefer it to
-      scraping pages when you need everything.
+      The full records, evidence included, as page 1 of at most {PAGE_SIZE}{" "}
+      servers. <code>next</code> names the following page,{" "}
+      <code>/api/pages/servers/&lt;n&gt;.json</code>, and is{" "}
+      <code>null</code> on the last; <code>count</code> is the number of
+      servers published in total. To read every record, follow{" "}
+      <code>next</code> until it is <code>null</code>, and read{" "}
+      <code>page_size</code> rather than assuming one. Prefer this to scraping
+      pages when you need everything.
     </p>
+    <pre><code>curl {BASE}/api/servers.json</code></pre>
 
     <h3><code>/api/servers/&lt;slug&gt;/history.json</code></h3>
     <p>
@@ -147,9 +158,51 @@ const historyShape = `{
     </dl>
   </section>
 
+  <section class="paper doc-paper" aria-labelledby="api-announced-heading">
+    <h2 id="api-announced-heading">Announced changes</h2>
+    <p>
+      A change that could break a reader is announced here at least 30 days
+      before it takes effect. Every JSON response also carries the list, as{" "}
+      <code>api_changes</code>.
+    </p>
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th scope="col">Change</th>
+            <th scope="col">Kind</th>
+            <th scope="col">Announced</th>
+            <th scope="col">Takes effect no earlier than</th>
+          </tr>
+        </thead>
+        <tbody>
+          {changes.map((c) => (
+            <tr>
+              <th scope="row"><a href={`#api-change-${c.id}`}>{c.title}</a></th>
+              <td>{c.level}</td>
+              <td><time datetime={c.announced}>{c.announced}</time></td>
+              <td><time datetime={c.not_before}>{c.not_before}</time></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {changes.map((c) => (
+      <Fragment>
+        <h3 id={`api-change-${c.id}`}>{c.title}</h3>
+        {c.points.map((p) => <p>{p}</p>)}
+      </Fragment>
+    ))}
+    <p>
+      Each announcement is also published in the{" "}
+      <a href="/feed/api.xml">API feed</a> (Atom).
+    </p>
+  </section>
+
   <section class="doc-section" aria-labelledby="other-heading">
     <h2 id="other-heading">Other machine surfaces</h2>
     <ul>
+      <li><a href="/feed/api.xml">/feed/api.xml</a> — Atom: changes to this API, each announced before it takes effect.</li>
       <li><a href="/feed/high-severity.xml">/feed/high-severity.xml</a> — Atom: critical and high findings new on a tracked page.</li>
       <li><a href="/llms.txt">/llms.txt</a> — a plain-text guide to the site for agents.</li>
       <li><code>/badge/&lt;slug&gt;.svg</code> — the README badge, which names a server's lowest-scoring axis.</li>

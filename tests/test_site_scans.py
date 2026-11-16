@@ -18,6 +18,7 @@ import json
 import re
 import shutil
 import subprocess
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -199,7 +200,92 @@ def test_the_machine_surface_warns_about_partial_coverage() -> None:
     payload = json.loads((DIST / "api" / "servers.json").read_text())
     assert payload["composite_published"] is False
     assert "assessed_weight" in payload["coverage_note"]
-    assert payload["count"] == len(payload["servers"])
+    assert payload["count"] == sum(len(p["servers"]) for p in _full_record_pages())
+
+
+# --- the full records, in pages (api-changes.json, ruling 2026-11-16) -------
+
+API_CHANGES = SITE / "src" / "data" / "api-changes.json"
+PAGING = "servers-json-pages"
+BASE = "https://mcpwatchman.com/"
+
+
+def _api_changes() -> dict:
+    return json.loads(API_CHANGES.read_text())
+
+
+def _full_record_pages() -> list[dict]:
+    """Every page of the full records, walked the way a reader is told to:
+    from `/api/servers.json`, following `next` until it is null."""
+    pages, url = [], f"{BASE}api/servers.json"
+    while url:
+        assert url.startswith(BASE) and len(pages) < 10_000, url
+        pages.append(json.loads((DIST / url.removeprefix(BASE)).read_text()))
+        url = pages[-1]["next"]
+    return pages
+
+
+def test_the_published_set_fits_one_page_until_the_paging_notice_expires(reports) -> None:
+    """Paging is announced 30 days ahead, and what a reader would notice is
+    page 1 no longer holding every server. So a published set larger than one
+    page is refused until the notice has run and the change is marked landed —
+    a publication gate, because growth is what would cross the line."""
+    changes = _api_changes()
+    if len(reports) <= changes["page_size"]:
+        return
+    change = next(c for c in changes["changes"] if c["id"] == PAGING)
+    today = datetime.now(UTC).date()
+    assert change["status"] == "landed" and today >= date.fromisoformat(change["not_before"]), (
+        f"{len(reports)} servers would put /api/servers.json past one page of "
+        f"{changes['page_size']}, but its paging notice runs until {change['not_before']} "
+        f"(status {change['status']!r})"
+    )
+
+
+@needs_dist
+def test_the_pages_of_full_records_hold_exactly_the_published_reports(reports) -> None:
+    pages = _full_record_pages()
+    size = _api_changes()["page_size"]
+    assert [p["page"] for p in pages] == list(range(1, len(pages) + 1))
+    assert all(p["page_count"] == len(pages) and p["page_size"] == size for p in pages)
+    assert all(p["count"] == len(reports) for p in pages)
+    assert all(len(p["servers"]) == size for p in pages[:-1])
+    assert 0 < len(pages[-1]["servers"]) <= size
+
+    def url(n: int) -> str:
+        return f"{BASE}api/servers.json" if n == 1 else f"{BASE}api/pages/servers/{n}.json"
+    for n, p in enumerate(pages, start=1):
+        assert p["prev"] == (url(n - 1) if n > 1 else None)
+        assert p["next"] == (url(n + 1) if n < len(pages) else None)
+    assert [s["slug"] for p in pages for s in p["servers"]] == [r["slug"] for r in reports]
+    # No stray page beyond the last: a stale file would be a second answer.
+    extra = sorted((DIST / "api" / "pages" / "servers").glob("*.json")) \
+        if (DIST / "api" / "pages" / "servers").is_dir() else []
+    assert [f.name for f in extra] == [f"{n}.json" for n in range(2, len(pages) + 1)]
+
+
+@needs_dist
+def test_every_json_response_carries_the_api_notices() -> None:
+    """A program never reads `/api/`, so the notice travels in band."""
+    want = [(c["id"], c["status"], c["announced"], c["not_before"])
+            for c in _api_changes()["changes"]]
+    files = sorted((DIST / "api").rglob("*.json"))
+    assert len(files) > 3
+    for f in files:
+        got = json.loads(f.read_text()).get("api_changes")
+        assert got is not None, f"{f.relative_to(DIST)} carries no api_changes"
+        assert [(c["id"], c["status"], c["announced"], c["not_before"]) for c in got] == want
+
+
+@needs_dist
+def test_no_built_file_nears_the_hosts_per_file_limit() -> None:
+    """Workers static assets refuse a file over 25 MiB on every plan, which
+    fails the deploy — a count-sized page can hold large records, so the bound
+    is checked on the bytes, with margin."""
+    limit = 20 * 1024 * 1024
+    big = [(f.relative_to(DIST), f.stat().st_size) for f in DIST.rglob("*")
+           if f.is_file() and f.stat().st_size > limit]
+    assert big == [], f"over 20 MiB, near the 25 MiB per-file limit: {big}"
 
 
 @needs_dist

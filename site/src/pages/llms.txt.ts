@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import scans from "../lib/reports";
 import { DOC_PAGES } from "../lib/pages";
+import { PAGE_SIZE } from "../lib/api-pages";
 
 /**
  * Generated, because its numbers are claims about the data.
@@ -118,7 +119,8 @@ committing under its own identity counts as an author like a person does.
 - [Scanned servers](https://mcpwatchman.com/servers/): the index, with per-axis scores and coverage.
 - [One server as JSON](https://mcpwatchman.com/api/servers/${exampleSlug}.json): \`/api/servers/<slug>.json\`, the machine twin of \`/servers/<slug>/\` — one record with the reading notes. Prefer this for a single server.
 - [Index](https://mcpwatchman.com/api/index.json): every published server with its name, slug, package, repository and per-axis score and \`assessed_weight\`, no evidence. Use it to find a server by package name or repository URL.
-- [Full JSON](https://mcpwatchman.com/api/servers.json): every record with its evidence, in one multi-megabyte document. Prefer it over scraping HTML when you need everything.
+- [Full JSON](https://mcpwatchman.com/api/servers.json): every record with its evidence, as page 1 of at most ${PAGE_SIZE} servers. Follow \`next\` until it is null to read them all, and read \`page_size\` rather than assuming one; \`count\` is the total. Prefer it over scraping HTML when you need everything.
+- [API feed](https://mcpwatchman.com/feed/api.xml): Atom 1.0. Each announced change to this JSON API, with the date it was announced and the date it takes effect no earlier than: 30 days after announcement for a change that could break a reader. Every JSON response also lists them in-band as \`api_changes\`.
 - CLI: \`mcpwatchman check <server>\` (from the PyPI package below) reads the same JSON; \`--format json\` for machines. It accepts a registry name, slug, npm or PyPI package name, or repository URL.
 - README badge: \`https://mcpwatchman.com/badge/<slug>.svg\`, one per published server, e.g. [this one](https://mcpwatchman.com/badge/${exampleSlug}.svg). It names the server's LOWEST-scoring axis with that axis's measured share when partly measured, "not scored" when no axis was, or "delisted" once the registry drops the server — never an overall score. Its SVG title lists all five axes.
 - [High-severity feed](https://mcpwatchman.com/feed/high-severity.xml): Atom 1.0. Critical and high findings that appeared on a server page already being tracked, newest first, each linked to the finding on its page. A page's findings at its first tracked scan are its baseline and are not announced, so an empty feed means nothing new, not nothing found.
