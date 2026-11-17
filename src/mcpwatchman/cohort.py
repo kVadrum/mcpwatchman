@@ -582,13 +582,16 @@ def systemic_staleness(reports: Iterable[dict]) -> str | None:
     costs that page its refresh, not the run; only a share past
     `max(STALE_FLOOR, 10%)` is treated as the run itself having failed.
 
-    The share is of the rows this run looked at (`checked_this_run`), so a page
-    not due tonight is neither a failure nor a reason to forgive one; on a run
-    that looked at every row that is the whole set, as it always was.
+    EVERY stale row counts, but the share is of the rows this run looked at
+    (`checked_this_run`): a page not due tonight is no reason to forgive a
+    failure, and a stale page is never one a run may pass by (`ops/scan_cohort.py`
+    retries every one), so no stamp can hide one. On a run that looked at every
+    row the share is of the whole set, as it always was; it is never larger.
     """
-    rows = checked_this_run(reports)
+    rows = list(reports)
     stale = sorted(r.get("name", "?") for r in rows if r.get("registry_state") == "stale")
-    limit = max(STALE_FLOOR, len(rows) * STALE_MAX_SHARE_PERCENT // 100)
+    looked_at = checked_this_run(rows)
+    limit = max(STALE_FLOOR, len(looked_at) * STALE_MAX_SHARE_PERCENT // 100)
     if len(stale) <= limit:
         return None
     return (

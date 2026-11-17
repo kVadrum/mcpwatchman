@@ -242,8 +242,14 @@ log "scanning the pinned cohort"
 # is `main`'s, and this wrapper is live the moment it is saved. The data push
 # below keeps the operator's config: it is ours, to our own repository.
 SCAN_GIT=(GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_TERMINAL_PROMPT=0)
+# Only the nightly runs under the unit's `TimeoutStartSec`, so only the nightly
+# tells the scan when to stop starting scans (`scan_cohort.py`, from v0.48.2) —
+# a regeneration or a `--grow` run by hand scans everything. An environment
+# variable rather than a flag: a `main` from before it ignores it, and this
+# wrapper is live the moment it is saved.
+SCAN_DEADLINE=(MCPW_SCAN_DEADLINE_SECONDS=7200)
 set +e
-stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_ENV[@]}" "${SCAN_GIT[@]}" \
+stage "${GITHUB_CREDENTIAL[@]}" -- env "${SCAN_ENV[@]}" "${SCAN_GIT[@]}" "${SCAN_DEADLINE[@]}" \
     PATH="$REPO/.venv-workers/bin:$PATH" PYTHONPATH="$MAIN/src" nice -n 10 \
   "$PY" "$MAIN/ops/scan_cohort.py" \
   --out "$MAIN/site/src/data/scans.json" --cohort "$MAIN/ops/cohort.json"

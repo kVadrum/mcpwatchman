@@ -53,6 +53,8 @@ def driver(monkeypatch, tmp_path: Path):
 
     state: dict = {"entries": {}, "reports": {}, "cohort": Cohort(servers=()),
                    "raises": set(), "calls": []}
+    # A run by hand unless a test says otherwise: only `ops/nightly.sh` sets it.
+    monkeypatch.delenv(sc.DEADLINE_ENV, raising=False)
 
     def run(*argv: str) -> tuple[int, str]:
         out = tmp_path / "scans.json"
@@ -463,7 +465,7 @@ def test_past_the_deadline_a_publishable_page_waits_and_a_moved_one_does_not(
         repository=Repository(url="https://github.com/d/four", source="github"),
     )
     state["reports"]["ai.d/four"] = _report("ai.d/four")
-    monkeypatch.setattr(sc, "SCAN_DEADLINE_SECONDS", -1)
+    monkeypatch.setenv(sc.DEADLINE_ENV, "-1")
 
     code, written = run("--adopt-file", str(_adopt(tmp_path, "ai.d/four")))
 
@@ -480,29 +482,39 @@ def test_past_the_deadline_a_publishable_page_waits_and_a_moved_one_does_not(
 
 
 @pytest.mark.parametrize(
-    "page_change",
+    ("page_change", "registry_status"),
     [
-        {"methodology_version": "0.1.0"},  # another scoring contract
-        {"axes": {"code_safety": {"score": None, "fault": "environment",
-                                  "reason": "our tool did not run"}}},  # refused tonight
-        {"registry_state": "deprecated", "registry_note": "the registry calls it deprecated"},
+        ({"methodology_version": "0.1.0"}, "active"),  # another scoring contract
+        ({"axes": {"code_safety": {"score": None, "fault": "environment",
+                                   "reason": "our tool did not run"}}}, "active"),  # refused
+        ({"registry_state": "deprecated", "registry_note": "deprecated"}, "active"),
+        ({"registry_state": "stale", "registry_note": "our last scan failed"}, "active"),
+        ({"registry_state": "delisted", "registry_note": "no longer listed"}, "active"),
+        # Unmoved, yet its note says "the scan below is current" — a claim a
+        # page passed by for nights would go on making.
+        ({"registry_state": "deprecated", "registry_note": "deprecated"}, "deprecated"),
     ],
-    ids=["off-contract", "unpublishable", "status-moved"],
+    ids=["off-contract", "unpublishable", "status-moved", "stale", "relisted",
+         "still-deprecated"],
 )
-def test_the_deadline_never_passes_by_a_page_that_cannot_be_published_as_it_stands(
-    driver, monkeypatch, tmp_path: Path, page_change: dict
+def test_the_deadline_passes_by_only_a_plain_listed_page(
+    driver, monkeypatch, tmp_path: Path, page_change: dict, registry_status: str
 ) -> None:
     """Passed through, each of these would be refused by a publication gate
     (every night, since a refused night commits nothing and the next one starts
-    from the same pages) or would state something the registry no longer says."""
+    from the same pages), would hide a failure we owe a retry, or would state
+    something the registry no longer says or the page no longer is."""
     import ops.scan_cohort as sc
 
     run, state = driver
     _three_pins_one_moved(state, tmp_path)
+    state["entries"]["ai.a/one"] = RegistryEntry(
+        name="ai.a/one", version="1", is_latest=True, status=registry_status
+    )
     pages = json.loads((tmp_path / "scans.json").read_text())
     pages[0] = {**pages[0], **page_change}  # ai.a/one
     (tmp_path / "scans.json").write_text(json.dumps(pages))
-    monkeypatch.setattr(sc, "SCAN_DEADLINE_SECONDS", -1)
+    monkeypatch.setenv(sc.DEADLINE_ENV, "-1")
 
     code, _ = run()
 
@@ -523,14 +535,14 @@ def test_a_night_that_reaches_almost_none_of_its_pins_is_refused(
     _three_pins_one_moved(state, tmp_path)
     state["entries"]["ai.c/three"] = RegistryEntry(name="ai.c/three", version="1", is_latest=True)
     before = (tmp_path / "scans.json").read_text()
-    monkeypatch.setattr(sc, "SCAN_DEADLINE_SECONDS", -1)
+    monkeypatch.setenv(sc.DEADLINE_ENV, "-1")
 
     code, written = run()
 
     assert code == 3
     assert state["calls"] == []
     assert written == before, "nothing written"
-    assert "reached 0 of 3 pins" in capsys.readouterr().err
+    assert "reached 0 of 3 servers" in capsys.readouterr().err
 
 
 def _adopt(tmp_path: Path, *names: str) -> Path:
@@ -561,26 +573,64 @@ def test_every_row_the_run_looked_at_carries_its_stamp_kept_ones_included(
     assert len(checked_this_run(rows.values())) == 3
 
 
-def test_the_deadline_leaves_the_unit_time_to_publish() -> None:
-    """The unit kills the night at `TimeoutStartSec`, and a killed night
-    publishes nothing. The deadline only stops scans STARTING: the last one
-    started can run every tool to its budget — fetch, secrets, semgrep, then a
-    supplementary repository's fetch and semgrep, osv-scanner — and an our-side
-    timeout is retried once. Then the gates, build, commit and deploy."""
+def test_a_run_by_hand_has_no_deadline(driver, monkeypatch, tmp_path: Path) -> None:
+    """A regeneration after a contract bump, or a `--grow`, is run by hand and
+    must scan everything: a run that passed rows through would leave them on
+    the old contract, and the gates would refuse every night after."""
+    import ops.scan_cohort as sc
+
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    clock = iter(range(0, 10**9, 10**6))
+    monkeypatch.setattr(sc.time, "time", lambda: float(next(clock)))
+
+    code, _ = run()
+
+    assert code == 0
+    assert sorted(state["calls"]) == ["ai.a/one", "ai.b/two", "ai.c/three"]
+
+
+def test_growth_scanned_before_the_deadline_counts_as_work_done(
+    driver, monkeypatch, tmp_path: Path
+) -> None:
+    """A night that spent its time on growth reached something; refusing it
+    would throw the growth away and blame a stalled network."""
+    import ops.scan_cohort as sc
+
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    state["entries"]["ai.c/three"] = RegistryEntry(name="ai.c/three", version="1", is_latest=True)
+    state["entries"]["ai.d/four"] = RegistryEntry(
+        name="ai.d/four", version="1", is_latest=True,
+        repository=Repository(url="https://github.com/d/four", source="github"),
+    )
+    state["reports"]["ai.d/four"] = _report("ai.d/four")
+    monkeypatch.setenv(sc.DEADLINE_ENV, "-1")
+
+    code, written = run("--adopt-file", str(_adopt(tmp_path, "ai.d/four")))
+
+    assert code == 0
+    assert state["calls"] == ["ai.d/four"]
+    assert "ai.d/four" in {r["name"] for r in json.loads(written)}
+
+
+def test_the_nightly_deadline_leaves_the_unit_time_to_publish() -> None:
+    """Only `ops/nightly.sh` sets the deadline, and the unit kills the night at
+    `TimeoutStartSec`. The deadline stops scans STARTING, so the margin holds
+    the last scan — its slowest measured, retried once — and what follows the
+    scan. Measured, 2026-10-15 → 11-16 (31 nights, 15,249 scans, STATE): the
+    slowest single scan took 302 s, p99 72 s. A scan that runs every tool to its
+    budget can still overrun the margin; then the unit kills the night, as it
+    did before the deadline existed (`scan_cohort.DEADLINE_ENV`)."""
     import re
 
     import ops.scan_cohort as sc
 
-    from mcpwatchman.workers.scanner.auth_check import SECRET_SCAN_TIMEOUT
-    from mcpwatchman.workers.scanner.osv_check import OSV_TIMEOUT_S
-    from mcpwatchman.workers.scanner.semgrep_check import SEMGREP_TIMEOUT_S
-    from mcpwatchman.workers.scanner.source import FETCH_TIMEOUT_S
-
-    unit = (Path(__file__).resolve().parents[1] / "ops" / "systemd"
-            / "mcpwatchman-nightly.service").read_text()
+    ops = Path(__file__).resolve().parents[1] / "ops"
+    unit = (ops / "systemd" / "mcpwatchman-nightly.service").read_text()
     hours = int(re.search(r"^TimeoutStartSec=(\d+)h$", unit, re.M).group(1))  # type: ignore[union-attr]
-    one_attempt = (2 * FETCH_TIMEOUT_S + SECRET_SCAN_TIMEOUT + 2 * SEMGREP_TIMEOUT_S
-                   + OSV_TIMEOUT_S)
-    before_and_after_the_scan = 15 * 60
-    assert (sc.SCAN_DEADLINE_SECONDS + 2 * one_attempt + before_and_after_the_scan
-            <= hours * 3600)
+    nightly = (ops / "nightly.sh").read_text()
+    found = re.findall(rf"\b{sc.DEADLINE_ENV}=(\d+)\b", nightly)
+    assert len(found) == 1, "the nightly sets the deadline exactly once"
+    slowest_scan_measured, after_the_scan = 10 * 60, 15 * 60
+    assert int(found[0]) + 2 * slowest_scan_measured + after_the_scan <= hours * 3600

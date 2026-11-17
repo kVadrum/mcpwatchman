@@ -627,8 +627,11 @@ def test_a_rolled_night_is_judged_on_what_it_looked_at_not_on_the_whole_set() ->
         # that does not stamp — `main` before this field reached it.
         [_row(0, checked=LAST_NIGHT, scanned="2026-11-01T00:00:00+00:00", state="stale"),
          _row(1, checked=None, scanned="2026-11-18T02:30:00+00:00")],
-        # A stamp nobody can read.
-        [_row(0, checked="not a time", scanned=TONIGHT), _row(1, checked=None, scanned=TONIGHT)],
+        # A stamp nobody can read, beside readable ones that would otherwise
+        # name a run: judging only those would drop the stale row from view.
+        [_row(0, checked="not a time", scanned="2026-11-01T00:00:00+00:00", state="stale"),
+         _row(1, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00"),
+         _row(2, checked=LAST_NIGHT, scanned="2026-11-17T02:30:00+00:00")],
     ],
 )
 def test_a_stamp_this_sets_run_did_not_write_judges_every_row(rows) -> None:
@@ -637,9 +640,23 @@ def test_a_stamp_this_sets_run_did_not_write_judges_every_row(rows) -> None:
     assert checked_this_run(rows) == rows
 
 
+def test_every_stale_row_counts_whatever_its_stamp() -> None:
+    """A file edited, merged or regenerated into mostly-stale pages is what the
+    second enforcer exists to refuse: 300 stale under last night's stamp beside
+    192 fresh under tonight's. Counting only the stale rows among the rows a run
+    looked at, it passed; every stale row counts, against tonight's share."""
+    from mcpwatchman.cohort import systemic_staleness
+
+    rows = [_row(i, checked=LAST_NIGHT, scanned="2026-11-01T00:00:00+00:00", state="stale")
+            for i in range(300)]
+    rows += [_row(i, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00")
+             for i in range(300, 492)]
+    assert systemic_staleness(rows) is not None
+
+
 def test_two_spellings_of_one_stamp_are_one_stamp_whatever_the_row_order() -> None:
     """`Z` and `+00:00` name the same instant. Matched as strings, the rows
-    judged depended on which spelling came first — 40 or 80 of the same set."""
+    judged depended on which spelling came first — 40 or 100 of the same set."""
     from mcpwatchman.cohort import checked_this_run
 
     fresh = [_row(i, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00") for i in range(40)]
@@ -666,7 +683,10 @@ def test_a_time_with_no_offset_judges_every_row_rather_than_raising() -> None:
     rows = [_row(0, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00"),
             _row(1, checked=None, scanned="2026-11-17T02:30:00")]
     assert checked_this_run(rows) == rows
-    naive = [_row(0, checked="2026-11-18T02:00:00", scanned="2026-11-18T02:30:00+00:00")]
+    naive = [_row(0, checked="2026-11-18T02:00:00", scanned="2026-11-01T00:00:00+00:00",
+                  state="stale"),
+             _row(1, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00"),
+             _row(2, checked=LAST_NIGHT, scanned="2026-11-17T02:30:00+00:00")]
     assert checked_this_run(naive) == naive
     assert systemic_staleness(rows) is None
 

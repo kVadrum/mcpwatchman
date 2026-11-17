@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import sys
 import time
@@ -309,43 +310,58 @@ def _growth_candidates(
     return out
 
 
-# When the run stops STARTING scans, counted from its own start (the registry
-# sweep included). `ops/systemd/mcpwatchman-nightly.service` kills the whole
-# night at `TimeoutStartSec=3h`, and a killed night publishes nothing; a run
-# that stops here publishes what it reached and passes every other pin through
-# with its last scan, which is the rolling nightly ruled 2026-11-09 (D1a) at the
-# size where one night no longer holds every server. At 492 a night takes about
-# an hour, so nothing is passed through. The last scan started can still run its
-# every tool to its budget, twice (`_scan_once_more_if_ours`), so
-# `tests/test_scan_cohort_driver.py` adds that worst case, from the scanner's own
-# budgets, to this and to the time the night needs after the scan.
-SCAN_DEADLINE_SECONDS = 120 * 60
+# When the run stops STARTING scans, in seconds from its own start (the
+# registry sweep included) — set only by `ops/nightly.sh`, because only the
+# nightly runs under `TimeoutStartSec=3h` (`ops/systemd/`), and a night the unit
+# kills publishes nothing. A run that stops here publishes what it reached and
+# passes every other pin through with its last scan: the rolling nightly ruled
+# 2026-11-09 (D1a), at the size where one night no longer holds every server
+# (at 492 a night takes about an hour, so nothing is passed through). A run by
+# hand — a regeneration after a contract bump, a `--grow` — has no deadline and
+# scans everything, as every run did before this existed.
+# ⚠ It does not GUARANTEE the unit never kills a night: the last scan started
+# runs to completion, and no per-scan wall clock bounds one (a scan that runs
+# every tool to its budget, twice, is the better part of an hour). The margin
+# `tests/test_scan_cohort_driver.py` holds is for scans as measured; past it the
+# unit kills the night, as it did before the deadline existed.
+DEADLINE_ENV = "MCPW_SCAN_DEADLINE_SECONDS"
 
-# A run that stops at its deadline having reached fewer of its pins than this
-# share — the registry sweep eating the night, a stalled network — changed
-# nothing worth publishing and is refused as systemic, as the unit's timeout
-# used to refuse it. It must stay below the share of the set a night is meant
-# to reach (the cadence, an operator decision held in STATE).
+# A run that stops at its deadline having done less than this share of its work
+# (pins and growth) — the registry sweep eating the night, a stalled network —
+# changed nothing worth publishing and is refused as systemic, as the unit's
+# timeout used to refuse it. It must stay below the share of the set a night is
+# meant to reach (the cadence, an operator decision held in STATE).
 MIN_REACHED_PERCENT = 10
+
+
+def _deadline_seconds() -> float | None:
+    raw = os.environ.get(DEADLINE_ENV, "").strip()
+    return float(raw) if raw else None
 
 
 def _due_order(
     pins: list[tuple[RegistryEntry, str]], previous: dict[str, dict]
 ) -> list[tuple[RegistryEntry, str, bool]]:
     """Tonight's pins, the ones that most need a scan first, each with whether
-    the deadline may pass it by.
+    a deadline may pass it by.
 
-    The deadline only ever passes by a page that is publishable as it stands.
-    So these are scanned whatever the hour, and first: a pin with no page yet;
-    a registry entry that moved since its page was scanned (a new version, or a
-    status the page does not show — the page would otherwise state the old one
-    unlabelled); a page scored under another scoring contract, which the
-    contract gate refuses; a page tonight's publication rules refuse. Then the
-    rest, oldest scan first, so a page the last run could not measure keeps its
-    old date and is tried again first. Ties by name hash, so the order is
-    reproducible. A ruleset bump past one night's capacity therefore runs as
-    long as it did before this deadline existed — how it regenerates at scale is
-    held for the operator in STATE.
+    A deadline passes by only a plain page: listed, on the version the registry
+    lists, under the current scoring contract, and accepted by tonight's
+    publication rules. Everything else is scanned whatever the hour, and first —
+    a pin with no page yet; a new registry version; any page that is not plain
+    `listed` (a `stale` one says its last scan failed and must be retried; a
+    `deprecated` one says "the scan below is current"; a `delisted` one whose
+    server is back), or a registry status other than active; another scoring
+    contract or a page the publication rules refuse, which the gates would
+    refuse every night. Then the rest, oldest scan first. Ties by name hash, so
+    the order is reproducible.
+
+    The data gates in `tests/test_site_scans.py` the nightly also runs are held
+    by CI: a gate that newly requires something of every row fails on `dev`'s
+    committed data until it is regenerated, and a regeneration is a run by hand,
+    which has no deadline. A contract bump past one night's capacity therefore
+    runs as long as it did before the deadline existed — how it regenerates at
+    scale is held for the operator in STATE.
     """
     from mcpwatchman.workers.scanner.semgrep_check import (
         RulesetError,
@@ -362,18 +378,14 @@ def _due_order(
         rules = None
 
     def must_scan(entry: RegistryEntry, kind: str, page: dict | None) -> bool:
-        if page is None:
+        if page is None or kind != "pinned" or page.get("registry_state") != "listed":
             return True
-        shown = page.get("registry_state")
-        registry_now = entry.status if kind == "flagged" else "listed"
-        moved = (
-            str(page.get("version", "")) != str(entry.version)
-            or (shown != "stale" and shown != registry_now)
-        )
+        if str(page.get("version", "")) != str(entry.version):
+            return True
         off_contract = page.get("methodology_version") != CURRENT_METHODOLOGY_VERSION or (
             bool(page.get("ruleset_version")) and page.get("ruleset_version") != rules
         )
-        return moved or off_contract or bool(unpublishable_gaps(entry.name, page))
+        return off_contract or bool(unpublishable_gaps(entry.name, page))
 
     due = [(e, kind, must_scan(e, kind, previous.get(e.name))) for e, kind in pins]
 
@@ -559,8 +571,9 @@ def main() -> int:
     reports: dict[str, dict] = {}
     index = 0
     unmeasured: list[str] = []
-    # Growth first: a candidate has no page to fall back on, so the deadline
-    # below must never be what costs it its pin.
+    # Growth first: a candidate has no page to fall back on, so a deadline
+    # must never be what costs it its pin. Its scans count as work done.
+    growth_tried = len(growth)
     published_growth: list[RegistryEntry] = []
     skipped: list[str] = []
     for entry in growth:
@@ -577,14 +590,15 @@ def main() -> int:
         published_growth.append(entry)
     growth = published_growth
 
-    deadline = started + SCAN_DEADLINE_SECONDS
+    limit = _deadline_seconds()
+    deadline = None if limit is None else started + limit
     not_reached: list[str] = []
     queue = _due_order(
         [(e, "pinned") for e in to_scan] + [(e, "flagged") for e in to_flag], previous
     )
     for entry, kind, must in queue:
         index += 1
-        if not must and time.time() >= deadline:
+        if not must and deadline is not None and time.time() >= deadline:
             # Its page is publishable as it stands (`_due_order`), so it stays
             # exactly as published, own date and all, and is due earlier next
             # run for being older. Not a failure, so not labelled, and not
@@ -668,20 +682,22 @@ def main() -> int:
         if name not in passed_through:
             reports[name] = {**reports[name], "checked_at": run_stamp}
     if not_reached:
+        minutes = int(limit or 0) // 60
         print(
-            f"deadline: {len(not_reached)} pins not reached in "
-            f"{SCAN_DEADLINE_SECONDS // 60} min — each keeps its published page "
-            f"and is due earlier next run (first: {', '.join(not_reached[:5])})",
+            f"deadline: {len(not_reached)} pins not reached in {minutes} min — each "
+            "keeps its published page and is due earlier next run "
+            f"(first: {', '.join(not_reached[:5])})",
             flush=True,
         )
-        reached = len(queue) - len(not_reached)
-        if reached == 0 or reached * 100 < len(queue) * MIN_REACHED_PERCENT:
+        work = growth_tried + len(queue)
+        reached = work - len(not_reached)
+        if reached * 100 < work * MIN_REACHED_PERCENT:
             # The file this run would write is last night's, give or take, and
             # as publishable as it was — so no gate on the FILE can see this.
             # Before the deadline existed the unit's timeout failed it loudly.
             print(
-                f"REFUSING TO WRITE:\n  the run reached {reached} of {len(queue)} "
-                f"pins before its {SCAN_DEADLINE_SECONDS // 60} min deadline, under "
+                f"REFUSING TO WRITE:\n  the run reached {reached} of {work} "
+                f"servers before its {minutes} min deadline, under "
                 f"the {MIN_REACHED_PERCENT}% a night must reach — a stalled "
                 "registry sweep or network is systemic, and publishing would "
                 "report a night that changed nothing as a success. Nothing written.",
