@@ -2,7 +2,7 @@
  "name": "io.github.penny4nonsense/mcp-pymupdf",
  "version": "0.1.1",
  "slug": "io-github-penny4nonsense-mcp-pymupdf",
- "scanned_at": "2026-11-16T02:48:19+00:00",
+ "scanned_at": "2026-11-17T03:04:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -116,7 +116,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 147 day(s) before 2026-11-16",
+     "detail": "last commit 148 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -865,7 +865,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-16T02:48:22+00:00",
+  "fetched_at": "2026-11-17T03:04:24+00:00",
   "system": "PyPI",
   "package": "mcp-pymupdf",
   "version": "0.1.1",

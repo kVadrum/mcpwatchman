@@ -2,7 +2,7 @@
  "name": "ai.elicitly/elicitly",
  "version": "0.8.6",
  "slug": "ai-elicitly-elicitly",
- "scanned_at": "2026-11-16T02:18:06+00:00",
+ "scanned_at": "2026-11-17T02:27:43+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-16",
+     "detail": "last commit 4 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 15 issue(s) in the last 6 months: 84.3 day(s) to first maintainer comment",
+     "detail": "median over 15 issue(s) in the last 6 months: 85.3 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 3 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,7 +252,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-16T02:18:11+00:00",
+  "fetched_at": "2026-11-17T02:27:49+00:00",
   "system": "npm",
   "package": "elicitly",
   "version": "0.8.6",

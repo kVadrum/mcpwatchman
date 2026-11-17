@@ -2,7 +2,7 @@
  "name": "ai.magicinsights/insights",
  "version": "0.1.1",
  "slug": "ai-magicinsights-insights",
- "scanned_at": "2026-11-16T02:27:08+00:00",
+ "scanned_at": "2026-11-17T02:40:27+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 144 day(s) before 2026-11-16",
+     "detail": "last commit 145 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 31.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 32.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",

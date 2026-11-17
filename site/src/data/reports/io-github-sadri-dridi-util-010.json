@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/util-010",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-util-010",
- "scanned_at": "2026-11-16T02:53:05+00:00",
+ "scanned_at": "2026-11-17T03:09:20+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 54 day(s) before 2026-11-16",
+     "detail": "last commit 55 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",

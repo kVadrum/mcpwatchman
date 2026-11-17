@@ -2,7 +2,7 @@
  "name": "io.github.DekryptLabs/dlbrowser",
  "version": "4.0.2",
  "slug": "io-github-dekryptlabs-dlbrowser",
- "scanned_at": "2026-11-16T02:35:45+00:00",
+ "scanned_at": "2026-11-17T02:50:20+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -226,7 +226,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 117 day(s) before 2026-11-16",
+     "detail": "last commit 118 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -374,7 +374,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-16T02:35:48+00:00",
+  "fetched_at": "2026-11-17T02:50:25+00:00",
   "system": "PyPI",
   "package": "dlbrowser",
   "version": "4.0.2",

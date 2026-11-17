@@ -2,7 +2,7 @@
  "name": "io.github.KyaniteLabs/kinocut",
  "version": "1.16.1",
  "slug": "io-github-kyanitelabs-kinocut",
- "scanned_at": "2026-11-16T02:58:53+00:00",
+ "scanned_at": "2026-11-17T03:15:40+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -16,7 +16,7 @@
  "ref_matched_version": null,
  "repository_commit": null,
  "registry_state": "deprecated",
- "registry_note": "The registry lists this server with status deprecated (observed 2026-11-16). That is the publisher's own label, not a finding of ours, and no axis scores it. The scan below is current.",
+ "registry_note": "The registry lists this server with status deprecated (observed 2026-11-17). That is the publisher's own label, not a finding of ours, and no axis scores it. The scan below is current.",
  "files_scanned": 670,
  "files_pruned": 0,
  "axes": {
@@ -154,9 +154,9 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 77,
+   "score": 100,
    "reason": "",
-   "assessed_weight": "0.75",
+   "assessed_weight": "0.5",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
@@ -165,7 +165,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-16",
+     "detail": "last commit 5 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -177,7 +177,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 8 issue(s) in the last 6 months: 49.5 day(s) to first maintainer comment",
+     "detail": "only 0 issue(s) from outside the project fall inside `03` \u00a75's 6-month window, which is under \u00a75's floor of 3, and \u00a75's lifetime-median fallback needs this repository's whole issue history \u2014 more of it than `04` \u00a77's bounded fetch reads. A limit of ours, not a finding about the server.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -189,7 +189,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 6 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 7 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -315,7 +315,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-16T02:58:59+00:00",
+  "fetched_at": "2026-11-17T03:15:51+00:00",
   "system": "PyPI",
   "package": "kinocut",
   "version": "1.16.1",

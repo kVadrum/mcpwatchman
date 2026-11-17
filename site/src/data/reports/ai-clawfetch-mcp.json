@@ -2,7 +2,7 @@
  "name": "ai.clawfetch/mcp",
  "version": "0.4.0",
  "slug": "ai-clawfetch-mcp",
- "scanned_at": "2026-11-16T02:15:02+00:00",
+ "scanned_at": "2026-11-17T02:24:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 26 day(s) before 2026-11-16",
+     "detail": "last commit 27 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 5 issue(s) in the last 6 months: 63.2 day(s) to first maintainer comment",
+     "detail": "median over 5 issue(s) in the last 6 months: 64.2 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 26 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 27 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -266,7 +266,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-16T02:15:08+00:00",
+  "fetched_at": "2026-11-17T02:24:29+00:00",
   "system": "npm",
   "package": "@clawfetch/mcp",
   "version": "0.4.0",

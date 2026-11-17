@@ -15,8 +15,8 @@
  "transport_mismatch": false,
  "ref_matched_version": false,
  "repository_commit": "7cab53e9434b76f74112fd3303152c668d6dd2dc",
- "registry_state": "listed",
- "registry_note": "",
+ "registry_state": "stale",
+ "registry_note": "This server is listed in the registry, but the most recent scan could not measure it for reasons on our side (last checked 2026-11-17). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-11-16, and have not been recomputed, because the scan that would have refreshed them did not complete.",
  "files_scanned": 1286,
  "files_pruned": 2,
  "axes": {

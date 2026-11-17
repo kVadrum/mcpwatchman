@@ -2,7 +2,7 @@
  "name": "ai.exa/exa",
  "version": "3.4.1",
  "slug": "ai-exa-exa",
- "scanned_at": "2026-11-16T02:20:08+00:00",
+ "scanned_at": "2026-11-17T02:30:08+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 13 day(s) before 2026-11-16",
+     "detail": "last commit 14 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 41 issue(s) in the last 6 months: 70.2 day(s) to first maintainer comment",
+     "detail": "median over 42 issue(s) in the last 6 months: 70.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",

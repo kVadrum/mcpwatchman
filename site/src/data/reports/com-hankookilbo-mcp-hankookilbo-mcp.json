@@ -2,7 +2,7 @@
  "name": "com.hankookilbo.mcp/hankookilbo-mcp",
  "version": "1.0.1",
  "slug": "com-hankookilbo-mcp-hankookilbo-mcp",
- "scanned_at": "2026-11-16T02:32:27+00:00",
+ "scanned_at": "2026-11-17T02:46:13+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 108 day(s) before 2026-11-16",
+     "detail": "last commit 109 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",

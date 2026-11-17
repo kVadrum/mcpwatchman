@@ -2,7 +2,7 @@
  "name": "io.github.software-mansion/argent",
  "version": "0.19.0",
  "slug": "io-github-software-mansion-argent",
- "scanned_at": "2026-11-16T02:55:01+00:00",
+ "scanned_at": "2026-11-17T03:11:29+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -192,7 +192,7 @@
    "axis": "maintenance",
    "score": 100,
    "reason": "",
-   "assessed_weight": "0.9",
+   "assessed_weight": "0.65",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
@@ -201,7 +201,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-16",
+     "detail": "last commit 1 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -213,7 +213,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 0.2 day(s) to first maintainer comment",
+     "detail": "only 1 issue(s) from outside the project fall inside `03` \u00a75's 6-month window, which is under \u00a75's floor of 3, and \u00a75's lifetime-median fallback needs this repository's whole issue history \u2014 more of it than `04` \u00a77's bounded fetch reads. A limit of ours, not a finding about the server.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -225,7 +225,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 5 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -351,7 +351,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-16T02:55:20+00:00",
+  "fetched_at": "2026-11-17T03:12:03+00:00",
   "system": "npm",
   "package": "@swmansion/argent",
   "version": "0.19.0",

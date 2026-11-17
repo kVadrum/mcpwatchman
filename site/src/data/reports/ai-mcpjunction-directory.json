@@ -2,7 +2,7 @@
  "name": "ai.mcpjunction/directory",
  "version": "1.0.0",
  "slug": "ai-mcpjunction-directory",
- "scanned_at": "2026-11-16T02:27:47+00:00",
+ "scanned_at": "2026-11-17T02:41:20+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "7dc6715386e1464a290cd4362e36b6e048618d0f",
+ "repository_commit": "7616bb9f4cf0be8722c85318ecca98c6314b77ea",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 11,
@@ -92,7 +92,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 1828 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Base64 High Entropy String at public/data/mcp_servers.json:58108; Base64 High Entropy String at public/data/mcp_servers.json:58877; Base64 High Entropy String at public/data/mcp_servers.json:60313; Base64 High Entropy String at public/data/mcp_servers.json:61964; Hex High Entropy String at state/lastmod.json:6; Hex High Entropy String at state/lastmod.json:10; Hex High Entropy String at state/lastmod.json:14; Hex High Entropy String at state/lastmod.json:18; Hex High Entropy String at state/lastmod.json:22; Hex High Entropy String at state/lastmod.json:26; \u2026and 1818 more matches",
+     "detail": "detect-secrets matched 1842 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Base64 High Entropy String at public/data/mcp_servers.json:55353; Base64 High Entropy String at public/data/mcp_servers.json:56595; Base64 High Entropy String at public/data/mcp_servers.json:61440; Base64 High Entropy String at public/data/mcp_servers.json:63080; Hex High Entropy String at state/lastmod.json:6; Hex High Entropy String at state/lastmod.json:10; Hex High Entropy String at state/lastmod.json:14; Hex High Entropy String at state/lastmod.json:18; Hex High Entropy String at state/lastmod.json:22; Hex High Entropy String at state/lastmod.json:26; \u2026and 1832 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-16",
+     "detail": "last commit 1 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 40.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",

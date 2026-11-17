@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/sefaz_mg_parcelamento-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-sefaz-mg-parcelamento-mcp",
- "scanned_at": "2026-11-16T02:46:22+00:00",
+ "scanned_at": "2026-11-17T03:01:36+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.46.6",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 89 day(s) before 2026-11-16",
+     "detail": "last commit 90 day(s) before 2026-11-17",
      "path": "",
      "line": 0,
      "excerpt": "",
