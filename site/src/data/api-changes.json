@@ -6,10 +6,10 @@
       "id": "servers-json-pages",
       "level": "breaking",
       "status": "announced",
-      "announced": "2026-11-16",
-      "not_before": "2026-12-16",
+      "announced": "2026-11-17",
+      "not_before": "2026-12-17",
       "title": "/api/servers.json becomes the first page of the full records",
-      "summary": "From 2026-12-16 at the earliest, /api/servers.json may hold only the first 500 servers' full records, with the rest at the URLs its next field names. Every record still fits on page 1 today, so nothing a reader gets changes yet.",
+      "summary": "From 2026-12-17 at the earliest, /api/servers.json may hold only the first 500 servers' full records, with the rest at the URLs its next field names. Every record still fits on page 1 today, so nothing a reader gets changes yet.",
       "points": [
         "What changes: /api/servers.json now carries page, page_count, page_size, prev and next. It is page 1 of the full records, in the same order and shape as before. Further pages are at /api/pages/servers/<n>.json, with the same fields. count is the number of servers published in total, on every page.",
         "Why: measured on 2026-11-16, the document grows by about 12.5 KB per server and is 6.5 MB at 492 servers. Our host refuses any single file over 25 MiB, which this one would pass at around 2,000 servers. Pages keep every file well under that limit.",
