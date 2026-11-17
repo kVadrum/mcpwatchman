@@ -374,3 +374,21 @@ def test_growth_the_page_allows_is_pinned(
     assert code == 0
     assert {r["name"] for r in json.loads(written)} == {"ai.a/one", "ai.c/three"}
     assert (tmp_path / "cohort.json").exists(), "the new name is pinned"
+
+
+def test_a_name_adopted_twice_counts_once_against_the_page(
+    driver, tmp_path: Path
+) -> None:
+    """Pinning keeps one of a repeated name, so the limit and the scan must too:
+    one pin plus the same name listed twice is two servers, inside a page of 2."""
+    run, state = driver
+    _one_pin_and_a_candidate(state, tmp_path)
+    _api_changes(tmp_path, page_size=2, status="announced", not_before="2999-01-01")
+    adopt = tmp_path / "adopt.txt"
+    adopt.write_text("ai.c/three\nai.c/three\n")
+
+    code, written = run("--adopt-file", str(adopt))
+
+    assert code == 0
+    assert [r["name"] for r in json.loads(written)] == ["ai.a/one", "ai.c/three"]
+    assert state["calls"].count("ai.c/three") == 1

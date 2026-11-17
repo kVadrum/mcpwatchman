@@ -429,11 +429,13 @@ def main() -> int:
 
     growth: list[RegistryEntry] = []
     if args.adopt_file:
-        wanted = [
+        # Once each: a repeated line would be scanned twice and counted twice
+        # against the page limit below, though pinning keeps one.
+        wanted = list(dict.fromkeys(
             line.strip()
             for line in args.adopt_file.read_text().splitlines()
             if line.strip()
-        ]
+        ))
         missing_from_registry = [
             n for n in wanted if n not in live and n not in cohort.names
         ]
