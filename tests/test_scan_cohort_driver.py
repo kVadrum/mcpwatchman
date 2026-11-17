@@ -399,14 +399,22 @@ def test_a_name_adopted_twice_counts_once_against_the_page(
 # --- the rolling nightly (D1a, ruled 2026-11-09) ------------------------------
 
 
+def _unedited(name: str, **kw) -> RegistryEntry:
+    """The registry entry a page in `_three_pins_one_moved` was scanned from,
+    at version 1, unedited since."""
+    return RegistryEntry(name=name, version="1", is_latest=True,
+                         content_hash=f"h:{name}@1", **kw)
+
+
 def _three_pins_one_moved(state: dict, tmp_path: Path) -> None:
     """Three pinned pages: `ai.c/three` has a new registry version, `ai.a/one`
     the oldest scan, `ai.b/two` the newest."""
     state["cohort"] = Cohort(servers=(_pin("ai.a/one"), _pin("ai.b/two"), _pin("ai.c/three")))
     state["entries"] = {
-        "ai.a/one": RegistryEntry(name="ai.a/one", version="1", is_latest=True),
-        "ai.b/two": RegistryEntry(name="ai.b/two", version="1", is_latest=True),
-        "ai.c/three": RegistryEntry(name="ai.c/three", version="2", is_latest=True),
+        "ai.a/one": _unedited("ai.a/one"),
+        "ai.b/two": _unedited("ai.b/two"),
+        "ai.c/three": RegistryEntry(name="ai.c/three", version="2", is_latest=True,
+                                    content_hash="h:ai.c/three@2"),
     }
     state["reports"] = {n: _report(n) for n in state["entries"]}
     from mcpwatchman.workers.scanner.semgrep_check import rules_root, ruleset_version
@@ -418,12 +426,11 @@ def _three_pins_one_moved(state: dict, tmp_path: Path) -> None:
                 "ruleset_version": ruleset_version(rules_root()),
                 "findings_tracked_since": "2026-09-10"}
     previous = [
-        {**_report("ai.a/one"), **contract, "version": "1",
-         "registry_state": "listed", "scanned_at": "2026-09-10T00:00:00+00:00"},
-        {**_report("ai.b/two"), **contract, "version": "1",
-         "registry_state": "listed", "scanned_at": "2026-09-19T00:00:00+00:00"},
-        {**_report("ai.c/three"), **contract, "version": "1",
-         "registry_state": "listed", "scanned_at": "2026-09-19T00:00:00+00:00"},
+        {**_report(n), **contract, "version": "1", "registry_state": "listed",
+         "registry_entry_hash": _unedited(n).content_hash, "scanned_at": at}
+        for n, at in (("ai.a/one", "2026-09-10T00:00:00+00:00"),
+                      ("ai.b/two", "2026-09-19T00:00:00+00:00"),
+                      ("ai.c/three", "2026-09-19T00:00:00+00:00"))
     ]
     (tmp_path / "scans.json").write_text(json.dumps(previous))
 
@@ -493,9 +500,13 @@ def test_past_the_deadline_a_publishable_page_waits_and_a_moved_one_does_not(
         # Unmoved, yet its note says "the scan below is current" — a claim a
         # page passed by for nights would go on making.
         ({"registry_state": "deprecated", "registry_note": "deprecated"}, "deprecated"),
+        # Same version, the entry edited (its packages, repository or remotes).
+        ({"edited": True}, "active"),
+        # A page from before the hash existed: nothing shows it unmoved.
+        ({"registry_entry_hash": None}, "active"),
     ],
     ids=["off-contract", "unpublishable", "status-moved", "stale", "relisted",
-         "still-deprecated"],
+         "still-deprecated", "edited-same-version", "no-hash"],
 )
 def test_the_deadline_passes_by_only_a_plain_listed_page(
     driver, monkeypatch, tmp_path: Path, page_change: dict, registry_status: str
@@ -508,8 +519,11 @@ def test_the_deadline_passes_by_only_a_plain_listed_page(
 
     run, state = driver
     _three_pins_one_moved(state, tmp_path)
-    state["entries"]["ai.a/one"] = RegistryEntry(
-        name="ai.a/one", version="1", is_latest=True, status=registry_status
+    page_change = dict(page_change)
+    edited = page_change.pop("edited", False)
+    state["entries"]["ai.a/one"] = (
+        RegistryEntry(name="ai.a/one", version="1", is_latest=True, content_hash="h:edited")
+        if edited else _unedited("ai.a/one", status=registry_status)
     )
     pages = json.loads((tmp_path / "scans.json").read_text())
     pages[0] = {**pages[0], **page_change}  # ai.a/one
@@ -533,7 +547,7 @@ def test_a_night_that_reaches_almost_none_of_its_pins_is_refused(
 
     run, state = driver
     _three_pins_one_moved(state, tmp_path)
-    state["entries"]["ai.c/three"] = RegistryEntry(name="ai.c/three", version="1", is_latest=True)
+    state["entries"]["ai.c/three"] = _unedited("ai.c/three")
     before = (tmp_path / "scans.json").read_text()
     monkeypatch.setenv(sc.DEADLINE_ENV, "-1")
 
@@ -573,6 +587,26 @@ def test_every_row_the_run_looked_at_carries_its_stamp_kept_ones_included(
     assert len(checked_this_run(rows.values())) == 3
 
 
+def test_a_scan_records_the_entry_it_read_and_a_page_passed_by_keeps_its_own(
+    driver, monkeypatch, tmp_path: Path
+) -> None:
+    """The hash is how the next night tells an edited entry from an unedited
+    one, so a fresh row carries the entry tonight's scan read and a row the
+    deadline passed by carries the one its old scan read — never tonight's."""
+    import ops.scan_cohort as sc
+
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    monkeypatch.setenv(sc.DEADLINE_ENV, "-1")
+
+    code, written = run()
+
+    assert code == 0
+    rows = {r["name"]: r for r in json.loads(written)}
+    assert rows["ai.c/three"]["registry_entry_hash"] == "h:ai.c/three@2"  # scanned
+    assert rows["ai.a/one"]["registry_entry_hash"] == "h:ai.a/one@1"  # passed by
+
+
 def test_a_run_by_hand_has_no_deadline(driver, monkeypatch, tmp_path: Path) -> None:
     """A regeneration after a contract bump, or a `--grow`, is run by hand and
     must scan everything: a run that passed rows through would leave them on
@@ -599,7 +633,7 @@ def test_growth_scanned_before_the_deadline_counts_as_work_done(
 
     run, state = driver
     _three_pins_one_moved(state, tmp_path)
-    state["entries"]["ai.c/three"] = RegistryEntry(name="ai.c/three", version="1", is_latest=True)
+    state["entries"]["ai.c/three"] = _unedited("ai.c/three")
     state["entries"]["ai.d/four"] = RegistryEntry(
         name="ai.d/four", version="1", is_latest=True,
         repository=Repository(url="https://github.com/d/four", source="github"),

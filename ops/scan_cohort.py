@@ -166,7 +166,12 @@ def _scan(entry: RegistryEntry, label: str, index: int, total: int) -> dict:
         f"{report.name[:40]:40} {report.source_state:13} {axes}",
         flush=True,
     )
-    return report.to_dict()
+    # Which registry entry this scan read, as the registry served it: a
+    # publisher can change packages, repository or remotes without changing
+    # the version, and `_due_order` must see that as a moved entry. Set here,
+    # the one place a fresh report is made, so a kept, carried or withheld page
+    # keeps the hash of the entry its scan actually read.
+    return {**report.to_dict(), "registry_entry_hash": entry.content_hash}
 
 
 def _scan_or_gap(
@@ -345,10 +350,11 @@ def _due_order(
     """Tonight's pins, the ones that most need a scan first, each with whether
     a deadline may pass it by.
 
-    A deadline passes by only a plain page: listed, on the version the registry
-    lists, under the current scoring contract, and accepted by tonight's
-    publication rules. Everything else is scanned whatever the hour, and first —
-    a pin with no page yet; a new registry version; any page that is not plain
+    A deadline passes by only a plain page: listed, on the registry entry its
+    scan read (version and content hash), under the current scoring contract,
+    and accepted by tonight's publication rules. Everything else is scanned
+    whatever the hour, and first — a pin with no page yet; a new registry
+    version, or the same version edited; any page that is not plain
     `listed` (a `stale` one says its last scan failed and must be retried; a
     `deprecated` one says "the scan below is current"; a `delisted` one whose
     server is back), or a registry status other than active; another scoring
@@ -381,6 +387,10 @@ def _due_order(
         if page is None or kind != "pinned" or page.get("registry_state") != "listed":
             return True
         if str(page.get("version", "")) != str(entry.version):
+            return True
+        # An entry edited at the same version (packages, repository, remotes);
+        # no hash on either side is an entry we cannot show unmoved.
+        if not entry.content_hash or page.get("registry_entry_hash") != entry.content_hash:
             return True
         off_contract = page.get("methodology_version") != CURRENT_METHODOLOGY_VERSION or (
             bool(page.get("ruleset_version")) and page.get("ruleset_version") != rules
