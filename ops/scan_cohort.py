@@ -47,7 +47,7 @@ import shutil
 import sys
 import time
 import traceback
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from mcpwatchman import store
@@ -309,6 +309,54 @@ def _growth_candidates(
     return out
 
 
+# When the run stops STARTING scans, counted from its own start (the registry
+# sweep included). `ops/systemd/mcpwatchman-nightly.service` kills the whole
+# night at `TimeoutStartSec=3h`, and a killed night publishes nothing; a run
+# that stops here publishes what it reached and passes every other pin through
+# with its last scan, which is the rolling nightly ruled 2026-11-09 (D1a) at the
+# size where one night no longer holds every server. At 492 a night takes about
+# an hour, so nothing is passed through. `tests/test_scan_cohort_driver.py`
+# holds it under the unit's limit with room for what runs after the scan.
+SCAN_DEADLINE_SECONDS = 150 * 60
+
+
+def _due_order(
+    pins: list[tuple[RegistryEntry, str]], previous: dict[str, dict]
+) -> list[tuple[RegistryEntry, str]]:
+    """Tonight's pins, the ones that most need a scan first.
+
+    First every pin whose page cannot wait: no page yet, a registry entry that
+    moved since its page was scanned (a new version, or a status the page does
+    not show), or a page scored under another scoring contract — which the
+    contract gate refuses to publish. Then the rest, oldest scan first, so a
+    page the last run could not measure keeps its old date and is tried again
+    first. Ties by name hash, so the order is reproducible.
+    """
+    from mcpwatchman.workers.scanner.semgrep_check import rules_root, ruleset_version
+    from mcpwatchman.workers.scoring.weights import CURRENT_METHODOLOGY_VERSION
+
+    rules = ruleset_version(rules_root())
+
+    def key(item: tuple[RegistryEntry, str]) -> tuple[int, str, str]:
+        entry, kind = item
+        page = previous.get(entry.name)
+        if page is None:
+            return (0, "", sample_key(entry.name))
+        shown = page.get("registry_state")
+        registry_now = entry.status if kind == "flagged" else "listed"
+        moved = (
+            str(page.get("version", "")) != str(entry.version)
+            or (shown != "stale" and shown != registry_now)
+        )
+        off_contract = page.get("methodology_version") != CURRENT_METHODOLOGY_VERSION or (
+            bool(page.get("ruleset_version")) and page.get("ruleset_version") != rules
+        )
+        due = 0 if moved or off_contract else 1
+        return (due, str(page.get("scanned_at", "")), sample_key(entry.name))
+
+    return sorted(pins, key=key)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out", type=Path, required=True, help="site data file to write")
@@ -483,16 +531,47 @@ def main() -> int:
     reports: dict[str, dict] = {}
     index = 0
     unmeasured: list[str] = []
-    for entry in to_scan:
+    # Growth first: a candidate has no page to fall back on, so the deadline
+    # below must never be what costs it its pin.
+    published_growth: list[RegistryEntry] = []
+    skipped: list[str] = []
+    for entry in growth:
         index += 1
-        report, gaps = _scan_once_more_if_ours(entry, "pinned", index, total)
+        report, gaps = _scan_once_more_if_ours(entry, "new", index, total)
+        # Nothing promises this page yet, so an our-side gap means DON'T PIN
+        # IT — publishing it would mint a URL whose first version states our
+        # broken run as the reason nobody scored them.
+        if gaps or report is None:
+            print(f"[skipped] {entry.name} — our side failed; not pinned")
+            skipped.append(entry.name)
+            continue
+        reports[entry.name] = report
+        published_growth.append(entry)
+    growth = published_growth
+
+    deadline = started + SCAN_DEADLINE_SECONDS
+    not_reached: list[str] = []
+    queue = _due_order(
+        [(e, "pinned") for e in to_scan] + [(e, "flagged") for e in to_flag], previous
+    )
+    for entry, kind in queue:
+        index += 1
+        if time.time() >= deadline and entry.name in previous:
+            # Its page stays exactly as published, own date and all, and it is
+            # due earlier tomorrow for being older. Not a failure, so not
+            # labelled, and not among the rows this run is judged on.
+            reports[entry.name] = previous[entry.name]
+            not_reached.append(entry.name)
+            continue
+        report, gaps = _scan_once_more_if_ours(entry, kind, index, total)
         # An ENVIRONMENT gap is ours and unpublishable, and at 500 servers it
         # is an ordinary event rather than an emergency: a clone that times
         # out, a scratch mount that fills. Refusing the whole run for one of
         # them would make the pin brittle in the one direction it exists to
         # prevent — a page disappearing — so the page keeps the last scan
         # taken when we could measure it, labelled, exactly as a delisted
-        # server does. The next run retries for free.
+        # server does. The next run retries for free. A deprecated pin takes
+        # the same path: it is still a pinned page.
         if gaps or report is None:
             kept = _keep_previous(entry.name, previous, today, gaps)
             if kept is None:
@@ -500,21 +579,8 @@ def main() -> int:
             reports[entry.name] = kept
             unmeasured.append(entry.name)
             continue
-        reports[entry.name] = report
-    for entry in to_flag:
-        index += 1
-        # Same per-server handling as `to_scan` — a deprecated pin is still a
-        # pinned page, and skipping this check meant a clone timeout on one of
-        # them aborted the whole batch while the identical failure on a
-        # non-deprecated pin was absorbed. 1 of the 40 original pins is
-        # deprecated, so that asymmetry was load-bearing.
-        report, gaps = _scan_once_more_if_ours(entry, "flagged", index, total)
-        if gaps or report is None:
-            kept = _keep_previous(entry.name, previous, today, gaps)
-            if kept is None:
-                return 2
-            reports[entry.name] = kept
-            unmeasured.append(entry.name)
+        if kind == "pinned":
+            reports[entry.name] = report
             continue
         try:
             reports[entry.name] = mark_status(
@@ -558,26 +624,27 @@ def main() -> int:
             reports[entry.name] = kept
             unmeasured.append(entry.name)
             continue
-    published_growth: list[RegistryEntry] = []
-    skipped: list[str] = []
-    for entry in growth:
-        index += 1
-        report, gaps = _scan_once_more_if_ours(entry, "new", index, total)
-        # Nothing promises this page yet, so an our-side gap means DON'T PIN
-        # IT — publishing it would mint a URL whose first version states our
-        # broken run as the reason nobody scored them.
-        if gaps or report is None:
-            print(f"[skipped] {entry.name} — our side failed; not pinned")
-            skipped.append(entry.name)
-            continue
-        reports[entry.name] = report
-        published_growth.append(entry)
-    growth = published_growth
     for name, observation in to_carry:
         reports[name] = carry_forward(
             previous[name], checked_on=today, observation=observation
         )
         print(f"[carried] {name} — {observation}", flush=True)
+
+    # Every row this run looked at carries the run's start, so the night is
+    # judged on those rows (`cohort.checked_this_run`); a row it did not reach
+    # keeps the stamp of the run that last did.
+    run_stamp = datetime.fromtimestamp(started, UTC).isoformat(timespec="seconds")
+    passed_through = set(not_reached)
+    for name in list(reports):
+        if name not in passed_through:
+            reports[name] = {**reports[name], "checked_at": run_stamp}
+    if not_reached:
+        print(
+            f"deadline: {len(not_reached)} pins not reached in "
+            f"{SCAN_DEADLINE_SECONDS // 60} min — each keeps its published page "
+            f"and is due earlier next run (first: {', '.join(not_reached[:5])})",
+            flush=True,
+        )
 
     grown: Cohort = cohort
     if growth:
@@ -623,8 +690,9 @@ def main() -> int:
     store.write_reports(args.out, ordered)
     print(
         f"\n{len(ordered)} servers -> {args.out} "
-        f"({len(to_scan) + len(to_flag)} scanned, {len(growth)} new, "
-        f"{len(to_carry)} carried, {len(unmeasured)} kept) "
+        f"({len(to_scan) + len(to_flag) - len(not_reached)} scanned, {len(growth)} new, "
+        f"{len(to_carry)} carried, {len(unmeasured)} kept, "
+        f"{len(not_reached)} not reached) "
         f"in {time.time() - started:.0f}s"
     )
     # ⚠ NAMED, NOT TALLIED. The counts above describe what was PUBLISHED, so

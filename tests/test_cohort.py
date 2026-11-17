@@ -565,3 +565,101 @@ def test_systemic_staleness_boundary(total, stale, refused) -> None:
         for i in range(total)
     ]
     assert (systemic_staleness(rows) is not None) is refused
+
+
+# --- the rows a run is judged on (D1a, the rolling nightly) -------------------
+
+TONIGHT = "2026-11-18T02:00:00+00:00"
+LAST_NIGHT = "2026-11-17T02:00:00+00:00"
+
+
+def _row(i: int, *, checked: str | None, scanned: str, state: str = "listed") -> dict:
+    row = {"name": f"s{i}", "registry_state": state, "scanned_at": scanned}
+    if checked:
+        row["checked_at"] = checked
+    return row
+
+
+@pytest.mark.parametrize(
+    ("total", "stale", "refused"),
+    [(8, 5, False), (8, 6, True), (492, 49, False), (492, 50, True)],
+)
+def test_a_run_that_looked_at_every_row_is_judged_as_before(total, stale, refused) -> None:
+    """The boundary above, with every row stamped by one run: the rule this
+    replaces, exactly, on the night shape the nightly has today."""
+    from mcpwatchman.cohort import systemic_staleness
+
+    rows = [
+        _row(i, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00",
+             state="stale" if i < stale else "listed")
+        for i in range(total)
+    ]
+    assert (systemic_staleness(rows) is not None) is refused
+
+
+def test_a_rolled_night_is_judged_on_what_it_looked_at_not_on_the_whole_set() -> None:
+    """200 rows, 40 looked at tonight, 6 of those failed: 6 > max(5, 4) is a
+    broken night. Against the whole set (limit 20) it passed — the weakening a
+    rolling nightly would have brought with it at 5,000 servers."""
+    from mcpwatchman.cohort import checked_this_run, systemic_staleness
+
+    tonight = [
+        _row(i, checked=TONIGHT, state="stale" if i < 6 else "listed",
+             scanned="2026-11-01T00:00:00+00:00" if i < 6 else "2026-11-18T02:30:00+00:00")
+        for i in range(40)
+    ]
+    waiting = [
+        _row(i, checked=LAST_NIGHT, scanned="2026-11-17T02:30:00+00:00")
+        for i in range(40, 200)
+    ]
+    assert len(checked_this_run(tonight + waiting)) == 40
+    assert systemic_staleness(tonight + waiting) is not None
+    assert systemic_staleness([{k: v for k, v in r.items() if k != "checked_at"}
+                               for r in tonight + waiting]) is None, "the old rule passed it"
+
+
+@pytest.mark.parametrize(
+    "rows",
+    [
+        # Nothing stamped: every row published before the field existed.
+        [_row(0, checked=None, scanned=LAST_NIGHT), _row(1, checked=None, scanned=TONIGHT)],
+        # A stamp inherited through a kept page, and tonight's rows from code
+        # that does not stamp — `main` before this field reached it.
+        [_row(0, checked=LAST_NIGHT, scanned="2026-11-01T00:00:00+00:00", state="stale"),
+         _row(1, checked=None, scanned="2026-11-18T02:30:00+00:00")],
+        # A stamp nobody can read.
+        [_row(0, checked="not a time", scanned=TONIGHT), _row(1, checked=None, scanned=TONIGHT)],
+    ],
+)
+def test_a_stamp_this_sets_run_did_not_write_judges_every_row(rows) -> None:
+    from mcpwatchman.cohort import checked_this_run
+
+    assert checked_this_run(rows) == rows
+
+
+def test_the_published_data_is_judged_the_same_stamped_or_not() -> None:
+    """The committed set, as `main` wrote it and as a stamping run would."""
+    from mcpwatchman import store
+    from mcpwatchman.cohort import checked_this_run, systemic_staleness
+
+    path = Path(__file__).resolve().parents[1] / "site" / "src" / "data" / "scans.json"
+    if not store.exists(path):
+        pytest.skip("no published data in this checkout")
+    rows = list(store.read_reports(path))
+    stamp = min(str(r["scanned_at"]) for r in rows if r.get("registry_state") == "listed")
+    stamped = [{**r, "checked_at": stamp} for r in rows]
+    assert len(checked_this_run(stamped)) == len(rows)
+    assert systemic_staleness(stamped) == systemic_staleness(rows)
+
+
+def test_a_carried_page_takes_the_stamp_of_the_attempt_not_of_its_old_scan() -> None:
+    from mcpwatchman.cohort import carry_forward
+
+    page = {"name": "x/y", "scanned_at": "2026-11-01T00:00:00+00:00", "checked_at": LAST_NIGHT}
+    kept = carry_forward(page, checked_on="2026-11-18", observation="o", state="stale",
+                         checked_at=TONIGHT)
+    assert kept["checked_at"] == TONIGHT
+    assert carry_forward(page, checked_on="2026-11-18", observation="o")["checked_at"] == LAST_NIGHT
+    assert "checked_at" not in carry_forward(
+        {"name": "x/y", "scanned_at": LAST_NIGHT}, checked_on="2026-11-18", observation="o"
+    )

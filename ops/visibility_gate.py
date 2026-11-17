@@ -240,6 +240,9 @@ def withhold(
                 previous[name], checked_on=today, state="stale",
                 observation=WITHHELD_OBSERVATION,
                 not_recomputed_because=WITHHELD_BECAUSE,
+                # The attempt was tonight's, so the withheld page counts among
+                # the rows tonight is judged on (`cohort.checked_this_run`).
+                checked_at=row.get("checked_at"),
             ))
         else:
             orphans.append(str(name))

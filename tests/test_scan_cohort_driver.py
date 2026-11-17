@@ -392,3 +392,126 @@ def test_a_name_adopted_twice_counts_once_against_the_page(
     assert code == 0
     assert [r["name"] for r in json.loads(written)] == ["ai.a/one", "ai.c/three"]
     assert state["calls"].count("ai.c/three") == 1
+
+
+# --- the rolling nightly (D1a, ruled 2026-11-09) ------------------------------
+
+
+def _three_pins_one_moved(state: dict, tmp_path: Path) -> None:
+    """Three pinned pages: `ai.c/three` has a new registry version, `ai.a/one`
+    the oldest scan, `ai.b/two` the newest."""
+    state["cohort"] = Cohort(servers=(_pin("ai.a/one"), _pin("ai.b/two"), _pin("ai.c/three")))
+    state["entries"] = {
+        "ai.a/one": RegistryEntry(name="ai.a/one", version="1", is_latest=True),
+        "ai.b/two": RegistryEntry(name="ai.b/two", version="1", is_latest=True),
+        "ai.c/three": RegistryEntry(name="ai.c/three", version="2", is_latest=True),
+    }
+    state["reports"] = {n: _report(n) for n in state["entries"]}
+    from mcpwatchman.workers.scanner.semgrep_check import rules_root, ruleset_version
+    from mcpwatchman.workers.scoring.weights import CURRENT_METHODOLOGY_VERSION
+
+    # As every published page has: `feed.stamp_first_seen` adds the field to
+    # a page without it, which would read here as a pass-through edited.
+    contract = {"methodology_version": CURRENT_METHODOLOGY_VERSION,
+                "ruleset_version": ruleset_version(rules_root()),
+                "findings_tracked_since": "2026-09-10"}
+    previous = [
+        {**_report("ai.a/one"), **contract, "version": "1",
+         "registry_state": "listed", "scanned_at": "2026-09-10T00:00:00+00:00"},
+        {**_report("ai.b/two"), **contract, "version": "1",
+         "registry_state": "listed", "scanned_at": "2026-09-19T00:00:00+00:00"},
+        {**_report("ai.c/three"), **contract, "version": "1",
+         "registry_state": "listed", "scanned_at": "2026-09-19T00:00:00+00:00"},
+    ]
+    (tmp_path / "scans.json").write_text(json.dumps(previous))
+
+
+def test_a_moved_registry_entry_is_scanned_first_then_the_oldest_page(
+    driver, tmp_path: Path
+) -> None:
+    """The deadline cuts the END of the queue, so the order is what decides
+    which pages wait: a new version first (its page shows code nobody installs
+    now), then the oldest scan, so a page the last run could not measure keeps
+    its old date and is tried again first."""
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+
+    code, _ = run()
+
+    assert code == 0
+    assert state["calls"] == ["ai.c/three", "ai.a/one", "ai.b/two"]
+
+
+def test_past_the_deadline_a_pin_keeps_its_page_unlabelled_and_unstamped(
+    driver, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    """A page the night did not reach is not a failure: it keeps its page as
+    published — own date, no `stale` label — and carries no stamp of this run,
+    so it is not among the rows the night is judged on. A growth candidate is
+    still scanned, because it has no page to fall back on."""
+    import ops.scan_cohort as sc
+
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    before = {r["name"]: r for r in json.loads((tmp_path / "scans.json").read_text())}
+    state["entries"]["ai.d/four"] = RegistryEntry(
+        name="ai.d/four", version="1", is_latest=True,
+        repository=Repository(url="https://github.com/d/four", source="github"),
+    )
+    state["reports"]["ai.d/four"] = _report("ai.d/four")
+    monkeypatch.setattr(sc, "SCAN_DEADLINE_SECONDS", -1)
+
+    code, written = run("--adopt-file", str(_adopt(tmp_path, "ai.d/four")))
+
+    assert code == 0, "a night that stops at its deadline publishes what it reached"
+    assert state["calls"] == ["ai.d/four"]
+    rows = {r["name"]: r for r in json.loads(written)}
+    for name in ("ai.a/one", "ai.b/two", "ai.c/three"):
+        assert rows[name] == before[name], f"{name} must pass through exactly as published"
+    assert "checked_at" in rows["ai.d/four"]
+    out = capsys.readouterr().out
+    assert "deadline: 3 pins not reached" in out
+    assert "3 not reached" in out
+
+
+def _adopt(tmp_path: Path, *names: str) -> Path:
+    path = tmp_path / "adopt.txt"
+    path.write_text("\n".join(names) + "\n")
+    return path
+
+
+def test_every_row_the_run_looked_at_carries_its_stamp_kept_ones_included(
+    driver, tmp_path: Path
+) -> None:
+    """`cohort.checked_this_run` judges the night on the rows stamped with its
+    start, so a page this run tried and could not measure must carry the stamp
+    too — else a broken night would drop its own failures from the count."""
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    state["raises"] = {"ai.b/two"}
+
+    code, written = run()
+
+    assert code == 0
+    rows = {r["name"]: r for r in json.loads(written)}
+    stamps = {r.get("checked_at") for r in rows.values()}
+    assert len(stamps) == 1 and None not in stamps, stamps
+    assert rows["ai.b/two"]["registry_state"] == "stale"
+    from mcpwatchman.cohort import checked_this_run
+
+    assert len(checked_this_run(rows.values())) == 3
+
+
+def test_the_deadline_leaves_the_unit_time_to_publish() -> None:
+    """The unit kills the night at `TimeoutStartSec`, and a killed night
+    publishes nothing — so the run must stop starting scans early enough for
+    the slowest server, the gates, the build, the commit and the deploy."""
+    import re
+
+    import ops.scan_cohort as sc
+
+    unit = (Path(__file__).resolve().parents[1] / "ops" / "systemd"
+            / "mcpwatchman-nightly.service").read_text()
+    hours = int(re.search(r"^TimeoutStartSec=(\d+)h$", unit, re.M).group(1))  # type: ignore[union-attr]
+    slowest_server, after_the_scan = 5 * 60, 15 * 60
+    assert sc.SCAN_DEADLINE_SECONDS + slowest_server + after_the_scan <= hours * 3600

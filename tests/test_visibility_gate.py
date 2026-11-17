@@ -310,3 +310,23 @@ def test_a_clean_run_leaves_the_file_byte_for_byte(tmp_path: Path, monkeypatch) 
     monkeypatch.setattr(gate, "probe_anonymous", lambda url: True)
     assert gate.main(["--before", str(b), "--after", str(a)]) == 0
     assert a.read_text() == json.dumps(after, indent=4)
+
+
+def test_a_withheld_page_keeps_the_stamp_of_tonights_attempt() -> None:
+    """Withholding swaps tonight's row for the previous page — whose own
+    `checked_at` is an earlier night's. Kept, it would drop the withheld page
+    from the rows tonight is judged on (`cohort.checked_this_run`), so a night
+    that withheld everything would be judged on nothing it looked at."""
+    tonight = "2026-11-18T02:00:00+00:00"
+    previous = {**_row("a", "https://github.com/a/a"), "checked_at": "2026-11-17T02:00:00+00:00"}
+    row = {**_row("a", "https://github.com/a/a", scanned_at="2026-11-18T02:30:00+00:00"),
+           "checked_at": tonight}
+    out, orphans = gate.withhold([previous], [row], {row["name"]}, "2026-11-18")
+    assert not orphans
+    assert out[0]["registry_state"] == "stale"
+    assert out[0]["checked_at"] == tonight
+    # A run that does not stamp (`main` before the field): nothing is minted.
+    unstamped = {k: v for k, v in row.items() if k != "checked_at"}
+    plain = {k: v for k, v in previous.items() if k != "checked_at"}
+    out, _ = gate.withhold([plain], [unstamped], {row["name"]}, "2026-11-18")
+    assert "checked_at" not in out[0]

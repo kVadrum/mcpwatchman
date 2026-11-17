@@ -37,7 +37,7 @@ import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from mcpwatchman.workers.scanner.reachability import Fault
@@ -436,7 +436,7 @@ CARRIED_STATES = frozenset({"delisted", "stale"})
 
 def carry_forward(
     previous: dict, *, checked_on: str, observation: str, state: str = "delisted",
-    not_recomputed_because: str | None = None,
+    not_recomputed_because: str | None = None, checked_at: str | None = None,
 ) -> dict:
     """The report to publish for a pinned server the registry no longer lists.
 
@@ -454,11 +454,17 @@ def carry_forward(
     `observation` states what was seen rather than why, the distinction
     `reachability` draws for a 404: absent from the listing and deliberately
     deleted are different facts, and only the first one was measured.
+
+    `checked_at` is the stamp of the run that just tried and failed, when that
+    run stamps (`checked_this_run`): the page carries the old scan but the new
+    attempt, or a withheld page would drop out of the rows its run is judged on.
     """
     scanned_on = str(previous.get("scanned_at", ""))[:10]
     if state not in CARRIED_STATES:
         raise ValueError(f"not a carried state: {state!r}")
     carried = dict(previous)
+    if checked_at:
+        carried["checked_at"] = checked_at
     # ⚠ THIS WAS HARDCODED `"delisted"` AND PUBLISHED A CONTRADICTION. The
     # our-side-failure caller passes an observation beginning "This server is
     # listed in the registry…" while the state said `delisted` — two opposite
@@ -510,6 +516,50 @@ STALE_FLOOR = 5
 STALE_MAX_SHARE_PERCENT = 10
 
 
+def _instant(value: object) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(value))
+    except ValueError:
+        return None
+
+
+def checked_this_run(reports: Iterable[dict]) -> list[dict]:
+    """The rows the run that wrote this set looked at — every row, unless it says otherwise.
+
+    A nightly that stops at its deadline (`ops/scan_cohort.py`) passes the
+    servers it did not reach through unchanged, so "of the set" stops meaning
+    "of tonight's attempts": 200 failures in 1,700 attempts is a broken night,
+    and against 10% of a 5,000-row set it would pass. So a run stamps
+    `checked_at` — its own start — on every row it looked at, kept and carried
+    ones included, and this returns those rows.
+
+    ⚠ **The stamp is trusted only if THIS set's run wrote it.** A row scanned
+    after the newest stamp without carrying it means the run did not stamp —
+    `main`'s code before this field, or a stamp inherited through a kept page —
+    and then every row counts, which is the rule this replaced. So a set where
+    no row is stamped, or where the newest stamp is not the run's, is judged
+    exactly as before.
+    """
+    rows = list(reports)
+    instants: dict[str, datetime] = {}
+    for r in rows:
+        if r.get("checked_at"):
+            at = _instant(r["checked_at"])
+            if at is None:
+                return rows
+            instants[str(r["checked_at"])] = at
+    if not instants:
+        return rows
+    newest = max(instants, key=instants.__getitem__)
+    for r in rows:
+        if r.get("checked_at") == newest:
+            continue
+        scanned = _instant(r.get("scanned_at", ""))
+        if scanned is None or scanned >= instants[newest]:
+            return rows
+    return [r for r in rows if r.get("checked_at") == newest]
+
+
 def systemic_staleness(reports: Iterable[dict]) -> str | None:
     """Why this set must not be published, if too much of it kept an older scan.
 
@@ -521,8 +571,12 @@ def systemic_staleness(reports: Iterable[dict]) -> str | None:
     Per-page staleness stays absorbed, which keeps the stance that a refused gap
     costs that page its refresh, not the run; only a share past
     `max(STALE_FLOOR, 10%)` is treated as the run itself having failed.
+
+    The share is of the rows this run looked at (`checked_this_run`), so a page
+    not due tonight is neither a failure nor a reason to forgive one; on a run
+    that looked at every row that is the whole set, as it always was.
     """
-    rows = list(reports)
+    rows = checked_this_run(reports)
     stale = sorted(r.get("name", "?") for r in rows if r.get("registry_state") == "stale")
     limit = max(STALE_FLOOR, len(rows) * STALE_MAX_SHARE_PERCENT // 100)
     if len(stale) <= limit:
@@ -568,6 +622,7 @@ __all__ = [
     "FILE_NOTE",
     "atomic_write",
     "carry_forward",
+    "checked_this_run",
     "mark_status",
     "publication_errors",
     "unpublishable_gaps",

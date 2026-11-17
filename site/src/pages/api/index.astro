@@ -143,6 +143,7 @@ const historyShape = `{
     <dl class="defs">
       <div><dt>name, slug, version</dt><dd>The registry name and version scanned, and the URL-safe slug.</dd></div>
       <div><dt>scanned_at</dt><dd>When the scan ran, ISO 8601 with offset.</dd></div>
+      <div><dt>checked_at</dt><dd>When a nightly run last looked at this server, ISO 8601 with offset: earlier than <code>scanned_at</code> when that run scanned it, later when that run kept the older scan. Absent until a run has stamped the record.</dd></div>
       <div><dt>methodology_version, ruleset_version, scanner_version</dt><dd>What produced the scores. <code>ruleset_version</code> is empty when no rule ran.</dd></div>
       <div><dt>repository_url, repository_commit, package</dt><dd>What was read. The commit names the exact tree; <code>null</code> when no repository was read.</dd></div>
       <div><dt>source_state, source_subject, source_reason</dt><dd>Whether source could be read, and if not, whether the repository or the package was the problem, in a sentence.</dd></div>
