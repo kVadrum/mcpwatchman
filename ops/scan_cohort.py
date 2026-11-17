@@ -42,10 +42,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import shutil
 import sys
 import time
 import traceback
+from datetime import date
 from pathlib import Path
 
 from mcpwatchman import store
@@ -56,6 +58,7 @@ from mcpwatchman.cohort import (
     load,
     mark_status,
     publication_errors,
+    published_limit,
     save,
     systemic_staleness,
     unpublishable_gaps,
@@ -259,6 +262,31 @@ def _keep_previous(
     )
 
 
+def _past_one_page(out: Path, pinned: int, growing: int, today: str) -> str | None:
+    """Why this growth must be refused, if it would outgrow the announced page.
+
+    Checked here, before scanning or pinning, because the publication gate in
+    `tests/test_site_scans.py` sees the set only after the pins are committed,
+    and `ops/cohort.json` is append-only: a pin past the limit could not be
+    taken back, and every night would fail its gates until the notice ran out.
+    No `api-changes.json` beside the store means a site from before paging,
+    which serves one document and has no page to outgrow.
+    """
+    changes = out.parent / "api-changes.json"
+    if not growing or not changes.exists():
+        return None
+    limit = published_limit(json.loads(changes.read_text()), date.fromisoformat(today))
+    if limit is None or pinned + growing <= limit:
+        return None
+    return (
+        f"REFUSING TO GROW: {pinned} pinned + {growing} to publish would put "
+        f"/api/servers.json past one page of {limit} servers before its paging "
+        f"notice has run (site/src/data/api-changes.json). A pin cannot be "
+        f"removed, so nothing is scanned or pinned. Grow by at most "
+        f"{max(0, limit - pinned)}."
+    )
+
+
 def _growth_candidates(
     live: dict[str, RegistryEntry], pinned: frozenset[str]
 ) -> list[RegistryEntry]:
@@ -430,6 +458,11 @@ def main() -> int:
                 file=sys.stderr,
             )
         growth.extend(picked)
+
+    refusal = _past_one_page(args.out, len(cohort), len(growth), today)
+    if refusal:
+        print(refusal, file=sys.stderr)
+        return 2
 
     if args.dry_run:
         print(f"\nwould scan   {len(to_scan)} pinned")

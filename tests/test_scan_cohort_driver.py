@@ -317,3 +317,60 @@ def test_a_scan_that_raises_costs_that_page_its_refresh_not_the_run(
     assert "ValueError" in captured.err and "Traceback" in captured.err, "a defect to fix"
     assert "kept previous scan (1): ai.b/two" in captured.out
     assert "not pinned, our side failed (1): ai.c/three" in captured.out
+
+
+def _api_changes(tmp_path: Path, page_size: int, status: str, not_before: str) -> None:
+    (tmp_path / "api-changes.json").write_text(json.dumps({
+        "page_size": page_size,
+        "changes": [{"id": "servers-json-pages", "status": status, "not_before": not_before}],
+    }))
+
+
+def _one_pin_and_a_candidate(state: dict, tmp_path: Path) -> None:
+    state["cohort"] = Cohort(servers=(_pin("ai.a/one"),))
+    state["entries"] = {
+        "ai.a/one": RegistryEntry(name="ai.a/one", version="1", is_latest=True),
+        "ai.c/three": RegistryEntry(
+            name="ai.c/three", version="1", is_latest=True,
+            repository=Repository(url="https://github.com/c/three", source="github"),
+        ),
+    }
+    state["reports"] = {n: _report(n) for n in state["entries"]}
+    (tmp_path / "scans.json").write_text(json.dumps([_report("ai.a/one")]))
+
+
+def test_growth_past_the_announced_page_is_refused_before_anything_is_pinned(
+    driver, capsys, tmp_path: Path
+) -> None:
+    """`ops/cohort.json` is append-only, so a pin past the page the paging
+    notice promises could not be taken back; the publication gate would then
+    fail every night until the notice ran out. The refusal comes first."""
+    run, state = driver
+    _one_pin_and_a_candidate(state, tmp_path)
+    _api_changes(tmp_path, page_size=1, status="announced", not_before="2999-01-01")
+
+    code, written = run("--grow", "1")
+
+    assert code == 2
+    assert "REFUSING TO GROW" in capsys.readouterr().err
+    assert state["calls"] == [], "nothing is scanned"
+    assert [r["name"] for r in json.loads(written)] == ["ai.a/one"], "the store is untouched"
+    assert not (tmp_path / "cohort.json").exists(), "nothing is pinned"
+
+
+@pytest.mark.parametrize(("page_size", "status", "not_before"), [
+    (2, "announced", "2999-01-01"),  # still fits one page
+    (1, "landed", "2000-01-01"),     # the notice has run and the change landed
+])
+def test_growth_the_page_allows_is_pinned(
+    driver, tmp_path: Path, page_size: int, status: str, not_before: str
+) -> None:
+    run, state = driver
+    _one_pin_and_a_candidate(state, tmp_path)
+    _api_changes(tmp_path, page_size=page_size, status=status, not_before=not_before)
+
+    code, written = run("--grow", "1")
+
+    assert code == 0
+    assert {r["name"] for r in json.loads(written)} == {"ai.a/one", "ai.c/three"}
+    assert (tmp_path / "cohort.json").exists(), "the new name is pinned"

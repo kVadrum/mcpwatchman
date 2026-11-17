@@ -18,13 +18,14 @@ import json
 import re
 import shutil
 import subprocess
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
 
 from mcpwatchman import store
+from mcpwatchman.cohort import published_limit
 from mcpwatchman.workers.scanner.runner import AXES, slugify
 from mcpwatchman.workers.scoring.weights import composite_published
 
@@ -206,7 +207,6 @@ def test_the_machine_surface_warns_about_partial_coverage() -> None:
 # --- the full records, in pages (api-changes.json, ruling 2026-11-16) -------
 
 API_CHANGES = SITE / "src" / "data" / "api-changes.json"
-PAGING = "servers-json-pages"
 BASE = "https://mcpwatchman.com/"
 
 
@@ -228,17 +228,13 @@ def _full_record_pages() -> list[dict]:
 def test_the_published_set_fits_one_page_until_the_paging_notice_expires(reports) -> None:
     """Paging is announced 30 days ahead, and what a reader would notice is
     page 1 no longer holding every server. So a published set larger than one
-    page is refused until the notice has run and the change is marked landed —
-    a publication gate, because growth is what would cross the line."""
-    changes = _api_changes()
-    if len(reports) <= changes["page_size"]:
-        return
-    change = next(c for c in changes["changes"] if c["id"] == PAGING)
-    today = datetime.now(UTC).date()
-    assert change["status"] == "landed" and today >= date.fromisoformat(change["not_before"]), (
+    page is refused until the notice has run and the change is marked landed.
+    `published_limit` is shared with `ops/scan_cohort.py`, which refuses the
+    growth itself before anything is pinned; this is the second enforcer."""
+    limit = published_limit(_api_changes(), datetime.now(UTC).date())
+    assert limit is None or len(reports) <= limit, (
         f"{len(reports)} servers would put /api/servers.json past one page of "
-        f"{changes['page_size']}, but its paging notice runs until {change['not_before']} "
-        f"(status {change['status']!r})"
+        f"{limit} before its paging notice has run (site/src/data/api-changes.json)"
     )
 
 
@@ -261,7 +257,8 @@ def test_the_pages_of_full_records_hold_exactly_the_published_reports(reports) -
     # No stray page beyond the last: a stale file would be a second answer.
     extra = sorted((DIST / "api" / "pages" / "servers").glob("*.json")) \
         if (DIST / "api" / "pages" / "servers").is_dir() else []
-    assert [f.name for f in extra] == [f"{n}.json" for n in range(2, len(pages) + 1)]
+    # As sets: sorted names put `10.json` before `2.json`.
+    assert {f.name for f in extra} == {f"{n}.json" for n in range(2, len(pages) + 1)}
 
 
 @needs_dist

@@ -14,8 +14,9 @@ import apiChanges from "../data/api-changes.json";
  *
  * `page_size` lives in `api-changes.json` beside the notice that promises it,
  * so the prose and the paging cannot disagree; `tests/test_api_changes.py`
- * holds them together and refuses a published set larger than one page while
- * the change is only announced.
+ * holds them together. `cohort.published_limit` refuses a published set larger
+ * than one page until the change has landed and its notice run, both where
+ * `ops/scan_cohort.py` grows the set and in `tests/test_site_scans.py`.
  */
 export const PAGE_SIZE: number = apiChanges.page_size;
 if (!Number.isInteger(PAGE_SIZE) || PAGE_SIZE < 1) {

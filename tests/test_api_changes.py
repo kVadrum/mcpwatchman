@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from mcpwatchman import store
+from mcpwatchman.cohort import published_limit
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
@@ -46,6 +47,8 @@ def test_every_change_states_what_it_is() -> None:
         assert change["level"] in NOTICE_DAYS
         assert change["status"] in {"announced", "landed"}
         assert change["title"] and change["summary"] and change["points"]
+        # The date is the notice: re-dating `not_before` must carry the summary.
+        assert change["not_before"] in change["summary"], change["id"]
 
 
 def test_the_paging_notice_promises_the_page_size_the_site_uses() -> None:
@@ -60,11 +63,42 @@ def test_the_paging_notice_promises_the_page_size_the_site_uses() -> None:
     assert f"{size} servers per page" in text
 
 
+def test_the_paging_change_cannot_land_before_what_landing_owes() -> None:
+    """A tripwire. While the change is announced, the page limit keeps every
+    record on page 1, which keeps four sentences true that landing makes false:
+    the notice's own "every server published today fits on page 1", the
+    homepage's "as one file", and its schema.org Dataset naming
+    /api/servers.json as the whole download. Nothing would tell a reader it
+    landed either: /api/ prints no status, and the feed entry's <updated> stays
+    the announcement date. Rewrite those with the flip, then this test."""
+    paging = next(c for c in _changes()["changes"] if c["id"] == "servers-json-pages")
+    assert paging["status"] == "announced", (
+        "landing the paging change owes: the notice's summary and points, the "
+        "homepage's 'as one file' link and Dataset distribution "
+        "(site/src/pages/index.astro), a status on /api/ and a landing date as "
+        "the feed entry's <updated>"
+    )
+
+
+@pytest.mark.parametrize(("status", "not_before", "limit"), [
+    ("announced", "2026-11-17", 500),  # the date alone does not land it
+    ("landed", "2026-11-18", 500),     # nor the flag before the notice has run
+    ("landed", "2026-11-17", None),    # both: no limit, from that day on
+])
+def test_the_page_limit_lifts_only_when_the_change_has_landed_and_its_notice_run(
+    status: str, not_before: str, limit: int | None,
+) -> None:
+    changes = {"page_size": 500, "changes": [
+        {"id": "servers-json-pages", "status": status, "not_before": not_before}]}
+    assert published_limit(changes, date(2026, 11, 17)) == limit
+
+
 @pytest.mark.skipif(not ASTRO.exists(), reason="needs the site's installed deps (CI's `site` job)")
 def test_a_reader_following_next_gets_every_record_once_in_order(tmp_path: Path) -> None:
     """At 492 servers and 500 a page there is one page, so the paging path
     never runs in the real build. A real build of a repo-shaped copy with a
-    page size small enough to make three pages runs it."""
+    page size small enough for ten pages or more runs it, page numbers of two
+    digits included (sorted as text, `10.json` comes before `2.json`)."""
     for entry in ROOT.iterdir():
         if entry.name not in {"site", ".git"}:
             (tmp_path / entry.name).symlink_to(entry)
@@ -73,8 +107,8 @@ def test_a_reader_following_next_gets_every_record_once_in_order(tmp_path: Path)
                     ignore=shutil.ignore_patterns("node_modules", "dist", ".astro", ".wrangler"))
     (site / "node_modules").symlink_to(SITE / "node_modules")
     reports = store.read_reports(site / "src" / "data" / "scans.json")
-    size = 200
-    assert len(reports) > 2 * size, "the copy needs at least three pages to mean anything"
+    size = 45
+    assert len(reports) > 9 * size, "the copy needs ten pages or more to mean anything"
     changes = _changes()
     changes["page_size"] = size
     (site / "src" / "data" / "api-changes.json").write_text(json.dumps(changes))

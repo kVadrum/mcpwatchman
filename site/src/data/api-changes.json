@@ -1,5 +1,5 @@
 {
-  "note": "Announced changes to the JSON API. One home for /api/, /feed/api.xml, the api_changes field of every JSON response and tests/test_api_changes.py, which refuses a breaking change announced under 30 days ahead, and a published set larger than one page while the paging change is only announced. page_size is the number of full records per page of /api/servers.json.",
+  "note": "Announced changes to the JSON API. One home for /api/, /feed/api.xml, the api_changes field of every JSON response and tests/test_api_changes.py, which refuses a breaking change announced under 30 days ahead. A published set larger than one page is refused until the paging change has landed and its notice run, by cohort.published_limit: when ops/scan_cohort.py grows the set, and again in tests/test_site_scans.py. page_size is the number of full records per page of /api/servers.json.",
   "page_size": 500,
   "changes": [
     {
@@ -13,7 +13,7 @@
       "points": [
         "What changes: /api/servers.json now carries page, page_count, page_size, prev and next. It is page 1 of the full records, in the same order and shape as before. Further pages are at /api/pages/servers/<n>.json, with the same fields. count is the number of servers published in total, on every page.",
         "Why: measured on 2026-11-16, the document grows by about 12.5 KB per server and is 6.5 MB at 492 servers. Our host refuses any single file over 25 MiB, which this one would pass at around 2,000 servers. Pages keep every file well under that limit.",
-        "Nothing changes for a reader yet. At 500 servers per page, today's 492 all fit on page 1, so next is null and the new fields are only additions. The change becomes visible when the published set passes 500 servers, which will not happen before the date above.",
+        "Nothing changes for a reader yet. At 500 servers per page, every server published today fits on page 1, so next is null and the new fields are only additions. The change becomes visible when the published set passes 500 servers, which will not happen before the date above.",
         "To read every record, start at /api/servers.json and follow next until it is null. Read page_size rather than assuming one: it may change without notice once paging is in effect. To find one server, use /api/index.json, which stays a single document, and its api_url."
       ]
     }

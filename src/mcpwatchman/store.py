@@ -49,7 +49,8 @@ def shard_name(slug: str) -> str:
     alphanumerics and single hyphens, so a fixed point is never a path — and,
     unlike an ASCII pattern, it refuses no slug the cohort can pin. `slugify`
     keeps Unicode letters (`é/server` → `é-server`), and one such pin refused
-    here would stop every write of the store, i.e. every night."""
+    here would stop every write of the store, i.e. every night. A fixed point
+    is also NFC, so the file name is the route the site builds."""
     if not slug or slugify(slug) != slug:
         raise StoreError(f"not a slug: {slug!r}")
     return f"{slug}.json"

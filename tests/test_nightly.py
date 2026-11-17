@@ -698,6 +698,29 @@ def test_the_seeded_store_modules_are_the_stores_whole_import_closure() -> None:
     import ast
 
     src = SCRIPT.parents[1] / "src"
+
+    def module_file(name: str) -> Path | None:
+        """A module's own file; a package's `__init__` is seeded empty already."""
+        path = src / (name.replace(".", "/") + ".py")
+        return path if path.is_file() else None
+
+    def imported(mod: str, tree: ast.AST) -> list[str]:
+        """Every `mcpwatchman` module `mod` imports, in any of Python's forms."""
+        names: list[str] = []
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                names += [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom):
+                base = n.module or ""
+                if n.level:  # relative: resolve against `mod`'s own package
+                    package = mod.rsplit(".", n.level)[0]
+                    base = f"{package}.{base}" if base else package
+                # `from pkg import sub` names a submodule, `from mod import x`
+                # a symbol; keep whichever has a file.
+                names += [base, *(f"{base}.{a.name}" for a in n.names)]
+        return [m for m in names
+                if m.split(".")[0] == "mcpwatchman" and module_file(m)]
+
     seen: set[str] = set()
     todo = ["mcpwatchman.store"]
     while todo:
@@ -705,10 +728,9 @@ def test_the_seeded_store_modules_are_the_stores_whole_import_closure() -> None:
         if mod in seen:
             continue
         seen.add(mod)
-        tree = ast.parse((src / (mod.replace(".", "/") + ".py")).read_text())
-        todo += [n.module for n in ast.walk(tree)
-                 if isinstance(n, ast.ImportFrom) and n.module
-                 and n.module.startswith("mcpwatchman.")]
+        file = module_file(mod)
+        assert file, mod
+        todo += imported(mod, ast.parse(file.read_text()))
     seeded = {rel.removeprefix("src/").removesuffix(".py").replace("/", ".")
               for rel in STORE_MODULES}
     assert seen == seeded

@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import unicodedata
 from pathlib import Path
 
 import pytest
@@ -72,8 +73,24 @@ def test_a_slug_is_never_a_path(bad: str) -> None:
 # whose slugs `slugify` keeps non-ASCII.
 UNICODE_ROWS = [
     {"name": n, "slug": slugify(n), "axes": {}}
-    for n in ("io.github.é/server", "io.github.x/ser٠ver", "com.例え/サーバー")
+    for n in ("io.github.é/server", "io.github.x/ser٠ver", "com.例え/サーバー",
+              "io.github.x/\u1100\u1161")
 ]
+
+
+@pytest.mark.parametrize("name", [
+    "io.github.x/\u1100\u1161",  # Hangul as separate jamo
+    "io.github.e\u0301/server",   # a letter and a combining accent
+    "io.github.x/\uf900",         # a CJK compatibility ideograph
+])
+def test_a_slug_is_the_route_the_site_builds(name: str) -> None:
+    """Astro builds `/servers/<slug>/` at the NFC form of the slug while every
+    link uses it as written, so a slug that is not NFC publishes a URL that
+    404s, and two names equal under NFC would be two slugs for one route."""
+    slug = slugify(name)
+    assert slug == unicodedata.normalize("NFC", slug)
+    assert slug == slugify(unicodedata.normalize("NFC", name))
+    assert store.shard_name(slug) == f"{slug}.json"
 
 
 def test_every_slug_the_cohort_can_pin_can_be_a_shard(tmp_path: Path) -> None:

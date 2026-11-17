@@ -9,11 +9,21 @@ pulling the scanner in (`tests/test_cli_lazy_imports.py`).
 
 from __future__ import annotations
 
+import unicodedata
+
 
 def slugify(name: str) -> str:
-    """A URL-safe slug for a registry name like `io.github.owner/server`."""
+    """A URL-safe slug for a registry name like `io.github.owner/server`.
+
+    NFC first, because the site builds `/servers/<slug>/` at the NFC form of
+    the slug (Astro normalizes every route parameter), while the sitemap,
+    canonical links and the CLI use the slug as written. A decomposed name
+    (Hangul as separate jamo) would otherwise publish a URL that 404s, and a
+    composed/decomposed pair two slugs with one route, failing the build.
+    Every pin to date is ASCII, which NFC leaves unchanged.
+    """
     out = []
-    for ch in name.lower():
+    for ch in unicodedata.normalize("NFC", name).lower():
         out.append(ch if ch.isalnum() else "-")
     slug = "".join(out)
     while "--" in slug:

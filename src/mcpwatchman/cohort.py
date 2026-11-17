@@ -37,6 +37,7 @@ import os
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from mcpwatchman.workers.scanner.reachability import Fault
@@ -536,6 +537,30 @@ def systemic_staleness(reports: Iterable[dict]) -> str | None:
     )
 
 
+# The full records' paging change in `site/src/data/api-changes.json`.
+PAGING_CHANGE = "servers-json-pages"
+
+
+def published_limit(changes: dict, today: date) -> int | None:
+    """How many servers may be published, or None once there is no limit.
+
+    `/api/servers.json` is page 1 of the full records, `page_size` to a page
+    (`site/src/data/api-changes.json`), and a reader notices paging only when
+    page 1 stops holding every server. That is announced 30 days ahead, so
+    until the change has landed AND its `not_before` has passed, the published
+    set may not outgrow one page.
+
+    ONE function, two enforcers, as `systemic_staleness`: `ops/scan_cohort.py`
+    refuses growth with it BEFORE anything is pinned — a pin cannot be removed,
+    so a check that only fires after the pin is committed fires too late — and
+    `tests/test_site_scans.py` refuses a committed set past it.
+    """
+    paging = next(c for c in changes["changes"] if c["id"] == PAGING_CHANGE)
+    if paging["status"] == "landed" and today >= date.fromisoformat(paging["not_before"]):
+        return None
+    return int(changes["page_size"])
+
+
 __all__ = [
     "CARRIED_STATES",
     "STALE_FLOOR",
@@ -548,9 +573,11 @@ __all__ = [
     "unpublishable_gaps",
     "Cohort",
     "CohortError",
+    "PAGING_CHANGE",
     "PinnedServer",
     "load",
     "parse",
+    "published_limit",
     "save",
     "systemic_staleness",
 ]
