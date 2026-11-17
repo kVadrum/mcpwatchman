@@ -442,14 +442,18 @@ def test_a_moved_registry_entry_is_scanned_first_then_the_oldest_page(
     assert state["calls"] == ["ai.c/three", "ai.a/one", "ai.b/two"]
 
 
-def test_past_the_deadline_a_pin_keeps_its_page_unlabelled_and_unstamped(
+def test_past_the_deadline_a_publishable_page_waits_and_a_moved_one_does_not(
     driver, monkeypatch, capsys, tmp_path: Path
 ) -> None:
-    """A page the night did not reach is not a failure: it keeps its page as
-    published — own date, no `stale` label — and carries no stamp of this run,
-    so it is not among the rows the night is judged on. A growth candidate is
-    still scanned, because it has no page to fall back on."""
+    """A page the night did not reach keeps its page as published — own date,
+    no `stale` label — carries no stamp of this run, and is not among the rows
+    the night is judged on. But the deadline passes by only a page that is
+    publishable as it stands: `ai.c/three`'s registry version moved, so its
+    page would state the old one unlabelled, and it is scanned past the
+    deadline, as is a growth candidate with no page to fall back on."""
     import ops.scan_cohort as sc
+
+    from mcpwatchman.cohort import checked_this_run
 
     run, state = driver
     _three_pins_one_moved(state, tmp_path)
@@ -464,14 +468,69 @@ def test_past_the_deadline_a_pin_keeps_its_page_unlabelled_and_unstamped(
     code, written = run("--adopt-file", str(_adopt(tmp_path, "ai.d/four")))
 
     assert code == 0, "a night that stops at its deadline publishes what it reached"
-    assert state["calls"] == ["ai.d/four"]
+    assert state["calls"] == ["ai.d/four", "ai.c/three"]
     rows = {r["name"]: r for r in json.loads(written)}
-    for name in ("ai.a/one", "ai.b/two", "ai.c/three"):
+    for name in ("ai.a/one", "ai.b/two"):
         assert rows[name] == before[name], f"{name} must pass through exactly as published"
-    assert "checked_at" in rows["ai.d/four"]
+    judged = {r["name"] for r in checked_this_run(rows.values())}
+    assert judged == {"ai.c/three", "ai.d/four"}
     out = capsys.readouterr().out
-    assert "deadline: 3 pins not reached" in out
-    assert "3 not reached" in out
+    assert "deadline: 2 pins not reached" in out
+    assert "2 not reached" in out
+
+
+@pytest.mark.parametrize(
+    "page_change",
+    [
+        {"methodology_version": "0.1.0"},  # another scoring contract
+        {"axes": {"code_safety": {"score": None, "fault": "environment",
+                                  "reason": "our tool did not run"}}},  # refused tonight
+        {"registry_state": "deprecated", "registry_note": "the registry calls it deprecated"},
+    ],
+    ids=["off-contract", "unpublishable", "status-moved"],
+)
+def test_the_deadline_never_passes_by_a_page_that_cannot_be_published_as_it_stands(
+    driver, monkeypatch, tmp_path: Path, page_change: dict
+) -> None:
+    """Passed through, each of these would be refused by a publication gate
+    (every night, since a refused night commits nothing and the next one starts
+    from the same pages) or would state something the registry no longer says."""
+    import ops.scan_cohort as sc
+
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    pages = json.loads((tmp_path / "scans.json").read_text())
+    pages[0] = {**pages[0], **page_change}  # ai.a/one
+    (tmp_path / "scans.json").write_text(json.dumps(pages))
+    monkeypatch.setattr(sc, "SCAN_DEADLINE_SECONDS", -1)
+
+    code, _ = run()
+
+    assert code == 0
+    assert "ai.a/one" in state["calls"]
+    assert "ai.b/two" not in state["calls"]
+
+
+def test_a_night_that_reaches_almost_none_of_its_pins_is_refused(
+    driver, monkeypatch, capsys, tmp_path: Path
+) -> None:
+    """The file such a night writes is last night's and as publishable as it
+    was, so no gate on the file can see it; before the deadline existed the
+    unit's timeout failed it. Exit 3, the systemic code, and nothing written."""
+    import ops.scan_cohort as sc
+
+    run, state = driver
+    _three_pins_one_moved(state, tmp_path)
+    state["entries"]["ai.c/three"] = RegistryEntry(name="ai.c/three", version="1", is_latest=True)
+    before = (tmp_path / "scans.json").read_text()
+    monkeypatch.setattr(sc, "SCAN_DEADLINE_SECONDS", -1)
+
+    code, written = run()
+
+    assert code == 3
+    assert state["calls"] == []
+    assert written == before, "nothing written"
+    assert "reached 0 of 3 pins" in capsys.readouterr().err
 
 
 def _adopt(tmp_path: Path, *names: str) -> Path:
@@ -504,14 +563,24 @@ def test_every_row_the_run_looked_at_carries_its_stamp_kept_ones_included(
 
 def test_the_deadline_leaves_the_unit_time_to_publish() -> None:
     """The unit kills the night at `TimeoutStartSec`, and a killed night
-    publishes nothing — so the run must stop starting scans early enough for
-    the slowest server, the gates, the build, the commit and the deploy."""
+    publishes nothing. The deadline only stops scans STARTING: the last one
+    started can run every tool to its budget — fetch, secrets, semgrep, then a
+    supplementary repository's fetch and semgrep, osv-scanner — and an our-side
+    timeout is retried once. Then the gates, build, commit and deploy."""
     import re
 
     import ops.scan_cohort as sc
 
+    from mcpwatchman.workers.scanner.auth_check import SECRET_SCAN_TIMEOUT
+    from mcpwatchman.workers.scanner.osv_check import OSV_TIMEOUT_S
+    from mcpwatchman.workers.scanner.semgrep_check import SEMGREP_TIMEOUT_S
+    from mcpwatchman.workers.scanner.source import FETCH_TIMEOUT_S
+
     unit = (Path(__file__).resolve().parents[1] / "ops" / "systemd"
             / "mcpwatchman-nightly.service").read_text()
     hours = int(re.search(r"^TimeoutStartSec=(\d+)h$", unit, re.M).group(1))  # type: ignore[union-attr]
-    slowest_server, after_the_scan = 5 * 60, 15 * 60
-    assert sc.SCAN_DEADLINE_SECONDS + slowest_server + after_the_scan <= hours * 3600
+    one_attempt = (2 * FETCH_TIMEOUT_S + SECRET_SCAN_TIMEOUT + 2 * SEMGREP_TIMEOUT_S
+                   + OSV_TIMEOUT_S)
+    before_and_after_the_scan = 15 * 60
+    assert (sc.SCAN_DEADLINE_SECONDS + 2 * one_attempt + before_and_after_the_scan
+            <= hours * 3600)

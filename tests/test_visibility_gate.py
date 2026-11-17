@@ -330,3 +330,23 @@ def test_a_withheld_page_keeps_the_stamp_of_tonights_attempt() -> None:
     plain = {k: v for k, v in previous.items() if k != "checked_at"}
     out, _ = gate.withhold([plain], [unstamped], {row["name"]}, "2026-11-18")
     assert "checked_at" not in out[0]
+
+
+def test_a_night_whose_every_scan_is_withheld_is_refused_on_tonights_rows() -> None:
+    """Ten rows scanned tonight, all withheld, beside 200 pages the night did
+    not reach. Judged on tonight's ten it is a broken night; had the withheld
+    pages kept last night's stamps, the night would be judged on 210 rows and
+    pass with 10 stale — the gate hiding its own refusals."""
+    from mcpwatchman.cohort import systemic_staleness
+
+    tonight, last_night = "2026-11-18T02:00:00+00:00", "2026-11-17T02:00:00+00:00"
+    previous = [{**_row(f"s{i}", f"https://github.com/s/{i}"), "checked_at": last_night,
+                 "scanned_at": "2026-11-17T02:30:00+00:00"} for i in range(10)]
+    after = [{**_row(f"s{i}", f"https://github.com/s/{i}"), "checked_at": tonight,
+              "scanned_at": "2026-11-18T02:30:00+00:00"} for i in range(10)]
+    waiting = [{**_row(f"w{i}", f"https://github.com/w/{i}"), "checked_at": last_night,
+                "scanned_at": "2026-11-17T02:30:00+00:00"} for i in range(200)]
+    out, orphans = gate.withhold(previous, after + waiting, {r["name"] for r in after},
+                                 "2026-11-18")
+    assert not orphans
+    assert systemic_staleness(out) is not None

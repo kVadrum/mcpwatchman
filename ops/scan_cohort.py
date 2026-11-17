@@ -315,33 +315,55 @@ def _growth_candidates(
 # that stops here publishes what it reached and passes every other pin through
 # with its last scan, which is the rolling nightly ruled 2026-11-09 (D1a) at the
 # size where one night no longer holds every server. At 492 a night takes about
-# an hour, so nothing is passed through. `tests/test_scan_cohort_driver.py`
-# holds it under the unit's limit with room for what runs after the scan.
-SCAN_DEADLINE_SECONDS = 150 * 60
+# an hour, so nothing is passed through. The last scan started can still run its
+# every tool to its budget, twice (`_scan_once_more_if_ours`), so
+# `tests/test_scan_cohort_driver.py` adds that worst case, from the scanner's own
+# budgets, to this and to the time the night needs after the scan.
+SCAN_DEADLINE_SECONDS = 120 * 60
+
+# A run that stops at its deadline having reached fewer of its pins than this
+# share — the registry sweep eating the night, a stalled network — changed
+# nothing worth publishing and is refused as systemic, as the unit's timeout
+# used to refuse it. It must stay below the share of the set a night is meant
+# to reach (the cadence, an operator decision held in STATE).
+MIN_REACHED_PERCENT = 10
 
 
 def _due_order(
     pins: list[tuple[RegistryEntry, str]], previous: dict[str, dict]
-) -> list[tuple[RegistryEntry, str]]:
-    """Tonight's pins, the ones that most need a scan first.
+) -> list[tuple[RegistryEntry, str, bool]]:
+    """Tonight's pins, the ones that most need a scan first, each with whether
+    the deadline may pass it by.
 
-    First every pin whose page cannot wait: no page yet, a registry entry that
-    moved since its page was scanned (a new version, or a status the page does
-    not show), or a page scored under another scoring contract — which the
-    contract gate refuses to publish. Then the rest, oldest scan first, so a
-    page the last run could not measure keeps its old date and is tried again
-    first. Ties by name hash, so the order is reproducible.
+    The deadline only ever passes by a page that is publishable as it stands.
+    So these are scanned whatever the hour, and first: a pin with no page yet;
+    a registry entry that moved since its page was scanned (a new version, or a
+    status the page does not show — the page would otherwise state the old one
+    unlabelled); a page scored under another scoring contract, which the
+    contract gate refuses; a page tonight's publication rules refuse. Then the
+    rest, oldest scan first, so a page the last run could not measure keeps its
+    old date and is tried again first. Ties by name hash, so the order is
+    reproducible. A ruleset bump past one night's capacity therefore runs as
+    long as it did before this deadline existed — how it regenerates at scale is
+    held for the operator in STATE.
     """
-    from mcpwatchman.workers.scanner.semgrep_check import rules_root, ruleset_version
+    from mcpwatchman.workers.scanner.semgrep_check import (
+        RulesetError,
+        rules_root,
+        ruleset_version,
+    )
     from mcpwatchman.workers.scoring.weights import CURRENT_METHODOLOGY_VERSION
 
-    rules = ruleset_version(rules_root())
+    try:
+        rules: str | None = ruleset_version(rules_root())
+    except RulesetError:
+        # Every scan meets the same error and keeps its page, which the
+        # staleness bound refuses as systemic — as before this order existed.
+        rules = None
 
-    def key(item: tuple[RegistryEntry, str]) -> tuple[int, str, str]:
-        entry, kind = item
-        page = previous.get(entry.name)
+    def must_scan(entry: RegistryEntry, kind: str, page: dict | None) -> bool:
         if page is None:
-            return (0, "", sample_key(entry.name))
+            return True
         shown = page.get("registry_state")
         registry_now = entry.status if kind == "flagged" else "listed"
         moved = (
@@ -351,10 +373,16 @@ def _due_order(
         off_contract = page.get("methodology_version") != CURRENT_METHODOLOGY_VERSION or (
             bool(page.get("ruleset_version")) and page.get("ruleset_version") != rules
         )
-        due = 0 if moved or off_contract else 1
-        return (due, str(page.get("scanned_at", "")), sample_key(entry.name))
+        return moved or off_contract or bool(unpublishable_gaps(entry.name, page))
 
-    return sorted(pins, key=key)
+    due = [(e, kind, must_scan(e, kind, previous.get(e.name))) for e, kind in pins]
+
+    def key(item: tuple[RegistryEntry, str, bool]) -> tuple[int, str, str]:
+        entry, _, must = item
+        page = previous.get(entry.name) or {}
+        return (0 if must else 1, str(page.get("scanned_at", "")), sample_key(entry.name))
+
+    return sorted(due, key=key)
 
 
 def main() -> int:
@@ -554,12 +582,13 @@ def main() -> int:
     queue = _due_order(
         [(e, "pinned") for e in to_scan] + [(e, "flagged") for e in to_flag], previous
     )
-    for entry, kind in queue:
+    for entry, kind, must in queue:
         index += 1
-        if time.time() >= deadline and entry.name in previous:
-            # Its page stays exactly as published, own date and all, and it is
-            # due earlier tomorrow for being older. Not a failure, so not
-            # labelled, and not among the rows this run is judged on.
+        if not must and time.time() >= deadline:
+            # Its page is publishable as it stands (`_due_order`), so it stays
+            # exactly as published, own date and all, and is due earlier next
+            # run for being older. Not a failure, so not labelled, and not
+            # among the rows this run is judged on.
             reports[entry.name] = previous[entry.name]
             not_reached.append(entry.name)
             continue
@@ -645,6 +674,20 @@ def main() -> int:
             f"and is due earlier next run (first: {', '.join(not_reached[:5])})",
             flush=True,
         )
+        reached = len(queue) - len(not_reached)
+        if reached == 0 or reached * 100 < len(queue) * MIN_REACHED_PERCENT:
+            # The file this run would write is last night's, give or take, and
+            # as publishable as it was — so no gate on the FILE can see this.
+            # Before the deadline existed the unit's timeout failed it loudly.
+            print(
+                f"REFUSING TO WRITE:\n  the run reached {reached} of {len(queue)} "
+                f"pins before its {SCAN_DEADLINE_SECONDS // 60} min deadline, under "
+                f"the {MIN_REACHED_PERCENT}% a night must reach — a stalled "
+                "registry sweep or network is systemic, and publishing would "
+                "report a night that changed nothing as a success. Nothing written.",
+                file=sys.stderr,
+            )
+            return 3
 
     grown: Cohort = cohort
     if growth:

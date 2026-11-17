@@ -517,10 +517,13 @@ STALE_MAX_SHARE_PERCENT = 10
 
 
 def _instant(value: object) -> datetime | None:
+    """An aware instant, or None — a time with no offset cannot be ordered
+    against one with an offset, so it is as unreadable as garbage here."""
     try:
-        return datetime.fromisoformat(str(value))
+        at = datetime.fromisoformat(str(value))
     except ValueError:
         return None
+    return at if at.tzinfo is not None else None
 
 
 def checked_this_run(reports: Iterable[dict]) -> list[dict]:
@@ -531,33 +534,40 @@ def checked_this_run(reports: Iterable[dict]) -> list[dict]:
     "of tonight's attempts": 200 failures in 1,700 attempts is a broken night,
     and against 10% of a 5,000-row set it would pass. So a run stamps
     `checked_at` — its own start — on every row it looked at, kept and carried
-    ones included, and this returns those rows.
+    ones included, and this returns the rows carrying the newest stamp,
+    compared as instants (two spellings of one time are one stamp).
 
-    ⚠ **The stamp is trusted only if THIS set's run wrote it.** A row scanned
-    after the newest stamp without carrying it means the run did not stamp —
-    `main`'s code before this field, or a stamp inherited through a kept page —
-    and then every row counts, which is the rule this replaced. So a set where
-    no row is stamped, or where the newest stamp is not the run's, is judged
-    exactly as before.
+    ⚠ **Every row counts — the rule this replaced — when the stamps cannot be
+    the newest run's:** no row stamped; a stamp or scan time that is not an
+    aware ISO 8601 instant; or a row scanned at or after the newest stamp
+    without carrying it, which is a run that did not stamp (`main`'s code
+    before this field) leaving a stamp inherited through a kept page.
+
+    What this cannot see is a run that reached NO pin: it writes the previous
+    set back, stamps and all, and that file is as publishable as it was last
+    night. Refusing that run is the driver's (`ops/scan_cohort.py`, which knows
+    what it reached), not a property of the file.
     """
     rows = list(reports)
-    instants: dict[str, datetime] = {}
+    stamped: list[tuple[dict, datetime]] = []
     for r in rows:
         if r.get("checked_at"):
             at = _instant(r["checked_at"])
             if at is None:
                 return rows
-            instants[str(r["checked_at"])] = at
-    if not instants:
+            stamped.append((r, at))
+    if not stamped:
         return rows
-    newest = max(instants, key=instants.__getitem__)
+    newest = max(at for _, at in stamped)
+    judged = [r for r, at in stamped if at == newest]
+    ids = {id(r) for r in judged}
     for r in rows:
-        if r.get("checked_at") == newest:
+        if id(r) in ids:
             continue
         scanned = _instant(r.get("scanned_at", ""))
-        if scanned is None or scanned >= instants[newest]:
+        if scanned is None or scanned >= newest:
             return rows
-    return [r for r in rows if r.get("checked_at") == newest]
+    return judged
 
 
 def systemic_staleness(reports: Iterable[dict]) -> str | None:

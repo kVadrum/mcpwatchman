@@ -637,19 +637,38 @@ def test_a_stamp_this_sets_run_did_not_write_judges_every_row(rows) -> None:
     assert checked_this_run(rows) == rows
 
 
-def test_the_published_data_is_judged_the_same_stamped_or_not() -> None:
-    """The committed set, as `main` wrote it and as a stamping run would."""
-    from mcpwatchman import store
+def test_two_spellings_of_one_stamp_are_one_stamp_whatever_the_row_order() -> None:
+    """`Z` and `+00:00` name the same instant. Matched as strings, the rows
+    judged depended on which spelling came first — 40 or 80 of the same set."""
+    from mcpwatchman.cohort import checked_this_run
+
+    fresh = [_row(i, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00") for i in range(40)]
+    kept = [_row(i, checked="2026-11-18T02:00:00Z", scanned="2026-11-01T00:00:00+00:00",
+                 state="stale") for i in range(40, 80)]
+    waiting = [_row(i, checked=LAST_NIGHT, scanned="2026-11-17T02:30:00+00:00")
+               for i in range(80, 100)]
+    assert len(checked_this_run(fresh + kept + waiting)) == 80
+    assert len(checked_this_run(kept + fresh + waiting)) == 80
+
+
+def test_a_row_scanned_at_the_very_stamp_without_it_is_a_run_that_did_not_stamp() -> None:
+    from mcpwatchman.cohort import checked_this_run
+
+    rows = [_row(0, checked=TONIGHT, scanned="2026-11-01T00:00:00+00:00", state="stale"),
+            _row(1, checked=None, scanned=TONIGHT),
+            _row(2, checked=None, scanned=LAST_NIGHT)]
+    assert checked_this_run(rows) == rows
+
+
+def test_a_time_with_no_offset_judges_every_row_rather_than_raising() -> None:
     from mcpwatchman.cohort import checked_this_run, systemic_staleness
 
-    path = Path(__file__).resolve().parents[1] / "site" / "src" / "data" / "scans.json"
-    if not store.exists(path):
-        pytest.skip("no published data in this checkout")
-    rows = list(store.read_reports(path))
-    stamp = min(str(r["scanned_at"]) for r in rows if r.get("registry_state") == "listed")
-    stamped = [{**r, "checked_at": stamp} for r in rows]
-    assert len(checked_this_run(stamped)) == len(rows)
-    assert systemic_staleness(stamped) == systemic_staleness(rows)
+    rows = [_row(0, checked=TONIGHT, scanned="2026-11-18T02:30:00+00:00"),
+            _row(1, checked=None, scanned="2026-11-17T02:30:00")]
+    assert checked_this_run(rows) == rows
+    naive = [_row(0, checked="2026-11-18T02:00:00", scanned="2026-11-18T02:30:00+00:00")]
+    assert checked_this_run(naive) == naive
+    assert systemic_staleness(rows) is None
 
 
 def test_a_carried_page_takes_the_stamp_of_the_attempt_not_of_its_old_scan() -> None:
