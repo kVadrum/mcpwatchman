@@ -2,9 +2,9 @@
  "name": "io.github.shulex-voc/smart-crawler",
  "version": "0.2.1",
  "slug": "io-github-shulex-voc-smart-crawler",
- "scanned_at": "2026-11-17T03:10:16+00:00",
+ "scanned_at": "2026-11-18T03:05:08+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/shulex-voc/smart-crawler",
  "package": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 162 day(s) before 2026-11-17",
+     "detail": "last commit 163 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",

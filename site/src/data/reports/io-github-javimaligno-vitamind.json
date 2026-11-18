@@ -2,9 +2,9 @@
  "name": "io.github.JaviMaligno/vitamind",
  "version": "1.0.0",
  "slug": "io-github-javimaligno-vitamind",
- "scanned_at": "2026-11-17T02:51:50+00:00",
+ "scanned_at": "2026-11-18T02:49:27+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/JaviMaligno/vitamind",
  "package": "",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-17",
+     "detail": "last commit 3 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -770,13 +770,37 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 92,
+   "score": 74,
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [],
    "evidence": [
+    {
+     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 4.0.7 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
     {
      "label": "next 16.4.1 \u2014 GHSA-mfr8-8qww-v76h",
      "detail": "direct, CVSS 6.3, fixed in 16.4.5",
@@ -787,6 +811,18 @@
      "finding": "next:GHSA-mfr8-8qww-v76h",
      "severity": "medium",
      "first_seen": "2026-11-17",
+     "deducts": true
+    },
+    {
+     "label": "next 16.4.1 \u2014 GHSA-vc7v-qv4w-wrv8",
+     "detail": "direct, CVSS 6.3, fixed in 16.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-vc7v-qv4w-wrv8",
+     "finding": "next:GHSA-vc7v-qv4w-wrv8",
+     "severity": "medium",
+     "first_seen": null,
      "deducts": true
     },
     {

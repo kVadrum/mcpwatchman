@@ -2,9 +2,9 @@
  "name": "ai.mcpcap/mcpcap",
  "version": "0.10.0",
  "slug": "ai-mcpcap-mcpcap",
- "scanned_at": "2026-11-17T02:41:14+00:00",
+ "scanned_at": "2026-11-18T02:38:43+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/mcpcap/mcpcap",
  "package": "pypi:mcpcap@0.10.0",
@@ -117,7 +117,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 48 day(s) before 2026-11-17",
+     "detail": "last commit 49 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 152.8 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 153.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 48 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 49 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -866,7 +866,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:41:20+00:00",
+  "fetched_at": "2026-11-18T02:38:50+00:00",
   "system": "PyPI",
   "package": "mcpcap",
   "version": "0.10.0",

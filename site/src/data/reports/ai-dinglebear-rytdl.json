@@ -2,9 +2,9 @@
  "name": "ai.dinglebear/rytdl",
  "version": "1.0.4",
  "slug": "ai-dinglebear-rytdl",
- "scanned_at": "2026-11-17T02:27:16+00:00",
+ "scanned_at": "2026-11-18T02:22:48+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/dinglebear-ai/rytdl",
  "package": "npm:@dinglebear/rytdl@1.0.4",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 47 day(s) before 2026-11-17",
+     "detail": "last commit 48 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 97 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 98 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -292,7 +292,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:27:20+00:00",
+  "fetched_at": "2026-11-18T02:22:50+00:00",
   "system": "npm",
   "package": "@dinglebear/rytdl",
   "version": "1.0.4",

@@ -2,9 +2,9 @@
  "name": "dev.uptimepage/uptimepage",
  "version": "1.6.0",
  "slug": "dev-uptimepage-uptimepage",
- "scanned_at": "2026-11-17T02:48:16+00:00",
+ "scanned_at": "2026-11-18T02:44:42+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/uptimepage/uptimepage",
  "package": "",
@@ -441,7 +441,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-17",
+     "detail": "last commit 2 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -465,7 +465,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 20 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 21 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -504,20 +504,20 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": null,
-   "reason": "56 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "reason": "61 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
    "assessed_weight": "0",
    "fault": "project",
-   "evidence_omitted": 6,
+   "evidence_omitted": 11,
    "unmeasured_faults": [],
    "evidence": [
     {
-     "label": "zip 3.0.0 \u2014 GHSA-m665-v7pm-7grj",
+     "label": "zip 3.0.0 \u2014 RUSTSEC-2026-0548",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 9.4, fixed in 9.0.5",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-m665-v7pm-7grj",
-     "finding": "zip:GHSA-m665-v7pm-7grj",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0548",
+     "finding": "zip:RUSTSEC-2026-0548",
      "severity": "critical",
      "first_seen": null,
      "deducts": false
@@ -715,13 +715,13 @@
      "deducts": false
     },
     {
-     "label": "zip 3.0.0 \u2014 GHSA-8hxf-qr8p-62x4",
+     "label": "zip 3.0.0 \u2014 RUSTSEC-2026-0545",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.5, fixed in 9.0.0",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-8hxf-qr8p-62x4",
-     "finding": "zip:GHSA-8hxf-qr8p-62x4",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0545",
+     "finding": "zip:RUSTSEC-2026-0545",
      "severity": "medium",
      "first_seen": null,
      "deducts": false
@@ -859,6 +859,30 @@
      "deducts": false
     },
     {
+     "label": "chrono 0.4.44 \u2014 RUSTSEC-2026-0543",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0543",
+     "finding": "chrono:RUSTSEC-2026-0543",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "chrono-tz 0.10.4 \u2014 RUSTSEC-2026-0555",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0555",
+     "finding": "chrono-tz:RUSTSEC-2026-0555",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
      "label": "crypto-bigint 0.5.5 \u2014 RUSTSEC-2026-0387",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.7.6",
      "path": "Cargo.lock",
@@ -967,6 +991,42 @@
      "deducts": false
     },
     {
+     "label": "hickory-net 0.26.1 \u2014 RUSTSEC-2026-0556",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.26.2",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0556",
+     "finding": "hickory-net:RUSTSEC-2026-0556",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "hickory-net 0.26.1 \u2014 RUSTSEC-2026-0557",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.26.2",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0557",
+     "finding": "hickory-net:RUSTSEC-2026-0557",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "hickory-net 0.26.1 \u2014 RUSTSEC-2026-0558",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.26.2",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0558",
+     "finding": "hickory-net:RUSTSEC-2026-0558",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
      "label": "hickory-proto 0.26.1 \u2014 RUSTSEC-2026-0487",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.26.2",
      "path": "Cargo.lock",
@@ -1046,66 +1106,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0516",
      "finding": "hickory-resolver:RUSTSEC-2026-0516",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
-     "label": "instant 0.1.13 \u2014 RUSTSEC-2024-0384",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2024-0384",
-     "finding": "instant:RUSTSEC-2024-0384",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
-     "label": "paste 1.0.15 \u2014 RUSTSEC-2024-0436",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2024-0436",
-     "finding": "paste:RUSTSEC-2024-0436",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
-     "label": "quinn-proto 0.11.14 \u2014 RUSTSEC-2026-0338",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.11.18",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0338",
-     "finding": "quinn-proto:RUSTSEC-2026-0338",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
-     "label": "quinn-proto 0.11.14 \u2014 RUSTSEC-2026-0339",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.11.17",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0339",
-     "finding": "quinn-proto:RUSTSEC-2026-0339",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
-     "label": "quinn-proto 0.11.14 \u2014 RUSTSEC-2026-0342",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 0.11.17",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0342",
-     "finding": "quinn-proto:RUSTSEC-2026-0342",
      "severity": "",
      "first_seen": null,
      "deducts": false

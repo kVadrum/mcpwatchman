@@ -2,9 +2,9 @@
  "name": "ai.clize/storefront",
  "version": "0.35.5",
  "slug": "ai-clize-storefront",
- "scanned_at": "2026-11-17T02:24:32+00:00",
+ "scanned_at": "2026-11-18T02:20:15+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/cooldk/clize-cli",
  "package": "npm:@clize/storefront@0.35.5",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 47 day(s) before 2026-11-17",
+     "detail": "last commit 48 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 75.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 76.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:24:33+00:00",
+  "fetched_at": "2026-11-18T02:20:15+00:00",
   "system": "npm",
   "package": "@clize/storefront",
   "version": "0.35.5",

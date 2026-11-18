@@ -2,9 +2,9 @@
  "name": "io.github.geeks-accelerator/inbed",
  "version": "1.0.3",
  "slug": "io-github-geeks-accelerator-inbed",
- "scanned_at": "2026-11-17T02:57:48+00:00",
+ "scanned_at": "2026-11-18T02:54:43+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/geeks-accelerator/in-bed-ai",
  "package": "npm:mcp-inbed-dating@1.0.3",
@@ -14,10 +14,10 @@
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "4bd9e0a78fcf30f61c6f3c09fc278aeabfed19cc",
+ "repository_commit": "93d88de5b97e529950230f40272f227b5e6d3d79",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 254,
+ "files_scanned": 259,
  "files_pruned": 0,
  "axes": {
   "code_safety": {
@@ -125,18 +125,6 @@
      "finding": "mcp-js-ssrf-nonliteral-url",
      "severity": "medium",
      "first_seen": "2026-11-17",
-     "deducts": true
-    },
-    {
-     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
-     "path": "scripts/prod-report-attribution.ts",
-     "line": 105,
-     "excerpt": "      const q = `${url}/rest/v1/agents?select=${cols}` +\n        `&created_at=gte.${ctx.now.from}T00:00:00Z&created_at=lt.${new Date(end(ctx.now)).toISOString()}`;\n      const res = await fetch(q, { headers: { apikey: key, authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(30_000) });\n\n      const empty: AttributionData = {",
-     "url": "",
-     "finding": "mcp-js-ssrf-nonliteral-url",
-     "severity": "medium",
-     "first_seen": "2026-11-14",
      "deducts": true
     },
     {
@@ -325,7 +313,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-17",
+     "detail": "last commit 2 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -473,7 +461,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:57:56+00:00",
+  "fetched_at": "2026-11-18T02:54:49+00:00",
   "system": "npm",
   "package": "mcp-inbed-dating",
   "version": "1.0.3",

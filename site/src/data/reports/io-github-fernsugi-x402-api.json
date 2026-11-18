@@ -2,9 +2,9 @@
  "name": "io.github.fernsugi/x402-api",
  "version": "1.0.5",
  "slug": "io-github-fernsugi-x402-api",
- "scanned_at": "2026-11-17T02:57:31+00:00",
+ "scanned_at": "2026-11-18T02:54:32+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/fernsugi/x402-api-mcp-server",
  "package": "npm:@x402-api/mcp-server@1.0.5",
@@ -129,7 +129,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 48 day(s) before 2026-11-17",
+     "detail": "last commit 49 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 213.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 214.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -153,7 +153,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 8 days (by releases), last release 48 day(s) ago",
+     "detail": "median release gap 8 days (by releases), last release 49 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -277,7 +277,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:57:35+00:00",
+  "fetched_at": "2026-11-18T02:54:35+00:00",
   "system": "npm",
   "package": "@x402-api/mcp-server",
   "version": "1.0.5",

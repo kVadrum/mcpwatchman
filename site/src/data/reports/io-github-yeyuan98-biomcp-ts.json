@@ -2,9 +2,9 @@
  "name": "io.github.yeyuan98/biomcp-ts",
  "version": "1.4.3",
  "slug": "io-github-yeyuan98-biomcp-ts",
- "scanned_at": "2026-11-17T03:14:47+00:00",
+ "scanned_at": "2026-11-18T03:07:57+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/yeyuan98/biomcp-ts",
  "package": "npm:biomcp@1.4.3",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 22 day(s) before 2026-11-17",
+     "detail": "last commit 23 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 22 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 23 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -858,7 +858,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T03:14:57+00:00",
+  "fetched_at": "2026-11-18T03:08:05+00:00",
   "system": "npm",
   "package": "biomcp",
   "version": "1.4.3",

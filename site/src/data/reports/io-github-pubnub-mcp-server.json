@@ -2,9 +2,9 @@
  "name": "io.github.pubnub/mcp-server",
  "version": "2.3.2",
  "slug": "io-github-pubnub-mcp-server",
- "scanned_at": "2026-11-17T03:05:26+00:00",
+ "scanned_at": "2026-11-18T03:00:41+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/pubnub/pubnub-mcp-server",
  "package": "npm:@pubnub/mcp@2.3.2",
@@ -165,7 +165,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-17",
+     "detail": "last commit 5 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -177,7 +177,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 274.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 275.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -189,7 +189,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 14 days (by releases), last release 181 day(s) ago",
+     "detail": "median release gap 14 days (by releases), last release 182 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -313,7 +313,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T03:05:31+00:00",
+  "fetched_at": "2026-11-18T03:00:45+00:00",
   "system": "npm",
   "package": "@pubnub/mcp",
   "version": "2.3.2",

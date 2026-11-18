@@ -2,9 +2,9 @@
  "name": "com.clauxel.fastmcpruntime/fastmcpruntime-mcp",
  "version": "1.0.0",
  "slug": "com-clauxel-fastmcpruntime-fastmcpruntime-mcp",
- "scanned_at": "2026-11-17T02:45:48+00:00",
+ "scanned_at": "2026-11-18T02:42:38+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/clauxel/fastmcp-runtime-mcp",
  "package": "",
@@ -94,7 +94,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 50,
+   "score": 30,
    "reason": "",
    "assessed_weight": "0.45",
    "fault": null,
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 180 day(s) before 2026-11-17",
+     "detail": "last commit 181 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",

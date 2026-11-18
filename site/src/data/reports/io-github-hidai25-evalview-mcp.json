@@ -2,9 +2,9 @@
  "name": "io.github.hidai25/evalview-mcp",
  "version": "0.6.0",
  "slug": "io-github-hidai25-evalview-mcp",
- "scanned_at": "2026-11-17T02:58:22+00:00",
+ "scanned_at": "2026-11-18T02:55:13+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/hidai25/eval-view",
  "package": "pypi:evalview@0.6.0",
@@ -333,7 +333,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 32 day(s) before 2026-11-17",
+     "detail": "last commit 33 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -345,7 +345,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 19.8 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 20.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -357,7 +357,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 114 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 115 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -481,7 +481,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:58:30+00:00",
+  "fetched_at": "2026-11-18T02:55:18+00:00",
   "system": "PyPI",
   "package": "evalview",
   "version": "0.6.0",

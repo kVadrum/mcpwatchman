@@ -2,9 +2,9 @@
  "name": "ai.meetsquad/squad",
  "version": "4.3.3",
  "slug": "ai-meetsquad-squad",
- "scanned_at": "2026-11-17T02:41:40+00:00",
+ "scanned_at": "2026-11-18T02:39:06+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/the-basilisk-ai/squad-mcp",
  "package": "",
@@ -117,7 +117,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 15 day(s) before 2026-11-17",
+     "detail": "last commit 16 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 15 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 16 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -179,13 +179,49 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 82,
+   "score": 64,
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [],
    "evidence": [
+    {
+     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 4.0.4 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 4.0.7 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
     {
      "label": "hono 4.13.13 \u2014 GHSA-46wx-v44x-9hh2",
      "detail": "direct, CVSS 5.3, fixed in 4.13.16",

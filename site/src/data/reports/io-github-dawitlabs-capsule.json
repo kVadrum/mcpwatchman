@@ -2,9 +2,9 @@
  "name": "io.github.dawitlabs/capsule",
  "version": "0.3.3",
  "slug": "io-github-dawitlabs-capsule",
- "scanned_at": "2026-11-17T02:56:22+00:00",
+ "scanned_at": "2026-11-18T02:53:35+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/dawitlabs/capsule",
  "package": "npm:capsulectx@0.3.3",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 137 day(s) before 2026-11-17",
+     "detail": "last commit 138 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by tags), last release 137 day(s) ago",
+     "detail": "median release gap 0 days (by tags), last release 138 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:56:25+00:00",
+  "fetched_at": "2026-11-18T02:53:37+00:00",
   "system": "npm",
   "package": "capsulectx",
   "version": "0.3.3",
@@ -261,8 +261,21 @@
   "direct": 5,
   "skipped_nodes": 0,
   "unresolved": 0,
-  "findings": [],
-  "findings_total": 0,
+  "findings": [
+   {
+    "package": "picomatch",
+    "version": "2.3.2",
+    "osv_id": "GHSA-fc5q-39xc-vjpf",
+    "cve_id": "CVE-2026-112366",
+    "severity": "high",
+    "cvss": "8.7",
+    "relation": "indirect",
+    "fixed_version": "",
+    "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+    "deducts": false
+   }
+  ],
+  "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "findings_tracked_since": "2026-10-10"

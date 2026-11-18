@@ -2,9 +2,9 @@
  "name": "io.github.JinNing6/cyberhuatuo",
  "version": "0.2.5",
  "slug": "io-github-jinning6-cyberhuatuo",
- "scanned_at": "2026-11-17T02:52:06+00:00",
+ "scanned_at": "2026-11-18T02:50:14+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/JinNing6/CyberHuaTuo-Plugin",
  "package": "pypi:cyberhuatuo@0.2.5",
@@ -212,7 +212,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 124 day(s) before 2026-11-17",
+     "detail": "last commit 125 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -236,7 +236,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 124 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 125 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -362,7 +362,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:52:12+00:00",
+  "fetched_at": "2026-11-18T02:50:19+00:00",
   "system": "PyPI",
   "package": "cyberhuatuo",
   "version": "0.2.5",

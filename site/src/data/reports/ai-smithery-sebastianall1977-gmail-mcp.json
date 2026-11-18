@@ -2,9 +2,9 @@
  "name": "ai.smithery/sebastianall1977-gmail-mcp",
  "version": "1.7.4",
  "slug": "ai-smithery-sebastianall1977-gmail-mcp",
- "scanned_at": "2026-11-17T02:44:06+00:00",
+ "scanned_at": "2026-11-18T02:41:07+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/sebastianall1977/gmail-mcp",
  "package": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 411 day(s) before 2026-11-17",
+     "detail": "last commit 412 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -172,7 +172,7 @@
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
-   "evidence_omitted": 36,
+   "evidence_omitted": 37,
    "unmeasured_faults": [],
    "evidence": [
     {
@@ -315,6 +315,18 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-3ppc-4f35-3m26",
      "finding": "minimatch:GHSA-3ppc-4f35-3m26",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 2.3.1 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -759,18 +771,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-xxjr-mmjv-4gpg",
      "finding": "lodash:GHSA-xxjr-mmjv-4gpg",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "brace-expansion 1.1.12 \u2014 GHSA-f886-m6hf-6m8v",
-     "detail": "transitive, CVSS 6.5, fixed in 1.1.13",
-     "path": "pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-f886-m6hf-6m8v",
-     "finding": "brace-expansion:GHSA-f886-m6hf-6m8v",
      "severity": "medium",
      "first_seen": null,
      "deducts": true

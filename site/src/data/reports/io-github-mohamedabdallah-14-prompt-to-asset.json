@@ -2,9 +2,9 @@
  "name": "io.github.MohamedAbdallah-14/prompt-to-asset",
  "version": "0.4.2",
  "slug": "io-github-mohamedabdallah-14-prompt-to-asset",
- "scanned_at": "2026-11-17T02:52:34+00:00",
+ "scanned_at": "2026-11-18T02:50:35+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/MohamedAbdallah-14/prompt-to-asset",
  "package": "npm:prompt-to-asset@0.4.2",
@@ -455,7 +455,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 119 day(s) before 2026-11-17",
+     "detail": "last commit 120 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -467,7 +467,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 184.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 185.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -479,7 +479,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 205 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 206 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -603,7 +603,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:52:40+00:00",
+  "fetched_at": "2026-11-18T02:50:40+00:00",
   "system": "npm",
   "package": "prompt-to-asset",
   "version": "0.4.2",

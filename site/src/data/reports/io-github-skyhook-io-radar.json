@@ -2,9 +2,9 @@
  "name": "io.github.skyhook-io/radar",
  "version": "1.20.3",
  "slug": "io-github-skyhook-io-radar",
- "scanned_at": "2026-11-17T03:10:19+00:00",
+ "scanned_at": "2026-11-18T03:05:10+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/skyhook-io/radar",
  "package": "",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-17",
+     "detail": "last commit 2 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -720,7 +720,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 5.3 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 6.3 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 5 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -770,15 +770,27 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 85,
+   "score": 79,
    "reason": "1 vulnerability could not be placed in `03` \u00a76's table and is listed but not scored; 1 dependency file (pkg/go.sum) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 2 lockfiles that were",
-   "assessed_weight": "0.55",
+   "assessed_weight": "0.56",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
     "project"
    ],
    "evidence": [
+    {
+     "label": "picomatch 4.0.7 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
     {
      "label": "zod 4.4.3 \u2014 GHSA-mrhx-c7xc-m3w5",
      "detail": "transitive, CVSS 8.2, fixed in 4.6.6",

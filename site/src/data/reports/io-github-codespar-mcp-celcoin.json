@@ -2,9 +2,9 @@
  "name": "io.github.codespar/mcp-celcoin",
  "version": "0.2.4",
  "slug": "io-github-codespar-mcp-celcoin",
- "scanned_at": "2026-11-17T02:55:43+00:00",
+ "scanned_at": "2026-11-18T02:53:06+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/codespar/mcp-dev-latam",
  "package": "npm:@codespar/mcp-celcoin@0.2.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 51 day(s) before 2026-11-17",
+     "detail": "last commit 52 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 7 issue(s) in the last 6 months: 124.3 day(s) to first maintainer comment",
+     "detail": "median over 7 issue(s) in the last 6 months: 125.3 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +255,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:55:48+00:00",
+  "fetched_at": "2026-11-18T02:53:08+00:00",
   "system": "npm",
   "package": "@codespar/mcp-celcoin",
   "version": "0.2.4",

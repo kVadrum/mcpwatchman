@@ -2,9 +2,9 @@
  "name": "io.github.Cifero74/mcp-apple-music",
  "version": "1.3.0",
  "slug": "io-github-cifero74-mcp-apple-music",
- "scanned_at": "2026-11-17T02:50:05+00:00",
+ "scanned_at": "2026-11-18T02:48:17+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Cifero74/mcp-apple-music",
  "package": "pypi:mcp-apple-music-server@1.3.0",
@@ -102,7 +102,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 26 day(s) before 2026-11-17",
+     "detail": "last commit 27 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -114,7 +114,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 81.6 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 82.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -126,7 +126,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 26 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 27 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -827,7 +827,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:50:10+00:00",
+  "fetched_at": "2026-11-18T02:48:21+00:00",
   "system": "PyPI",
   "package": "mcp-apple-music-server",
   "version": "1.3.0",

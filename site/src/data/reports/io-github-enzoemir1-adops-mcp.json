@@ -2,9 +2,9 @@
  "name": "io.github.enzoemir1/adops-mcp",
  "version": "1.3.0",
  "slug": "io-github-enzoemir1-adops-mcp",
- "scanned_at": "2026-11-17T02:57:15+00:00",
+ "scanned_at": "2026-11-18T02:54:20+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/enzoemir1/adops-mcp",
  "package": "npm:adops-mcp-server@1.3.0",
@@ -93,7 +93,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 79,
+   "score": 74,
    "reason": "",
    "assessed_weight": "0.9",
    "fault": null,
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 65 day(s) before 2026-11-17",
+     "detail": "last commit 66 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 6.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 7.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 3 days (by releases), last release 206 day(s) ago",
+     "detail": "median release gap 3 days (by releases), last release 207 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:57:17+00:00",
+  "fetched_at": "2026-11-18T02:54:22+00:00",
   "system": "npm",
   "package": "adops-mcp-server",
   "version": "1.3.0",

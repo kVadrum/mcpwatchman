@@ -2,9 +2,9 @@
  "name": "io.github.GarAlex/promoshot",
  "version": "0.4.7",
  "slug": "io-github-garalex-promoshot",
- "scanned_at": "2026-11-17T02:51:16+00:00",
+ "scanned_at": "2026-11-18T02:49:00+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/GarAlex/promoshot",
  "package": "",
@@ -525,7 +525,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 9 day(s) before 2026-11-17",
+     "detail": "last commit 10 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -537,7 +537,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 74.1 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 75.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -549,7 +549,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 19 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 20 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -595,25 +595,25 @@
    "unmeasured_faults": [],
    "evidence": [
     {
-     "label": "zip 2.6.1 \u2014 GHSA-m665-v7pm-7grj",
+     "label": "zip 2.6.1 \u2014 RUSTSEC-2026-0548",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 9.4, fixed in 9.0.5",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-m665-v7pm-7grj",
-     "finding": "zip:GHSA-m665-v7pm-7grj",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0548",
+     "finding": "zip:RUSTSEC-2026-0548",
      "severity": "critical",
      "first_seen": null,
      "deducts": false
     },
     {
-     "label": "zip 8.6.0 \u2014 GHSA-m665-v7pm-7grj",
+     "label": "zip 8.6.0 \u2014 RUSTSEC-2026-0548",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 9.4, fixed in 9.0.5",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-m665-v7pm-7grj",
-     "finding": "zip:GHSA-m665-v7pm-7grj",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0548",
+     "finding": "zip:RUSTSEC-2026-0548",
      "severity": "critical",
      "first_seen": null,
      "deducts": false
@@ -643,18 +643,6 @@
      "deducts": false
     },
     {
-     "label": "zip 8.6.0 \u2014 GHSA-9hj8-73fh-9963",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 9.0.0",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-9hj8-73fh-9963",
-     "finding": "zip:GHSA-9hj8-73fh-9963",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
      "label": "zip 2.6.1 \u2014 RUSTSEC-2026-0429",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 9.0.0",
      "path": "Cargo.lock",
@@ -679,13 +667,25 @@
      "deducts": false
     },
     {
-     "label": "zip 8.6.0 \u2014 GHSA-hjqx-j4rw-g7xv",
+     "label": "zip 8.6.0 \u2014 RUSTSEC-2026-0547",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.5, fixed in 9.0.0",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0547",
+     "finding": "zip:RUSTSEC-2026-0547",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "zip 8.6.0 \u2014 RUSTSEC-2026-0546",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 7.4, fixed in 9.0.0",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-hjqx-j4rw-g7xv",
-     "finding": "zip:GHSA-hjqx-j4rw-g7xv",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0546",
+     "finding": "zip:RUSTSEC-2026-0546",
      "severity": "high",
      "first_seen": null,
      "deducts": false
@@ -715,25 +715,25 @@
      "deducts": false
     },
     {
-     "label": "zip 2.6.1 \u2014 GHSA-8hxf-qr8p-62x4",
+     "label": "zip 2.6.1 \u2014 RUSTSEC-2026-0545",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.5, fixed in 9.0.0",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-8hxf-qr8p-62x4",
-     "finding": "zip:GHSA-8hxf-qr8p-62x4",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0545",
+     "finding": "zip:RUSTSEC-2026-0545",
      "severity": "medium",
      "first_seen": null,
      "deducts": false
     },
     {
-     "label": "zip 8.6.0 \u2014 GHSA-8hxf-qr8p-62x4",
+     "label": "zip 8.6.0 \u2014 RUSTSEC-2026-0545",
      "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.5, fixed in 9.0.0",
      "path": "Cargo.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-8hxf-qr8p-62x4",
-     "finding": "zip:GHSA-8hxf-qr8p-62x4",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0545",
+     "finding": "zip:RUSTSEC-2026-0545",
      "severity": "medium",
      "first_seen": null,
      "deducts": false

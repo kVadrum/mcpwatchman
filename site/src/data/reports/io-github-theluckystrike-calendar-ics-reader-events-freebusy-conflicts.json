@@ -2,9 +2,9 @@
  "name": "io.github.theluckystrike/calendar-ics-reader-events-freebusy-conflicts",
  "version": "0.23.0",
  "slug": "io-github-theluckystrike-calendar-ics-reader-events-freebusy-conflicts",
- "scanned_at": "2026-11-17T03:12:30+00:00",
+ "scanned_at": "2026-11-18T03:06:49+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/theluckystrike/mcp-servers",
  "package": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": true,
  "ref_matched_version": false,
- "repository_commit": "38d23ad08a56388b3bb6cac07cfa828b1854f8ef",
+ "repository_commit": "aa181c7026a5fc5c95ed563dcd274c95b37f7d3a",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 5,
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-17",
+     "detail": "last commit 2 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -155,7 +155,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 22 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 23 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",

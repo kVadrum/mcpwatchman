@@ -2,9 +2,9 @@
  "name": "ai.dynsoft/sac",
  "version": "0.1.2",
  "slug": "ai-dynsoft-sac",
- "scanned_at": "2026-11-17T02:27:36+00:00",
+ "scanned_at": "2026-11-18T02:23:01+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Software-As-Content/software-as-content-sdk",
  "package": "pypi:sac-sdk@0.1.2",
@@ -249,7 +249,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 67 day(s) before 2026-11-17",
+     "detail": "last commit 68 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -261,7 +261,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 12.0 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 13.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -273,7 +273,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 176 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 177 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -399,7 +399,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:27:42+00:00",
+  "fetched_at": "2026-11-18T02:23:17+00:00",
   "system": "PyPI",
   "package": "sac-sdk",
   "version": "0.1.2",

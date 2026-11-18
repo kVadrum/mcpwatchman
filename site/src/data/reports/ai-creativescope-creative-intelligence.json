@@ -2,9 +2,9 @@
  "name": "ai.creativescope/creative-intelligence",
  "version": "1.0.0",
  "slug": "ai-creativescope-creative-intelligence",
- "scanned_at": "2026-11-17T02:26:43+00:00",
+ "scanned_at": "2026-11-18T02:22:23+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/creativescope/creativescope-mcp",
  "package": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 33 day(s) before 2026-11-17",
+     "detail": "last commit 34 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 33 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 34 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",

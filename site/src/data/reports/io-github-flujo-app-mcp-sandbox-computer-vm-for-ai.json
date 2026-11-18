@@ -2,9 +2,9 @@
  "name": "io.github.flujo-app/mcp-sandbox-computer-vm-for-ai",
  "version": "0.2.3",
  "slug": "io-github-flujo-app-mcp-sandbox-computer-vm-for-ai",
- "scanned_at": "2026-11-17T02:57:35+00:00",
+ "scanned_at": "2026-11-18T02:54:35+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/flujo-app/mcp-sandbox-computer-vm-for-ai",
  "package": "pypi:mcp-sandbox-computer-vm-for-ai@0.2.3",
@@ -238,7 +238,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 13 day(s) before 2026-11-17",
+     "detail": "last commit 14 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -262,7 +262,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 13 days (by releases), last release 72 day(s) ago",
+     "detail": "median release gap 13 days (by releases), last release 73 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -388,7 +388,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:57:42+00:00",
+  "fetched_at": "2026-11-18T02:54:39+00:00",
   "system": "PyPI",
   "package": "mcp-sandbox-computer-vm-for-ai",
   "version": "0.2.3",

@@ -1,10 +1,10 @@
 {
  "name": "ai.ankimcp/anki-mcp-server-addon",
- "version": "0.41.1",
+ "version": "0.41.2",
  "slug": "ai-ankimcp-anki-mcp-server-addon",
- "scanned_at": "2026-11-17T02:22:18+00:00",
+ "scanned_at": "2026-11-18T02:18:13+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/ankimcp/anki-mcp-server-addon",
  "package": "",
@@ -14,7 +14,7 @@
  "transport": "unknown",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "763518607f115ea8272f8c126f501f400cb4b66a",
+ "repository_commit": "278f5e94c8eb5faedff272c505310e55c540b26f",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 161,
@@ -129,7 +129,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 3 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at README.md:405; Base64 High Entropy String at tests/e2e/test_media_security.py:12; Base64 High Entropy String at tests/e2e/test_media_tools.py:11",
+     "detail": "detect-secrets matched 3 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at README.md:407; Base64 High Entropy String at tests/e2e/test_media_security.py:12; Base64 High Entropy String at tests/e2e/test_media_tools.py:11",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-17",
+     "detail": "last commit 2 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -190,7 +190,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 8 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 9 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",

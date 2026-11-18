@@ -2,9 +2,9 @@
  "name": "io.github.easytocloud/mac-letterhead",
  "version": "0.25.0",
  "slug": "io-github-easytocloud-mac-letterhead",
- "scanned_at": "2026-11-17T02:56:49+00:00",
+ "scanned_at": "2026-11-18T02:53:58+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/easytocloud/Mac-letterhead",
  "package": "pypi:Mac-letterhead@0.25.0",
@@ -103,7 +103,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 20 day(s) before 2026-11-17",
+     "detail": "last commit 21 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -127,7 +127,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 20 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 21 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -165,7 +165,7 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 67,
+   "score": 66,
    "reason": "the dependencies in 1 requirements file (tools/requirements.txt) were not measured \u2014 it does not pin every requirement to one exact version, or could not be read whole; 1 dependency file (dxt/uv.lock) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 2 lockfiles that were",
    "assessed_weight": "0.5",
    "fault": null,
@@ -184,6 +184,30 @@
      "url": "",
      "finding": "",
      "severity": "",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 4.0.4 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
      "first_seen": null,
      "deducts": true
     },
@@ -507,7 +531,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:57:00+00:00",
+  "fetched_at": "2026-11-18T02:54:07+00:00",
   "system": "PyPI",
   "package": "Mac-letterhead",
   "version": "0.25.0",

@@ -2,9 +2,9 @@
  "name": "com.knowjudges/knowjudges",
  "version": "0.10.15",
  "slug": "com-knowjudges-knowjudges",
- "scanned_at": "2026-11-17T02:46:33+00:00",
+ "scanned_at": "2026-11-18T02:43:11+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/KnowJudges/knowjudges-mcp",
  "package": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 36 day(s) before 2026-11-17",
+     "detail": "last commit 37 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",

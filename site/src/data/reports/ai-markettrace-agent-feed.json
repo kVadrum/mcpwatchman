@@ -1,10 +1,10 @@
 {
  "name": "ai.markettrace/agent-feed",
- "version": "1.11.0",
+ "version": "1.13.0",
  "slug": "ai-markettrace-agent-feed",
- "scanned_at": "2026-11-17T02:41:00+00:00",
+ "scanned_at": "2026-11-18T02:37:00+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/MarketTrace/markettrace-agent-feed",
  "package": "",
@@ -13,7 +13,7 @@
  "source_reason": "",
  "transport": "streamable-http",
  "transport_mismatch": false,
- "ref_matched_version": true,
+ "ref_matched_version": false,
  "repository_commit": "8d785eb1c1a3a7e8693c9621f548b0eba94fccba",
  "registry_state": "listed",
  "registry_note": "",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 32 day(s) before 2026-11-17",
+     "detail": "last commit 33 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 34.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 35.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",

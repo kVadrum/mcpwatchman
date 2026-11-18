@@ -2,9 +2,9 @@
  "name": "io.github.aliengineering-byte/resilireplay",
  "version": "0.7.1",
  "slug": "io-github-aliengineering-byte-resilireplay",
- "scanned_at": "2026-11-17T02:54:01+00:00",
+ "scanned_at": "2026-11-18T02:51:48+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/aliengineering-byte/resilireplay",
  "package": "npm:resilireplay@0.7.1",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 74 day(s) before 2026-11-17",
+     "detail": "last commit 75 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 74 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 75 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-17T02:54:15+00:00",
+  "fetched_at": "2026-11-18T02:51:53+00:00",
   "system": "npm",
   "package": "resilireplay",
   "version": "0.7.1",

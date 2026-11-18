@@ -2,9 +2,9 @@
  "name": "io.github.mcp-dir/registro_pf_br-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-registro-pf-br-mcp",
- "scanned_at": "2026-11-17T03:01:33+00:00",
+ "scanned_at": "2026-11-18T02:57:42+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/mcp-dir/registro_pf_br-mcp",
  "package": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 94 day(s) before 2026-11-17",
+     "detail": "last commit 95 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",

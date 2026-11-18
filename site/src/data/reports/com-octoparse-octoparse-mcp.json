@@ -2,9 +2,9 @@
  "name": "com.octoparse/octoparse-mcp",
  "version": "1.0.0",
  "slug": "com-octoparse-octoparse-mcp",
- "scanned_at": "2026-11-17T02:47:24+00:00",
+ "scanned_at": "2026-11-18T02:43:56+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/octoparse/octoparse-mcp",
  "package": "",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 112 day(s) before 2026-11-17",
+     "detail": "last commit 113 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -184,7 +184,7 @@
    "reason": "1 dependency file (web/package-lock.json) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 1 lockfile that was",
    "assessed_weight": "0.5",
    "fault": null,
-   "evidence_omitted": 68,
+   "evidence_omitted": 70,
    "unmeasured_faults": [
     "project"
    ],
@@ -538,6 +538,30 @@
      "deducts": true
     },
     {
+     "label": "picomatch 2.3.1 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 4.0.3 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
      "label": "handlebars 4.7.8 \u2014 GHSA-xjpj-3mr7-gcpf",
      "detail": "transitive, CVSS 8.2, fixed in 4.7.9",
      "path": "package-lock.json",
@@ -761,30 +785,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-7p8r-x3mc-p8w7",
      "finding": "fast-uri:GHSA-7p8r-x3mc-p8w7",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "fast-uri 3.1.0 \u2014 GHSA-f65p-4m7j-42xc",
-     "detail": "transitive, CVSS 7.5, fixed in 3.1.6",
-     "path": "package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-f65p-4m7j-42xc",
-     "finding": "fast-uri:GHSA-f65p-4m7j-42xc",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "fast-uri 3.1.0 \u2014 GHSA-jqff-g426-hqxp",
-     "detail": "transitive, CVSS 7.5, fixed in 3.1.6",
-     "path": "package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-jqff-g426-hqxp",
-     "finding": "fast-uri:GHSA-jqff-g426-hqxp",
      "severity": "high",
      "first_seen": null,
      "deducts": true

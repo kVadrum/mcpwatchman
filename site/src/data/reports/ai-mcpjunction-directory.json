@@ -2,9 +2,9 @@
  "name": "ai.mcpjunction/directory",
  "version": "1.0.0",
  "slug": "ai-mcpjunction-directory",
- "scanned_at": "2026-11-17T02:41:20+00:00",
+ "scanned_at": "2026-11-18T02:38:51+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/rickstek/mcpjunction",
  "package": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "7616bb9f4cf0be8722c85318ecca98c6314b77ea",
+ "repository_commit": "8ae4c405f54971174fbd55b812acc554b4d8027f",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 11,
@@ -92,7 +92,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 1842 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Base64 High Entropy String at public/data/mcp_servers.json:55353; Base64 High Entropy String at public/data/mcp_servers.json:56595; Base64 High Entropy String at public/data/mcp_servers.json:61440; Base64 High Entropy String at public/data/mcp_servers.json:63080; Hex High Entropy String at state/lastmod.json:6; Hex High Entropy String at state/lastmod.json:10; Hex High Entropy String at state/lastmod.json:14; Hex High Entropy String at state/lastmod.json:18; Hex High Entropy String at state/lastmod.json:22; Hex High Entropy String at state/lastmod.json:26; \u2026and 1832 more matches",
+     "detail": "detect-secrets matched 1843 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Base64 High Entropy String at public/data/mcp_servers.json:55348; Base64 High Entropy String at public/data/mcp_servers.json:56700; Base64 High Entropy String at public/data/mcp_servers.json:61452; Base64 High Entropy String at public/data/mcp_servers.json:63374; Hex High Entropy String at state/lastmod.json:6; Hex High Entropy String at state/lastmod.json:10; Hex High Entropy String at state/lastmod.json:14; Hex High Entropy String at state/lastmod.json:18; Hex High Entropy String at state/lastmod.json:22; Hex High Entropy String at state/lastmod.json:26; \u2026and 1833 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-17",
+     "detail": "last commit 2 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 42.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -192,7 +192,7 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 84,
+   "score": 74,
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
@@ -207,6 +207,30 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-wq5f-xc86-pv6w",
      "finding": "sharp:GHSA-wq5f-xc86-pv6w",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "picomatch 4.0.7 \u2014 GHSA-fc5q-39xc-vjpf",
+     "detail": "transitive, CVSS 8.7",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
+     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true

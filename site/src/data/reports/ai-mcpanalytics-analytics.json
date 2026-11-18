@@ -2,9 +2,9 @@
  "name": "ai.mcpanalytics/analytics",
  "version": "1.0.8",
  "slug": "ai-mcpanalytics-analytics",
- "scanned_at": "2026-11-17T02:41:08+00:00",
+ "scanned_at": "2026-11-18T02:37:07+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/embeddedlayers/mcp-analytics",
  "package": "",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 22 day(s) before 2026-11-17",
+     "detail": "last commit 23 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 32.7 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 33.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 8 days (by releases), last release 234 day(s) ago",
+     "detail": "median release gap 8 days (by releases), last release 235 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",

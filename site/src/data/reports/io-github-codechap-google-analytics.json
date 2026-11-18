@@ -2,9 +2,9 @@
  "name": "io.github.codeChap/google-analytics",
  "version": "0.1.0",
  "slug": "io-github-codechap-google-analytics",
- "scanned_at": "2026-11-17T02:55:39+00:00",
+ "scanned_at": "2026-11-18T02:52:58+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.46.6",
+ "scanner_version": "0.47.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/codeChap/mcp-server-google-analytics",
  "package": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 83 day(s) before 2026-11-17",
+     "detail": "last commit 84 day(s) before 2026-11-18",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -169,7 +169,7 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": null,
-   "reason": "28 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "reason": "29 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
    "assessed_weight": "0",
    "fault": "project",
    "evidence_omitted": 0,
@@ -447,6 +447,18 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0190",
      "finding": "anyhow:RUSTSEC-2026-0190",
+     "severity": "",
+     "first_seen": null,
+     "deducts": false
+    },
+    {
+     "label": "chrono 0.4.44 \u2014 RUSTSEC-2026-0543",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0543",
+     "finding": "chrono:RUSTSEC-2026-0543",
      "severity": "",
      "first_seen": null,
      "deducts": false
