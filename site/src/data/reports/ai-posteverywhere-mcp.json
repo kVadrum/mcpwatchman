@@ -2,9 +2,9 @@
  "name": "ai.posteverywhere/mcp",
  "version": "1.14.1",
  "slug": "ai-posteverywhere-mcp",
- "scanned_at": "2026-11-18T02:40:41+00:00",
+ "scanned_at": "2026-11-19T02:43:02+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/posteverywhere/mcp",
  "package": "npm:@posteverywhere/mcp@1.14.1",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 26 day(s) before 2026-11-18",
+     "detail": "last commit 27 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 35.7 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 36.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -266,7 +266,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:40:46+00:00",
+  "fetched_at": "2026-11-19T02:43:06+00:00",
   "system": "npm",
   "package": "@posteverywhere/mcp",
   "version": "1.14.1",
@@ -291,5 +291,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "dff7cb19d4d0c4981a6b2135b2e140e25b890c1a413d8c22bcd050bb5adf0900",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

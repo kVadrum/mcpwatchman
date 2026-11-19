@@ -2,9 +2,9 @@
  "name": "dev.primitive/email",
  "version": "0.2.0",
  "slug": "dev-primitive-email",
- "scanned_at": "2026-11-18T02:44:29+00:00",
+ "scanned_at": "2026-11-19T02:47:25+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/primitivedotdev/primitive-mono-repo",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "f0912b21efcfa0cb5f2c62525634ee07e19b58041bbba1d71312c69a7a63d766",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

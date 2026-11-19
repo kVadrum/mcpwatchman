@@ -2,9 +2,9 @@
  "name": "ai.clarx/mcp",
  "version": "0.2.2",
  "slug": "ai-clarx-mcp",
- "scanned_at": "2026-11-18T02:20:04+00:00",
+ "scanned_at": "2026-11-19T02:24:03+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/Gernika-Labs/clarx-cloud",
  "package": "npm:@clarxai/mcp@0.2.2",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:20:06+00:00",
+  "fetched_at": "2026-11-19T02:24:05+00:00",
   "system": "npm",
   "package": "@clarxai/mcp",
   "version": "0.2.2",
@@ -278,5 +278,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "4752d2406a278394662db418f712dc39f395a3eb9422fe625cb97a45f9228464",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "ai.marketcore/mcp",
  "version": "1.0.5",
  "slug": "ai-marketcore-mcp",
- "scanned_at": "2026-11-18T02:36:56+00:00",
+ "scanned_at": "2026-11-19T02:40:18+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/ccromp/marcora-mcp",
  "package": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "f0be1576e4816200efae9a580be1beb9ba02c3b8",
+ "repository_commit": "2299bf0377388ba2d5fabb71e15bc12a264b80c8",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-18",
+     "detail": "last commit 1 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 37.8 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 38.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "165b77e12aadd451023e5ff10dd7bdc163bd448341f89cf62724be37780e8554",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

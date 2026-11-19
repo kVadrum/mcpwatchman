@@ -2,9 +2,9 @@
  "name": "com.angelsforagents/funding",
  "version": "1.1.0",
  "slug": "com-angelsforagents-funding",
- "scanned_at": "2026-11-18T02:41:48+00:00",
+ "scanned_at": "2026-11-19T02:44:28+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/AngelsForAgents/afa-agent-kit",
  "package": "",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 92 day(s) before 2026-11-18",
+     "detail": "last commit 93 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -397,5 +397,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "e588b20ffe8cd4178a847e1827722b7e7748680dd12957fd3060864c5e39bdef",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "io.github.Alepha188838884/context-firewall",
  "version": "0.1.1",
  "slug": "io-github-alepha188838884-context-firewall",
- "scanned_at": "2026-11-18T02:45:27+00:00",
+ "scanned_at": "2026-11-19T02:48:37+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Alepha188838884/context-firewall",
  "package": "npm:context-firewall@0.1.1",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 76 day(s) before 2026-11-18",
+     "detail": "last commit 77 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 6 days (by releases), last release 76 day(s) ago",
+     "detail": "median release gap 6 days (by releases), last release 77 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -278,7 +278,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:45:31+00:00",
+  "fetched_at": "2026-11-19T02:48:42+00:00",
   "system": "npm",
   "package": "context-firewall",
   "version": "0.1.1",
@@ -303,5 +303,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "93be109ce5004ccaa8b31410dde1c7252791a244bd55223940584391d93459f9",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

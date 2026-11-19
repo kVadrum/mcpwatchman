@@ -2,9 +2,9 @@
  "name": "com.hovercode/mcp",
  "version": "1.0.1",
  "slug": "com-hovercode-mcp",
- "scanned_at": "2026-11-18T02:43:04+00:00",
+ "scanned_at": "2026-11-19T02:45:51+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Hovercode-Ltd/hovercode-mcp",
  "package": "npm:hovercode-mcp@1.0.1",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 27 day(s) before 2026-11-18",
+     "detail": "last commit 28 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 27 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 28 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:43:06+00:00",
+  "fetched_at": "2026-11-19T02:45:54+00:00",
   "system": "npm",
   "package": "hovercode-mcp",
   "version": "1.0.1",
@@ -266,5 +266,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "a0d9c772af0a00951d46127fce29c1166efc7b0235599cf46e51f374ae6f1743",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

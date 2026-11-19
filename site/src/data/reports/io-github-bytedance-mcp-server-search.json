@@ -2,9 +2,9 @@
  "name": "io.github.bytedance/mcp-server-search",
  "version": "1.0.0",
  "slug": "io-github-bytedance-mcp-server-search",
- "scanned_at": "2026-11-18T02:52:34+00:00",
+ "scanned_at": "2026-11-19T02:54:26+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/bytedance/UI-TARS-desktop",
  "package": "npm:@agent-infra/mcp-server-search@latest",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 40 day(s) before 2026-11-18",
+     "detail": "last commit 41 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 45 issue(s) in the last 6 months: 55.4 day(s) to first maintainer comment",
+     "detail": "median over 45 issue(s) in the last 6 months: 56.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,5 +249,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "5f4b05ecf78fe5071502a4c2f1f1bd8df357a97830815af049c3c0f749c66587",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

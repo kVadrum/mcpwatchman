@@ -2,9 +2,9 @@
  "name": "dev.filetopdf/filetopdf-mcp",
  "version": "0.1.1",
  "slug": "dev-filetopdf-filetopdf-mcp",
- "scanned_at": "2026-11-18T02:44:24+00:00",
+ "scanned_at": "2026-11-19T02:47:19+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/FileToPDF/filetopdf-mcp",
  "package": "npm:filetopdf-mcp@0.1.1",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 161 day(s) before 2026-11-18",
+     "detail": "last commit 162 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -131,7 +131,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 99.4 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 100.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -267,7 +267,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:44:28+00:00",
+  "fetched_at": "2026-11-19T02:47:24+00:00",
   "system": "npm",
   "package": "filetopdf-mcp",
   "version": "0.1.1",
@@ -292,5 +292,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "ea8aa11f1d00ddb4cd9672499e6273868f76138241f4c1a04a5506432e70c5c2",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

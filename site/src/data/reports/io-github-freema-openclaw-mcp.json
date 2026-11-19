@@ -2,9 +2,9 @@
  "name": "io.github.freema/openclaw-mcp",
  "version": "1.8.1",
  "slug": "io-github-freema-openclaw-mcp",
- "scanned_at": "2026-11-18T02:54:39+00:00",
+ "scanned_at": "2026-11-19T02:57:10+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/freema/openclaw-mcp",
  "package": "npm:openclaw-mcp@1.8.1",
@@ -201,7 +201,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 12 day(s) before 2026-11-18",
+     "detail": "last commit 13 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -225,7 +225,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 12 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 13 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -349,7 +349,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:54:42+00:00",
+  "fetched_at": "2026-11-19T02:57:14+00:00",
   "system": "npm",
   "package": "openclaw-mcp",
   "version": "1.8.1",
@@ -361,5 +361,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "ccdc571dab4dab41bc9ce278e4806fb1f0fba6212c811c97469518878f1c59d3",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "ai.certscore/mcp",
  "version": "0.2.32",
  "slug": "ai-certscore-mcp",
- "scanned_at": "2026-11-18T02:18:42+00:00",
+ "scanned_at": "2026-11-19T02:22:36+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/ergoveritas1-alt/certscore.ai",
  "package": "npm:@certscore/mcp@0.2.32",
@@ -14,19 +14,19 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "a0dc65c98dc50661a9e3714e89622174d339ba4d",
+ "repository_commit": "397b1ed6d4cfb7500514d9d407679d64328f547d",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 4153,
+ "files_scanned": 4185,
  "files_pruned": 19,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
    "score": 0,
-   "reason": "scored on the declared repository, because the published package carries its code only as build output, which is not read as the server's own source; no tag matched this version, so the repository's default branch was read and the findings describe that code, not necessarily the release; 10 findings from checks whose precision is not yet measured are listed but not deducted; 660 findings in test code are listed but not deducted; 19 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 33 files could not be parsed and were not scanned",
+   "reason": "scored on the declared repository, because the published package carries its code only as build output, which is not read as the server's own source; no tag matched this version, so the repository's default branch was read and the findings describe that code, not necessarily the release; 10 findings from checks whose precision is not yet measured are listed but not deducted; 666 findings in test code are listed but not deducted; 19 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 33 files could not be parsed and were not scanned",
    "assessed_weight": "0.98",
    "fault": null,
-   "evidence_omitted": 833,
+   "evidence_omitted": 842,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -443,7 +443,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "apps/web/server/scans/local-v2-dag-lambda-dispatch.ts",
-     "line": 698,
+     "line": 707,
      "excerpt": "      : null;\n    if (sha256 && sizeBytes !== null && /^[a-f0-9]{64}$/i.test(sha256) && sizeBytes >= 0) {\n      artifactMetadata[field] = {\n        sha256: sha256.toLowerCase(),\n        sizeBytes",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -709,7 +709,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-18",
+     "detail": "last commit 1 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -733,7 +733,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 15 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 16 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -859,7 +859,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:20:04+00:00",
+  "fetched_at": "2026-11-19T02:24:02+00:00",
   "system": "npm",
   "package": "@certscore/mcp",
   "version": "0.2.32",
@@ -884,5 +884,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "7f598f1ff0a480d809170a57322a0513bde7724482b03479a91401cd2988ea05",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "io.github.Thefirstmannnn/tack",
  "version": "0.1.0",
  "slug": "io-github-thefirstmannnn-tack",
- "scanned_at": "2026-11-18T02:51:17+00:00",
+ "scanned_at": "2026-11-19T02:52:47+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Thefirstmannnn/tack",
  "package": "",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 57 day(s) before 2026-11-18",
+     "detail": "last commit 58 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -261,5 +261,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "27dac9e6898ef3dad3c693ab14118d84d5c4028abf644a492e8962045c4b8dd3",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

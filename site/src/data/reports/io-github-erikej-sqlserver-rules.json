@@ -2,9 +2,9 @@
  "name": "io.github.ErikEJ/SqlServer.Rules",
  "version": "1.0",
  "slug": "io-github-erikej-sqlserver-rules",
- "scanned_at": "2026-11-18T02:48:37+00:00",
+ "scanned_at": "2026-11-19T02:50:04+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/ErikEJ/SqlServer.Rules",
  "package": "",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-18",
+     "detail": "last commit 2 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 37 days (by releases), last release 185 day(s) ago",
+     "detail": "median release gap 37 days (by releases), last release 186 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,25 +166,13 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 54,
+   "score": 55,
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [],
    "evidence": [
-    {
-     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "vscode-extension/package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
     {
      "label": "@azure/msal-node 5.4.1 \u2014 GHSA-xcx6-jx8p-x3h5",
      "detail": "transitive, CVSS 7.5, fixed in 7.1.0",
@@ -764,5 +752,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "8899fc906395dab2418b511f6a6f07223f8747d9b33033b883b236c23c25e679",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

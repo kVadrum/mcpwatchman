@@ -2,9 +2,9 @@
  "name": "io.github.pedroknigge/arkgate",
  "version": "4.8.24",
  "slug": "io-github-pedroknigge-arkgate",
- "scanned_at": "2026-11-18T02:59:36+00:00",
+ "scanned_at": "2026-11-19T03:03:21+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/pedroknigge/arkgate",
  "package": "npm:arkgate@4.8.24",
@@ -299,7 +299,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-18",
+     "detail": "last commit 1 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -323,7 +323,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 5 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -447,7 +447,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:59:43+00:00",
+  "fetched_at": "2026-11-19T03:03:32+00:00",
   "system": "npm",
   "package": "arkgate",
   "version": "4.8.24",
@@ -459,5 +459,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "a0bb7aea0c4dbf5e87e4eb072528cb35545a9a50fc38a7aa0cdf14adfbf1c77e",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

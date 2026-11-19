@@ -2,9 +2,9 @@
  "name": "dev.veritap/locker",
  "version": "0.3.1",
  "slug": "dev-veritap-locker",
- "scanned_at": "2026-11-18T02:45:01+00:00",
+ "scanned_at": "2026-11-19T02:48:06+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/veritap-dev/veritap-locker",
  "package": "",
@@ -191,7 +191,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 81 day(s) before 2026-11-18",
+     "detail": "last commit 82 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -257,7 +257,7 @@
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
-   "evidence_omitted": 101,
+   "evidence_omitted": 99,
    "unmeasured_faults": [],
    "evidence": [
     {
@@ -436,30 +436,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-wq5f-xc86-pv6w",
      "finding": "sharp:GHSA-wq5f-xc86-pv6w",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 4.0.5 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -859,6 +835,30 @@
      "severity": "high",
      "first_seen": null,
      "deducts": true
+    },
+    {
+     "label": "undici 7.29.0 \u2014 GHSA-xjj6-f33q-929c",
+     "detail": "transitive, CVSS 7.5, fixed in 7.30.1",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-xjj6-f33q-929c",
+     "finding": "undici:GHSA-xjj6-f33q-929c",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "uuid 8.3.2 \u2014 GHSA-w5hq-g745-h8pq",
+     "detail": "transitive, CVSS 7.5, fixed in 11.1.1",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-w5hq-g745-h8pq",
+     "finding": "uuid:GHSA-w5hq-g745-h8pq",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
     }
    ]
   },
@@ -937,5 +937,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "2dddb8e4f73ae26877dea23526d3f3cf75d0ff28a483252d92379a8a2c918c69",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

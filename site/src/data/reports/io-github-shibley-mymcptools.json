@@ -2,9 +2,9 @@
  "name": "io.github.shibley/mymcptools",
  "version": "0.1.1",
  "slug": "io-github-shibley-mymcptools",
- "scanned_at": "2026-11-18T03:04:59+00:00",
+ "scanned_at": "2026-11-19T03:09:28+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/shibley/mymcptools-mcp-server",
  "package": "",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 111 day(s) before 2026-11-18",
+     "detail": "last commit 112 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -805,5 +805,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "fa394df6ffcb7f29b9dce4f69f6440d4399b14dc99b21727f70af7157192da42",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "io.github.gregario/lorcana-oracle",
  "version": "0.1.0",
  "slug": "io-github-gregario-lorcana-oracle",
- "scanned_at": "2026-11-18T02:55:00+00:00",
+ "scanned_at": "2026-11-19T02:57:33+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/gregario/lorcana-oracle",
  "package": "npm:lorcana-oracle@0.1.0",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 156 day(s) before 2026-11-18",
+     "detail": "last commit 157 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -278,7 +278,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:55:04+00:00",
+  "fetched_at": "2026-11-19T02:57:38+00:00",
   "system": "npm",
   "package": "lorcana-oracle",
   "version": "0.1.0",
@@ -303,5 +303,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "c24c70d17153937bf0bf35bbb40b1dfed64fe3ee13f405a9da1035c169c2f6ef",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

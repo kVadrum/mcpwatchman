@@ -2,9 +2,9 @@
  "name": "com.mcpbundles/uk-court-finder",
  "version": "1.0.0",
  "slug": "com-mcpbundles-uk-court-finder",
- "scanned_at": "2026-11-18T02:43:23+00:00",
+ "scanned_at": "2026-11-19T02:46:13+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/thinkchainai/mcpbundles",
  "package": "",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 29 day(s) before 2026-11-18",
+     "detail": "last commit 30 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 22.4 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 23.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 221 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 222 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -247,5 +247,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "4d605c7b1856cc5f2ebb7e224ba56daceb3b0ff5280e5067966183e831e9558c",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

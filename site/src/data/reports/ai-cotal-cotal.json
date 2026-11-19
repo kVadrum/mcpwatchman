@@ -2,9 +2,9 @@
  "name": "ai.cotal/cotal",
  "version": "1.1.0",
  "slug": "ai-cotal-cotal",
- "scanned_at": "2026-11-18T02:20:16+00:00",
+ "scanned_at": "2026-11-19T02:24:17+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Cotal-AI/Cotal",
  "package": "",
@@ -14,19 +14,19 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "c4261d22a9b00def95e8ff650a3ba465d02dd7a0",
+ "repository_commit": "d75d210f34e47da4da77d1d3778dbecaf85f9baf",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 3252,
+ "files_scanned": 3347,
  "files_pruned": 6,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
    "score": 0,
-   "reason": "4 findings from checks whose precision is not yet measured are listed but not deducted; 9 findings in test code are listed but not deducted; 6 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 16 files could not be parsed and were not scanned",
+   "reason": "3 findings from checks whose precision is not yet measured are listed but not deducted; 12 findings in test code are listed but not deducted; 6 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 16 files could not be parsed and were not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 440,
+   "evidence_omitted": 470,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -215,7 +215,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "bin/smoke/daemon-update-startup.smoke.ts",
-     "line": 28,
+     "line": 30,
      "excerpt": "  };\n  for (const key of [\"HOME\", \"COTAL_HOME\", \"XDG_CONFIG_HOME\", \"XDG_RUNTIME_DIR\", \"TMPDIR\"] as const) {\n    process.env[key] = env[key];\n    mkdirSync(env[key]!, { recursive: true, mode: 0o700 });\n  }",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -262,8 +262,20 @@
     {
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "extensions/connector-claude-code/smoke/setup-refresh.smoke.ts",
+     "line": 107,
+     "excerpt": "  for (const key of keys) {\n    if (before[key] === undefined) delete process.env[key];\n    else process.env[key] = before[key];\n  }\n  console.log(`Refresh evidence retained at ${root}`);",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "extensions/connector-codex/smoke/setup-refresh.smoke.ts",
-     "line": 95,
+     "line": 138,
      "excerpt": "  for (const key of keys) {\n    if (before[key] === undefined) delete process.env[key];\n    else process.env[key] = before[key];\n  }\n  rmSync(ROOT, { recursive: true, force: true });",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -383,7 +395,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/auth/src/retirement-barrier.ts",
-     "line": 791,
+     "line": 792,
      "excerpt": "        throw new EpEnvelopeError(\"failed-precondition\", `the frontier step cannot read the stream ${stream} named by the intent; a missing cutoff never closes a lifecycle interval (SPEC 13.1): ${(e as Error)?.message ?? String(e)}`);\n      }\n      frontiers[stream] = last;\n    }\n    const record: FrontierRecord = { lifecycleUid: intent.lifecycleUid, opId, streams: frontiers };",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -479,7 +491,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/src/commands/backup.ts",
-     "line": 222,
+     "line": 224,
      "excerpt": "    if (streamInfo.error) throw new Error(streamInfo.error.description ?? `JetStream stream info failed for ${stream}`);\n    if (!streamInfo.state) throw new Error(`JetStream omitted stream state for ${stream}`);\n    statesByStream[stream] = validateBackupStreamState(streamInfo.state);\n    const consumers: ConsumerInfo[] = [];\n    try {",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -491,7 +503,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/src/commands/backup.ts",
-     "line": 236,
+     "line": 238,
      "excerpt": "      throw new Error(`isolated backup cannot enumerate consumers for ${stream}: ${(error as Error).message}`);\n    }\n    consumersByStream[stream] = consumers;\n  }\n  if (selected === \"registry\") {",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -503,7 +515,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/src/commands/setup.ts",
-     "line": 940,
+     "line": 943,
      "excerpt": "  for (const key of [\"managerInstanceId\", \"managerEpoch\", \"requestId\", \"requestedGoalId\", \"acceptedGoalId\"] as const) {\n    const coordinate = native[key];\n    if (typeof coordinate === \"string\" && coordinate.length <= 512 && !/[\\u0000-\\u001f\\u007f]/u.test(coordinate)) result[key] = coordinate;\n    if (key === \"managerEpoch\" && typeof coordinate === \"number\" && Number.isSafeInteger(coordinate) && coordinate >= 0) result[key] = coordinate;\n  }",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -515,7 +527,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/src/commands/setup.ts",
-     "line": 941,
+     "line": 944,
      "excerpt": "    const coordinate = native[key];\n    if (typeof coordinate === \"string\" && coordinate.length <= 512 && !/[\\u0000-\\u001f\\u007f]/u.test(coordinate)) result[key] = coordinate;\n    if (key === \"managerEpoch\" && typeof coordinate === \"number\" && Number.isSafeInteger(coordinate) && coordinate >= 0) result[key] = coordinate;\n  }\n  const coordinator = native.coordinator;",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -618,18 +630,6 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
-     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
-     "path": "implementations/manager/smoke/remote-isolated-renewal.smoke.ts",
-     "line": 137,
-     "excerpt": "        issue: async () => {\n          const credentials = {} as NonNullable<RemoteManagerAuthorityMaterial[\"credentials\"]>;\n          for (const n of names) { const c = await sign(n); credentials[n] = { jwt: jwtFromCreds(c)!, exp: credsClaims(c).exp! }; }\n          return { credentials };\n        },",
-     "url": "",
-     "finding": "mcp-js-prototype-pollution-merge-loop",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
     }
    ]
   },
@@ -670,7 +670,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "AWS Access Key at docs/dashboard-api.mdx:1560; JSON Web Token at implementations/auth/smoke/grant-usage.smoke.ts:147; JSON Web Token at implementations/auth/smoke/login.smoke.ts:415; JSON Web Token at implementations/auth/smoke/login.smoke.ts:969; AWS Access Key at implementations/web/openapi.json:604; \u2026and 2407 more matches",
+     "detail": "AWS Access Key at docs/dashboard-api.mdx:1560; JSON Web Token at implementations/auth/smoke/grant-usage.smoke.ts:147; JSON Web Token at implementations/auth/smoke/login.smoke.ts:415; JSON Web Token at implementations/auth/smoke/login.smoke.ts:969; AWS Access Key at implementations/web/openapi.json:604; \u2026and 2397 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -698,7 +698,7 @@
    "axis": "maintenance",
    "score": 100,
    "reason": "",
-   "assessed_weight": "0.75",
+   "assessed_weight": "0.9",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
@@ -707,7 +707,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-18",
+     "detail": "last commit 0 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -719,7 +719,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 1.2 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 0.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -743,7 +743,7 @@
     },
     {
      "label": "bus_factor",
-     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "detail": "3 authors with >= 5 commits in 12 months",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -773,23 +773,11 @@
    "reason": "2 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored; 4 dependency files (desktop/src-tauri/Cargo.lock, remotion/pnpm-lock.yaml, website/package-lock.json) were not read as this server's \u2014 each sits inside a nested sub-project, a directory below this one with its own package manifest, and whether any of them also covers the server cannot be told from the tree \u2014 so the score covers the 1 lockfile that was",
    "assessed_weight": "0.19",
    "fault": null,
-   "evidence_omitted": 81,
+   "evidence_omitted": 79,
    "unmeasured_faults": [
     "project"
    ],
    "evidence": [
-    {
-     "label": "dompurify 3.4.12 \u2014 GHSA-cg2g-xh64-v4q7",
-     "detail": "transitive, CVSS 9.2, fixed in 3.4.17",
-     "path": "pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-cg2g-xh64-v4q7",
-     "finding": "dompurify:GHSA-cg2g-xh64-v4q7",
-     "severity": "critical",
-     "first_seen": null,
-     "deducts": true
-    },
     {
      "label": "better-auth 1.6.23 \u2014 GHSA-965c-763c-88jm",
      "detail": "transitive, CVSS 9.1, fixed in 1.7.7",
@@ -822,30 +810,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-h895-cgqg-jf52",
      "finding": "toml:GHSA-h895-cgqg-jf52",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 4.0.7 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -954,18 +918,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-mwp4-54f8-5fhr",
      "finding": "ip-address:GHSA-mwp4-54f8-5fhr",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "dompurify 3.4.12 \u2014 GHSA-mrv2-3pqr-j5jr",
-     "detail": "transitive, CVSS 7.6, fixed in 3.4.17",
-     "path": "pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-mrv2-3pqr-j5jr",
-     "finding": "dompurify:GHSA-mrv2-3pqr-j5jr",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -1377,6 +1329,54 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
+    },
+    {
+     "label": "ip-address 10.2.0 \u2014 GHSA-4xrf-jv44-h6hh",
+     "detail": "transitive, CVSS 6.9, fixed in 10.2.2",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-4xrf-jv44-h6hh",
+     "finding": "ip-address:GHSA-4xrf-jv44-h6hh",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "minimatch 10.2.5 \u2014 GHSA-g3hv-75wg-m249",
+     "detail": "transitive, CVSS 6.9, fixed in 11.0.1",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-g3hv-75wg-m249",
+     "finding": "minimatch:GHSA-g3hv-75wg-m249",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "minimatch 8.0.7 \u2014 GHSA-g3hv-75wg-m249",
+     "detail": "transitive, CVSS 6.9, fixed in 11.0.1",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-g3hv-75wg-m249",
+     "finding": "minimatch:GHSA-g3hv-75wg-m249",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "@modelcontextprotocol/sdk 1.29.0 \u2014 GHSA-rvq5-wwqv-78pq",
+     "detail": "transitive, CVSS 6.8, fixed in 1.32.0",
+     "path": "pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-rvq5-wwqv-78pq",
+     "finding": "@modelcontextprotocol/sdk:GHSA-rvq5-wwqv-78pq",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
     }
    ]
   },
@@ -1455,5 +1455,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "a83369f94b30aad80c489e9f0e10065848a1e2922216a411cce49631e8bddbea",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

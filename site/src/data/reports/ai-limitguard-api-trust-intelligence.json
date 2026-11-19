@@ -16,7 +16,7 @@
  "ref_matched_version": true,
  "repository_commit": "836aa64c184ccc451ba0e62cb63c581506dba3c1",
  "registry_state": "delisted",
- "registry_note": "The registry no longer lists this server (last checked 2026-11-18). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-10-11, and have not been recomputed, because there is no current entry to scan.",
+ "registry_note": "The registry no longer lists this server (last checked 2026-11-19). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-10-11, and have not been recomputed, because there is no current entry to scan.",
  "files_scanned": 2,
  "files_pruned": 0,
  "axes": {
@@ -261,5 +261,6 @@
    ]
   }
  },
- "findings_tracked_since": "2026-10-10"
+ "findings_tracked_since": "2026-10-10",
+ "checked_at": "2026-11-19T02:09:09+00:00"
 }

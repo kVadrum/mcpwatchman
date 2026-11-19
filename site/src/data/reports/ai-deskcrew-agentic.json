@@ -2,9 +2,9 @@
  "name": "ai.deskcrew/agentic",
  "version": "1.0.0",
  "slug": "ai-deskcrew-agentic",
- "scanned_at": "2026-11-18T02:22:37+00:00",
+ "scanned_at": "2026-11-19T02:26:42+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/papperkash/ttf-website-v3",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "1130b5617b38c3963dd93e28f78635e1cf62f9238f47f23d03bc866d002f0781",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

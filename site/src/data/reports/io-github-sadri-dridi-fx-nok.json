@@ -2,9 +2,9 @@
  "name": "io.github.sadri-dridi/fx-nok",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-fx-nok",
- "scanned_at": "2026-11-18T03:02:59+00:00",
+ "scanned_at": "2026-11-19T03:07:22+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/sadri-dridi/named-mcp-utilities",
  "package": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 56 day(s) before 2026-11-18",
+     "detail": "last commit 57 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,5 +249,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "79f23bdfa31ba3cf60d9bafeb81732ea3508cab541bb5da36a7f25774dd973b3",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

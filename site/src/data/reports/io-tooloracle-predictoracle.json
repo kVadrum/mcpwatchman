@@ -2,9 +2,9 @@
  "name": "io.tooloracle/predictoracle",
  "version": "1.0.0",
  "slug": "io-tooloracle-predictoracle",
- "scanned_at": "2026-11-18T03:08:08+00:00",
+ "scanned_at": "2026-11-19T03:13:24+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/ToolOracle/predictoracle",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "bc2bcbac5e7525d425bc4bd5f8f4d73d6deb5b944d6a5e226972566ff3d883a2",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

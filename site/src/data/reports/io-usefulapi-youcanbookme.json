@@ -1,10 +1,10 @@
 {
  "name": "io.usefulapi/youcanbookme",
- "version": "1.42.1",
+ "version": "1.42.4",
  "slug": "io-usefulapi-youcanbookme",
- "scanned_at": "2026-11-18T03:08:08+00:00",
+ "scanned_at": "2026-11-19T03:13:19+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/m190/usefulapi-mcp",
  "package": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "179cda54e0aefa5e0e28e210c2b4e4d6c3e4b4a7",
+ "repository_commit": "e2c8fd8716b03efe09b3e3f39d51f172257bd06c",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-18",
+     "detail": "last commit 0 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 39.9 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 40.9 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -251,5 +251,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "9cb4169f2624757978f8c8020d03129fcaaae30bbd36577dff1f550ba3e0d145",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

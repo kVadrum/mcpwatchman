@@ -2,9 +2,9 @@
  "name": "io.github.AutomateLab-tech/citation-intelligence",
  "version": "0.12.1",
  "slug": "io-github-automatelab-tech-citation-intelligence",
- "scanned_at": "2026-11-18T02:46:50+00:00",
+ "scanned_at": "2026-11-19T02:49:03+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/AutomateLab-tech/citation-intelligence",
  "package": "npm:@automatelab/citation-intelligence@0.12.1",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 16 day(s) before 2026-11-18",
+     "detail": "last commit 17 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 7.7 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 8.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 141 days (by releases), last release 36 day(s) ago",
+     "detail": "median release gap 141 days (by releases), last release 37 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -292,7 +292,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:46:54+00:00",
+  "fetched_at": "2026-11-19T02:49:08+00:00",
   "system": "npm",
   "package": "@automatelab/citation-intelligence",
   "version": "0.12.1",
@@ -761,5 +761,7 @@
   "findings_total": 38,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "c23109cf1155520ba8e7be16c951b7819e8efa9a425039e766d0a4f81981d951",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "io.github.rendleyhq/rendley-mcp",
  "version": "1.0.1",
  "slug": "io-github-rendleyhq-rendley-mcp",
- "scanned_at": "2026-11-18T03:01:09+00:00",
+ "scanned_at": "2026-11-19T03:05:38+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/rendleyhq/rendley-mcp",
  "package": "",
@@ -176,7 +176,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 121 day(s) before 2026-11-18",
+     "detail": "last commit 122 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -920,5 +920,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "db2dab792a5e782f892491b575c78d9c18706938c8ea3009d89bf0217603ccfc",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

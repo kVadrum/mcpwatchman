@@ -2,9 +2,9 @@
  "name": "ai.smithery/BigVik193-reddit-ads-mcp-api",
  "version": "1.0.0",
  "slug": "ai-smithery-bigvik193-reddit-ads-mcp-api",
- "scanned_at": "2026-11-18T02:40:49+00:00",
+ "scanned_at": "2026-11-19T02:43:14+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/BigVik193/reddit-ads-mcp-api",
  "package": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 429 day(s) before 2026-11-18",
+     "detail": "last commit 430 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 33.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 34.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -171,7 +171,7 @@
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
-   "evidence_omitted": 22,
+   "evidence_omitted": 21,
    "unmeasured_faults": [],
    "evidence": [
     {
@@ -422,18 +422,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-3g43-6gmg-66jw",
      "finding": "axios:GHSA-3g43-6gmg-66jw",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 2.3.1 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -773,6 +761,18 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
+    },
+    {
+     "label": "axios 1.12.1 \u2014 GHSA-898c-q2cr-xwhg",
+     "detail": "direct, CVSS 4.8, fixed in 1.16.0",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-898c-q2cr-xwhg",
+     "finding": "axios:GHSA-898c-q2cr-xwhg",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
     }
    ]
   },
@@ -849,5 +849,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "bbbd41ab97f42569949bfbb7c1afb59cd967f6695c0078e41e6eb5105f560f69",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

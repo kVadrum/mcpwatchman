@@ -2,9 +2,9 @@
  "name": "ai.getfacade/mcp",
  "version": "0.2.1",
  "slug": "ai-getfacade-mcp",
- "scanned_at": "2026-11-18T02:25:54+00:00",
+ "scanned_at": "2026-11-19T02:30:54+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/getfacade/mcp",
  "package": "npm:@getfacade/mcp@0.2.1",
@@ -118,7 +118,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 79,
+   "score": 88,
    "reason": "",
    "assessed_weight": "0.65",
    "fault": null,
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 48 day(s) before 2026-11-18",
+     "detail": "last commit 2 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 37 days (by tags), last release 48 day(s) ago",
+     "detail": "released 2 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -278,7 +278,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:25:56+00:00",
+  "fetched_at": "2026-11-19T02:30:57+00:00",
   "system": "npm",
   "package": "@getfacade/mcp",
   "version": "0.2.1",
@@ -290,5 +290,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "4990d4a617e7d12118e8b1410da07b9be40ee4ce7137f1c089ff61b268777051",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

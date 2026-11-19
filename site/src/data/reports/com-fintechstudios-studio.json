@@ -2,9 +2,9 @@
  "name": "com.fintechstudios/studio",
  "version": "1.1.0",
  "slug": "com-fintechstudios-studio",
- "scanned_at": "2026-11-18T02:42:55+00:00",
+ "scanned_at": "2026-11-19T02:45:42+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/Fintech-Studios-Apps/FTS-Web",
  "package": "npm:@fts-studio/studio-mcp@1.1.0",
@@ -256,7 +256,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:42:57+00:00",
+  "fetched_at": "2026-11-19T02:45:43+00:00",
   "system": "npm",
   "package": "@fts-studio/studio-mcp",
   "version": "1.1.0",
@@ -281,5 +281,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "9c2dfab73baf5815e24ee0f4a9e8aaf9b29aedcbacefac9783280965d8114bf6",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

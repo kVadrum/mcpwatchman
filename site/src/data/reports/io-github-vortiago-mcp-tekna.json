@@ -2,9 +2,9 @@
  "name": "io.github.Vortiago/mcp-tekna",
  "version": "0.3.1",
  "slug": "io-github-vortiago-mcp-tekna",
- "scanned_at": "2026-11-18T02:51:22+00:00",
+ "scanned_at": "2026-11-19T02:52:52+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Vortiago/mcp-tekna",
  "package": "pypi:mcp-tekna@0.3.1",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 239 day(s) before 2026-11-18",
+     "detail": "last commit 240 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 239 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 240 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -171,7 +171,7 @@
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
-   "evidence_omitted": 33,
+   "evidence_omitted": 34,
    "unmeasured_faults": [],
    "evidence": [
     {
@@ -283,6 +283,18 @@
      "deducts": true
     },
     {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4374",
+     "detail": "transitive, CVSS 8.4, fixed in 21.14.9",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4374",
+     "finding": "virtualenv:PYSEC-2026-4374",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
      "label": "cryptography 46.0.5 \u2014 PYSEC-2026-3552",
      "detail": "transitive, CVSS 8.2, fixed in 50.0.0",
      "path": "uv.lock",
@@ -307,66 +319,6 @@
      "deducts": true
     },
     {
-     "label": "virtualenv 21.2.0 \u2014 GHSA-5vjq-rrrf-7h2q",
-     "detail": "transitive, CVSS 7.8, fixed in 21.14.4",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-5vjq-rrrf-7h2q",
-     "finding": "virtualenv:GHSA-5vjq-rrrf-7h2q",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 GHSA-8rjx-v5ww-45pp",
-     "detail": "transitive, CVSS 7.8, fixed in 21.14.2",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-8rjx-v5ww-45pp",
-     "finding": "virtualenv:GHSA-8rjx-v5ww-45pp",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 GHSA-c947-3pg5-gm8q",
-     "detail": "transitive, CVSS 7.8, fixed in 21.14.2",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-c947-3pg5-gm8q",
-     "finding": "virtualenv:GHSA-c947-3pg5-gm8q",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 GHSA-c978-59m8-c77v",
-     "detail": "transitive, CVSS 7.8, fixed in 21.14.9",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-c978-59m8-c77v",
-     "finding": "virtualenv:GHSA-c978-59m8-c77v",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 GHSA-vxj4-q4g9-crj7",
-     "detail": "transitive, CVSS 7.8, fixed in 21.14.7",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-vxj4-q4g9-crj7",
-     "finding": "virtualenv:GHSA-vxj4-q4g9-crj7",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
      "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4013",
      "detail": "transitive, CVSS 7.8, fixed in 21.7.13",
      "path": "uv.lock",
@@ -374,6 +326,78 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/PYSEC-2026-4013",
      "finding": "virtualenv:PYSEC-2026-4013",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4381",
+     "detail": "transitive, CVSS 7.8, fixed in 21.14.9",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4381",
+     "finding": "virtualenv:PYSEC-2026-4381",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4382",
+     "detail": "transitive, CVSS 7.8, fixed in 21.14.9",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4382",
+     "finding": "virtualenv:PYSEC-2026-4382",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4384",
+     "detail": "transitive, CVSS 7.8, fixed in 21.14.7",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4384",
+     "finding": "virtualenv:PYSEC-2026-4384",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4385",
+     "detail": "transitive, CVSS 7.8, fixed in 21.14.4",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4385",
+     "finding": "virtualenv:PYSEC-2026-4385",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4386",
+     "detail": "transitive, CVSS 7.8, fixed in 21.14.2",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4386",
+     "finding": "virtualenv:PYSEC-2026-4386",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4387",
+     "detail": "transitive, CVSS 7.8, fixed in 21.14.2",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4387",
+     "finding": "virtualenv:PYSEC-2026-4387",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -559,6 +583,18 @@
      "deducts": true
     },
     {
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4379",
+     "detail": "transitive, CVSS 7.3, fixed in 21.14.9",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4379",
+     "finding": "virtualenv:PYSEC-2026-4379",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
      "label": "filelock 3.25.2 \u2014 GHSA-v4x8-3wr5-3wq8",
      "detail": "transitive, CVSS 7.1, fixed in 4.2.1",
      "path": "uv.lock",
@@ -578,18 +614,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-394h-qwmc-48pf",
      "finding": "virtualenv:GHSA-394h-qwmc-48pf",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 GHSA-6w3r-xr62-4xcp",
-     "detail": "transitive, CVSS 7.1, fixed in 21.14.9",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-6w3r-xr62-4xcp",
-     "finding": "virtualenv:GHSA-6w3r-xr62-4xcp",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -739,37 +763,13 @@
      "deducts": true
     },
     {
-     "label": "pyjwt 2.12.1 \u2014 PYSEC-2026-4152",
-     "detail": "transitive, CVSS 5.9, fixed in 2.14.0",
+     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4372",
+     "detail": "transitive, CVSS 6.0, fixed in 21.14.10",
      "path": "uv.lock",
      "line": 0,
      "excerpt": "",
-     "url": "https://osv.dev/vulnerability/PYSEC-2026-4152",
-     "finding": "pyjwt:PYSEC-2026-4152",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4012",
-     "detail": "transitive, CVSS 5.8, fixed in 21.7.11",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/PYSEC-2026-4012",
-     "finding": "virtualenv:PYSEC-2026-4012",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "filelock 3.25.2 \u2014 GHSA-cwqr-hh33-gh44",
-     "detail": "transitive, CVSS 5.5, fixed in 4.2.1",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-cwqr-hh33-gh44",
-     "finding": "filelock:GHSA-cwqr-hh33-gh44",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4372",
+     "finding": "virtualenv:PYSEC-2026-4372",
      "severity": "medium",
      "first_seen": null,
      "deducts": true
@@ -854,7 +854,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:51:25+00:00",
+  "fetched_at": "2026-11-19T02:52:57+00:00",
   "system": "PyPI",
   "package": "mcp-tekna",
   "version": "0.3.1",
@@ -866,5 +866,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "9a8e478af126dd063d637dd1809dc3516b88551ed06d9d39e74cea2bbbdce6a3",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

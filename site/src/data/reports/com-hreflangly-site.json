@@ -2,9 +2,9 @@
  "name": "com.hreflangly/site",
  "version": "1.0.1",
  "slug": "com-hreflangly-site",
- "scanned_at": "2026-11-18T02:43:06+00:00",
+ "scanned_at": "2026-11-19T02:46:00+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "51648bc3117b48f8fa26878d40cccd12c7b79cd209cc49d39a1448ec2a662278",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

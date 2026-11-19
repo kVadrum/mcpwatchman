@@ -2,9 +2,9 @@
  "name": "io.github.Ninjabeam20/sportiq-mcp",
  "version": "0.4.0",
  "slug": "io-github-ninjabeam20-sportiq-mcp",
- "scanned_at": "2026-11-18T02:50:41+00:00",
+ "scanned_at": "2026-11-19T02:52:02+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/Ninjabeam20/SportIQ-MCP",
  "package": "pypi:sportiq-mcp@0.4.0",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 26 day(s) before 2026-11-18",
+     "detail": "last commit 27 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 26 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 27 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +255,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:50:46+00:00",
+  "fetched_at": "2026-11-19T02:52:08+00:00",
   "system": "PyPI",
   "package": "sportiq-mcp",
   "version": "0.4.0",
@@ -280,5 +280,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "59f2663700785cce797702e4f91b2b98fb30be3d54587ab82ee9d8243e962b8a",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

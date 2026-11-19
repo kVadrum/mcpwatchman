@@ -2,9 +2,9 @@
  "name": "io.github.alex-on-ai/webreaper",
  "version": "11.3.2",
  "slug": "io-github-alex-on-ai-webreaper",
- "scanned_at": "2026-11-18T02:51:40+00:00",
+ "scanned_at": "2026-11-19T02:53:14+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/alex-on-ai/WebReaper",
  "package": "",
@@ -141,7 +141,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 45 day(s) before 2026-11-18",
+     "detail": "last commit 46 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -153,7 +153,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 98.3 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 99.3 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -165,7 +165,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 143 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 144 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -207,7 +207,7 @@
    "reason": "1 dependency file (WebReaper/WebReaper.csproj) was not read as this server's \u2014 it is of a kind this check does not count as a lockfile, or outside the files it listed, so whether it belongs to the server was not established \u2014 so the score covers the 1 lockfile that was",
    "assessed_weight": "0.5",
    "fault": null,
-   "evidence_omitted": 8,
+   "evidence_omitted": 6,
    "unmeasured_faults": [
     "project"
    ],
@@ -364,30 +364,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-wq5f-xc86-pv6w",
      "finding": "sharp:GHSA-wq5f-xc86-pv6w",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "website/pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 4.0.4 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "website/pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -811,6 +787,30 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
+    },
+    {
+     "label": "baseline-browser-mapping 2.10.32 \u2014 GHSA-w5vr-8v7q-w6rv",
+     "detail": "transitive, CVSS 6.6, fixed in 2.11.0",
+     "path": "website/pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-w5vr-8v7q-w6rv",
+     "finding": "baseline-browser-mapping:GHSA-w5vr-8v7q-w6rv",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "postcss 8.4.31 \u2014 GHSA-fxqj-rqcc-2cmp",
+     "detail": "transitive, CVSS 6.3, fixed in 8.5.23",
+     "path": "website/pnpm-lock.yaml",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-fxqj-rqcc-2cmp",
+     "finding": "postcss:GHSA-fxqj-rqcc-2cmp",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
     }
    ]
   },
@@ -887,5 +887,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "2711bcc7999516b5dd245cdc817a1d086edd93f7279ecd0198ccdf821f43addb",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "io.github.shigechika/gws-mcp",
  "version": "0.22.5-mcp.38",
  "slug": "io-github-shigechika-gws-mcp",
- "scanned_at": "2026-11-18T03:05:02+00:00",
+ "scanned_at": "2026-11-19T03:09:32+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/shigechika/gws-mcp",
  "package": "",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 48 day(s) before 2026-11-18",
+     "detail": "last commit 49 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 48 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 49 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -192,9 +192,9 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 66,
+   "score": 72,
    "reason": "20 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored",
-   "assessed_weight": "0.2",
+   "assessed_weight": "0.16",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
@@ -210,18 +210,6 @@
      "url": "https://osv.dev/vulnerability/GHSA-pqg4-j6r4-53mv",
      "finding": "shell-quote:GHSA-pqg4-j6r4-53mv",
      "severity": "critical",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 4.0.5 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "pnpm-lock.yaml",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
-     "severity": "high",
      "first_seen": null,
      "deducts": true
     },
@@ -576,5 +564,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "0c42bbfbef1bbd1ee0180bdd37d8ae8fba79e9f29e51fc0accdf48ce4ea04fc0",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

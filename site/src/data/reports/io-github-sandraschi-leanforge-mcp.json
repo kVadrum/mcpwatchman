@@ -2,9 +2,9 @@
  "name": "io.github.sandraschi/leanforge-mcp",
  "version": "0.1.1",
  "slug": "io-github-sandraschi-leanforge-mcp",
- "scanned_at": "2026-11-18T03:04:33+00:00",
+ "scanned_at": "2026-11-19T03:08:58+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/sandraschi/leanforge-mcp",
  "package": "",
@@ -226,7 +226,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 25 day(s) before 2026-11-18",
+     "detail": "last commit 26 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,7 +250,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 30 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "median release gap 51 days (by releases), last release 31 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -972,5 +972,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "2e4dfb54db5f0c19d12ba43ec674d937e7d983e461bf1ae500dddf3fab54ed4e",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

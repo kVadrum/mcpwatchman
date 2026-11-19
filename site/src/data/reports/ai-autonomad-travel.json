@@ -2,9 +2,9 @@
  "name": "ai.autonomad/travel",
  "version": "1.6.7",
  "slug": "ai-autonomad-travel",
- "scanned_at": "2026-11-18T02:18:22+00:00",
+ "scanned_at": "2026-11-19T02:22:12+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/autonomad-ai/autonomad",
  "package": "npm:autonomad-travel@1.6.7",
@@ -253,7 +253,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:18:23+00:00",
+  "fetched_at": "2026-11-19T02:22:14+00:00",
   "system": "npm",
   "package": "autonomad-travel",
   "version": "1.6.7",
@@ -265,5 +265,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "bc7d9e17dd67bf68aec6d83785e2b6d209637cd2d4fa4e4e735dac20026f2c46",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

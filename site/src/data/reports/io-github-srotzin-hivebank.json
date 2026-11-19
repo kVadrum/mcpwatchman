@@ -2,9 +2,9 @@
  "name": "io.github.srotzin/hivebank",
  "version": "1.0.0",
  "slug": "io-github-srotzin-hivebank",
- "scanned_at": "2026-11-18T03:06:34+00:00",
+ "scanned_at": "2026-11-19T03:11:20+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/srotzin/hivebank",
  "package": "",
@@ -190,7 +190,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 199 day(s) before 2026-11-18",
+     "detail": "last commit 200 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -862,5 +862,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "cc8492e4733dc711744317fc1d1fce9d1f8651356c119df4ce44897abc7edaba",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

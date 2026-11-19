@@ -2,9 +2,9 @@
  "name": "io.github.1powergrey/sios-gano-connector",
  "version": "1.5.0",
  "slug": "io-github-1powergrey-sios-gano-connector",
- "scanned_at": "2026-11-18T02:45:14+00:00",
+ "scanned_at": "2026-11-19T02:48:21+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/1powergrey/sios-gano-connector",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "69f195219844ad44100daef4936a196d8ad080dd227832d3c1191781d380ba63",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

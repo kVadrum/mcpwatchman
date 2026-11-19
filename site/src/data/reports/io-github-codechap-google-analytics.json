@@ -2,9 +2,9 @@
  "name": "io.github.codeChap/google-analytics",
  "version": "0.1.0",
  "slug": "io-github-codechap-google-analytics",
- "scanned_at": "2026-11-18T02:52:58+00:00",
+ "scanned_at": "2026-11-19T02:54:53+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/codeChap/mcp-server-google-analytics",
  "package": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 84 day(s) before 2026-11-18",
+     "detail": "last commit 85 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -598,5 +598,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "0e83dee00483c658bf56d276ed5ca3c4bd80c15c606d7740866460e2e4832a54",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

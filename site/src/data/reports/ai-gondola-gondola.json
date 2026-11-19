@@ -2,9 +2,9 @@
  "name": "ai.gondola/gondola",
  "version": "0.1.6",
  "slug": "ai-gondola-gondola",
- "scanned_at": "2026-11-18T02:26:19+00:00",
+ "scanned_at": "2026-11-19T02:31:23+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/gondola-ai/gondola-mcp",
  "package": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 37 day(s) before 2026-11-18",
+     "detail": "last commit 38 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 6 issue(s) in the last 6 months: 72.5 day(s) to first maintainer comment",
+     "detail": "median over 6 issue(s) in the last 6 months: 73.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 57 days (by releases), last release 63 day(s) ago",
+     "detail": "median release gap 57 days (by releases), last release 64 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -813,5 +813,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "c17e7f53ea18866d78dbf58d655dd745e3a7d4ed8bd714bed2c496e33a94f5d1",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

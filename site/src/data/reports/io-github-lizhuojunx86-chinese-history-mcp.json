@@ -2,9 +2,9 @@
  "name": "io.github.lizhuojunx86/chinese-history-mcp",
  "version": "0.3.0",
  "slug": "io-github-lizhuojunx86-chinese-history-mcp",
- "scanned_at": "2026-11-18T02:57:04+00:00",
+ "scanned_at": "2026-11-19T03:00:05+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/lizhuojunx86/chinese-history-mcp",
  "package": "pypi:chinese-history-mcp@0.3.0",
@@ -166,7 +166,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 107 day(s) before 2026-11-18",
+     "detail": "last commit 108 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -190,7 +190,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 15 days (by releases), last release 35 day(s) ago",
+     "detail": "median release gap 15 days (by releases), last release 36 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -316,7 +316,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:57:07+00:00",
+  "fetched_at": "2026-11-19T03:00:09+00:00",
   "system": "PyPI",
   "package": "chinese-history-mcp",
   "version": "0.3.0",
@@ -328,5 +328,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "7c795e7d466e6e0541ad634fa1c3382b6e97932fa5c8bdec9f8172b5f3d6941f",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

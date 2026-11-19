@@ -2,9 +2,9 @@
  "name": "uk.co.shipmycar/quote",
  "version": "2.0.0",
  "slug": "uk-co-shipmycar-quote",
- "scanned_at": "2026-11-18T03:08:21+00:00",
+ "scanned_at": "2026-11-19T03:13:37+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/itboffins/SMC-Website-NextJS",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "64e4ed855c52f2cd939f8e62dda5d8d05b95d4e030ea6e6e60d04393af341eaa",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

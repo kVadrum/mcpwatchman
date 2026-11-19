@@ -2,9 +2,9 @@
  "name": "io.sunaivacore/gate",
  "version": "2.0.4",
  "slug": "io-sunaivacore-gate",
- "scanned_at": "2026-11-18T03:08:06+00:00",
+ "scanned_at": "2026-11-19T03:13:17+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "",
  "package": "npm:@sunaiva/gate@2.0.4",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T03:08:07+00:00",
+  "fetched_at": "2026-11-19T03:13:18+00:00",
   "system": "npm",
   "package": "@sunaiva/gate",
   "version": "2.0.4",
@@ -278,5 +278,7 @@
   "findings_total": 1,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "7d8499ffa9688582356caf039f630cb4ded2803cb7d549f52e5e5d4e855d5363",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

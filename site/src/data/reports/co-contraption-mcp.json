@@ -2,9 +2,9 @@
  "name": "co.contraption/mcp",
  "version": "1.0.0",
  "slug": "co-contraption-mcp",
- "scanned_at": "2026-11-18T02:41:36+00:00",
+ "scanned_at": "2026-11-19T02:44:12+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/contraptionco/mcp",
  "package": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 265 day(s) before 2026-11-18",
+     "detail": "last commit 266 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -172,7 +172,7 @@
    "reason": "2 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 208,
+   "evidence_omitted": 209,
    "unmeasured_faults": [
     "project"
    ],
@@ -852,5 +852,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "e882141a16946dfbdf8efab56289cb33306bc5be285809fc292e41ad2d4a99c7",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

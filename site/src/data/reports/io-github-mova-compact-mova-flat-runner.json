@@ -2,9 +2,9 @@
  "name": "io.github.mova-compact/mova-flat-runner",
  "version": "2.0.6",
  "slug": "io-github-mova-compact-mova-flat-runner",
- "scanned_at": "2026-11-18T02:58:18+00:00",
+ "scanned_at": "2026-11-19T03:01:42+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/mova-compact/mova-flat-runner",
  "package": "npm:mova-mcp@2.0.6",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:58:19+00:00",
+  "fetched_at": "2026-11-19T03:01:43+00:00",
   "system": "npm",
   "package": "mova-mcp",
   "version": "2.0.6",
@@ -265,5 +265,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "4395e48a7659ac12e0bf4244d8fbb1ee4e715e3a0345fc42bcfba51bfa269ad5",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

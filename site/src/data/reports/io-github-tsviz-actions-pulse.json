@@ -2,9 +2,9 @@
  "name": "io.github.tsviz/actions-pulse",
  "version": "2.3.0",
  "slug": "io-github-tsviz-actions-pulse",
- "scanned_at": "2026-11-18T03:06:58+00:00",
+ "scanned_at": "2026-11-19T03:11:51+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/tsviz/github-mcp-server-devops",
  "package": "",
@@ -166,7 +166,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 283 day(s) before 2026-11-18",
+     "detail": "last commit 284 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -190,7 +190,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 283 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 284 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -232,7 +232,7 @@
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
-   "evidence_omitted": 76,
+   "evidence_omitted": 75,
    "unmeasured_faults": [],
    "evidence": [
     {
@@ -351,18 +351,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-3ppc-4f35-3m26",
      "finding": "minimatch:GHSA-3ppc-4f35-3m26",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 2.3.1 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -834,6 +822,18 @@
      "severity": "high",
      "first_seen": null,
      "deducts": true
+    },
+    {
+     "label": "hono 4.11.5 \u2014 GHSA-88fw-hqm2-52qc",
+     "detail": "transitive, CVSS 7.1, fixed in 4.12.25",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-88fw-hqm2-52qc",
+     "finding": "hono:GHSA-88fw-hqm2-52qc",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
     }
    ]
   },
@@ -910,5 +910,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "68ebf8050b6fd584e9a6f65a6c11b404c0cad07b99aa2081d917fb568ce94efa",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,9 +2,9 @@
  "name": "io.github.moelayyan90/xguard",
  "version": "6.1.0",
  "slug": "io-github-moelayyan90-xguard",
- "scanned_at": "2026-11-18T02:58:09+00:00",
+ "scanned_at": "2026-11-19T03:01:30+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/moelayyan90/XGuard",
  "package": "",
@@ -14,19 +14,19 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "6a7c27ed9da0489a104c215aff28e514b18f86f4",
+ "repository_commit": "a30d25a38997a8a5f4481fef718efebc4bc6fb6b",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 243,
+ "files_scanned": 254,
  "files_pruned": 16,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
-   "score": 23,
+   "score": 22,
    "reason": "5 findings from checks whose precision is not yet measured are listed but not deducted; 16 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 1 file could not be parsed and was not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 49,
+   "evidence_omitted": 52,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -203,8 +203,8 @@
      "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
      "path": "apps/relay/src/action/paypal.js",
-     "line": 23,
-     "excerpt": "  if (!config.ready) throw fail('card_payments_not_activated', 503, { blockers: config.blockers });\n  if (!/^\\/v[12]\\/[a-z0-9/_-]+$/i.test(path)) throw fail('invalid_paypal_path', 503);\n  const tokenResponse = await fetch(config.origin + '/v1/oauth2/token', { method: 'POST', headers: { authorization: 'Basic ' + btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_CLIENT_SECRET), 'content-type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials', redirect: 'manual', signal: AbortSignal.timeout(12000) });\n  if (!tokenResponse.ok) throw fail('paypal_authentication_unavailable', 503);\n  const token = await boundedJson(tokenResponse, 16384);",
+     "line": 21,
+     "excerpt": "}\nasync function paypalAccessToken(env, config) {\n  const tokenResponse = await fetch(config.origin + '/v1/oauth2/token', { method: 'POST', headers: { authorization: 'Basic ' + btoa(env.PAYPAL_CLIENT_ID + ':' + env.PAYPAL_CLIENT_SECRET), accept: 'application/json', 'content-type': 'application/x-www-form-urlencoded' }, body: 'grant_type=client_credentials', redirect: 'manual', signal: AbortSignal.timeout(12000) });\n  if (!tokenResponse.ok) {\n    let failure;",
      "url": "",
      "finding": "mcp-js-ssrf-nonliteral-url",
      "severity": "medium",
@@ -215,8 +215,8 @@
      "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
      "path": "apps/relay/src/action/paypal.js",
-     "line": 27,
-     "excerpt": "  const token = await boundedJson(tokenResponse, 16384);\n  if (typeof token.access_token !== 'string') throw fail('paypal_authentication_unavailable', 503);\n  const response = await fetch(config.origin + path, { method, headers: { authorization: 'Bearer ' + token.access_token, 'content-type': 'application/json', prefer: 'return=representation', ...(requestId ? { 'PayPal-Request-Id': requestId } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual', signal: AbortSignal.timeout(20000) });\n  const value = await boundedJson(response);\n  if (!response.ok) throw fail('paypal_request_unconfirmed', 503);",
+     "line": 52,
+     "excerpt": "  if (!/^\\/v[12]\\/[a-z0-9/_-]+$/i.test(path)) throw fail('invalid_paypal_path', 503);\n  const token = await paypalAccessToken(env, config);\n  const response = await fetch(config.origin + path, { method, headers: { authorization: 'Bearer ' + token, accept: 'application/json', 'content-type': 'application/json', prefer: 'return=representation', ...(requestId ? { 'PayPal-Request-Id': requestId } : {}) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'manual', signal: AbortSignal.timeout(20000) });\n  const value = await boundedJson(response);\n  if (!response.ok) throw fail('paypal_request_unconfirmed', 503);",
      "url": "",
      "finding": "mcp-js-ssrf-nonliteral-url",
      "severity": "medium",
@@ -668,7 +668,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "Private Key at apps/relay/test/commerce.test.mjs:57; JSON Web Token at docs/evidence/financial-authority/sample-sandbox-receipt.json:2; \u2026and 51 more matches",
+     "detail": "Private Key at apps/relay/test/commerce.test.mjs:57; JSON Web Token at docs/evidence/financial-authority/sample-sandbox-receipt.json:2; \u2026and 53 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -680,7 +680,7 @@
     },
     {
      "label": "authorization_granularity",
-     "detail": "16 tool registrations with conditional access logic present in the same source",
+     "detail": "11 tool registrations with conditional access logic present in the same source",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-18",
+     "detail": "last commit 1 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 59 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 60 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -850,5 +850,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "8050d3a302f085e17f6437101485a3d47e6fde39eccdb797be84375c55b29e46",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

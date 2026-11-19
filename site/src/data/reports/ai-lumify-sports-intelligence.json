@@ -2,9 +2,9 @@
  "name": "ai.lumify/sports-intelligence",
  "version": "1.0.1",
  "slug": "ai-lumify-sports-intelligence",
- "scanned_at": "2026-11-18T02:36:28+00:00",
+ "scanned_at": "2026-11-19T02:39:45+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/lumifyai/lumify",
  "package": "",
@@ -129,7 +129,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 19 day(s) before 2026-11-18",
+     "detail": "last commit 20 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 36.9 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 37.9 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -191,7 +191,7 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 42,
+   "score": 44,
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
@@ -218,30 +218,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-hmw2-7cc7-3qxx",
      "finding": "form-data:GHSA-hmw2-7cc7-3qxx",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 2.3.2 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "clients/n8n-nodes-lumify/package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "picomatch 4.0.5 \u2014 GHSA-fc5q-39xc-vjpf",
-     "detail": "transitive, CVSS 8.7",
-     "path": "clients/n8n-nodes-lumify/package-lock.json",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-fc5q-39xc-vjpf",
-     "finding": "picomatch:GHSA-fc5q-39xc-vjpf",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -645,5 +621,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "793e7eb2978d528b6481138a603895af5341d6f99a5b1653f681c43551bfdbd4",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

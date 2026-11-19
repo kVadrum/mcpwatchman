@@ -2,9 +2,9 @@
  "name": "com.siftivo/siftivo",
  "version": "0.2.0",
  "slug": "com-siftivo-siftivo",
- "scanned_at": "2026-11-18T02:44:10+00:00",
+ "scanned_at": "2026-11-19T02:47:05+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/btg5679/siftivo",
  "package": "",
@@ -250,5 +250,7 @@
   }
  },
  "install_resolution": null,
+ "registry_entry_hash": "b2e3f0f19194a61035e2405c92518781282977d98b5e7010469258a9580ca5a4",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

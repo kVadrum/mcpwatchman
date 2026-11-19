@@ -2,9 +2,9 @@
  "name": "io.github.API-Disk-Integrations/agent-mandate",
  "version": "0.1.1",
  "slug": "io-github-api-disk-integrations-agent-mandate",
- "scanned_at": "2026-11-18T02:45:23+00:00",
+ "scanned_at": "2026-11-19T02:48:32+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/API-Disk-Integrations/agent-mandate-mcp",
  "package": "npm:@api-disk-integrations/agent-mandate-mcp@0.1.1",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 63 day(s) before 2026-11-18",
+     "detail": "last commit 64 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +255,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T02:45:26+00:00",
+  "fetched_at": "2026-11-19T02:48:37+00:00",
   "system": "npm",
   "package": "@api-disk-integrations/agent-mandate-mcp",
   "version": "0.1.1",
@@ -328,5 +328,7 @@
   "findings_total": 5,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "e1f4fb56b20977346434718d93ca0b61a0875a4b5de8f6b2768e37a62af323bf",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }

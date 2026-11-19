@@ -2,9 +2,9 @@
  "name": "io.github.pipeworx-io/arcgis-sanjuannm",
  "version": "0.2.1",
  "slug": "io-github-pipeworx-io-arcgis-sanjuannm",
- "scanned_at": "2026-11-18T03:00:00+00:00",
+ "scanned_at": "2026-11-19T03:04:15+00:00",
  "methodology_version": "0.2.0",
- "scanner_version": "0.47.3",
+ "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/pipeworx-io/mcp-arcgis-sanjuannm",
  "package": "npm:@pipeworx/mcp-arcgis-sanjuannm@0.2.1",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 9 day(s) before 2026-11-18",
+     "detail": "last commit 10 day(s) before 2026-11-19",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -269,7 +269,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-18T03:00:03+00:00",
+  "fetched_at": "2026-11-19T03:04:18+00:00",
   "system": "npm",
   "package": "@pipeworx/mcp-arcgis-sanjuannm",
   "version": "0.2.1",
@@ -281,5 +281,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
+ "registry_entry_hash": "67ddc96cb8c8a3acd1ac81026a34cec8a5698a2b65419efe2258c558a0996998",
+ "checked_at": "2026-11-19T02:09:09+00:00",
  "findings_tracked_since": "2026-10-10"
 }
