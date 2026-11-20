@@ -2,7 +2,7 @@
  "name": "ai.smithery/BigVik193-reddit-ads-mcp-api",
  "version": "1.0.0",
  "slug": "ai-smithery-bigvik193-reddit-ads-mcp-api",
- "scanned_at": "2026-11-19T02:43:14+00:00",
+ "scanned_at": "2026-11-20T02:36:59+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 430 day(s) before 2026-11-19",
+     "detail": "last commit 431 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 34.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 35.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -850,6 +850,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "bbbd41ab97f42569949bfbb7c1afb59cd967f6695c0078e41e6eb5105f560f69",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

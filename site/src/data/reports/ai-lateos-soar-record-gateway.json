@@ -2,7 +2,7 @@
  "name": "ai.lateos/soar-record-gateway",
  "version": "1.0.0",
  "slug": "ai-lateos-soar-record-gateway",
- "scanned_at": "2026-11-19T02:39:32+00:00",
+ "scanned_at": "2026-11-20T02:33:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "217d076e5299039be37fedbcd49a18ad22be05b616c6516c2415bdbcc46d28a7",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.chrischall/alphaportal-mcp",
  "version": "1.3.0",
  "slug": "io-github-chrischall-alphaportal-mcp",
- "scanned_at": "2026-11-19T02:54:28+00:00",
+ "scanned_at": "2026-11-20T02:46:12+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-19",
+     "detail": "last commit 3 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 15 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 16 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -268,7 +268,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:54:40+00:00",
+  "fetched_at": "2026-11-20T02:46:22+00:00",
   "system": "npm",
   "package": "alphaportal-mcp",
   "version": "1.3.0",
@@ -281,6 +281,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "b04184afc25fc7a07e01022e39ea9c08f43876ef73a73516e496832356edbdeb",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

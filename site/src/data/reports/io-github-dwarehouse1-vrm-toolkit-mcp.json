@@ -2,7 +2,7 @@
  "name": "io.github.dwarehouse1/vrm-toolkit-mcp",
  "version": "0.1.1",
  "slug": "io-github-dwarehouse1-vrm-toolkit-mcp",
- "scanned_at": "2026-11-19T02:55:52+00:00",
+ "scanned_at": "2026-11-20T02:47:22+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 106 day(s) before 2026-11-19",
+     "detail": "last commit 107 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +255,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:56:02+00:00",
+  "fetched_at": "2026-11-20T02:47:30+00:00",
   "system": "npm",
   "package": "vrm-toolkit-mcp",
   "version": "0.1.1",
@@ -413,6 +413,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "d482a62258ac359dc7c22554a423973fff23f892a9b601d2765897b1111de02b",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

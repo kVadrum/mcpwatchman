@@ -2,7 +2,7 @@
  "name": "com.averray/mcp",
  "version": "1.1.0",
  "slug": "com-averray-mcp",
- "scanned_at": "2026-11-19T02:44:32+00:00",
+ "scanned_at": "2026-11-20T02:38:00+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -707,7 +707,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 8 day(s) before 2026-11-19",
+     "detail": "last commit 9 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -719,7 +719,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 14 issue(s) in the last 6 months: 62.3 day(s) to first maintainer comment",
+     "detail": "median over 14 issue(s) in the last 6 months: 63.3 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -773,7 +773,7 @@
    "reason": "1 dependency file (indexer/package-lock.json) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 1 lockfile that was",
    "assessed_weight": "0.5",
    "fault": null,
-   "evidence_omitted": 100,
+   "evidence_omitted": 104,
    "unmeasured_faults": [
     "project"
    ],
@@ -1456,6 +1456,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d93c99216ced7738499d71e9680416c1ff008fcd439dc9d4d04caa77aa90e5f2",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

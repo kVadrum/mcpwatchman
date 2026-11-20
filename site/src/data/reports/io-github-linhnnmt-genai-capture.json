@@ -2,7 +2,7 @@
  "name": "io.github.linhnnmt/genai-capture",
  "version": "1.0.1",
  "slug": "io-github-linhnnmt-genai-capture",
- "scanned_at": "2026-11-19T03:00:02+00:00",
+ "scanned_at": "2026-11-20T02:50:29+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 109 day(s) before 2026-11-19",
+     "detail": "last commit 110 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 121 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 122 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T03:00:05+00:00",
+  "fetched_at": "2026-11-20T02:50:31+00:00",
   "system": "npm",
   "package": "genai-capture-mcp",
   "version": "1.0.1",
@@ -266,6 +266,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "a4a78839d13bf0790cf1776d8f748f2e4f9ae4c5399b62c1b7fc146a16b416b5",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

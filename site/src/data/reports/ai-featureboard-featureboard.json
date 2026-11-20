@@ -2,7 +2,7 @@
  "name": "ai.featureboard/featureboard",
  "version": "0.7.0",
  "slug": "ai-featureboard-featureboard",
- "scanned_at": "2026-11-19T02:30:25+00:00",
+ "scanned_at": "2026-11-20T02:28:26+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "219752f1b2198040a97e10db16e45f6d1b9e96e3785e14115bc6df181398a35b",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

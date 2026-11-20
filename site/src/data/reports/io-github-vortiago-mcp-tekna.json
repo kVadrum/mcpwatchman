@@ -2,7 +2,7 @@
  "name": "io.github.Vortiago/mcp-tekna",
  "version": "0.3.1",
  "slug": "io-github-vortiago-mcp-tekna",
- "scanned_at": "2026-11-19T02:52:52+00:00",
+ "scanned_at": "2026-11-20T02:44:56+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 240 day(s) before 2026-11-19",
+     "detail": "last commit 241 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 240 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 241 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -171,7 +171,7 @@
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
-   "evidence_omitted": 34,
+   "evidence_omitted": 35,
    "unmeasured_faults": [],
    "evidence": [
     {
@@ -256,6 +256,18 @@
      "finding": "mcp:GHSA-84m7-p3x7-pcfv",
      "severity": "high",
      "first_seen": "2026-10-16",
+     "deducts": true
+    },
+    {
+     "label": "mcp 1.26.0 \u2014 GHSA-qx49-fqc8-xw99",
+     "detail": "direct, CVSS 7.5, fixed in 1.30.0",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-qx49-fqc8-xw99",
+     "finding": "mcp:GHSA-qx49-fqc8-xw99",
+     "severity": "high",
+     "first_seen": null,
      "deducts": true
     },
     {
@@ -761,18 +773,6 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "virtualenv 21.2.0 \u2014 PYSEC-2026-4372",
-     "detail": "transitive, CVSS 6.0, fixed in 21.14.10",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/PYSEC-2026-4372",
-     "finding": "virtualenv:PYSEC-2026-4372",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
     }
    ]
   },
@@ -854,7 +854,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:52:57+00:00",
+  "fetched_at": "2026-11-20T02:44:59+00:00",
   "system": "PyPI",
   "package": "mcp-tekna",
   "version": "0.3.1",
@@ -867,6 +867,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "9a8e478af126dd063d637dd1809dc3516b88551ed06d9d39e74cea2bbbdce6a3",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

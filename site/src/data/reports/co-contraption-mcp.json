@@ -2,7 +2,7 @@
  "name": "co.contraption/mcp",
  "version": "1.0.0",
  "slug": "co-contraption-mcp",
- "scanned_at": "2026-11-19T02:44:12+00:00",
+ "scanned_at": "2026-11-20T02:37:46+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 266 day(s) before 2026-11-19",
+     "detail": "last commit 267 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -172,7 +172,7 @@
    "reason": "2 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 209,
+   "evidence_omitted": 210,
    "unmeasured_faults": [
     "project"
    ],
@@ -646,18 +646,6 @@
      "deducts": true
     },
     {
-     "label": "aiohttp 3.13.3 \u2014 GHSA-2g87-pp6c-29x5",
-     "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-2g87-pp6c-29x5",
-     "finding": "aiohttp:GHSA-2g87-pp6c-29x5",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
      "label": "aiohttp 3.13.3 \u2014 GHSA-5rmc-48h2-hvcm",
      "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
      "path": "uv.lock",
@@ -689,6 +677,18 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-xgw8-8ccx-rmqh",
      "finding": "aiohttp:GHSA-xgw8-8ccx-rmqh",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "aiohttp 3.13.3 \u2014 PYSEC-2026-4389",
+     "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4389",
+     "finding": "aiohttp:PYSEC-2026-4389",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -853,6 +853,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e882141a16946dfbdf8efab56289cb33306bc5be285809fc292e41ad2d4a99c7",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

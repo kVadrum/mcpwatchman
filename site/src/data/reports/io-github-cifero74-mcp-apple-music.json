@@ -2,7 +2,7 @@
  "name": "io.github.Cifero74/mcp-apple-music",
  "version": "1.3.0",
  "slug": "io-github-cifero74-mcp-apple-music",
- "scanned_at": "2026-11-19T02:49:39+00:00",
+ "scanned_at": "2026-11-20T02:42:20+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -102,7 +102,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 28 day(s) before 2026-11-19",
+     "detail": "last commit 29 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -114,7 +114,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 82.6 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 83.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -126,7 +126,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 28 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 29 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -301,6 +301,18 @@
      "finding": "mcp:GHSA-84m7-p3x7-pcfv",
      "severity": "high",
      "first_seen": "2026-10-16",
+     "deducts": true
+    },
+    {
+     "label": "mcp 1.26.0 \u2014 GHSA-qx49-fqc8-xw99",
+     "detail": "direct, CVSS 7.5, fixed in 1.30.0",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-qx49-fqc8-xw99",
+     "finding": "mcp:GHSA-qx49-fqc8-xw99",
+     "severity": "high",
+     "first_seen": "2026-11-20",
      "deducts": true
     },
     {
@@ -827,7 +839,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:49:43+00:00",
+  "fetched_at": "2026-11-20T02:42:23+00:00",
   "system": "PyPI",
   "package": "mcp-apple-music-server",
   "version": "1.3.0",
@@ -840,6 +852,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "5b907d8e65a508ba2995f31cc730862a98e68c77702d27ee2209d1a6be454158",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

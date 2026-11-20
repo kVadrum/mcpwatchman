@@ -1,13 +1,13 @@
 {
  "name": "app.apiguru/amazon-data",
- "version": "1.1.68",
+ "version": "1.1.69",
  "slug": "app-apiguru-amazon-data",
- "scanned_at": "2026-11-19T02:43:53+00:00",
+ "scanned_at": "2026-11-20T02:17:26+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/apiguru-app/agent-kit",
- "package": "pypi:apiguru-mcp@1.1.68",
+ "package": "pypi:apiguru-mcp@1.1.69",
  "source_state": "fetched",
  "source_subject": "",
  "source_reason": "",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-19",
+     "detail": "last commit 2 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,10 +252,10 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:43:57+00:00",
+  "fetched_at": "2026-11-20T02:17:30+00:00",
   "system": "PyPI",
   "package": "apiguru-mcp",
-  "version": "1.1.68",
+  "version": "1.1.69",
   "nodes": 0,
   "direct": 0,
   "skipped_nodes": 0,
@@ -264,7 +264,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
- "registry_entry_hash": "6f316939f58291f66100dedba9722654cac9fa814ef0338e09d0109241e9d781",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "registry_entry_hash": "523fda9824dbcdd686776419a6fb2d8e24348bed4a5dd432d3c058259511ded1",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

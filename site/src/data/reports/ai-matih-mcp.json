@@ -2,7 +2,7 @@
  "name": "ai.matih/mcp",
  "version": "0.2.1",
  "slug": "ai-matih-mcp",
- "scanned_at": "2026-11-19T02:40:28+00:00",
+ "scanned_at": "2026-11-20T02:34:44+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 136 day(s) before 2026-11-19",
+     "detail": "last commit 137 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 34.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 35.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 136 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 137 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,7 +252,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:40:32+00:00",
+  "fetched_at": "2026-11-20T02:34:47+00:00",
   "system": "npm",
   "package": "@matihlabs/mcp",
   "version": "0.2.1",
@@ -265,6 +265,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "983aca851ba53046552be1526964d814368796c02f1b1eb289e0c18c8e749832",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

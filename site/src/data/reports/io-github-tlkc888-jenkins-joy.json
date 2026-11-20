@@ -2,7 +2,7 @@
  "name": "io.github.tlkc888-Jenkins/joy",
  "version": "2.40.0",
  "slug": "io-github-tlkc888-jenkins-joy",
- "scanned_at": "2026-11-19T03:11:59+00:00",
+ "scanned_at": "2026-11-20T02:59:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "091369d5000b8c537ca946885816f0197218fb600760761f361420e1ca954b97",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

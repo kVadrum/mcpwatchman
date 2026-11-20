@@ -1,8 +1,8 @@
 {
  "name": "io.github.nicglazkov/commutescout",
- "version": "2.134.0",
+ "version": "2.135.0",
  "slug": "io-github-nicglazkov-commutescout",
- "scanned_at": "2026-11-19T03:01:58+00:00",
+ "scanned_at": "2026-11-20T02:17:39+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "7d56fb2fda5b28d7a1305f0848423f340b690df2",
+ "repository_commit": "25911632a567767d7d9c528d06638390780b1957",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 129,
@@ -334,7 +334,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 12 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at evals/results/history.jsonl:1; Hex High Entropy String at site/app/layout.tsx:98; Base64 High Entropy String at src/ca_roads_demo/states.py:1397; Hex High Entropy String at src/ca_roads_demo/static/admin.html:562; Hex High Entropy String at src/ca_roads_demo/static/map.html:516; Hex High Entropy String at src/ca_roads_demo/static/trip.html:244; Hex High Entropy String at src/ca_roads_demo/static/watch.html:408; Base64 High Entropy String at src/ca_roads_demo/watch.py:49; Base64 High Entropy String at src/ca_roads_mcp/rest.py:164; Secret Keyword at tests/test_contact.py:162; \u2026and 2 more matches",
+     "detail": "detect-secrets matched 12 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at evals/results/history.jsonl:1; Hex High Entropy String at site/app/layout.tsx:98; Base64 High Entropy String at src/ca_roads_demo/states.py:1397; Hex High Entropy String at src/ca_roads_demo/static/admin.html:562; Hex High Entropy String at src/ca_roads_demo/static/map.html:517; Hex High Entropy String at src/ca_roads_demo/static/trip.html:244; Hex High Entropy String at src/ca_roads_demo/static/watch.html:408; Base64 High Entropy String at src/ca_roads_demo/watch.py:49; Base64 High Entropy String at src/ca_roads_mcp/rest.py:164; Secret Keyword at tests/test_contact.py:162; \u2026and 2 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -371,7 +371,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 0 day(s) before 2026-11-19",
+     "detail": "last commit 1 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -383,7 +383,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 25.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 26.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -395,7 +395,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 13 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 14 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -516,7 +516,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "e87ae74c709bc7920b98c1ee1e9050f5fcf61bd3dbf9b9d3258247aabd3c0e96",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "registry_entry_hash": "a6c56fd04bbab53c1ea249b63050c46638be0053c94929092568da6a7ece8a69",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

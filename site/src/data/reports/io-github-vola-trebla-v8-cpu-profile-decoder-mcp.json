@@ -2,7 +2,7 @@
  "name": "io.github.vola-trebla/v8-cpu-profile-decoder-mcp",
  "version": "0.3.0",
  "slug": "io-github-vola-trebla-v8-cpu-profile-decoder-mcp",
- "scanned_at": "2026-11-19T03:12:40+00:00",
+ "scanned_at": "2026-11-20T02:59:53+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 184 day(s) before 2026-11-19",
+     "detail": "last commit 185 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by tags), last release 184 day(s) ago",
+     "detail": "median release gap 1 days (by tags), last release 185 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T03:12:44+00:00",
+  "fetched_at": "2026-11-20T02:59:56+00:00",
   "system": "npm",
   "package": "v8-cpu-profile-decoder-mcp",
   "version": "0.3.0",
@@ -266,6 +266,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "d0c4b2bc8d69abd2dbe5c26ebd92cb4dd22d756fa2733c2e9d5496153b42ef06",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

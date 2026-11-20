@@ -2,7 +2,7 @@
  "name": "io.github.korobkov-v/porkbun-mcp",
  "version": "0.3.4",
  "slug": "io-github-korobkov-v-porkbun-mcp",
- "scanned_at": "2026-11-19T02:59:10+00:00",
+ "scanned_at": "2026-11-20T02:49:48+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 19 day(s) before 2026-11-19",
+     "detail": "last commit 20 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 21.9 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 22.9 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 19 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 20 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -268,7 +268,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:59:15+00:00",
+  "fetched_at": "2026-11-20T02:49:52+00:00",
   "system": "npm",
   "package": "porkbun-mcp",
   "version": "0.3.4",
@@ -294,6 +294,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "9c99380bce46e779332b5b6a1ffb176cf1865c8867684c49fdc867dbfbc8e8db",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

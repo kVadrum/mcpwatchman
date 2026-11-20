@@ -2,7 +2,7 @@
  "name": "pro.nomos/nomos-mcp",
  "version": "1.0.0",
  "slug": "pro-nomos-nomos-mcp",
- "scanned_at": "2026-11-19T03:13:31+00:00",
+ "scanned_at": "2026-11-20T03:00:32+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "bcc980eb03049358e1eb5aeb06364cb34fec4164a25e029ade0e2bd1d7aab74b",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

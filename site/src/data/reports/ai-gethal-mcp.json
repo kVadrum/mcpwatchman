@@ -2,7 +2,7 @@
  "name": "ai.gethal/mcp",
  "version": "1.0.0",
  "slug": "ai-gethal-mcp",
- "scanned_at": "2026-11-19T02:30:57+00:00",
+ "scanned_at": "2026-11-20T02:28:54+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "188829f76d28841547e7b99bebad87bc0002234a32144b300c6eca47c116792a",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

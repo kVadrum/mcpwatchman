@@ -2,7 +2,7 @@
  "name": "io.github.JaviMaligno/vitamind",
  "version": "1.0.0",
  "slug": "io-github-javimaligno-vitamind",
- "scanned_at": "2026-11-19T02:51:08+00:00",
+ "scanned_at": "2026-11-20T02:43:35+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-19",
+     "detail": "last commit 5 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -770,13 +770,25 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 88,
+   "score": 83,
    "reason": "",
    "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [],
    "evidence": [
+    {
+     "label": "next 16.4.1 \u2014 GHSA-7qx7-33qx-rqx2",
+     "detail": "direct, CVSS 6.9, fixed in 16.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-7qx7-33qx-rqx2",
+     "finding": "next:GHSA-7qx7-33qx-rqx2",
+     "severity": "medium",
+     "first_seen": "2026-11-20",
+     "deducts": true
+    },
     {
      "label": "next 16.4.1 \u2014 GHSA-mfr8-8qww-v76h",
      "detail": "direct, CVSS 6.3, fixed in 16.4.5",
@@ -790,6 +802,30 @@
      "deducts": true
     },
     {
+     "label": "next 16.4.1 \u2014 GHSA-pc58-hwjq-p385",
+     "detail": "direct, CVSS 6.3, fixed in 16.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-pc58-hwjq-p385",
+     "finding": "next:GHSA-pc58-hwjq-p385",
+     "severity": "medium",
+     "first_seen": "2026-11-20",
+     "deducts": true
+    },
+    {
+     "label": "next 16.4.1 \u2014 GHSA-rhh4-g77r-r9qj",
+     "detail": "direct, CVSS 6.3, fixed in 16.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-rhh4-g77r-r9qj",
+     "finding": "next:GHSA-rhh4-g77r-r9qj",
+     "severity": "medium",
+     "first_seen": "2026-11-20",
+     "deducts": true
+    },
+    {
      "label": "next 16.4.1 \u2014 GHSA-vc7v-qv4w-wrv8",
      "detail": "direct, CVSS 6.3, fixed in 16.4.5",
      "path": "package-lock.json",
@@ -799,6 +835,30 @@
      "finding": "next:GHSA-vc7v-qv4w-wrv8",
      "severity": "medium",
      "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "next 16.4.1 \u2014 GHSA-vvgp-ww4w-46vf",
+     "detail": "direct, CVSS 6.3, fixed in 16.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-vvgp-ww4w-46vf",
+     "finding": "next:GHSA-vvgp-ww4w-46vf",
+     "severity": "medium",
+     "first_seen": "2026-11-20",
+     "deducts": true
+    },
+    {
+     "label": "next 16.4.1 \u2014 GHSA-f3mh-rxg3-f5g2",
+     "detail": "direct, CVSS 6.0, fixed in 16.4.5",
+     "path": "package-lock.json",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-f3mh-rxg3-f5g2",
+     "finding": "next:GHSA-f3mh-rxg3-f5g2",
+     "severity": "medium",
+     "first_seen": "2026-11-20",
      "deducts": true
     },
     {
@@ -889,6 +949,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "218d16893de2bbc76073102d52c6551a09423e517e35582e8451068bb311ace5",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

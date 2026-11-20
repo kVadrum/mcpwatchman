@@ -2,7 +2,7 @@
  "name": "ai.gregbenza/meet",
  "version": "1.0.1",
  "slug": "ai-gregbenza-meet",
- "scanned_at": "2026-11-19T02:31:27+00:00",
+ "scanned_at": "2026-11-20T02:29:11+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -132,7 +132,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 65 day(s) before 2026-11-19",
+     "detail": "last commit 66 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -144,7 +144,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 40.6 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 41.6 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -841,6 +841,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "95344cc92e36a55203c6a3975de5f7c3e05cce74d23c7ab3b4ef67dbcf93c669",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

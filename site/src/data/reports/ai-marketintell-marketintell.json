@@ -2,7 +2,7 @@
  "name": "ai.marketintell/marketintell",
  "version": "0.3.1",
  "slug": "ai-marketintell-marketintell",
- "scanned_at": "2026-11-19T02:40:22+00:00",
+ "scanned_at": "2026-11-20T02:34:40+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "04fa3baffa61a0b38588bf8a7e33d684ebe52e6a4e796f5e4ec5a29f9dba5848",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

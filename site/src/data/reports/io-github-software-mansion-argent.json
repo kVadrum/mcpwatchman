@@ -1,13 +1,13 @@
 {
  "name": "io.github.software-mansion/argent",
- "version": "0.19.0",
+ "version": "0.34.0",
  "slug": "io-github-software-mansion-argent",
- "scanned_at": "2026-11-19T03:10:48+00:00",
+ "scanned_at": "2026-11-20T02:18:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/software-mansion/argent",
- "package": "npm:@swmansion/argent@0.19.0",
+ "package": "npm:@swmansion/argent@0.34.0",
  "source_state": "fetched",
  "source_subject": "",
  "source_reason": "",
@@ -164,7 +164,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 17 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at dist/cli-cmds.mjs:1427; Secret Keyword at dist/cli-cmds.mjs:2062; Secret Keyword at dist/cli-cmds.mjs:2063; Secret Keyword at dist/cli-cmds.mjs:4529; Base64 High Entropy String at dist/cli-cmds.mjs:7526; Secret Keyword at dist/installer.mjs:13294; Base64 High Entropy String at dist/installer.mjs:16291; Secret Keyword at dist/installer.mjs:16576; Base64 High Entropy String at dist/mcp-server.mjs:14109; Secret Keyword at dist/mcp-server.mjs:16633; \u2026and 7 more matches",
+     "detail": "detect-secrets matched 37 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at dist/cli-cmds.mjs:9760; Secret Keyword at dist/cli-cmds.mjs:9761; Secret Keyword at dist/cli-cmds.mjs:10196; Secret Keyword at dist/cli-cmds.mjs:10795; Hex High Entropy String at dist/cli-cmds.mjs:35163; Secret Keyword at dist/client.js:7948; Secret Keyword at dist/client.js:7949; Secret Keyword at dist/client.js:8772; Secret Keyword at dist/client.js:9368; Hex High Entropy String at dist/installer.mjs:15582; \u2026and 27 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -201,7 +201,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-19",
+     "detail": "last commit 2 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -225,7 +225,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -273,14 +273,12 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 53,
+   "score": 23,
    "reason": "",
-   "assessed_weight": "0.8",
+   "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
-   "unmeasured_faults": [
-    "project"
-   ],
+   "unmeasured_faults": [],
    "evidence": [
     {
      "label": "license",
@@ -296,7 +294,7 @@
     },
     {
      "label": "readme_quality",
-     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
+     "detail": "README.md: states what the server does in the first 200 words (+20)",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -308,7 +306,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -346,24 +344,24 @@
   }
  },
  "install_resolution": {
-  "status": "ok",
-  "reason": "",
-  "fault": null,
+  "status": "unavailable",
+  "reason": "deps.dev holds no resolved graph for this version",
+  "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T03:11:16+00:00",
+  "fetched_at": "2026-11-20T02:19:20+00:00",
   "system": "npm",
   "package": "@swmansion/argent",
-  "version": "0.19.0",
-  "nodes": 180,
-  "direct": 7,
+  "version": "0.34.0",
+  "nodes": 0,
+  "direct": 0,
   "skipped_nodes": 0,
   "unresolved": 0,
   "findings": [],
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
- "registry_entry_hash": "743f58325090723152f5fb0a6e6fd85193d02b9722197a5d5fd37f88d81e6785",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "registry_entry_hash": "cbff23c62766d68bc00f4bd4a83de13bae118f1ea466ec9c0cfd9e9689ec44eb",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "uk.co.employmentcontractgenerator/site",
  "version": "1.0.1",
  "slug": "uk-co-employmentcontractgenerator-site",
- "scanned_at": "2026-11-19T03:13:37+00:00",
+ "scanned_at": "2026-11-20T03:00:38+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "4aea020b4c7f15878764f6f3faf19b86cc5a2270803721e253476430f0e07b22",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

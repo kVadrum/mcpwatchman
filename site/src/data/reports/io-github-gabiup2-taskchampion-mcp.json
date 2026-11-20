@@ -2,7 +2,7 @@
  "name": "io.github.GabiUp2/taskchampion-mcp",
  "version": "1.0.4",
  "slug": "io-github-gabiup2-taskchampion-mcp",
- "scanned_at": "2026-11-19T02:50:30+00:00",
+ "scanned_at": "2026-11-20T02:43:05+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -103,7 +103,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 141 day(s) before 2026-11-19",
+     "detail": "last commit 142 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -127,7 +127,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 5 days (by releases), last release 164 day(s) ago",
+     "detail": "median release gap 5 days (by releases), last release 165 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -251,7 +251,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-19T02:50:34+00:00",
+  "fetched_at": "2026-11-20T02:43:08+00:00",
   "system": "PyPI",
   "package": "taskchampion-mcp",
   "version": "1.0.4",
@@ -264,6 +264,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "c551c9a17ac38f665729d0f3299590b8bb5c91c0620526f66462925c3c7a5263",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

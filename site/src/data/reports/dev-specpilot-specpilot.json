@@ -2,7 +2,7 @@
  "name": "dev.specpilot/specpilot",
  "version": "1.0.0",
  "slug": "dev-specpilot-specpilot",
- "scanned_at": "2026-11-19T02:47:25+00:00",
+ "scanned_at": "2026-11-20T02:40:38+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "c6db0ae1986e4907526a6cd5a095646524fed224",
+ "repository_commit": "b355f8bc00c9d2bb6c4307a07ab93fa53397d84c",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 103,
@@ -668,7 +668,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 193 credential-shaped string(s), every one from a keyword or entropy heuristic (Basic Auth Credentials, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at .specs/development/context.md:204; Basic Auth Credentials at .specs/quality/tests.md:110; Basic Auth Credentials at .specs/quality/tests.md:161; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:5; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:6; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:7; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:8; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:9; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:10; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:11; \u2026and 183 more matches",
+     "detail": "detect-secrets matched 193 credential-shaped string(s), every one from a keyword or entropy heuristic (Basic Auth Credentials, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at .specs/development/context.md:204; Basic Auth Credentials at .specs/quality/tests.md:121; Basic Auth Credentials at .specs/quality/tests.md:172; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:5; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:6; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:7; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:8; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:9; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:10; Hex High Entropy String at src/__tests__/__snapshots__/specCore.test.ts.snap:11; \u2026and 183 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-19",
+     "detail": "last commit 2 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -717,7 +717,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 34.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 35.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -1296,6 +1296,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ed3be016806902550aa2b83bd5f455aae0e33c45fa9e5cdb2516bf7f255c2146",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

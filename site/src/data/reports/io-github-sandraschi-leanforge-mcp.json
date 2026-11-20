@@ -2,7 +2,7 @@
  "name": "io.github.sandraschi/leanforge-mcp",
  "version": "0.1.1",
  "slug": "io-github-sandraschi-leanforge-mcp",
- "scanned_at": "2026-11-19T03:08:58+00:00",
+ "scanned_at": "2026-11-20T02:58:03+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -226,7 +226,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 26 day(s) before 2026-11-19",
+     "detail": "last commit 27 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,7 +250,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 51 days (by releases), last release 31 day(s) ago",
+     "detail": "median release gap 51 days (by releases), last release 32 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -292,7 +292,7 @@
    "reason": "1 vulnerability could not be placed in `03` \u00a76's table and is listed but not scored; 1 dependency file (webapp/frontend/bun.lock) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 1 lockfile that was",
    "assessed_weight": "0.49",
    "fault": null,
-   "evidence_omitted": 39,
+   "evidence_omitted": 40,
    "unmeasured_faults": [
     "project"
    ],
@@ -802,6 +802,18 @@
      "deducts": true
     },
     {
+     "label": "mcp 1.27.2 \u2014 GHSA-qx49-fqc8-xw99",
+     "detail": "transitive, CVSS 7.5, fixed in 1.30.0",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GHSA-qx49-fqc8-xw99",
+     "finding": "mcp:GHSA-qx49-fqc8-xw99",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
      "label": "pillow 12.3.0 \u2014 PYSEC-2026-4328",
      "detail": "transitive, CVSS 7.5, fixed in 13.0.0",
      "path": "uv.lock",
@@ -884,18 +896,6 @@
      "severity": "high",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "pyjwt 2.13.0 \u2014 PYSEC-2026-4150",
-     "detail": "transitive, CVSS 7.4, fixed in 2.14.0",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/PYSEC-2026-4150",
-     "finding": "pyjwt:PYSEC-2026-4150",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
     }
    ]
   },
@@ -973,6 +973,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "2e4dfb54db5f0c19d12ba43ec674d937e7d983e461bf1ae500dddf3fab54ed4e",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

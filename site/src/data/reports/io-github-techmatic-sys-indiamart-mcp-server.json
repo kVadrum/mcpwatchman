@@ -2,7 +2,7 @@
  "name": "io.github.Techmatic-sys/indiamart-mcp-server",
  "version": "1.1.0",
  "slug": "io-github-techmatic-sys-indiamart-mcp-server",
- "scanned_at": "2026-11-19T02:52:42+00:00",
+ "scanned_at": "2026-11-20T02:44:46+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 227 day(s) before 2026-11-19",
+     "detail": "last commit 228 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 58.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 59.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -286,6 +286,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0cee8d22a1ce0ef5038095d68d38d5075a7fc690ad29dbd02df92e957ba8e008",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

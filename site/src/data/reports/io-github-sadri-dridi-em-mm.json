@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/em-mm",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-em-mm",
- "scanned_at": "2026-11-19T03:07:10+00:00",
+ "scanned_at": "2026-11-20T02:56:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 57 day(s) before 2026-11-19",
+     "detail": "last commit 58 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "dca8859111f22041c6bf60fba78588953f9f7c6c558045e7c9d78e1a07f1de79",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

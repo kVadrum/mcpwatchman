@@ -2,7 +2,7 @@
  "name": "ai.outlit/outlit",
  "version": "1.1.0",
  "slug": "ai-outlit-outlit",
- "scanned_at": "2026-11-19T02:42:16+00:00",
+ "scanned_at": "2026-11-20T02:36:10+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "aefebdda78fb48e12ede80cfc6b62abff00cb3cd",
+ "repository_commit": "9d63d1860b31439f858260a3aa5bdfe61ab6d030",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 213,
+ "files_scanned": 218,
  "files_pruned": 0,
  "axes": {
   "code_safety": {
@@ -69,7 +69,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "packages/cli/src/commands/customers/get.ts",
-     "line": 73,
+     "line": 74,
      "excerpt": "  const options: Record<string, Record<string, unknown>> = {}\n  for (const section of paged) {\n    options[section] = {\n      ...(usage.includes(section) && weeks !== undefined ? { weeks } : {}),\n      ...(usage.includes(section) && args.weekly ? { weekly: true } : {}),",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -177,7 +177,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 54 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Basic Auth Credentials, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at .agents/skills/typescript-advanced-types/references/details.md:274; Secret Keyword at docs/cli/configuration.mdx:37; Hex High Entropy String at docs/openapi.json:28208; Base64 High Entropy String at docs/outlit.js:8; Hex High Entropy String at docs/skill-source.json:3; Hex High Entropy String at docs/skill-source.json:5; Hex High Entropy String at docs/skill-source.json:6; Hex High Entropy String at docs/skill-source.json:7; Secret Keyword at docs/superpowers/plans/2026-04-30-cli-source-listing.md:619; Secret Keyword at docs/superpowers/plans/2026-04-30-cli-source-listing.md:620; \u2026and 44 more matches",
+     "detail": "detect-secrets matched 55 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Basic Auth Credentials, Hex High Entropy String, Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at .agents/skills/typescript-advanced-types/references/details.md:274; Secret Keyword at docs/cli/configuration.mdx:37; Hex High Entropy String at docs/openapi.json:28208; Base64 High Entropy String at docs/outlit.js:8; Hex High Entropy String at docs/skill-source.json:3; Hex High Entropy String at docs/skill-source.json:5; Hex High Entropy String at docs/skill-source.json:6; Hex High Entropy String at docs/skill-source.json:7; Secret Keyword at docs/superpowers/plans/2026-04-30-cli-source-listing.md:619; Secret Keyword at docs/superpowers/plans/2026-04-30-cli-source-listing.md:620; \u2026and 45 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -214,7 +214,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 5 day(s) before 2026-11-19",
+     "detail": "last commit 6 day(s) before 2026-11-20",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -226,7 +226,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 23.7 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 24.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -238,7 +238,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 8 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 9 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -963,6 +963,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5a0f2b9da3b2b73d44f922ed73e1ef079927db2636e3c44310e5d08bb790d018",
- "checked_at": "2026-11-19T02:09:09+00:00",
+ "checked_at": "2026-11-20T02:04:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }
