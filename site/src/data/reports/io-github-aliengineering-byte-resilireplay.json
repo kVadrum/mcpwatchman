@@ -2,7 +2,7 @@
  "name": "io.github.aliengineering-byte/resilireplay",
  "version": "0.7.1",
  "slug": "io-github-aliengineering-byte-resilireplay",
- "scanned_at": "2026-11-20T02:45:21+00:00",
+ "scanned_at": "2026-11-21T02:51:45+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 77 day(s) before 2026-11-20",
+     "detail": "last commit 78 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 77 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 78 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:45:27+00:00",
+  "fetched_at": "2026-11-21T02:51:52+00:00",
   "system": "npm",
   "package": "resilireplay",
   "version": "0.7.1",
@@ -266,6 +266,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "b3f30064f7af26dbee624d1d8f1840f885e457d9b876e1c4572b7bef2218083c",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

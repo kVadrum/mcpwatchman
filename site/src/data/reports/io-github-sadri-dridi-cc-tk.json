@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/cc-tk",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-cc-tk",
- "scanned_at": "2026-11-20T02:56:11+00:00",
+ "scanned_at": "2026-11-21T03:03:53+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 58 day(s) before 2026-11-20",
+     "detail": "last commit 59 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d9bf3df30c83fc273d3b4bafd00ac440f30d2e676fd09772eec8cb7b03f702cb",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

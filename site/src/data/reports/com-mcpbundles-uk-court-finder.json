@@ -2,7 +2,7 @@
  "name": "com.mcpbundles/uk-court-finder",
  "version": "1.0.0",
  "slug": "com-mcpbundles-uk-court-finder",
- "scanned_at": "2026-11-20T02:39:36+00:00",
+ "scanned_at": "2026-11-21T02:45:12+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 31 day(s) before 2026-11-20",
+     "detail": "last commit 32 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 24.4 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 25.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 223 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 224 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -248,6 +248,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "4d605c7b1856cc5f2ebb7e224ba56daceb3b0ff5280e5067966183e831e9558c",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "com.findmetool/lookup",
  "version": "1.0.0",
  "slug": "com-findmetool-lookup",
- "scanned_at": "2026-11-20T02:39:11+00:00",
+ "scanned_at": "2026-11-21T02:44:45+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "79d39cfdc1beda3acc4de912effabc07e48df11aba78056101ecf026275bb947",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

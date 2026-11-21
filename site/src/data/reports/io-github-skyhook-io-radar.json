@@ -1,8 +1,8 @@
 {
  "name": "io.github.skyhook-io/radar",
- "version": "1.21.0",
+ "version": "1.21.1",
  "slug": "io-github-skyhook-io-radar",
- "scanned_at": "2026-11-20T02:17:50+00:00",
+ "scanned_at": "2026-11-21T02:22:14+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "60bde53d0b7a33514610a93bb1153094c9665325",
+ "repository_commit": "827ed0bf399f8a42d3b75f5152da8c670021fc73",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 3261,
+ "files_scanned": 3270,
  "files_pruned": 2,
  "axes": {
   "code_safety": {
@@ -671,7 +671,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "GitHub Token at internal/helm/manifest_redaction_test.go:49; AWS Access Key at internal/server/trivy_reports_access_test.go:27; AWS Access Key at pkg/ai/context/redact_auth_test.go:25; AWS Access Key at pkg/ai/context/redact_auth_test.go:26; GitHub Token at pkg/ai/context/redact_test.go:20; AWS Access Key at pkg/ai/context/redact_test.go:28; GitHub Token at pkg/ai/context/redact_test.go:160; Private Key at web/src/components/diagnose/InvestigationResourceEvidence.test.tsx:26; \u2026and 515 more matches",
+     "detail": "GitHub Token at internal/helm/manifest_redaction_test.go:49; AWS Access Key at internal/server/trivy_reports_access_test.go:27; AWS Access Key at pkg/ai/context/redact_auth_test.go:25; AWS Access Key at pkg/ai/context/redact_auth_test.go:26; GitHub Token at pkg/ai/context/redact_test.go:20; AWS Access Key at pkg/ai/context/redact_test.go:28; GitHub Token at pkg/ai/context/redact_test.go:160; Private Key at web/src/components/diagnose/InvestigationResourceEvidence.test.tsx:26; \u2026and 521 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-20",
+     "detail": "last commit 1 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -720,7 +720,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 7.6 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 8.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 7 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -904,7 +904,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "aa31fe453e64f27068e005e0259f26422801a4d8e2194babd7d35bed3ac896a3",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "registry_entry_hash": "d46e0f25f37e650dafee4f3d0fffec61174e1c41dae330cd8f8fdede2236748c",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

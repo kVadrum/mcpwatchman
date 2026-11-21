@@ -2,7 +2,7 @@
  "name": "com.whichmadvisor/site",
  "version": "1.0.1",
  "slug": "com-whichmadvisor-site",
- "scanned_at": "2026-11-20T02:40:33+00:00",
+ "scanned_at": "2026-11-21T02:46:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9eac0c43115703415a72eca052e89b9e2d7a78daa06150d306fc0f61e92dcfc1",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

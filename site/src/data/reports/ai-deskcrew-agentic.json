@@ -2,7 +2,7 @@
  "name": "ai.deskcrew/agentic",
  "version": "1.0.0",
  "slug": "ai-deskcrew-agentic",
- "scanned_at": "2026-11-20T02:24:23+00:00",
+ "scanned_at": "2026-11-21T02:30:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "1130b5617b38c3963dd93e28f78635e1cf62f9238f47f23d03bc866d002f0781",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.shigechika/gws-mcp",
  "version": "0.22.5-mcp.38",
  "slug": "io-github-shigechika-gws-mcp",
- "scanned_at": "2026-11-20T02:58:33+00:00",
+ "scanned_at": "2026-11-21T03:06:16+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 50 day(s) before 2026-11-20",
+     "detail": "last commit 51 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 50 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 51 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -565,6 +565,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0c42bbfbef1bbd1ee0180bdd37d8ae8fba79e9f29e51fc0accdf48ce4ea04fc0",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

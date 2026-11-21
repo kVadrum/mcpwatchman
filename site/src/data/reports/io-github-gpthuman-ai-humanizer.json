@@ -2,7 +2,7 @@
  "name": "io.github.GPTHuman-ai/humanizer",
  "version": "1.0.4",
  "slug": "io-github-gpthuman-ai-humanizer",
- "scanned_at": "2026-11-20T02:43:02+00:00",
+ "scanned_at": "2026-11-21T02:48:53+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 28 day(s) before 2026-11-20",
+     "detail": "last commit 2 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 28 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
+     "detail": "released 29 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:43:05+00:00",
+  "fetched_at": "2026-11-21T02:48:58+00:00",
   "system": "npm",
   "package": "@gpthuman/mcp-server",
   "version": "1.0.4",
@@ -267,6 +267,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "7156f405a3fab9695914e0914a150ba2e4936fbbe844e98f98424307e1bcb0ef",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

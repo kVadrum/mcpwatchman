@@ -2,7 +2,7 @@
  "name": "io.github.geeks-accelerator/inbed",
  "version": "1.0.3",
  "slug": "io-github-geeks-accelerator-inbed",
- "scanned_at": "2026-11-20T02:48:11+00:00",
+ "scanned_at": "2026-11-21T02:54:58+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "25806509efb16d3aa9badc1ef72282782a48313a",
+ "repository_commit": "c016b452aa41557b2e00ef5bfd8262623739ba14",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 263,
+ "files_scanned": 272,
  "files_pruned": 0,
  "axes": {
   "code_safety": {
@@ -149,6 +149,18 @@
      "finding": "mcp-js-ssrf-nonliteral-url",
      "severity": "medium",
      "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "src/app/admin/agents/page.tsx",
+     "line": 37,
+     "excerpt": "    const adminKey = localStorage.getItem('admin_key');\n    if (!adminKey) { router.push('/admin/login'); return null; }\n    const res = await fetch(path, { ...init, headers: { 'x-admin-key': adminKey } });\n    if (res.status === 401) { localStorage.removeItem('admin_key'); router.push('/admin/login'); return null; }\n    if (!res.ok) throw new Error(`${res.status}`);",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": "2026-11-21",
      "deducts": true
     },
     {
@@ -313,7 +325,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-20",
+     "detail": "last commit 1 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -461,7 +473,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:48:17+00:00",
+  "fetched_at": "2026-11-21T02:55:06+00:00",
   "system": "npm",
   "package": "mcp-inbed-dating",
   "version": "1.0.3",
@@ -474,6 +486,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "30fe9d6659ee24e17ac194ceabfd05b61f85d41dd31cc8a2997ef1a79d0dcc00",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

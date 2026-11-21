@@ -2,7 +2,7 @@
  "name": "com.angelsforagents/funding",
  "version": "1.1.0",
  "slug": "com-angelsforagents-funding",
- "scanned_at": "2026-11-20T02:37:55+00:00",
+ "scanned_at": "2026-11-21T02:43:25+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 94 day(s) before 2026-11-20",
+     "detail": "last commit 95 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -398,6 +398,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e588b20ffe8cd4178a847e1827722b7e7748680dd12957fd3060864c5e39bdef",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

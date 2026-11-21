@@ -2,7 +2,7 @@
  "name": "io.prisma/mcp",
  "version": "1.1.0",
  "slug": "io-prisma-mcp",
- "scanned_at": "2026-11-20T03:00:27+00:00",
+ "scanned_at": "2026-11-21T03:08:36+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "b1a053c41eb0e84667fa1af5afd747043c1bdf30630fc6af353e50f5e4a3233e",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

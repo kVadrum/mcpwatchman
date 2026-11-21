@@ -2,7 +2,7 @@
  "name": "io.github.bytedance/mcp-server-search",
  "version": "1.0.0",
  "slug": "io-github-bytedance-mcp-server-search",
- "scanned_at": "2026-11-20T02:46:12+00:00",
+ "scanned_at": "2026-11-21T02:52:54+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 42 day(s) before 2026-11-20",
+     "detail": "last commit 43 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 45 issue(s) in the last 6 months: 57.4 day(s) to first maintainer comment",
+     "detail": "median over 45 issue(s) in the last 6 months: 58.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5f4b05ecf78fe5071502a4c2f1f1bd8df357a97830815af049c3c0f749c66587",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

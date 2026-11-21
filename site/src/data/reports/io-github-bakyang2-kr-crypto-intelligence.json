@@ -2,7 +2,7 @@
  "name": "io.github.bakyang2/kr-crypto-intelligence",
  "version": "1.6.0",
  "slug": "io-github-bakyang2-kr-crypto-intelligence",
- "scanned_at": "2026-11-20T02:45:48+00:00",
+ "scanned_at": "2026-11-21T02:52:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 108 day(s) before 2026-11-20",
+     "detail": "last commit 109 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 77.0 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 78.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -274,6 +274,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "2415302bbed1bed9229d34e11a7a8ab727415a37932e87f977f571dc653ae00d",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

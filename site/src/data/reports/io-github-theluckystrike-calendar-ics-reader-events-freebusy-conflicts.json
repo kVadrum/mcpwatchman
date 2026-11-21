@@ -2,7 +2,7 @@
  "name": "io.github.theluckystrike/calendar-ics-reader-events-freebusy-conflicts",
  "version": "0.23.0",
  "slug": "io-github-theluckystrike-calendar-ics-reader-events-freebusy-conflicts",
- "scanned_at": "2026-11-20T02:59:03+00:00",
+ "scanned_at": "2026-11-21T03:06:58+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-20",
+     "detail": "last commit 4 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -155,7 +155,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 25 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 26 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -275,6 +275,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "29c2f707310c04cd0c7b707af5dacb884b6e8e6cb6e723d350c2aa5b3fb3a0f9",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

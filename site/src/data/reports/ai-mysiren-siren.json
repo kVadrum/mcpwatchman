@@ -1,8 +1,8 @@
 {
  "name": "ai.mysiren/siren",
- "version": "1.1.0",
+ "version": "1.1.1",
  "slug": "ai-mysiren-siren",
- "scanned_at": "2026-11-20T02:35:29+00:00",
+ "scanned_at": "2026-11-21T02:23:50+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 48 day(s) before 2026-11-20",
+     "detail": "last commit 49 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,7 +249,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "0c3aad7939523338f6cfcbd3f8097c9043b052dc4a43356af4f43576fe3b11f1",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "registry_entry_hash": "1a815e9ca6921cddc101cafe2df78d351f5a5ffa1916eeb44e01207cb147490d",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

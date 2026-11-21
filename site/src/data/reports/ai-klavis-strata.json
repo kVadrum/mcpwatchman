@@ -2,7 +2,7 @@
  "name": "ai.klavis/strata",
  "version": "1.0.0",
  "slug": "ai-klavis-strata",
- "scanned_at": "2026-11-20T02:30:31+00:00",
+ "scanned_at": "2026-11-21T02:35:34+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 15 day(s) before 2026-11-20",
+     "detail": "last commit 16 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -717,7 +717,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 12 issue(s) in the last 6 months: 87.7 day(s) to first maintainer comment",
+     "detail": "median over 12 issue(s) in the last 6 months: 88.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 295 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 296 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -771,7 +771,7 @@
    "reason": "65 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored; the dependencies in 63 requirements files (examples/agno-klavis/requirements.txt, examples/claude-klavis/python/requirements.txt, examples/crewai-klavis/python/requirements.txt) were not measured \u2014 they do not pin every requirement to one exact version, or could not be read whole \u2014 so the score covers the 65 lockfiles that were",
    "assessed_weight": "0.49",
    "fault": null,
-   "evidence_omitted": 4576,
+   "evidence_omitted": 4577,
    "unmeasured_faults": [
     "project",
     "publisher"
@@ -1455,6 +1455,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5a436e7e5be6ac727ccc24b3a8a3e8718d8bff4c8bc13febb23f12d4bc5c6ba1",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

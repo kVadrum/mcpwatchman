@@ -2,7 +2,7 @@
  "name": "io.github.ECD5A/tkach-security",
  "version": "0.1.2",
  "slug": "io-github-ecd5a-tkach-security",
- "scanned_at": "2026-11-20T02:42:34+00:00",
+ "scanned_at": "2026-11-21T02:48:23+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 62 day(s) before 2026-11-20",
+     "detail": "last commit 63 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 62 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 63 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -469,6 +469,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "7055b319ec5d2f19b93b66a615d65d0fd8dfc80b63deae611777510a6b07ca9f",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

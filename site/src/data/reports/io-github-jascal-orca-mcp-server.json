@@ -2,7 +2,7 @@
  "name": "io.github.jascal/orca-mcp-server",
  "version": "0.1.30",
  "slug": "io-github-jascal-orca-mcp-server",
- "scanned_at": "2026-11-20T02:49:24+00:00",
+ "scanned_at": "2026-11-21T02:56:20+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 170 day(s) before 2026-11-20",
+     "detail": "last commit 171 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 170 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 171 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -278,7 +278,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:49:28+00:00",
+  "fetched_at": "2026-11-21T02:56:25+00:00",
   "system": "npm",
   "package": "@orcalang/orca-mcp-server",
   "version": "0.1.30",
@@ -291,6 +291,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "865db481a23bf6508dd37e813507eea0b358fff10f4cc40b44d611b3ecd40db4",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

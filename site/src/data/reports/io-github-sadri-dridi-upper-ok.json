@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/upper-ok",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-upper-ok",
- "scanned_at": "2026-11-20T02:57:47+00:00",
+ "scanned_at": "2026-11-21T03:05:30+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 58 day(s) before 2026-11-20",
+     "detail": "last commit 59 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "7fae9dfa455250054806a8251350685a34b4a4c2f2f8337474583014fda42a53",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

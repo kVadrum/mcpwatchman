@@ -2,7 +2,7 @@
  "name": "ai.calendarmcp/server",
  "version": "1.0.0",
  "slug": "ai-calendarmcp-server",
- "scanned_at": "2026-11-20T02:20:21+00:00",
+ "scanned_at": "2026-11-21T02:25:59+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 166 day(s) before 2026-11-20",
+     "detail": "last commit 167 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 50.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 51.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "f8ab5b34895a63e2f5ad83a7dc78f7911260b954488d9a7e5e1791d1895738b9",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

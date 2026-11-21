@@ -2,7 +2,7 @@
  "name": "com.hankookilbo.mcp/hankookilbo-mcp",
  "version": "1.0.1",
  "slug": "com-hankookilbo-mcp-hankookilbo-mcp",
- "scanned_at": "2026-11-20T02:39:11+00:00",
+ "scanned_at": "2026-11-21T02:44:43+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 112 day(s) before 2026-11-20",
+     "detail": "last commit 113 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,6 +249,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "7b6935dc7dd860b11820cea48980e58d2fbd7456b6d942d6df3124f104d115e8",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

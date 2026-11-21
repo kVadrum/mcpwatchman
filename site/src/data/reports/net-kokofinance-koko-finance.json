@@ -2,7 +2,7 @@
  "name": "net.kokofinance/koko-finance",
  "version": "1.1.0",
  "slug": "net-kokofinance-koko-finance",
- "scanned_at": "2026-11-20T03:00:28+00:00",
+ "scanned_at": "2026-11-21T03:08:37+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 44 day(s) before 2026-11-20",
+     "detail": "last commit 45 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d05b3ee974acf8c5bacb54aea78b91f6b5bbb06771ecd362993ef31e9065a848",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

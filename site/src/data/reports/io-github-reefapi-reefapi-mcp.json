@@ -2,7 +2,7 @@
  "name": "io.github.reefapi/reefapi-mcp",
  "version": "1.27.2",
  "slug": "io-github-reefapi-reefapi-mcp",
- "scanned_at": "2026-11-20T02:54:56+00:00",
+ "scanned_at": "2026-11-21T03:02:32+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d229d7f7c4383a03e19bb88d8f00ce67b77451c76cd2a76c9d078124348d8d40",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

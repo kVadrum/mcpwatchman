@@ -2,7 +2,7 @@
  "name": "io.github.sudomock/mcp",
  "version": "3.12.1",
  "slug": "io-github-sudomock-mcp",
- "scanned_at": "2026-11-20T02:58:52+00:00",
+ "scanned_at": "2026-11-21T03:06:43+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -143,7 +143,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-20",
+     "detail": "last commit 4 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -167,7 +167,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 7 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
+     "detail": "released 8 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -291,7 +291,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:58:56+00:00",
+  "fetched_at": "2026-11-21T03:06:48+00:00",
   "system": "npm",
   "package": "@sudomock/mcp",
   "version": "3.12.1",
@@ -304,6 +304,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "db2ee8f80d49a1bfc51026059fe8599ae3689d404f44958dd67754c9e7f49b4e",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

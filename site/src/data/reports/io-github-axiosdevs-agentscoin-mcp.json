@@ -2,7 +2,7 @@
  "name": "io.github.axiosdevs/agentscoin-mcp",
  "version": "1.1.0",
  "slug": "io-github-axiosdevs-agentscoin-mcp",
- "scanned_at": "2026-11-20T02:45:45+00:00",
+ "scanned_at": "2026-11-21T02:52:11+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:45:47+00:00",
+  "fetched_at": "2026-11-21T02:52:14+00:00",
   "system": "npm",
   "package": "agentscoin-mcp",
   "version": "1.1.0",
@@ -279,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "e52d6b11ccc5eee23597ae1a4d5beeaecd6ad9b2364ed15cf8cda55a27deef3f",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

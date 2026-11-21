@@ -2,7 +2,7 @@
  "name": "com.siftivo/siftivo",
  "version": "0.2.0",
  "slug": "com-siftivo-siftivo",
- "scanned_at": "2026-11-20T02:40:21+00:00",
+ "scanned_at": "2026-11-21T02:46:05+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "b2e3f0f19194a61035e2405c92518781282977d98b5e7010469258a9580ca5a4",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }

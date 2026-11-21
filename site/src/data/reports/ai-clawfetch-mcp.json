@@ -2,7 +2,7 @@
  "name": "ai.clawfetch/mcp",
  "version": "0.4.0",
  "slug": "ai-clawfetch-mcp",
- "scanned_at": "2026-11-20T02:21:53+00:00",
+ "scanned_at": "2026-11-21T02:27:34+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -107,7 +107,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 69,
+   "score": 62,
    "reason": "",
    "assessed_weight": "0.9",
    "fault": null,
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 30 day(s) before 2026-11-20",
+     "detail": "last commit 31 day(s) before 2026-11-21",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 5 issue(s) in the last 6 months: 67.2 day(s) to first maintainer comment",
+     "detail": "median over 5 issue(s) in the last 6 months: 68.2 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 30 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "median release gap 26 days (by releases), last release 31 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -266,7 +266,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-20T02:22:01+00:00",
+  "fetched_at": "2026-11-21T02:27:41+00:00",
   "system": "npm",
   "package": "@clawfetch/mcp",
   "version": "0.4.0",
@@ -279,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "f73811b8224e69163f29efdf3e385ec1c26c7c06ed7ceae1d748c76552d8b573",
- "checked_at": "2026-11-20T02:04:52+00:00",
+ "checked_at": "2026-11-21T02:09:18+00:00",
  "findings_tracked_since": "2026-10-10"
 }
