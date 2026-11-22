@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/transparencia_indicadores_pj-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-transparencia-indicadores-pj-mcp",
- "scanned_at": "2026-11-21T02:58:43+00:00",
+ "scanned_at": "2026-11-22T02:54:49+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 98 day(s) before 2026-11-21",
+     "detail": "last commit 99 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "f476293780b7dbb5b5854e2865fbc0a8e98e4c5bc4e681f5f91d7592351c56ad",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

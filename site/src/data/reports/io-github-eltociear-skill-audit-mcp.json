@@ -2,7 +2,7 @@
  "name": "io.github.eltociear/skill-audit-mcp",
  "version": "1.2.1",
  "slug": "io-github-eltociear-skill-audit-mcp",
- "scanned_at": "2026-11-21T02:24:36+00:00",
+ "scanned_at": "2026-11-22T02:20:50+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-21",
+     "detail": "last commit 3 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 55.2 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 56.2 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 11 days (by releases), last release 194 day(s) ago",
+     "detail": "median release gap 11 days (by releases), last release 195 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -276,6 +276,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "cab44138cadd3898ede7330b9485d71b19185b58254a9db1a218e6b671cebcb8",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

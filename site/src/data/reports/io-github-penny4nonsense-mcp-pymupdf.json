@@ -2,7 +2,7 @@
  "name": "io.github.penny4nonsense/mcp-pymupdf",
  "version": "0.1.1",
  "slug": "io-github-penny4nonsense-mcp-pymupdf",
- "scanned_at": "2026-11-21T03:00:52+00:00",
+ "scanned_at": "2026-11-22T02:56:37+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -116,7 +116,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 152 day(s) before 2026-11-21",
+     "detail": "last commit 153 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -865,7 +865,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-21T03:00:56+00:00",
+  "fetched_at": "2026-11-22T02:56:42+00:00",
   "system": "PyPI",
   "package": "mcp-pymupdf",
   "version": "0.1.1",
@@ -878,6 +878,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "ac4ad4f180465448c5be1063d2842c641ec57af73c20bdb5a08ea04b3f19dbc3",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

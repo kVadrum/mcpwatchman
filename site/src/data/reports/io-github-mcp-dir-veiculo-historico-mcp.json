@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/veiculo_historico-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-veiculo-historico-mcp",
- "scanned_at": "2026-11-21T02:58:49+00:00",
+ "scanned_at": "2026-11-22T02:54:53+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 98 day(s) before 2026-11-21",
+     "detail": "last commit 99 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "adfbb4469d7c6be7297d6e76b58b07161145c414f84a17bff9b16e8e281fc572",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "ai.dinglebear/runifi",
  "version": "0.2.5",
  "slug": "ai-dinglebear-runifi",
- "scanned_at": "2026-11-21T02:30:27+00:00",
+ "scanned_at": "2026-11-22T02:26:08+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 51 day(s) before 2026-11-21",
+     "detail": "last commit 52 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 116 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 117 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -292,7 +292,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-21T02:30:31+00:00",
+  "fetched_at": "2026-11-22T02:26:10+00:00",
   "system": "npm",
   "package": "@dinglebear/runifi",
   "version": "0.2.5",
@@ -305,6 +305,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "968916b7afbc5c5e34019e928627e35e094dc3854893fd394b12bd54aaf2911c",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

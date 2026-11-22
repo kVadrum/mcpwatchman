@@ -2,7 +2,7 @@
  "name": "ai.lucasandersen/mlp-tax",
  "version": "1.0.0",
  "slug": "ai-lucasandersen-mlp-tax",
- "scanned_at": "2026-11-21T02:39:17+00:00",
+ "scanned_at": "2026-11-22T02:38:28+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "1d6b476b9422388512cf171499f3dba640c5ae7a61fb7f674daee774bb36f905",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

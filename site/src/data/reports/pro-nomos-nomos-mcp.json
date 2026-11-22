@@ -1,16 +1,16 @@
 {
  "name": "pro.nomos/nomos-mcp",
- "version": "1.0.0",
+ "version": "1.0.1",
  "slug": "pro-nomos-nomos-mcp",
- "scanned_at": "2026-11-21T03:08:43+00:00",
+ "scanned_at": "2026-11-22T02:19:12+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
- "repository_url": "https://github.com/Nomos-Tech/nomos-mcp",
+ "repository_url": "",
  "package": "",
- "source_state": "unreachable",
- "source_subject": "repository",
- "source_reason": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+ "source_state": "not_declared",
+ "source_subject": "",
+ "source_reason": "this server declares no source we know how to fetch",
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": null,
@@ -23,7 +23,7 @@
   "code_safety": {
    "axis": "code_safety",
    "score": null,
-   "reason": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "reason": "this server declares no source we know how to fetch",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -94,7 +94,7 @@
   "maintenance": {
    "axis": "maintenance",
    "score": null,
-   "reason": "this server's declared repository could not be read through the GitHub API, so `03` \u00a75's maintenance signals were not retrieved \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "reason": "this server declares no repository, so `03` \u00a75's forge signals have nothing to read",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -168,7 +168,7 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": null,
-   "reason": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "reason": "this server declares no source we know how to fetch",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -178,7 +178,7 @@
   "transparency": {
    "axis": "transparency",
    "score": null,
-   "reason": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "reason": "this server declares no source we know how to fetch",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -188,7 +188,7 @@
    "evidence": [
     {
      "label": "license",
-     "detail": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "detail": "this server declares no source we know how to fetch",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -200,7 +200,7 @@
     },
     {
      "label": "readme_quality",
-     "detail": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "detail": "this server declares no source we know how to fetch",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -212,7 +212,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "detail": "this server declares no source we know how to fetch",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -224,7 +224,7 @@
     },
     {
      "label": "changelog",
-     "detail": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "detail": "this server declares no source we know how to fetch",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -236,7 +236,7 @@
     },
     {
      "label": "security_contact",
-     "detail": "the repository this server declares (https://github.com/Nomos-Tech/nomos-mcp) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
+     "detail": "this server declares no source we know how to fetch",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,7 +250,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "bcc980eb03049358e1eb5aeb06364cb34fec4164a25e029ade0e2bd1d7aab74b",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "registry_entry_hash": "e313e0f4a4605dac1c0747da5659a8a0db5cdd208ca13655f22e5995ff42259f",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

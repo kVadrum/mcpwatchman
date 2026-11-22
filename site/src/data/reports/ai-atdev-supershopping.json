@@ -2,7 +2,7 @@
  "name": "ai.atdev/supershopping",
  "version": "1.0.0",
  "slug": "ai-atdev-supershopping",
- "scanned_at": "2026-11-21T02:25:53+00:00",
+ "scanned_at": "2026-11-22T02:21:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "932bf7c72db1e95cd1a49a9d233b6f6827a3876976233ca85dbc356f781a46b7",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

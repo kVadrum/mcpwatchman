@@ -2,7 +2,7 @@
  "name": "com.sarabalawson/afromorphism",
  "version": "1.0.0",
  "slug": "com-sarabalawson-afromorphism",
- "scanned_at": "2026-11-21T02:45:59+00:00",
+ "scanned_at": "2026-11-22T02:44:30+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "780a1cfc4a3665e0d8195611ea097a3ac43937e3ce1160e44fcf0a86faab8f9d",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

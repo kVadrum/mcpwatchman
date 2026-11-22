@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/tribunal_tjsp_pedido_criminal-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-tribunal-tjsp-pedido-criminal-mcp",
- "scanned_at": "2026-11-21T02:58:46+00:00",
+ "scanned_at": "2026-11-22T02:54:51+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 94 day(s) before 2026-11-21",
+     "detail": "last commit 95 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "22a3a9431635988236985c7b6909a64267aeecfd44db65b13e8743e109bacf7e",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

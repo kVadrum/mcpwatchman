@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/cc-lv",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-cc-lv",
- "scanned_at": "2026-11-21T03:03:45+00:00",
+ "scanned_at": "2026-11-22T02:59:14+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 59 day(s) before 2026-11-21",
+     "detail": "last commit 60 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "88db2e1d8fe7aaf1ac898c6baeea098e05e97802e52a62b37f23624a25d0e40f",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

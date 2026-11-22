@@ -2,7 +2,7 @@
  "name": "io.github.yeyuan98/biomcp-ts",
  "version": "1.4.3",
  "slug": "io-github-yeyuan98-biomcp-ts",
- "scanned_at": "2026-11-21T03:08:19+00:00",
+ "scanned_at": "2026-11-22T03:03:16+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 26 day(s) before 2026-11-21",
+     "detail": "last commit 27 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 26 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 27 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -858,7 +858,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-21T03:08:29+00:00",
+  "fetched_at": "2026-11-22T03:03:24+00:00",
   "system": "npm",
   "package": "biomcp",
   "version": "1.4.3",
@@ -871,6 +871,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "cef3caab84a318b88390894cd2c513ae743e9513e4812ff01f24a0282603d942",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

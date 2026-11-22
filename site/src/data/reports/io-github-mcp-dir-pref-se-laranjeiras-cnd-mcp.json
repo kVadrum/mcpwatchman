@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/pref_se_laranjeiras_cnd-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-pref-se-laranjeiras-cnd-mcp",
- "scanned_at": "2026-11-21T02:58:32+00:00",
+ "scanned_at": "2026-11-22T02:54:40+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 93 day(s) before 2026-11-21",
+     "detail": "last commit 94 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ef5d6258d4796a248840d0e6608ec803c34ad5701caf62251080b8fd2161c371",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.mharnett/reddit-ads",
  "version": "1.0.1",
  "slug": "io-github-mharnett-reddit-ads",
- "scanned_at": "2026-11-21T02:58:51+00:00",
+ "scanned_at": "2026-11-22T02:54:55+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "64aae1d438cc67ca6ed2c5917f93774fc9e47100",
+ "repository_commit": "d34a62c32ea2beb1931f2ead3cb3b93fc8446a29",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 12,
+ "files_scanned": 16,
  "files_pruned": 0,
  "axes": {
   "code_safety": {
@@ -33,7 +33,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "src/resilience.ts",
-     "line": 67,
+     "line": 73,
      "excerpt": "      for (const key of [\"items\", \"results\", \"data\", \"rows\", \"tags\", \"triggers\", \"variables\"]) {\n        if (Array.isArray(obj[key]) && obj[key].length > 1) {\n          obj[key] = obj[key].slice(0, Math.max(1, Math.floor(obj[key].length * 0.5)));\n          if (\"count\" in obj) obj.count = obj[key].length;\n          if (\"row_count\" in obj) obj.row_count = obj[key].length;",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 7 day(s) before 2026-11-21",
+     "detail": "last commit 8 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 76 days (by releases), last release 79 day(s) ago",
+     "detail": "median release gap 76 days (by releases), last release 80 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -278,7 +278,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-21T02:58:56+00:00",
+  "fetched_at": "2026-11-22T02:54:59+00:00",
   "system": "npm",
   "package": "mcp-reddit-ads",
   "version": "1.0.1",
@@ -328,6 +328,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "111cb1fbb92317fa26d59493afb22a1b9dff8eb1f2911842affcaf5a8b88d452",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

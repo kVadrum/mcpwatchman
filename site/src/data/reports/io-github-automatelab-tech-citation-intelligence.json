@@ -2,7 +2,7 @@
  "name": "io.github.AutomateLab-tech/citation-intelligence",
  "version": "0.12.1",
  "slug": "io-github-automatelab-tech-citation-intelligence",
- "scanned_at": "2026-11-21T02:47:35+00:00",
+ "scanned_at": "2026-11-22T02:45:48+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 19 day(s) before 2026-11-21",
+     "detail": "last commit 20 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 11.6 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 12.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 141 days (by releases), last release 39 day(s) ago",
+     "detail": "median release gap 141 days (by releases), last release 40 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -292,7 +292,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-21T02:47:40+00:00",
+  "fetched_at": "2026-11-22T02:45:52+00:00",
   "system": "npm",
   "package": "@automatelab/citation-intelligence",
   "version": "0.12.1",
@@ -762,6 +762,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "c23109cf1155520ba8e7be16c951b7819e8efa9a425039e766d0a4f81981d951",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

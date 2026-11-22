@@ -2,7 +2,7 @@
  "name": "ai.latticenet/latticenet",
  "version": "1.0.0",
  "slug": "ai-latticenet-latticenet",
- "scanned_at": "2026-11-21T02:39:06+00:00",
+ "scanned_at": "2026-11-22T02:38:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -94,7 +94,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 56,
+   "score": 43,
    "reason": "",
    "assessed_weight": "0.7",
    "fault": null,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 90 day(s) before 2026-11-21",
+     "detail": "last commit 91 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 36.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 37.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "bus_factor",
-     "detail": "sole maintainer",
+     "detail": "sole maintainer, and no commit in over 90 days",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,6 +249,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "92d46d7341682c70edee1ec5cef1c74da9c11cfb796c189a979413591a6f10f5",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

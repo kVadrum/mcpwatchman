@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/redirect-hop-ok",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-redirect-hop-ok",
- "scanned_at": "2026-11-21T03:04:50+00:00",
+ "scanned_at": "2026-11-22T03:00:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 59 day(s) before 2026-11-21",
+     "detail": "last commit 60 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "b6b9903ebcdf22ea68067f93e4f36eaeb43dc43c208224b493397456f56ca815",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

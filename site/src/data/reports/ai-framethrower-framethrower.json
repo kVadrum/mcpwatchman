@@ -2,7 +2,7 @@
  "name": "ai.framethrower/framethrower",
  "version": "1.0.0",
  "slug": "ai-framethrower-framethrower",
- "scanned_at": "2026-11-21T02:33:31+00:00",
+ "scanned_at": "2026-11-22T02:29:02+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 101 day(s) before 2026-11-21",
+     "detail": "last commit 102 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 39.9 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 40.9 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "cc30b176b194ea03b11e1fb279a5ef3f87368e6716445d77be31f491e195f07e",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

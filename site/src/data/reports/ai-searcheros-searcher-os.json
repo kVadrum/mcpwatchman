@@ -2,7 +2,7 @@
  "name": "ai.searcheros/searcher-os",
  "version": "1.0.1",
  "slug": "ai-searcheros-searcher-os",
- "scanned_at": "2026-11-21T02:42:23+00:00",
+ "scanned_at": "2026-11-22T02:41:14+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 9 day(s) before 2026-11-21",
+     "detail": "last commit 10 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 36.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 37.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,6 +252,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0d860e11864836b9391523a41c5ec4d2a2ed57e8401659808323215fad759938",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

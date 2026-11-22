@@ -2,7 +2,7 @@
  "name": "io.github.segentic-lab/glovebox-mcp",
  "version": "0.6.2",
  "slug": "io-github-segentic-lab-glovebox-mcp",
- "scanned_at": "2026-11-21T02:24:20+00:00",
+ "scanned_at": "2026-11-22T02:20:38+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -143,7 +143,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-21",
+     "detail": "last commit 2 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -167,7 +167,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -289,6 +289,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "36c90da13c80a8d78d3219a2b1959710f40f91478f5ea9d463afcd4329abcfd1",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

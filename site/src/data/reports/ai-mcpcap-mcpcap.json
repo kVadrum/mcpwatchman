@@ -2,7 +2,7 @@
  "name": "ai.mcpcap/mcpcap",
  "version": "0.10.0",
  "slug": "ai-mcpcap-mcpcap",
- "scanned_at": "2026-11-21T02:40:11+00:00",
+ "scanned_at": "2026-11-22T02:39:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -117,7 +117,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 52 day(s) before 2026-11-21",
+     "detail": "last commit 53 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 156.8 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 157.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 52 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 53 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -866,7 +866,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-21T02:40:16+00:00",
+  "fetched_at": "2026-11-22T02:39:18+00:00",
   "system": "PyPI",
   "package": "mcpcap",
   "version": "0.10.0",
@@ -892,6 +892,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "c5414991bdaf6c87922965f4404a86bea6d985927ba98c2f771cd3d7ed220a7d",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }

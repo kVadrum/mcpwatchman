@@ -2,7 +2,7 @@
  "name": "io.github.AncientiCe/palace-rs",
  "version": "0.20.5",
  "slug": "io-github-ancientice-palace-rs",
- "scanned_at": "2026-11-21T02:21:55+00:00",
+ "scanned_at": "2026-11-22T02:19:12+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -117,7 +117,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-21",
+     "detail": "last commit 2 day(s) before 2026-11-22",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -263,6 +263,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "7af4f4180c9a972877b04ad6f5d16d2ffc19bf34d11966d2ecee1a192d081ca2",
- "checked_at": "2026-11-21T02:09:18+00:00",
+ "checked_at": "2026-11-22T02:05:50+00:00",
  "findings_tracked_since": "2026-10-10"
 }
