@@ -2,7 +2,7 @@
  "name": "ai.marketcore/mcp",
  "version": "1.0.5",
  "slug": "ai-marketcore-mcp",
- "scanned_at": "2026-11-22T02:39:00+00:00",
+ "scanned_at": "2026-11-23T02:36:58+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "aade7ff966b4beb2b4cbca1d14c4960e00bb9136",
+ "repository_commit": "e869e32d9cdceee076d574664eb518f476f57494",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -23,9 +23,9 @@
   "code_safety": {
    "axis": "code_safety",
    "score": null,
-   "reason": "the source this server declares holds no code \u2014 only documentation, configuration or data files \u2014 so there was nothing to scan (the ruleset covers python, javascript, typescript and go)",
+   "reason": "its only code is shell scripts, which the ruleset does not cover (the ruleset covers python, javascript, typescript and go)",
    "assessed_weight": "0",
-   "fault": "publisher",
+   "fault": "project",
    "evidence_omitted": 0,
    "unmeasured_faults": [],
    "evidence": []
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-22",
+     "detail": "last commit 1 day(s) before 2026-11-23",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 41.8 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 42.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -168,7 +168,7 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": null,
-   "reason": "the source this server declares holds no code and no dependency manifest, so there is no dependency to check",
+   "reason": "no lockfile in the fetched source; dependency versions are unresolved, so no vulnerability can be attributed",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "165b77e12aadd451023e5ff10dd7bdc163bd448341f89cf62724be37780e8554",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

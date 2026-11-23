@@ -2,7 +2,7 @@
  "name": "io.github.SunFlash12/forge-cascade-mcp",
  "version": "0.1.7",
  "slug": "io-github-sunflash12-forge-cascade-mcp",
- "scanned_at": "2026-11-22T02:48:31+00:00",
+ "scanned_at": "2026-11-23T02:48:22+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -102,7 +102,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 5 day(s) before 2026-11-22",
+     "detail": "last commit 6 day(s) before 2026-11-23",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -114,7 +114,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 103.4 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 104.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -126,7 +126,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 175 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 176 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -246,6 +246,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "17a66218466643472dead6719abc695069970e208f255c77e222936b2f32fb6e",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

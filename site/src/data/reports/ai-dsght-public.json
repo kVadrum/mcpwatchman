@@ -2,7 +2,7 @@
  "name": "ai.dsght/public",
  "version": "1.2.0",
  "slug": "ai-dsght-public",
- "scanned_at": "2026-11-22T02:26:20+00:00",
+ "scanned_at": "2026-11-23T02:30:25+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "6cfd3ae163e91e107e837c39b99871aa8769da169ef48035d2ee9cc6521987a7",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

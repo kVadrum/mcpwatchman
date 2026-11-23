@@ -2,7 +2,7 @@
  "name": "ai.painspotter/painspotter",
  "version": "1.0.0",
  "slug": "ai-painspotter-painspotter",
- "scanned_at": "2026-11-22T02:40:51+00:00",
+ "scanned_at": "2026-11-23T02:39:27+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "70dce29dfae7ea4b3d935e0b80f96947deb0eb08f4afcccb8d86a90598d0a0e7",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

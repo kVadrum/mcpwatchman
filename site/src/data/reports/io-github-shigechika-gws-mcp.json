@@ -2,7 +2,7 @@
  "name": "io.github.shigechika/gws-mcp",
  "version": "0.22.5-mcp.38",
  "slug": "io-github-shigechika-gws-mcp",
- "scanned_at": "2026-11-22T03:01:40+00:00",
+ "scanned_at": "2026-11-23T03:03:58+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -130,7 +130,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 52 day(s) before 2026-11-22",
+     "detail": "last commit 53 day(s) before 2026-11-23",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -154,7 +154,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 52 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 53 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -193,7 +193,7 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": 72,
-   "reason": "20 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored",
+   "reason": "21 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored",
    "assessed_weight": "0.16",
    "fault": null,
    "evidence_omitted": 0,
@@ -488,6 +488,18 @@
      "severity": "",
      "first_seen": "2026-10-24",
      "deducts": false
+    },
+    {
+     "label": "url 2.5.8 \u2014 RUSTSEC-2026-0592",
+     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 2.5.9",
+     "path": "Cargo.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0592",
+     "finding": "url:RUSTSEC-2026-0592",
+     "severity": "",
+     "first_seen": "2026-11-23",
+     "deducts": false
     }
    ]
   },
@@ -565,6 +577,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0c42bbfbef1bbd1ee0180bdd37d8ae8fba79e9f29e51fc0accdf48ce4ea04fc0",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

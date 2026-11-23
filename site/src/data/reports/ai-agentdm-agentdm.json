@@ -2,7 +2,7 @@
  "name": "ai.agentdm/agentdm",
  "version": "2.0.0",
  "slug": "ai-agentdm-agentdm",
- "scanned_at": "2026-11-22T02:21:24+00:00",
+ "scanned_at": "2026-11-23T02:24:50+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e6f6c34b9422eca2ce6d26fe74490a121036c78a292d1ff9190fb1218569dada",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,15 +2,15 @@
  "name": "ai.marketintell/marketintell",
  "version": "0.3.1",
  "slug": "ai-marketintell-marketintell",
- "scanned_at": "2026-11-22T02:39:03+00:00",
+ "scanned_at": "2026-11-23T02:21:26+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
  "repository_url": "https://github.com/ravidsrk/marketintell",
- "package": "npm:marketintell@0.2.1",
+ "package": "",
  "source_state": "unreachable",
- "source_subject": "package",
- "source_reason": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+ "source_subject": "repository",
+ "source_reason": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": null,
@@ -23,7 +23,7 @@
   "code_safety": {
    "axis": "code_safety",
    "score": null,
-   "reason": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+   "reason": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -168,7 +168,7 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": null,
-   "reason": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+   "reason": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -178,7 +178,7 @@
   "transparency": {
    "axis": "transparency",
    "score": null,
-   "reason": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+   "reason": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
    "assessed_weight": "0",
    "fault": "publisher",
    "evidence_omitted": 0,
@@ -188,7 +188,7 @@
    "evidence": [
     {
      "label": "license",
-     "detail": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+     "detail": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -200,7 +200,7 @@
     },
     {
      "label": "readme_quality",
-     "detail": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+     "detail": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -212,7 +212,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+     "detail": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -224,7 +224,7 @@
     },
     {
      "label": "changelog",
-     "detail": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+     "detail": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -236,7 +236,7 @@
     },
     {
      "label": "security_contact",
-     "detail": "the package this server declares (npm:marketintell@0.2.1) could not be fetched from its registry, so its source could not be read",
+     "detail": "the repository this server declares (https://github.com/ravidsrk/marketintell) is not publicly reachable, so its documentation could not be read \u2014 note that a private repository and an absent one are indistinguishable from outside",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,7 +250,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "04fa3baffa61a0b38588bf8a7e33d684ebe52e6a4e796f5e4ec5a29f9dba5848",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "registry_entry_hash": "598447c4185025dab3bbb322e5a19ce74d85ce58d8dea62160f03c1acf187f42",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

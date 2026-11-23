@@ -2,7 +2,7 @@
  "name": "io.github.Servosity/wordpress-mcp",
  "version": "0.1.13",
  "slug": "io-github-servosity-wordpress-mcp",
- "scanned_at": "2026-11-22T02:48:21+00:00",
+ "scanned_at": "2026-11-23T02:48:09+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -333,7 +333,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-22",
+     "detail": "last commit 5 day(s) before 2026-11-23",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -345,7 +345,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 45 issue(s) in the last 6 months: 23.1 day(s) to first maintainer comment",
+     "detail": "median over 45 issue(s) in the last 6 months: 24.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -357,7 +357,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 5 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -504,6 +504,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "3342d257f63ff1533e4144c0703409adb68f7755d87c17cdcc121433d9439ef0",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }

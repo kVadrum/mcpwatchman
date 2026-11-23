@@ -2,7 +2,7 @@
  "name": "ai.mafdet/mcp",
  "version": "1.7.0",
  "slug": "ai-mafdet-mcp",
- "scanned_at": "2026-11-22T02:38:36+00:00",
+ "scanned_at": "2026-11-23T02:36:29+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -256,7 +256,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-22T02:38:36+00:00",
+  "fetched_at": "2026-11-23T02:36:29+00:00",
   "system": "npm",
   "package": "@mafdet/mcp",
   "version": "1.7.0",
@@ -269,6 +269,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "770e156fa208bcfd833f4905731442da47c07d132bcf32d0fdaaccc75ad7d60a",
- "checked_at": "2026-11-22T02:05:50+00:00",
+ "checked_at": "2026-11-23T02:01:30+00:00",
  "findings_tracked_since": "2026-10-10"
 }
