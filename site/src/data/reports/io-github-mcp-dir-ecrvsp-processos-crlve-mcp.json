@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/ecrvsp_processos_crlve-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-ecrvsp-processos-crlve-mcp",
- "scanned_at": "2026-11-23T02:55:44+00:00",
+ "scanned_at": "2026-11-24T03:01:07+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 95 day(s) before 2026-11-23",
+     "detail": "last commit 96 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5c2785089d86bf9c22105fcab4ab0610e335150695542b8fe18725ad1b58871c",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

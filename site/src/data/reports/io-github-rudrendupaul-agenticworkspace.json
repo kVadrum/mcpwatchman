@@ -2,7 +2,7 @@
  "name": "io.github.RudrenduPaul/agenticworkspace",
  "version": "0.1.4",
  "slug": "io-github-rudrendupaul-agenticworkspace",
- "scanned_at": "2026-11-23T02:47:53+00:00",
+ "scanned_at": "2026-11-24T02:53:14+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -116,7 +116,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 59 day(s) before 2026-11-23",
+     "detail": "last commit 60 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -140,7 +140,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 21 days (by releases), last release 59 day(s) ago",
+     "detail": "median release gap 21 days (by releases), last release 60 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -266,7 +266,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:47:57+00:00",
+  "fetched_at": "2026-11-24T02:53:18+00:00",
   "system": "PyPI",
   "package": "agenticworkspace-cli",
   "version": "0.1.4",
@@ -279,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "f7877546af78c5910e836ae81a2427fbcc916ecbc2eb194d56cc4b8978363197",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

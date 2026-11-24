@@ -2,7 +2,7 @@
  "name": "io.github.jgalea/telegram-mcp",
  "version": "0.1.2",
  "slug": "io-github-jgalea-telegram-mcp",
- "scanned_at": "2026-11-23T02:54:04+00:00",
+ "scanned_at": "2026-11-24T02:59:21+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -117,7 +117,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 20 day(s) before 2026-11-23",
+     "detail": "last commit 21 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -141,7 +141,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 111 days (by tags), last release 49 day(s) ago",
+     "detail": "median release gap 111 days (by tags), last release 50 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -868,7 +868,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:54:08+00:00",
+  "fetched_at": "2026-11-24T02:59:25+00:00",
   "system": "PyPI",
   "package": "telegram-mcp-jgalea",
   "version": "0.1.2",
@@ -881,6 +881,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "13a8fa06c1cb949d8b047db06082d2c9e91cf66190a64ee445a5eacef7c3d38e",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

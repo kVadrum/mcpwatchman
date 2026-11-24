@@ -2,7 +2,7 @@
  "name": "io.github.rijul170/sophos-central-mcp",
  "version": "1.1.0",
  "slug": "io-github-rijul170-sophos-central-mcp",
- "scanned_at": "2026-11-23T03:00:13+00:00",
+ "scanned_at": "2026-11-24T03:05:48+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 120 day(s) before 2026-11-23",
+     "detail": "last commit 121 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -269,7 +269,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T03:00:18+00:00",
+  "fetched_at": "2026-11-24T03:05:53+00:00",
   "system": "npm",
   "package": "@rijul170/sophos-mcp",
   "version": "1.1.0",
@@ -295,6 +295,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "ad0acf67db72db6564a48a03ed888898b32899cac66c4c660f41011b19e7b0cd",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

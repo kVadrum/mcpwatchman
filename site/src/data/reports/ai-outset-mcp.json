@@ -2,7 +2,7 @@
  "name": "ai.outset/mcp",
  "version": "1.0.0",
  "slug": "ai-outset-mcp",
- "scanned_at": "2026-11-23T02:39:08+00:00",
+ "scanned_at": "2026-11-24T02:44:23+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 144 day(s) before 2026-11-23",
+     "detail": "last commit 145 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 38.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 39.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "6ad2074e18a09e8ffb51479ae3c85e3d800933d047e2287fea70482f45c62a02",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

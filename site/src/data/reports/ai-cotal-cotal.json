@@ -2,7 +2,7 @@
  "name": "ai.cotal/cotal",
  "version": "1.1.0",
  "slug": "ai-cotal-cotal",
- "scanned_at": "2026-11-23T02:27:26+00:00",
+ "scanned_at": "2026-11-24T02:32:46+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "0342cf62421d6175efab63f69b28d336e6090f67",
+ "repository_commit": "9014adbac799a02f0706122e42b1296ba5404e34",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 3521,
+ "files_scanned": 3552,
  "files_pruned": 5,
  "axes": {
   "code_safety": {
@@ -26,7 +26,7 @@
    "reason": "4 findings from checks whose precision is not yet measured are listed but not deducted; 12 findings in test code are listed but not deducted; 5 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 17 files could not be parsed and were not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 482,
+   "evidence_omitted": 483,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -334,6 +334,18 @@
     {
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "implementations/acp/src/setup/command.ts",
+     "line": 43,
+     "excerpt": "  for (const name of [\"COTAL_HOME\", \"XDG_CONFIG_HOME\"]) {\n    const value = env[name]?.trim();\n    if (value) out[name] = value;\n  }\n  return out;",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/auth/smoke/freeslot-respawn-barrier.smoke.ts",
      "line": 181,
      "excerpt": "  for (const k of [\"PATH\", \"HOME\", \"TMPDIR\", \"TMP\", \"TEMP\", \"XDG_CACHE_HOME\", \"LANG\", \"TERM\"]) {\n    const v = process.env[k];\n    if (v) out[k] = v;\n  }\n  return out;",
@@ -371,7 +383,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/auth/smoke/user-spawn.smoke.ts",
-     "line": 149,
+     "line": 155,
      "excerpt": "  for (const k of [\"PATH\", \"HOME\", \"TMPDIR\", \"TMP\", \"TEMP\", \"XDG_CACHE_HOME\", \"LANG\", \"TERM\", \"NODE_EXTRA_CA_CERTS\"]) {\n    const v = process.env[k];\n    if (v) out[k] = v;\n  }\n  return out;",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -383,7 +395,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/auth/smoke/user-spawn.smoke.ts",
-     "line": 733,
+     "line": 760,
      "excerpt": "    check(`precondition: kappa remained alive to receive the ${want} status signal`, signalSent);\n    const reached = signalSent && await until(() => rosterOf(\"kappa\") === want);\n    carried[want] = reached ? meshOf(\"kappa\") : `the roster never reached ${want} (it says ${rosterOf(\"kappa\")})`;\n  }\n  check(",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -551,7 +563,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/src/commands/setup.ts",
-     "line": 1001,
+     "line": 1017,
      "excerpt": "  for (const key of [\"managerInstanceId\", \"managerEpoch\", \"requestId\", \"requestedGoalId\", \"acceptedGoalId\"] as const) {\n    const coordinate = native[key];\n    if (typeof coordinate === \"string\" && coordinate.length <= 512 && !/[\\u0000-\\u001f\\u007f]/u.test(coordinate)) result[key] = coordinate;\n    if (key === \"managerEpoch\" && typeof coordinate === \"number\" && Number.isSafeInteger(coordinate) && coordinate >= 0) result[key] = coordinate;\n  }",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -563,7 +575,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/src/commands/setup.ts",
-     "line": 1002,
+     "line": 1018,
      "excerpt": "    const coordinate = native[key];\n    if (typeof coordinate === \"string\" && coordinate.length <= 512 && !/[\\u0000-\\u001f\\u007f]/u.test(coordinate)) result[key] = coordinate;\n    if (key === \"managerEpoch\" && typeof coordinate === \"number\" && Number.isSafeInteger(coordinate) && coordinate >= 0) result[key] = coordinate;\n  }\n  const coordinator = native.coordinator;",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -618,18 +630,6 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
-     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
-     "path": "implementations/delivery/smoke/hosted-delivery-startup-isolation.smoke.ts",
-     "line": 156,
-     "excerpt": "    const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, LANG: \"C.UTF-8\", COTAL_STARTUP_PROOF_CHILD: \"1\", COTAL_STARTUP_PROOF_INPUT: inputPath, COTAL_DELIVERY_BROKER_GONE_MS: \"2500\", COTAL_DELIVERY_BROKER_GONE_BACKSTOP_MS: \"3000\" };\n    for (const key of [\"HOME\", \"XDG_CONFIG_HOME\", \"XDG_STATE_HOME\", \"XDG_CACHE_HOME\", \"XDG_DATA_HOME\", \"COTAL_HOME\", \"COTAL_SEAT_ROOT\", \"TMPDIR\"]) {\n      env[key] = join(root, key.toLowerCase()); mkdirSync(env[key]!, { recursive: true, mode: 0o700 });\n    }\n    child = spawn(process.execPath, [\"--import\", \"tsx\", fileURLToPath(import.meta.url)], { cwd: process.cwd(), env, stdio: [\"ignore\", \"pipe\", \"pipe\", \"ipc\"] });",
-     "url": "",
-     "finding": "mcp-js-prototype-pollution-merge-loop",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
     }
    ]
   },
@@ -670,7 +670,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "AWS Access Key at docs/dashboard-api.mdx:1560; JSON Web Token at implementations/auth/smoke/grant-usage.smoke.ts:147; JSON Web Token at implementations/auth/smoke/login.smoke.ts:415; JSON Web Token at implementations/auth/smoke/login.smoke.ts:969; AWS Access Key at implementations/web/openapi.json:604; \u2026and 2403 more matches",
+     "detail": "AWS Access Key at docs/dashboard-api.mdx:1560; JSON Web Token at implementations/auth/smoke/grant-usage.smoke.ts:147; JSON Web Token at implementations/auth/smoke/login.smoke.ts:415; JSON Web Token at implementations/auth/smoke/login.smoke.ts:969; AWS Access Key at implementations/web/openapi.json:604; \u2026and 2406 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -707,7 +707,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 0 day(s) before 2026-11-23",
+     "detail": "last commit 0 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -719,7 +719,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 0.4 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 0.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -731,7 +731,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 0 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -1456,6 +1456,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "a83369f94b30aad80c489e9f0e10065848a1e2922216a411cce49631e8bddbea",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

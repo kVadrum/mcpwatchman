@@ -1,8 +1,8 @@
 {
  "name": "io.github.skyhook-io/radar",
- "version": "1.21.1",
+ "version": "1.21.2",
  "slug": "io-github-skyhook-io-radar",
- "scanned_at": "2026-11-23T02:22:07+00:00",
+ "scanned_at": "2026-11-24T02:26:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,19 +14,19 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "827ed0bf399f8a42d3b75f5152da8c670021fc73",
+ "repository_commit": "94b60427cdd067edaf46a64e3acb9c462712eef3",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 3270,
+ "files_scanned": 3364,
  "files_pruned": 2,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
-   "score": 41,
+   "score": 43,
    "reason": "7 findings from checks whose precision is not yet measured are listed but not deducted; 9 findings in test code are listed but not deducted; 2 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 6 files could not be parsed and were not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 63,
+   "evidence_omitted": 59,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -35,7 +35,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "packages/k8s-ui/src/components/resources/ResourcesView.tsx",
-     "line": 3986,
+     "line": 4039,
      "excerpt": "  const result: Record<string, ResourceCoverage> = { ...resourceCoverage }\n  for (const key of Object.keys(resourceCounts ?? {})) {\n    if (!(key in result)) result[key] = { status: 'unknown' }\n  }\n  for (const [key, cached] of Object.entries(loadedCountCache)) {",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -371,7 +371,7 @@
      "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
      "path": "internal/k8s/runtime_auth.go",
-     "line": 429,
+     "line": 428,
      "excerpt": "\t\treturn http.ErrUseLastResponse\n\t}\n\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, probeConfig.Host+\"/version\", nil)\n\tif err != nil {\n\t\treturn err",
      "url": "",
      "finding": "mcp-go-ssrf-nonliteral-url",
@@ -572,6 +572,18 @@
      "deducts": true
     },
     {
+     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
+     "path": "scripts/connection-lifecycle-ui-check.mjs",
+     "line": 22,
+     "excerpt": "const log = (...a) => console.log(t(), ...a)\nconst ann = (ctx) => execFileSync('kubectl', ['--kubeconfig', kubeconfig, '--context', ctx, '-n', 'default', 'get', 'deploy', 'radar-live-probe', '-o', 'jsonpath={.spec.template.metadata.annotations.kubectl\\\\.kubernetes\\\\.io/restartedAt}']).toString()\nconst status = async () => (await fetch(base + '/api/connection?contexts=0')).json()\n\nconst browser = await chromium.launch({ channel: 'chrome', headless: true })",
+     "url": "",
+     "finding": "mcp-js-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
      "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
      "path": "scripts/mcp-agent-test/run.py",
@@ -618,18 +630,6 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
-     "path": "web/src/App.tsx",
-     "line": 2759,
-     "excerpt": "\n    // Check if user already starred (via backend/gh CLI) and whether to show prompt\n    fetch(apiUrl('/github/starred'), { credentials: getCredentialsMode(), headers: getAuthHeaders() })\n      .then(res => res.ok ? res.json() : null)\n      .then(data => {",
-     "url": "",
-     "finding": "mcp-js-ssrf-nonliteral-url",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
     }
    ]
   },
@@ -671,7 +671,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "GitHub Token at internal/helm/manifest_redaction_test.go:49; AWS Access Key at internal/server/trivy_reports_access_test.go:27; AWS Access Key at pkg/ai/context/redact_auth_test.go:25; AWS Access Key at pkg/ai/context/redact_auth_test.go:26; GitHub Token at pkg/ai/context/redact_test.go:20; AWS Access Key at pkg/ai/context/redact_test.go:28; GitHub Token at pkg/ai/context/redact_test.go:160; Private Key at web/src/components/diagnose/InvestigationResourceEvidence.test.tsx:26; \u2026and 521 more matches",
+     "detail": "GitHub Token at internal/helm/manifest_redaction_test.go:49; AWS Access Key at internal/server/trivy_reports_access_test.go:27; AWS Access Key at pkg/ai/context/redact_auth_test.go:25; AWS Access Key at pkg/ai/context/redact_auth_test.go:26; GitHub Token at pkg/ai/context/redact_test.go:20; AWS Access Key at pkg/ai/context/redact_test.go:28; GitHub Token at pkg/ai/context/redact_test.go:160; Private Key at web/src/components/diagnose/InvestigationResourceEvidence.test.tsx:26; \u2026and 526 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-23",
+     "detail": "last commit 1 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -720,7 +720,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 10.4 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 11.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 3 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -904,7 +904,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "d46e0f25f37e650dafee4f3d0fffec61174e1c41dae330cd8f8fdede2236748c",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "registry_entry_hash": "c30535d207d7c99fd6d4456e9bdca61a6f76edb9438346ea226d4447b6d1d0be",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

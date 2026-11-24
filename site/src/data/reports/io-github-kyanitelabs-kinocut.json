@@ -2,7 +2,7 @@
  "name": "io.github.KyaniteLabs/kinocut",
  "version": "1.16.1",
  "slug": "io-github-kyanitelabs-kinocut",
- "scanned_at": "2026-11-23T02:21:05+00:00",
+ "scanned_at": "2026-11-24T02:26:24+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -16,7 +16,7 @@
  "ref_matched_version": null,
  "repository_commit": null,
  "registry_state": "deprecated",
- "registry_note": "The registry lists this server with status deprecated (observed 2026-11-23). That is the publisher's own label, not a finding of ours, and no axis scores it. The scan below is current.",
+ "registry_note": "The registry lists this server with status deprecated (observed 2026-11-24). That is the publisher's own label, not a finding of ours, and no axis scores it. The scan below is current.",
  "files_scanned": 670,
  "files_pruned": 0,
  "axes": {
@@ -156,7 +156,7 @@
    "axis": "maintenance",
    "score": 100,
    "reason": "",
-   "assessed_weight": "0.5",
+   "assessed_weight": "0.65",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
@@ -165,7 +165,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-23",
+     "detail": "last commit 0 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -189,7 +189,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 13 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 14 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -201,7 +201,7 @@
     },
     {
      "label": "bus_factor",
-     "detail": "this repository's 12-month history is longer than the bounded walk `04` \u00a77 performs, and the authors found so far span more than one of `03` \u00a75's bands. A limit of ours, not a finding about the server.",
+     "detail": "3 authors with >= 5 commits in 12 months",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -315,7 +315,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:21:14+00:00",
+  "fetched_at": "2026-11-24T02:26:34+00:00",
   "system": "PyPI",
   "package": "kinocut",
   "version": "1.16.1",
@@ -328,6 +328,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "8639a538aa0ef8709f1048aef4df20eb59ba810d428ee46dd2386e952f9dd4f5",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.usefulapi/youcanbookme",
  "version": "1.42.4",
  "slug": "io-usefulapi-youcanbookme",
- "scanned_at": "2026-11-23T03:06:20+00:00",
+ "scanned_at": "2026-11-24T03:11:57+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "993b299fa351ac0bbc43b15d705fd31131ef1ce7",
+ "repository_commit": "a5c410dd16aa03774e860ca1b7061a5246618cf8",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-23",
+     "detail": "last commit 1 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 44.9 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 45.9 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,6 +252,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9cb4169f2624757978f8c8020d03129fcaaae30bbd36577dff1f550ba3e0d145",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

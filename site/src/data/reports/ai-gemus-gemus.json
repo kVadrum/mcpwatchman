@@ -2,7 +2,7 @@
  "name": "ai.gemus/gemus",
  "version": "0.1.0",
  "slug": "ai-gemus-gemus",
- "scanned_at": "2026-11-23T02:33:53+00:00",
+ "scanned_at": "2026-11-24T02:39:35+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "54e545d8dbd9d1494359ff9286b5b4a09135ba561344f9fe41a2335b24410472",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

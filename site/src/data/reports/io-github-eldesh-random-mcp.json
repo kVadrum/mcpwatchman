@@ -2,7 +2,7 @@
  "name": "io.github.eldesh/random-mcp",
  "version": "2.1.0",
  "slug": "io-github-eldesh-random-mcp",
- "scanned_at": "2026-11-23T02:52:00+00:00",
+ "scanned_at": "2026-11-24T02:57:21+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "d8ec33b9830af3ad9e7feb11ec144b4deb72544f",
+ "repository_commit": "c317bde695d43db898511198422bead9e1a38135",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 15,
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 17 day(s) before 2026-11-23",
+     "detail": "last commit 1 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -864,6 +864,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "30d11538b496201bc3260b29b0a5636a8f35af2dbaf767d8e4a093568b729525",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

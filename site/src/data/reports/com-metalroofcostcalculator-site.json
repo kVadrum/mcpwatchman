@@ -2,7 +2,7 @@
  "name": "com.metalroofcostcalculator/site",
  "version": "1.0.1",
  "slug": "com-metalroofcostcalculator-site",
- "scanned_at": "2026-11-23T02:42:50+00:00",
+ "scanned_at": "2026-11-24T02:48:09+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "f238bc04ddbde6a21661eae3e8672a0bff56aadaa3882219be45b6db08608fee",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

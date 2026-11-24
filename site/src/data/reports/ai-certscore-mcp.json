@@ -2,7 +2,7 @@
  "name": "ai.certscore/mcp",
  "version": "0.2.32",
  "slug": "ai-certscore-mcp",
- "scanned_at": "2026-11-23T02:25:45+00:00",
+ "scanned_at": "2026-11-24T02:31:07+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "48a3e073f84f00c38e37c707e21b38836b9a0cf0",
+ "repository_commit": "5098fb258b3d5a30ba3af2bf835a3a670c5a3157",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 4217,
+ "files_scanned": 4220,
  "files_pruned": 19,
  "axes": {
   "code_safety": {
@@ -709,7 +709,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-23",
+     "detail": "last commit 1 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -733,7 +733,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 20 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 21 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -859,7 +859,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:27:10+00:00",
+  "fetched_at": "2026-11-24T02:32:31+00:00",
   "system": "npm",
   "package": "@certscore/mcp",
   "version": "0.2.32",
@@ -885,6 +885,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "7f598f1ff0a480d809170a57322a0513bde7724482b03479a91401cd2988ea05",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

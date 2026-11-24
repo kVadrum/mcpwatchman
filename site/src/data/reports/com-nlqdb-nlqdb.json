@@ -2,7 +2,7 @@
  "name": "com.nlqdb/nlqdb",
  "version": "0.1.1",
  "slug": "com-nlqdb-nlqdb",
- "scanned_at": "2026-11-23T02:43:00+00:00",
+ "scanned_at": "2026-11-24T02:48:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -178,7 +178,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-23",
+     "detail": "last commit 1 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -202,7 +202,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 9 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 10 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -244,7 +244,7 @@
    "reason": "1 vulnerability could not be placed in `03` \u00a76's table and is listed but not scored; 1 dependency file (cli/go.sum) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 1 lockfile that was; 3 dependency files in a test or excluded directory (tests/e2e/cli/go.mod, tests/e2e/mcp/bun.lock, tests/e2e/sdk/bun.lock) were not read as this server's",
    "assessed_weight": "0.49",
    "fault": null,
-   "evidence_omitted": 279,
+   "evidence_omitted": 280,
    "unmeasured_faults": [
     "project"
    ],
@@ -927,6 +927,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "b734609e7db2580ec5b2c73e343da36ae890a56e4c179a90f71270bf7edc36ce",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

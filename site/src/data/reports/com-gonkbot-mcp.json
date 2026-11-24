@@ -2,7 +2,7 @@
  "name": "com.gonkbot/mcp",
  "version": "1.0.0",
  "slug": "com-gonkbot-mcp",
- "scanned_at": "2026-11-23T02:42:14+00:00",
+ "scanned_at": "2026-11-24T02:47:33+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "c62915bc4dde06fa815279d33113bb0a1a21403f0ceb2b4490a84e38480acf52",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.LeandroPG19/cuba-memorys",
  "version": "0.24.0",
  "slug": "io-github-leandropg19-cuba-memorys",
- "scanned_at": "2026-11-23T02:47:23+00:00",
+ "scanned_at": "2026-11-24T02:52:43+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -292,7 +292,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:47:25+00:00",
+  "fetched_at": "2026-11-24T02:52:46+00:00",
   "system": "npm",
   "package": "cuba-memorys",
   "version": "0.24.0",
@@ -305,6 +305,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "0d6fb8b47b0978a496e2bc84f7e8f10f2431d275c7b93be06f116ec69abf964a",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

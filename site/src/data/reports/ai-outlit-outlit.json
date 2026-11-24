@@ -2,7 +2,7 @@
  "name": "ai.outlit/outlit",
  "version": "1.1.0",
  "slug": "ai-outlit-outlit",
- "scanned_at": "2026-11-23T02:38:50+00:00",
+ "scanned_at": "2026-11-24T02:44:06+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -214,7 +214,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-23",
+     "detail": "last commit 4 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -226,7 +226,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 27.7 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 28.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -238,7 +238,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 3 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -963,6 +963,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5a0f2b9da3b2b73d44f922ed73e1ef079927db2636e3c44310e5d08bb790d018",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

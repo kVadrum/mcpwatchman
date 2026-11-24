@@ -2,7 +2,7 @@
  "name": "ai.marchward/mcp-server",
  "version": "0.2.4",
  "slug": "ai-marchward-mcp-server",
- "scanned_at": "2026-11-23T02:36:52+00:00",
+ "scanned_at": "2026-11-24T02:42:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 145 day(s) before 2026-11-23",
+     "detail": "last commit 146 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:36:55+00:00",
+  "fetched_at": "2026-11-24T02:42:18+00:00",
   "system": "npm",
   "package": "@marchward/mcp-server",
   "version": "0.2.4",
@@ -279,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "c03dc9cf8748435353cf28768ca42cb4361496077fc430b5f7a4dca9d5c9b55c",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/crc16-len",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-crc16-len",
- "scanned_at": "2026-11-23T03:01:39+00:00",
+ "scanned_at": "2026-11-24T03:07:13+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 61 day(s) before 2026-11-23",
+     "detail": "last commit 62 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e0e811312d839a8218d659efa898882ae32e9869aafb93bf8c9ada4e291c2747",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

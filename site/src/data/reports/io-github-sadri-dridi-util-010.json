@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/util-010",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-util-010",
- "scanned_at": "2026-11-23T03:03:15+00:00",
+ "scanned_at": "2026-11-24T03:08:51+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 61 day(s) before 2026-11-23",
+     "detail": "last commit 62 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5e1ff1a233f2cc1b11b66663caa0ff2e0657997603dc01df4b685d2dfa9b4348",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

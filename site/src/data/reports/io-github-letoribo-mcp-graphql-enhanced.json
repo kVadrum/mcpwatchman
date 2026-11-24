@@ -2,7 +2,7 @@
  "name": "io.github.letoribo/mcp-graphql-enhanced",
  "version": "4.18.0",
  "slug": "io-github-letoribo-mcp-graphql-enhanced",
- "scanned_at": "2026-11-23T02:22:01+00:00",
+ "scanned_at": "2026-11-24T02:28:36+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -273,7 +273,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-23",
+     "detail": "last commit 3 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -285,7 +285,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 0.6 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 1.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -297,7 +297,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 3 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -421,7 +421,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:22:06+00:00",
+  "fetched_at": "2026-11-24T02:28:41+00:00",
   "system": "npm",
   "package": "@letoribo/mcp-graphql-enhanced",
   "version": "4.18.0",
@@ -434,6 +434,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "c80c7cae8a0fd2ea30ad47bc05854d36481d3f904ab7fe144465da21e1cac969",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

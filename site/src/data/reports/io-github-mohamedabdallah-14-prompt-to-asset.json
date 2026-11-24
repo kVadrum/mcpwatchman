@@ -2,7 +2,7 @@
  "name": "io.github.MohamedAbdallah-14/prompt-to-asset",
  "version": "0.4.2",
  "slug": "io-github-mohamedabdallah-14-prompt-to-asset",
- "scanned_at": "2026-11-23T02:47:41+00:00",
+ "scanned_at": "2026-11-24T02:53:02+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -455,7 +455,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 125 day(s) before 2026-11-23",
+     "detail": "last commit 126 day(s) before 2026-11-24",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -467,7 +467,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 190.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 191.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -479,7 +479,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 211 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 212 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -603,7 +603,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:47:47+00:00",
+  "fetched_at": "2026-11-24T02:53:08+00:00",
   "system": "npm",
   "package": "prompt-to-asset",
   "version": "0.4.2",
@@ -665,6 +665,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "afd85f0ca892be8172e527df5a55a0c0224c82bff11b46356bf7ffb33503e7e8",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }

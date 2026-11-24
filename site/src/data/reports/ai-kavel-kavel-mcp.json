@@ -2,10 +2,10 @@
  "name": "ai.kavel/kavel-mcp",
  "version": "0.2.0",
  "slug": "ai-kavel-kavel-mcp",
- "scanned_at": "2026-11-23T02:35:37+00:00",
+ "scanned_at": "2026-11-24T02:41:02+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
- "ruleset_version": "0.1.4",
+ "ruleset_version": "",
  "repository_url": "https://github.com/hanshs474/kavel-mcp",
  "package": "npm:kavel-mcp@0.1.1",
  "source_state": "fetched",
@@ -14,18 +14,18 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "df26c946fec952e7438f8ff6d51209a4b0b6e6ca",
+ "repository_commit": null,
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 2,
+ "files_scanned": 0,
  "files_pruned": 0,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
-   "score": 100,
-   "reason": "scored on the declared repository at version 0.2.0, because the published package carries its code only as build output, which is not read as the server's own source",
-   "assessed_weight": "1",
-   "fault": null,
+   "score": null,
+   "reason": "the published package carries its code only as build output (2 files under dist/ or build/), which this scanner does not read as the server's own source \u2014 a bundle can inline its dependencies' code; the declared repository could not be read to score instead",
+   "assessed_weight": "0",
+   "fault": "project",
    "evidence_omitted": 0,
    "unmeasured_faults": [],
    "evidence": []
@@ -93,18 +93,19 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 56,
-   "reason": "",
-   "assessed_weight": "0.7",
-   "fault": null,
+   "score": null,
+   "reason": "this server's declared repository could not be read through the GitHub API, so `03` \u00a75's maintenance signals were not retrieved \u2014 note that a private repository and an absent one are indistinguishable from outside",
+   "assessed_weight": "0",
+   "fault": "publisher",
    "evidence_omitted": 0,
    "unmeasured_faults": [
-    "project"
+    "project",
+    "publisher"
    ],
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 42 day(s) before 2026-11-23",
+     "detail": "no last-commit date was retrieved for this repository",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 36.8 day(s) to first maintainer comment",
+     "detail": "no issue-response median was retrieved. An unanswered issue scores 0 under `03` \u00a75, but an absent measurement is not an unanswered issue.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "a release exists but fewer than two fall inside `03` \u00a75's 12-month window, so no median gap can be taken \u2014 and \u00a75's remaining bands are all defined on that median. A limit of the methodology, not of this repository.",
+     "detail": "no release history was retrieved for this repository",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -140,7 +141,7 @@
     },
     {
      "label": "bus_factor",
-     "detail": "sole maintainer",
+     "detail": "no contributor history was retrieved for this repository",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-23T02:35:41+00:00",
+  "fetched_at": "2026-11-24T02:41:03+00:00",
   "system": "npm",
   "package": "kavel-mcp",
   "version": "0.1.1",
@@ -278,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "b4e0ebf63a03067d7fbe135f1db96232974bc0a673c64e75b203310b9f7cd658",
- "checked_at": "2026-11-23T02:01:30+00:00",
+ "checked_at": "2026-11-24T02:05:35+00:00",
  "findings_tracked_since": "2026-10-10"
 }
