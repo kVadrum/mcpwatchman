@@ -2,7 +2,7 @@
  "name": "ai.mentionagent/mentionagent",
  "version": "1.1.0",
  "slug": "ai-mentionagent-mentionagent",
- "scanned_at": "2026-11-24T02:43:12+00:00",
+ "scanned_at": "2026-11-25T02:47:39+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "505bed5eaf114fd0c098a404ae1b90782d4ddc9a",
+ "repository_commit": "b2ab06eb18771f5d6a5ba61e7cea94d611071c0b",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -93,19 +93,18 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 64,
+   "score": 72,
    "reason": "",
-   "assessed_weight": "0.7",
+   "assessed_weight": "0.9",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
-    "project",
-    "publisher"
+    "project"
    ],
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 5 day(s) before 2026-11-24",
+     "detail": "last commit 1 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 42.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "this repository publishes neither releases nor version tags",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -177,7 +176,7 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 44,
+   "score": 53,
    "reason": "",
    "assessed_weight": "0.8",
    "fault": null,
@@ -200,7 +199,7 @@
     },
     {
      "label": "readme_quality",
-     "detail": "README.md: installation instructions (+25), configuration documented (+25), states what the server does in the first 200 words (+20)",
+     "detail": "README.md: installation instructions (+25), configuration documented (+25), exposed tools or resources enumerated (+30), states what the server does in the first 200 words (+20)",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -251,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "703ef4e7fcc8105d65d303cf6cfa3bb6f302dbe0ca1fab1dc4938571f51ba504",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "email.templated/mcp",
  "version": "0.1.1",
  "slug": "email-templated-mcp",
- "scanned_at": "2026-11-24T02:49:45+00:00",
+ "scanned_at": "2026-11-25T02:54:09+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T02:49:45+00:00",
+  "fetched_at": "2026-11-25T02:54:10+00:00",
   "system": "npm",
   "package": "@templatedemails/mcp",
   "version": "0.1.1",
@@ -267,6 +267,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "6822edf27630496686a3a1b36838e9484a4df3c57ec1b409e1a3e066417f919e",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

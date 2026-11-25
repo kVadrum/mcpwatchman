@@ -1,8 +1,8 @@
 {
  "name": "ai.mailmcp/mailmcp",
- "version": "0.15.0",
+ "version": "0.16.0",
  "slug": "ai-mailmcp-mailmcp",
- "scanned_at": "2026-11-24T02:41:54+00:00",
+ "scanned_at": "2026-11-25T02:31:59+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "d6700ca2d79d298f644e47efd1fce72e76456b52",
+ "repository_commit": "76d0d33d610dc5eac6a99120e38f323d52e6f7a9",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 1,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 20 day(s) before 2026-11-24",
+     "detail": "last commit 21 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 43.8 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 44.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 20 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 21 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,7 +250,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "fea8927ff823e1f761ca1261fbf747018694f939f3f9982b7094f6f0ee788e1a",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "registry_entry_hash": "fad8cd825f62b1a383ef4c5577f86b6dea67e18be42188bb834814826b43f416",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

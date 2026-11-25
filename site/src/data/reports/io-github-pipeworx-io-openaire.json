@@ -2,7 +2,7 @@
  "name": "io.github.pipeworx-io/openaire",
  "version": "0.2.1",
  "slug": "io-github-pipeworx-io-openaire",
- "scanned_at": "2026-11-24T03:04:52+00:00",
+ "scanned_at": "2026-11-25T03:09:07+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 15 day(s) before 2026-11-24",
+     "detail": "last commit 16 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -269,7 +269,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T03:04:55+00:00",
+  "fetched_at": "2026-11-25T03:09:10+00:00",
   "system": "npm",
   "package": "@pipeworx/mcp-openaire",
   "version": "0.2.1",
@@ -282,6 +282,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "408e494ca4cfc64fbbd70a9ff546265a5d5d3d46af80d98e781d191a99fa82e2",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

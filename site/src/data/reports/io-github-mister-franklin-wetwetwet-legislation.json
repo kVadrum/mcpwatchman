@@ -2,7 +2,7 @@
  "name": "io.github.mister-franklin/wetwetwet-legislation",
  "version": "0.1.0",
  "slug": "io-github-mister-franklin-wetwetwet-legislation",
- "scanned_at": "2026-11-24T03:02:01+00:00",
+ "scanned_at": "2026-11-25T03:06:14+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "63b1d12a7c1c3951409d028db2f1ea2a803f14e62423ffc73cb1ac845b709254",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

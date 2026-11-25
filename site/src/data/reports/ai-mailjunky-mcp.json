@@ -2,7 +2,7 @@
  "name": "ai.mailjunky/mcp",
  "version": "0.1.0",
  "slug": "ai-mailjunky-mcp",
- "scanned_at": "2026-11-24T02:42:11+00:00",
+ "scanned_at": "2026-11-25T02:46:34+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ed05735a222c8f5c9d06f805fe6ef066df4b5893c8e9c6e3d7c997eb62f5b09c",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

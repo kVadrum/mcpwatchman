@@ -2,7 +2,7 @@
  "name": "ai.levelfour/levelfour-mcp",
  "version": "1.0.1",
  "slug": "ai-levelfour-levelfour-mcp",
- "scanned_at": "2026-11-24T02:41:41+00:00",
+ "scanned_at": "2026-11-25T02:46:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e5544a43265006f904c17d682ee1f936a61773335d1e4adbc252153bb3936074",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

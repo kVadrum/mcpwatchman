@@ -2,7 +2,7 @@
  "name": "ai.marketcore/mcp",
  "version": "1.0.5",
  "slug": "ai-marketcore-mcp",
- "scanned_at": "2026-11-24T02:42:19+00:00",
+ "scanned_at": "2026-11-25T02:46:42+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "e869e32d9cdceee076d574664eb518f476f57494",
+ "repository_commit": "fe03e218ac96d57033b7ccda767f6648204f6418",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-24",
+     "detail": "last commit 1 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 43.8 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 44.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 3 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "165b77e12aadd451023e5ff10dd7bdc163bd448341f89cf62724be37780e8554",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

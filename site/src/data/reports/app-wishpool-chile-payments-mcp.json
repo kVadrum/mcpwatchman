@@ -2,7 +2,7 @@
  "name": "app.wishpool/chile-payments-mcp",
  "version": "0.1.0",
  "slug": "app-wishpool-chile-payments-mcp",
- "scanned_at": "2026-11-24T02:45:45+00:00",
+ "scanned_at": "2026-11-25T02:50:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9db0eae2bc58d180342315279ba439fe6160a64b2b733dc2f6cad2a3e706aafd",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

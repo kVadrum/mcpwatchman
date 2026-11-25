@@ -2,7 +2,7 @@
  "name": "xyz.draket/btcpay-mcp",
  "version": "0.3.0",
  "slug": "xyz-draket-btcpay-mcp",
- "scanned_at": "2026-11-24T03:12:17+00:00",
+ "scanned_at": "2026-11-25T03:16:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 242 day(s) before 2026-11-24",
+     "detail": "last commit 243 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "574b26f41433a27d98f36e4785f6d04141f6fbd8d15e17aceff7180372155067",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

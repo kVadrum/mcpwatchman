@@ -2,7 +2,7 @@
  "name": "co.contraption/mcp",
  "version": "1.0.0",
  "slug": "co-contraption-mcp",
- "scanned_at": "2026-11-24T02:45:52+00:00",
+ "scanned_at": "2026-11-25T02:50:21+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 271 day(s) before 2026-11-24",
+     "detail": "last commit 272 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -634,30 +634,6 @@
      "deducts": true
     },
     {
-     "label": "aiohttp 3.13.3 \u2014 GHSA-5rmc-48h2-hvcm",
-     "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-5rmc-48h2-hvcm",
-     "finding": "aiohttp:GHSA-5rmc-48h2-hvcm",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "aiohttp 3.13.3 \u2014 GHSA-h4cc-hm5h-fmm9",
-     "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
-     "path": "uv.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GHSA-h4cc-hm5h-fmm9",
-     "finding": "aiohttp:GHSA-h4cc-hm5h-fmm9",
-     "severity": "high",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
      "label": "aiohttp 3.13.3 \u2014 PYSEC-2026-4389",
      "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
      "path": "uv.lock",
@@ -689,6 +665,30 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/PYSEC-2026-4394",
      "finding": "aiohttp:PYSEC-2026-4394",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "aiohttp 3.13.3 \u2014 PYSEC-2026-4399",
+     "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4399",
+     "finding": "aiohttp:PYSEC-2026-4399",
+     "severity": "high",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "aiohttp 3.13.3 \u2014 PYSEC-2026-4400",
+     "detail": "transitive, CVSS 8.7, fixed in 3.14.4",
+     "path": "uv.lock",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/PYSEC-2026-4400",
+     "finding": "aiohttp:PYSEC-2026-4400",
      "severity": "high",
      "first_seen": null,
      "deducts": true
@@ -853,6 +853,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e882141a16946dfbdf8efab56289cb33306bc5be285809fc292e41ad2d4a99c7",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.seankim-android/humanaway-mcp-server",
  "version": "0.2.2",
  "slug": "io-github-seankim-android-humanaway-mcp-server",
- "scanned_at": "2026-11-24T03:09:13+00:00",
+ "scanned_at": "2026-11-25T03:13:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 249 day(s) before 2026-11-24",
+     "detail": "last commit 250 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -267,7 +267,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T03:09:18+00:00",
+  "fetched_at": "2026-11-25T03:13:24+00:00",
   "system": "npm",
   "package": "@humanaway/mcp-server",
   "version": "0.2.2",
@@ -293,6 +293,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "6e925a9157f2c530e1918ed563561ef2315c9dbf8b50602fdfa171879c4b8cfa",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

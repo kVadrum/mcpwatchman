@@ -2,7 +2,7 @@
  "name": "io.github.moelayyan90/xguard",
  "version": "6.1.0",
  "slug": "io-github-moelayyan90-xguard",
- "scanned_at": "2026-11-24T03:02:02+00:00",
+ "scanned_at": "2026-11-25T03:06:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 5 day(s) before 2026-11-24",
+     "detail": "last commit 6 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 65 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 66 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -851,6 +851,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "8050d3a302f085e17f6437101485a3d47e6fde39eccdb797be84375c55b29e46",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

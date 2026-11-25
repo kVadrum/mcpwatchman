@@ -2,7 +2,7 @@
  "name": "io.github.docracy1/runwayleft",
  "version": "1.0.0",
  "slug": "io-github-docracy1-runwayleft",
- "scanned_at": "2026-11-24T02:56:57+00:00",
+ "scanned_at": "2026-11-25T03:01:21+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 100 day(s) before 2026-11-24",
+     "detail": "last commit 101 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "fe1cc7314ee276f5dc3cc5ddad09db19302015b169b369812d5fa995097570f3",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

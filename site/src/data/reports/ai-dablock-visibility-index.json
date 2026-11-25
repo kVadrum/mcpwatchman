@@ -2,7 +2,7 @@
  "name": "ai.dablock/visibility-index",
  "version": "1.0.1",
  "slug": "ai-dablock-visibility-index",
- "scanned_at": "2026-11-24T02:35:02+00:00",
+ "scanned_at": "2026-11-25T02:39:55+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "375e70d87643d4a2ddb0c754a9fc8315a4e28c45",
+ "repository_commit": "a9a002bcb997787dd825d7c8c0373da548d06373",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 2,
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 7 day(s) before 2026-11-24",
+     "detail": "last commit 1 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -275,6 +275,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0aebb7e78be5ccee9e5e63ccf59bbd7791229a594b841ca1ae26e48a02db4a2a",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

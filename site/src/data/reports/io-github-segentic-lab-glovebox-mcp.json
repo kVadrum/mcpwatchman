@@ -1,8 +1,8 @@
 {
  "name": "io.github.segentic-lab/glovebox-mcp",
- "version": "0.7.0",
+ "version": "0.7.1",
  "slug": "io-github-segentic-lab-glovebox-mcp",
- "scanned_at": "2026-11-24T02:27:58+00:00",
+ "scanned_at": "2026-11-25T02:31:35+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "unknown",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "1e9e8f4b78ce5ff58882cf42d85a71edca5bf1fc",
+ "repository_commit": "1dd6e9fa79104e54c98f8271ec28061eea9fccae",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 10,
@@ -143,7 +143,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-24",
+     "detail": "last commit 1 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -288,7 +288,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "496874f1154f2c552d76d79cc2c88a13dcf48429c3dd80d362ed023c0c5b0044",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "registry_entry_hash": "4d658ad69ba40f38d3827a4063aee84bd8511042426f908524d180706b0db7a4",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

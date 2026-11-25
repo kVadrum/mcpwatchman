@@ -2,7 +2,7 @@
  "name": "io.github.pipeworx-io/transport-feeds",
  "version": "0.2.1",
  "slug": "io-github-pipeworx-io-transport-feeds",
- "scanned_at": "2026-11-24T03:04:58+00:00",
+ "scanned_at": "2026-11-25T03:09:13+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 15 day(s) before 2026-11-24",
+     "detail": "last commit 16 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -269,7 +269,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T03:05:01+00:00",
+  "fetched_at": "2026-11-25T03:09:16+00:00",
   "system": "npm",
   "package": "@pipeworx/mcp-transport-feeds",
   "version": "0.2.1",
@@ -282,6 +282,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "1b2cfdcde1dc32b2cc4a768124a2ffbc71d6bb12316b146f645d4047fcd92ebf",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

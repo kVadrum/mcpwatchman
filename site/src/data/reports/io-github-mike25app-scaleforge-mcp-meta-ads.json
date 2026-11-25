@@ -2,7 +2,7 @@
  "name": "io.github.Mike25app/scaleforge-mcp-meta-ads",
  "version": "0.2.3",
  "slug": "io-github-mike25app-scaleforge-mcp-meta-ads",
- "scanned_at": "2026-11-24T02:52:56+00:00",
+ "scanned_at": "2026-11-25T02:57:07+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -166,7 +166,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 10 day(s) before 2026-11-24",
+     "detail": "last commit 11 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -316,7 +316,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T02:53:01+00:00",
+  "fetched_at": "2026-11-25T02:57:12+00:00",
   "system": "npm",
   "package": "@getscaleforge/mcp-meta-ads",
   "version": "0.2.3",
@@ -342,6 +342,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "da9e53d9f5853ced1fc22007398ebd4b1c498d417306fbb31373a6c0920f41c1",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

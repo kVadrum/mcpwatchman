@@ -2,7 +2,7 @@
  "name": "io.github.kylastech/kylas-crm",
  "version": "1.0.4",
  "slug": "io-github-kylastech-kylas-crm",
- "scanned_at": "2026-11-24T02:59:52+00:00",
+ "scanned_at": "2026-11-25T03:04:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 288 day(s) before 2026-11-24",
+     "detail": "last commit 289 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T02:59:55+00:00",
+  "fetched_at": "2026-11-25T03:04:21+00:00",
   "system": "PyPI",
   "package": "kylas-crm-mcp-server",
   "version": "1.0.4",
@@ -266,6 +266,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "10b14f99fdf763a361865b80a23da1ed8ce9b6595b99b0aea1be5d605c3026b1",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

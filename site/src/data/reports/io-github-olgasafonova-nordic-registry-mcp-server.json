@@ -2,7 +2,7 @@
  "name": "io.github.olgasafonova/nordic-registry-mcp-server",
  "version": "1.0.2",
  "slug": "io-github-olgasafonova-nordic-registry-mcp-server",
- "scanned_at": "2026-11-24T03:02:57+00:00",
+ "scanned_at": "2026-11-25T03:07:07+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -154,7 +154,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-24",
+     "detail": "last commit 5 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -178,7 +178,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 10 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 11 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -735,6 +735,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "636bb1ad87d1f1e4bb12755827454227f6addc0a7ed8c27a2178b38213e3e602",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

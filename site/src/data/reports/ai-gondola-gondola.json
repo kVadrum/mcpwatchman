@@ -1,8 +1,8 @@
 {
  "name": "ai.gondola/gondola",
- "version": "0.1.6",
+ "version": "0.1.7",
  "slug": "ai-gondola-gondola",
- "scanned_at": "2026-11-24T02:39:42+00:00",
+ "scanned_at": "2026-11-25T02:31:54+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -13,8 +13,8 @@
  "source_reason": "",
  "transport": "streamable-http",
  "transport_mismatch": true,
- "ref_matched_version": true,
- "repository_commit": "086cf163bffaef46f422a55b56f429c99a03009c",
+ "ref_matched_version": false,
+ "repository_commit": "f81e827d364c411d48ed1557337b7849e6c06aca",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 1,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 43 day(s) before 2026-11-24",
+     "detail": "last commit 44 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 6 issue(s) in the last 6 months: 78.5 day(s) to first maintainer comment",
+     "detail": "median over 6 issue(s) in the last 6 months: 79.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 57 days (by releases), last release 69 day(s) ago",
+     "detail": "median release gap 57 days (by releases), last release 70 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -742,12 +742,14 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 43,
+   "score": 53,
    "reason": "",
-   "assessed_weight": "1",
+   "assessed_weight": "0.8",
    "fault": null,
    "evidence_omitted": 0,
-   "unmeasured_faults": [],
+   "unmeasured_faults": [
+    "project"
+   ],
    "evidence": [
     {
      "label": "license",
@@ -775,7 +777,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -813,7 +815,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "c17e7f53ea18866d78dbf58d655dd745e3a7d4ed8bd714bed2c496e33a94f5d1",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "registry_entry_hash": "0b04d22aba29478c9088552fcbd589cbc4d93a3f080f102642bd0ffb7d58ec3f",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

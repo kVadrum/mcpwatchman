@@ -2,7 +2,7 @@
  "name": "io.github.imouiche/mitre-attack-mcp-server",
  "version": "0.1.6",
  "slug": "io-github-imouiche-mitre-attack-mcp-server",
- "scanned_at": "2026-11-24T02:58:55+00:00",
+ "scanned_at": "2026-11-25T03:03:22+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 10 day(s) before 2026-11-24",
+     "detail": "last commit 11 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 10 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
+     "detail": "released 11 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +255,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T02:58:59+00:00",
+  "fetched_at": "2026-11-25T03:03:26+00:00",
   "system": "npm",
   "package": "@imouiche/mitre-attack-mcp-server",
   "version": "0.1.6",
@@ -268,6 +268,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "0ca0e55467d72b255d688aba91ee65eefbc74df2d2a003346d15ef35bdb16b84",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

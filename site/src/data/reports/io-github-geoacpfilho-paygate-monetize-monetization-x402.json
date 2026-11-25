@@ -2,7 +2,7 @@
  "name": "io.github.geoacpfilho/paygate-monetize-monetization-x402",
  "version": "0.3.1",
  "slug": "io-github-geoacpfilho-paygate-monetize-monetization-x402",
- "scanned_at": "2026-11-24T02:58:04+00:00",
+ "scanned_at": "2026-11-25T03:02:29+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -226,7 +226,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 102 day(s) before 2026-11-24",
+     "detail": "last commit 103 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -971,6 +971,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d771c1a3dfbc4bf011405c7f62cf336a0b583395e47c0495daa660765531c2d4",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

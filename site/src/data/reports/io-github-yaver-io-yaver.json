@@ -2,7 +2,7 @@
  "name": "io.github.yaver-io/yaver",
  "version": "1.99.478",
  "slug": "io-github-yaver-io-yaver",
- "scanned_at": "2026-11-24T03:11:37+00:00",
+ "scanned_at": "2026-11-25T03:15:42+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -297,7 +297,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 44 day(s) before 2026-11-24",
+     "detail": "last commit 45 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -309,7 +309,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 134.1 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 135.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -321,7 +321,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 45 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 46 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -445,7 +445,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T03:11:43+00:00",
+  "fetched_at": "2026-11-25T03:15:47+00:00",
   "system": "npm",
   "package": "yaver-cli",
   "version": "1.99.478",
@@ -495,6 +495,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "433a71179cef26542a7cffce58b573b972ae9a61d4cecdec3a62b605c995dadb",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

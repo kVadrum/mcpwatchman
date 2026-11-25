@@ -2,7 +2,7 @@
  "name": "ai.gavelin/mcp",
  "version": "1.0.0",
  "slug": "ai-gavelin-mcp",
- "scanned_at": "2026-11-24T02:39:19+00:00",
+ "scanned_at": "2026-11-25T02:43:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 58 day(s) before 2026-11-24",
+     "detail": "last commit 59 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 42.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 43.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -850,6 +850,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "c7e7aa3460c81c27996a9fcd79c0a229706a0b2c9a847b20064020b18ccc2dc1",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

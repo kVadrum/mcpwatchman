@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/json-bytes",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-json-bytes",
- "scanned_at": "2026-11-24T03:07:42+00:00",
+ "scanned_at": "2026-11-25T03:11:49+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 62 day(s) before 2026-11-24",
+     "detail": "last commit 63 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "6aa569833012309bf107252b776d37bfab874251880e47d7970341be1d8e9647",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.rajat79suri/visa-info",
  "version": "1.0.2",
  "slug": "io-github-rajat79suri-visa-info",
- "scanned_at": "2026-11-24T03:05:31+00:00",
+ "scanned_at": "2026-11-25T03:09:40+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T03:05:36+00:00",
+  "fetched_at": "2026-11-25T03:09:45+00:00",
   "system": "npm",
   "package": "visa-info-mcp",
   "version": "1.0.2",
@@ -279,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "55a0d45fe78d6d74117acded0f03c4c6e0a2fe393ebf062a97c0bbaa3f28769a",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

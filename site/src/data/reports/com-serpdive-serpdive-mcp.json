@@ -2,7 +2,7 @@
  "name": "com.serpdive/serpdive-mcp",
  "version": "0.1.4",
  "slug": "com-serpdive-serpdive-mcp",
- "scanned_at": "2026-11-24T02:48:50+00:00",
+ "scanned_at": "2026-11-25T02:53:19+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 122 day(s) before 2026-11-24",
+     "detail": "last commit 123 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 122 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 123 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-24T02:48:53+00:00",
+  "fetched_at": "2026-11-25T02:53:22+00:00",
   "system": "npm",
   "package": "serpdive-mcp",
   "version": "0.1.4",
@@ -267,6 +267,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "3abd966fec50bd2d93085b6512c13d61f71101cf723df5c06fdf063bc88844e7",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

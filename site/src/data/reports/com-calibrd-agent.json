@@ -2,7 +2,7 @@
  "name": "com.calibrd/agent",
  "version": "1.0.1",
  "slug": "com-calibrd-agent",
- "scanned_at": "2026-11-24T02:46:59+00:00",
+ "scanned_at": "2026-11-25T02:51:23+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 75 day(s) before 2026-11-24",
+     "detail": "last commit 76 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "dc665583e05373ccd661c2186e7add701d8104361199b0f24c0b761a3fcc39b8",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

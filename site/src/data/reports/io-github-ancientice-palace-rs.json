@@ -1,8 +1,8 @@
 {
  "name": "io.github.AncientiCe/palace-rs",
- "version": "0.20.10",
+ "version": "0.20.11",
  "slug": "io-github-ancientice-palace-rs",
- "scanned_at": "2026-11-24T02:26:39+00:00",
+ "scanned_at": "2026-11-25T02:30:16+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "04b36bf8c77a30910eede8e81239ca2f3a4a93cf",
+ "repository_commit": "eda4d350b722408607d8d27db99f4d3ec9f66f7b",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 1,
@@ -117,7 +117,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-24",
+     "detail": "last commit 1 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 0.3 day(s) to first maintainer comment",
+     "detail": "median over 5 issue(s) in the last 6 months: 0.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -262,7 +262,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "eb3c9b309938021830e98b25534ff7bcbb4ebebc3b3615b8d2e1d88d2031b030",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "registry_entry_hash": "d5abda8e38c839cc4222c3df53ead8ee09b6bce96297f34cc8c82e70a97ad177",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

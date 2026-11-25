@@ -2,7 +2,7 @@
  "name": "ai.klavis/strata",
  "version": "1.0.0",
  "slug": "ai-klavis-strata",
- "scanned_at": "2026-11-21T02:35:34+00:00",
+ "scanned_at": "2026-11-25T02:26:17+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -15,8 +15,8 @@
  "transport_mismatch": false,
  "ref_matched_version": false,
  "repository_commit": "7cab53e9434b76f74112fd3303152c668d6dd2dc",
- "registry_state": "stale",
- "registry_note": "This server is listed in the registry, but the most recent scan could not measure it for reasons on our side (last checked 2026-11-24). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-11-21, and have not been recomputed, because the scan that would have refreshed them did not complete.",
+ "registry_state": "listed",
+ "registry_note": "",
  "files_scanned": 1286,
  "files_pruned": 2,
  "axes": {
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 16 day(s) before 2026-11-21",
+     "detail": "last commit 20 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -717,7 +717,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 12 issue(s) in the last 6 months: 88.7 day(s) to first maintainer comment",
+     "detail": "median over 11 issue(s) in the last 6 months: 82.2 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 296 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 300 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -768,10 +768,10 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": 0,
-   "reason": "65 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored; the dependencies in 63 requirements files (examples/agno-klavis/requirements.txt, examples/claude-klavis/python/requirements.txt, examples/crewai-klavis/python/requirements.txt) were not measured \u2014 they do not pin every requirement to one exact version, or could not be read whole \u2014 so the score covers the 65 lockfiles that were",
+   "reason": "66 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored; the dependencies in 63 requirements files (examples/agno-klavis/requirements.txt, examples/claude-klavis/python/requirements.txt, examples/crewai-klavis/python/requirements.txt) were not measured \u2014 they do not pin every requirement to one exact version, or could not be read whole \u2014 so the score covers the 65 lockfiles that were",
    "assessed_weight": "0.49",
    "fault": null,
-   "evidence_omitted": 4577,
+   "evidence_omitted": 4578,
    "unmeasured_faults": [
     "project",
     "publisher"
@@ -1455,6 +1455,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5a436e7e5be6ac727ccc24b3a8a3e8718d8bff4c8bc13febb23f12d4bc5c6ba1",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }

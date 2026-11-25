@@ -1,8 +1,8 @@
 {
  "name": "io.github.GarAlex/promoshot",
- "version": "0.4.7",
+ "version": "0.4.8",
  "slug": "io-github-garalex-promoshot",
- "scanned_at": "2026-11-24T02:51:47+00:00",
+ "scanned_at": "2026-11-25T02:32:17+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "af3f6364f28e50a94a055947e173c11d2a874deb",
+ "repository_commit": "14c7fd221e54eaf01048579b1b1e0a9bd2b5021d",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 16,
@@ -525,7 +525,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-24",
+     "detail": "last commit 2 day(s) before 2026-11-25",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -537,7 +537,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 81.1 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 82.1 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -549,7 +549,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 26 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 27 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -1041,7 +1041,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "2d593b5a35d0c3f7f414b91ab39b93919c53cac9117b558e45980f56f59727cd",
- "checked_at": "2026-11-24T02:05:35+00:00",
+ "registry_entry_hash": "b2ac39795f44b756a0108036ed4526ce8d425ce63e4ebf552660060210cb4417",
+ "checked_at": "2026-11-25T02:09:21+00:00",
  "findings_tracked_since": "2026-10-10"
 }
