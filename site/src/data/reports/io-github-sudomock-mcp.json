@@ -1,20 +1,20 @@
 {
  "name": "io.github.sudomock/mcp",
- "version": "3.12.1",
+ "version": "3.12.2",
  "slug": "io-github-sudomock-mcp",
- "scanned_at": "2026-11-25T03:14:06+00:00",
+ "scanned_at": "2026-11-26T02:22:01+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/sudomock/mcp-server",
- "package": "npm:@sudomock/mcp@3.12.1",
+ "package": "npm:@sudomock/mcp@3.12.2",
  "source_state": "fetched",
  "source_subject": "",
  "source_reason": "",
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "ad1c5c14eba4962032717f7c9476a74dd6ebd0e5",
+ "repository_commit": "7f54d79c7a569f919279226bef8eb5aa2ac91e07",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 4,
@@ -23,7 +23,7 @@
   "code_safety": {
    "axis": "code_safety",
    "score": 89,
-   "reason": "scored on the declared repository at version 3.12.1, because the published package carries its code only as build output, which is not read as the server's own source",
+   "reason": "scored on the declared repository at version 3.12.2, because the published package carries its code only as build output, which is not read as the server's own source",
    "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
@@ -105,7 +105,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 1 credential-shaped string(s), every one from a keyword or entropy heuristic (Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at README.md:30",
+     "detail": "detect-secrets matched 1 credential-shaped string(s), every one from a keyword or entropy heuristic (Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at README.md:39",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -143,7 +143,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-25",
+     "detail": "last commit 2 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -167,7 +167,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 12 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
+     "detail": "released 13 day(s) ago (by tags), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -291,10 +291,10 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T03:14:11+00:00",
+  "fetched_at": "2026-11-26T02:22:04+00:00",
   "system": "npm",
   "package": "@sudomock/mcp",
-  "version": "3.12.1",
+  "version": "3.12.2",
   "nodes": 0,
   "direct": 0,
   "skipped_nodes": 0,
@@ -303,7 +303,7 @@
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
- "registry_entry_hash": "db2ee8f80d49a1bfc51026059fe8599ae3689d404f44958dd67754c9e7f49b4e",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "registry_entry_hash": "4d90d409ec06b6dff6b3ff8b536ec3e13923462879b83cf8d3a8f08d5bf41c4d",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

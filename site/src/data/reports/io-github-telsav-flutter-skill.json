@@ -2,7 +2,7 @@
  "name": "io.github.telsav/flutter-skill",
  "version": "0.7.6",
  "slug": "io-github-telsav-flutter-skill",
- "scanned_at": "2026-11-25T03:14:11+00:00",
+ "scanned_at": "2026-11-26T03:00:01+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -213,7 +213,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 85 day(s) before 2026-11-25",
+     "detail": "last commit 86 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -225,7 +225,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 9 issue(s) in the last 6 months: 103.7 day(s) to first maintainer comment",
+     "detail": "median over 9 issue(s) in the last 6 months: 104.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -237,7 +237,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 85 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 86 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -361,7 +361,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T03:14:16+00:00",
+  "fetched_at": "2026-11-26T03:00:03+00:00",
   "system": "npm",
   "package": "flutter-skill",
   "version": "0.7.6",
@@ -374,6 +374,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "106bf752f2f641cd8f3e5ced934aab0c2359c7578821bc254f361ae55a8d619d",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

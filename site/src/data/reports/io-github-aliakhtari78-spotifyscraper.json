@@ -2,7 +2,7 @@
  "name": "io.github.AliAkhtari78/spotifyscraper",
  "version": "3.9.2",
  "slug": "io-github-aliakhtari78-spotifyscraper",
- "scanned_at": "2026-11-25T02:54:32+00:00",
+ "scanned_at": "2026-11-26T02:44:01+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 152 day(s) before 2026-11-25",
+     "detail": "last commit 153 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 152 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 153 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -855,7 +855,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T02:54:43+00:00",
+  "fetched_at": "2026-11-26T02:44:06+00:00",
   "system": "PyPI",
   "package": "spotifyscraper",
   "version": "3.9.2",
@@ -868,6 +868,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "8e1899a5129a5f18e4f982a1073326dc8d54fc6f48c6a67e67570dea6f4c858f",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

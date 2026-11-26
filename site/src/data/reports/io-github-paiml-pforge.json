@@ -2,7 +2,7 @@
  "name": "io.github.paiml/pforge",
  "version": "0.1.2",
  "slug": "io-github-paiml-pforge",
- "scanned_at": "2026-11-25T03:07:25+00:00",
+ "scanned_at": "2026-11-26T02:54:03+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 96 day(s) before 2026-11-25",
+     "detail": "last commit 97 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -155,7 +155,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 15 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 16 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -684,6 +684,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "c2876dcf97ea5e7a7bba6916eb1d054f3ff50ad9794106a6284536df64f7fe51",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

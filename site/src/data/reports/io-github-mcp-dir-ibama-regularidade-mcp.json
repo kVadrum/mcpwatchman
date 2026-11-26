@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/ibama_regularidade-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-ibama-regularidade-mcp",
- "scanned_at": "2026-11-25T03:05:31+00:00",
+ "scanned_at": "2026-11-26T02:52:35+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 102 day(s) before 2026-11-25",
+     "detail": "last commit 103 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "01f090fa2a1cf099be7b7e67aae285be0668932893a1391119f1d4be595f19ca",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -1,8 +1,8 @@
 {
  "name": "ai.kanonik/kanonik",
- "version": "1.0.0",
+ "version": "1.1.4",
  "slug": "ai-kanonik-kanonik",
- "scanned_at": "2026-11-25T02:45:36+00:00",
+ "scanned_at": "2026-11-26T02:21:46+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "81adcc9abd8727b07ee0c6f7c1171dd797e13d86",
+ "repository_commit": "063add6a10ff86f4091e9c24110e9785c0afa64c",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 35 day(s) before 2026-11-25",
+     "detail": "last commit 36 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 40.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -178,12 +178,14 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 29,
+   "score": 55,
    "reason": "",
-   "assessed_weight": "1",
+   "assessed_weight": "0.8",
    "fault": null,
    "evidence_omitted": 0,
-   "unmeasured_faults": [],
+   "unmeasured_faults": [
+    "project"
+   ],
    "evidence": [
     {
      "label": "license",
@@ -211,7 +213,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -235,7 +237,7 @@
     },
     {
      "label": "security_contact",
-     "detail": "no SECURITY.md and no disclosure contact in the README, so a finder has no route to report a vulnerability privately",
+     "detail": "no SECURITY.md, but README.md documents a disclosure route \u2014 `03` \u00a77 accepts either",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,7 +251,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "a9ad0da6f498e4f7bfabee2802b219b872d819ccc8444b4772b43c8df50a603d",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "registry_entry_hash": "3b675979c07f47a1efcb37948494021b575f22529f8b5308638cbf18498ffdad",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

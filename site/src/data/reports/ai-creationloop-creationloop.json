@@ -2,7 +2,7 @@
  "name": "ai.creationloop/creationloop",
  "version": "0.1.0",
  "slug": "ai-creationloop-creationloop",
- "scanned_at": "2026-11-25T02:39:50+00:00",
+ "scanned_at": "2026-11-26T02:31:33+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 28 day(s) before 2026-11-25",
+     "detail": "last commit 29 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 44.8 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 45.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "bde8df0701bfcead595209419ff5973ad842765d32d7826357e4920979a46105",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

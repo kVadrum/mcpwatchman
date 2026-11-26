@@ -1,8 +1,8 @@
 {
  "name": "dev.uptimepage/uptimepage",
- "version": "1.7.0",
+ "version": "1.8.0",
  "slug": "dev-uptimepage-uptimepage",
- "scanned_at": "2026-11-25T02:33:35+00:00",
+ "scanned_at": "2026-11-26T02:21:11+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "aebb9bb8a5e9a38d9f2140afa7b138ab14a95391",
+ "repository_commit": "ecb0dada33ee44aa94bfb6a7531dbcf7e1c8281a",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 85,
@@ -440,7 +440,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "Twilio API Key at scripts/seed-marketing.sh:497; GitHub Token at src/public_status/aggregator.rs:1678; Twilio API Key at tests/delegate_links_test.rs:334; Twilio API Key at tests/plan_governance_test.rs:108; \u2026and 133 more matches",
+     "detail": "Twilio API Key at scripts/seed-marketing.sh:497; GitHub Token at src/public_status/aggregator.rs:1678; Twilio API Key at tests/delegate_links_test.rs:334; Twilio API Key at tests/plan_governance_test.rs:108; \u2026and 137 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -477,7 +477,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-25",
+     "detail": "last commit 2 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -501,7 +501,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 5 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 6 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -540,7 +540,7 @@
   "dependency_health": {
    "axis": "dependency_health",
    "score": null,
-   "reason": "29 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
+   "reason": "27 vulnerabilities were found and none could be placed in `03` \u00a76's table \u2014 no CVSS score, or an ecosystem whose manifest we cannot parse for direct-vs-transitive",
    "assessed_weight": "0",
    "fault": "project",
    "evidence_omitted": 0,
@@ -614,18 +614,6 @@
      "excerpt": "",
      "url": "https://osv.dev/vulnerability/GHSA-9g45-5xwm-f3wc",
      "finding": "rmcp:GHSA-9g45-5xwm-f3wc",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": false
-    },
-    {
-     "label": "cookie 0.18.1 \u2014 RUSTSEC-2026-0594",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, CVSS 6.5, fixed in 0.18.3",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0594",
-     "finding": "cookie:RUSTSEC-2026-0594",
      "severity": "medium",
      "first_seen": null,
      "deducts": false
@@ -881,18 +869,6 @@
      "severity": "",
      "first_seen": null,
      "deducts": false
-    },
-    {
-     "label": "url 2.5.8 \u2014 RUSTSEC-2026-0592",
-     "detail": "direct or transitive unknown \u2014 no parseable manifest for this ecosystem, no CVSS published, fixed in 2.5.9",
-     "path": "Cargo.lock",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/RUSTSEC-2026-0592",
-     "finding": "url:RUSTSEC-2026-0592",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
     }
    ]
   },
@@ -971,7 +947,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "f9eca0df81ffd1d59ab868fedd63eb3d8c8f4292fd0153fcd55cd6c40363dbdd",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "registry_entry_hash": "1d87dbc9649fe126a37d7242d499a5a6929cc074473ab1feed4407a54b3e1285",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

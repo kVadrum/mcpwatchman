@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/pref_pr_curitiba_cnd-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-pref-pr-curitiba-cnd-mcp",
- "scanned_at": "2026-11-25T03:05:42+00:00",
+ "scanned_at": "2026-11-26T02:52:44+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 97 day(s) before 2026-11-25",
+     "detail": "last commit 98 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "53fe3d0d996c5508f615105181ae16ca451160e710c3c705e3df26c5acb5ee22",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

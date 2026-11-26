@@ -16,7 +16,7 @@
  "ref_matched_version": null,
  "repository_commit": null,
  "registry_state": "delisted",
- "registry_note": "The registry no longer lists this server (last checked 2026-11-25). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-11-14, and have not been recomputed, because there is no current entry to scan.",
+ "registry_note": "The registry no longer lists this server (last checked 2026-11-26). This page is kept because its URL is public; the scores below are from the last scan taken while the server was listed, on 2026-11-14, and have not been recomputed, because there is no current entry to scan.",
  "files_scanned": 25,
  "files_pruned": 0,
  "axes": {
@@ -545,5 +545,5 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "findings_tracked_since": "2026-10-10",
- "checked_at": "2026-11-25T02:09:21+00:00"
+ "checked_at": "2026-11-26T02:05:46+00:00"
 }

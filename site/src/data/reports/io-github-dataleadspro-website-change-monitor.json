@@ -2,7 +2,7 @@
  "name": "io.github.DataLeadsPRO/website-change-monitor",
  "version": "1.0.1",
  "slug": "io-github-dataleadspro-website-change-monitor",
- "scanned_at": "2026-11-25T02:55:27+00:00",
+ "scanned_at": "2026-11-26T02:44:44+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -119,7 +119,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 69 day(s) before 2026-11-25",
+     "detail": "last commit 70 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -263,6 +263,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "fb2fb26546fcd599696c43cee79078b2823b32bf947ba250cd8a0a7d42715f27",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

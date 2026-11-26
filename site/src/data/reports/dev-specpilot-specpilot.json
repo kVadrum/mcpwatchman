@@ -2,7 +2,7 @@
  "name": "dev.specpilot/specpilot",
  "version": "1.0.0",
  "slug": "dev-specpilot-specpilot",
- "scanned_at": "2026-11-25T02:53:42+00:00",
+ "scanned_at": "2026-11-26T02:43:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-25",
+     "detail": "last commit 2 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -717,7 +717,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 40.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 7 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 8 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -1296,6 +1296,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ed3be016806902550aa2b83bd5f455aae0e33c45fa9e5cdb2516bf7f255c2146",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

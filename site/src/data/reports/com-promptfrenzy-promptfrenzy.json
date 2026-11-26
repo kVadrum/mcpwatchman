@@ -2,7 +2,7 @@
  "name": "com.promptfrenzy/promptfrenzy",
  "version": "1.0.0",
  "slug": "com-promptfrenzy-promptfrenzy",
- "scanned_at": "2026-11-25T02:53:14+00:00",
+ "scanned_at": "2026-11-26T02:42:55+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 69 day(s) before 2026-11-25",
+     "detail": "last commit 70 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "dec3a70d34f65ecf0c3f19bcc7a88d56291bd588769cff0f13a88ad0a100a186",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

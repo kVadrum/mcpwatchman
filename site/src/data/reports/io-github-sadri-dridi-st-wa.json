@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/st-wa",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-st-wa",
- "scanned_at": "2026-11-25T03:12:29+00:00",
+ "scanned_at": "2026-11-26T02:58:42+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 63 day(s) before 2026-11-25",
+     "detail": "last commit 64 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9a35e51bf6f6bb8644471a38f900a9da955bcb58ff64972c5dace3075585a014",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

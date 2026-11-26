@@ -2,7 +2,7 @@
  "name": "ai.cotal/cotal",
  "version": "1.1.0",
  "slug": "ai-cotal-cotal",
- "scanned_at": "2026-11-25T02:37:35+00:00",
+ "scanned_at": "2026-11-26T02:29:16+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "7da4ac0fa52b341aa94e8e6a4b6fe846a4317735",
+ "repository_commit": "be4c516864ba45e31953f23781f4d47ecb72fb2b",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 3580,
+ "files_scanned": 3714,
  "files_pruned": 5,
  "axes": {
   "code_safety": {
@@ -26,7 +26,7 @@
    "reason": "5 findings from checks whose precision is not yet measured are listed but not deducted; 12 findings in test code are listed but not deducted; 5 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 17 files could not be parsed and were not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 485,
+   "evidence_omitted": 518,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -251,7 +251,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "extensions/connector-claude-code/smoke/launch-env.smoke.ts",
-     "line": 151,
+     "line": 158,
      "excerpt": "  delete process.env.PATH;\n  delete process.env.Path;\n  process.env[spelling] = ambientPath;\n  const row =\n    claudeConnector.buildLaunch({ space: \"smoke\", name: `claude-path-${spelling}`, events: false } as never).env ?? {};",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -323,7 +323,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "extensions/pi/pi.smoke.ts",
-     "line": 1370,
+     "line": 1376,
      "excerpt": "    const value = saved[key];\n    if (value === undefined) delete process.env[key];\n    else process.env[key] = value;\n  }\n}",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -491,7 +491,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "implementations/cli/smoke/mint-persona-space.smoke.ts",
-     "line": 138,
+     "line": 184,
      "excerpt": "  for (const k of envKeys) {\n    if (savedEnv[k] === undefined) delete process.env[k];\n    else process.env[k] = savedEnv[k];\n  }\n  rmSync(scratch, { recursive: true, force: true });",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -670,7 +670,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "AWS Access Key at docs/dashboard-api.mdx:1560; JSON Web Token at implementations/auth/smoke/grant-usage.smoke.ts:147; JSON Web Token at implementations/auth/smoke/login.smoke.ts:415; JSON Web Token at implementations/auth/smoke/login.smoke.ts:969; AWS Access Key at implementations/web/openapi.json:604; \u2026and 2407 more matches",
+     "detail": "AWS Access Key at docs/dashboard-api.mdx:1560; JSON Web Token at implementations/auth/smoke/grant-usage.smoke.ts:147; JSON Web Token at implementations/auth/smoke/login.smoke.ts:415; JSON Web Token at implementations/auth/smoke/login.smoke.ts:1007; AWS Access Key at implementations/web/openapi.json:604; \u2026and 2413 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -707,7 +707,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 0 day(s) before 2026-11-25",
+     "detail": "last commit 1 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -719,7 +719,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 0.0 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 0.9 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -731,7 +731,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 0 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -773,7 +773,7 @@
    "reason": "2 vulnerabilities could not be placed in `03` \u00a76's table and are listed but not scored; 4 dependency files (desktop/src-tauri/Cargo.lock, remotion/pnpm-lock.yaml, website/package-lock.json) were not read as this server's \u2014 each sits inside a nested sub-project, a directory below this one with its own package manifest, and whether any of them also covers the server cannot be told from the tree \u2014 so the score covers the 1 lockfile that was",
    "assessed_weight": "0.19",
    "fault": null,
-   "evidence_omitted": 79,
+   "evidence_omitted": 78,
    "unmeasured_faults": [
     "project"
    ],
@@ -1456,6 +1456,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "a83369f94b30aad80c489e9f0e10065848a1e2922216a411cce49631e8bddbea",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

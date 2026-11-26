@@ -2,7 +2,7 @@
  "name": "io.github.ErikEJ/SqlServer.Rules",
  "version": "1.0",
  "slug": "io-github-erikej-sqlserver-rules",
- "scanned_at": "2026-11-25T02:55:46+00:00",
+ "scanned_at": "2026-11-26T02:44:57+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,7 +14,7 @@
  "transport": "stdio",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "4a4193285a19e1d17fa9b075c221f9fb62ef8a61",
+ "repository_commit": "132bb4a5c0147dbcd3236f4d9b43ce10c388626a",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 2,
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 8 day(s) before 2026-11-25",
+     "detail": "last commit 9 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 37 days (by releases), last release 192 day(s) ago",
+     "detail": "median release gap 37 days (by releases), last release 193 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -753,6 +753,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "8899fc906395dab2418b511f6a6f07223f8747d9b33033b883b236c23c25e679",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

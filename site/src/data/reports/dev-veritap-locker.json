@@ -2,7 +2,7 @@
  "name": "dev.veritap/locker",
  "version": "0.3.1",
  "slug": "dev-veritap-locker",
- "scanned_at": "2026-11-25T02:54:03+00:00",
+ "scanned_at": "2026-11-26T02:43:34+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -191,7 +191,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 88 day(s) before 2026-11-25",
+     "detail": "last commit 89 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -938,6 +938,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "2dddb8e4f73ae26877dea23526d3f3cf75d0ff28a483252d92379a8a2c918c69",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

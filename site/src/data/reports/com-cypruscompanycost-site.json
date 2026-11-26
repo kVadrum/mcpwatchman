@@ -2,7 +2,7 @@
  "name": "com.cypruscompanycost/site",
  "version": "1.0.1",
  "slug": "com-cypruscompanycost-site",
- "scanned_at": "2026-11-25T02:51:58+00:00",
+ "scanned_at": "2026-11-26T02:41:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ef3ba63c9c19eba0336733398434048da9187de3a748cf0e8315dc49ca39b41c",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

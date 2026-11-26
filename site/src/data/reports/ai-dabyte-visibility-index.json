@@ -2,7 +2,7 @@
  "name": "ai.dabyte/visibility-index",
  "version": "1.0.1",
  "slug": "ai-dabyte-visibility-index",
- "scanned_at": "2026-11-25T02:39:59+00:00",
+ "scanned_at": "2026-11-26T02:31:40+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-25",
+     "detail": "last commit 2 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -275,6 +275,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "331da601b32ada71948b5a3f37c4d92102bb9897653682d1f9110087c78c9ab4",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

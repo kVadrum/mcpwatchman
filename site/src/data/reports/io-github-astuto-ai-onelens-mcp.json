@@ -2,7 +2,7 @@
  "name": "io.github.astuto-ai/onelens-mcp",
  "version": "0.1.0",
  "slug": "io-github-astuto-ai-onelens-mcp",
- "scanned_at": "2026-11-25T02:59:13+00:00",
+ "scanned_at": "2026-11-26T02:47:37+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "f843e75bc5d854fa74b6733125cefb48a72c4a6229ebb2229769ba4e3e629cb3",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

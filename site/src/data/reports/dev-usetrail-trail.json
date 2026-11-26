@@ -2,7 +2,7 @@
  "name": "dev.usetrail/trail",
  "version": "1.29.1",
  "slug": "dev-usetrail-trail",
- "scanned_at": "2026-11-25T02:53:59+00:00",
+ "scanned_at": "2026-11-26T02:43:32+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 69 day(s) before 2026-11-25",
+     "detail": "last commit 70 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 69 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 70 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -290,7 +290,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T02:54:02+00:00",
+  "fetched_at": "2026-11-26T02:43:34+00:00",
   "system": "npm",
   "package": "usetrail",
   "version": "1.29.1",
@@ -303,6 +303,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "da99b541ba5927c9c118b1dbb3bc4177250bfa102086d3cd27855852308d6e27",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

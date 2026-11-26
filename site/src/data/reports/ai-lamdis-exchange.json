@@ -2,7 +2,7 @@
  "name": "ai.lamdis/exchange",
  "version": "0.1.0",
  "slug": "ai-lamdis-exchange",
- "scanned_at": "2026-11-25T02:45:55+00:00",
+ "scanned_at": "2026-11-26T02:36:42+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 15 day(s) before 2026-11-25",
+     "detail": "last commit 16 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -717,7 +717,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 40.7 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 41.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 47 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 48 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -1082,6 +1082,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "e62061fb67eb5d6ee139fd5e665388a63ec0d1ad57d53d65e5cdd0ea7f245709",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

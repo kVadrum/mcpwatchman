@@ -2,7 +2,7 @@
  "name": "ai.kolens/kolens-mcp",
  "version": "1.0.0",
  "slug": "ai-kolens-kolens-mcp",
- "scanned_at": "2026-11-25T02:45:52+00:00",
+ "scanned_at": "2026-11-26T02:36:39+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9898ba76fcade57786594d51ed7517a9499f5543a239b7edd5215f2ce3a97e57",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

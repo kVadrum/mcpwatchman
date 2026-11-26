@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/au-postcode",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-au-postcode",
- "scanned_at": "2026-11-25T03:10:48+00:00",
+ "scanned_at": "2026-11-26T02:56:55+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 63 day(s) before 2026-11-25",
+     "detail": "last commit 64 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "12daea720e652c891c0975c4e5b2f415f64b9327fe0ccf678a5adf9f1827b2f8",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

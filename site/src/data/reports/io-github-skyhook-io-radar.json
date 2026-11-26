@@ -1,8 +1,8 @@
 {
  "name": "io.github.skyhook-io/radar",
- "version": "1.21.4",
+ "version": "1.21.5",
  "slug": "io-github-skyhook-io-radar",
- "scanned_at": "2026-11-25T02:30:29+00:00",
+ "scanned_at": "2026-11-26T02:19:43+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,19 +14,19 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": true,
- "repository_commit": "f7efd90e0b65b0b7dd33d6bfff333a1bc6458c4c",
+ "repository_commit": "44d73bf7e3e54e577b7d0c62de9c245d7fce5a1f",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 3401,
+ "files_scanned": 3523,
  "files_pruned": 2,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
-   "score": 43,
+   "score": 38,
    "reason": "7 findings from checks whose precision is not yet measured are listed but not deducted; 9 findings in test code are listed but not deducted; 2 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 6 files could not be parsed and were not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 60,
+   "evidence_omitted": 69,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -35,7 +35,7 @@
      "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
      "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
      "path": "packages/k8s-ui/src/components/resources/ResourcesView.tsx",
-     "line": 4070,
+     "line": 4086,
      "excerpt": "  const result: Record<string, ResourceCoverage> = { ...resourceCoverage }\n  for (const key of Object.keys(resourceCounts ?? {})) {\n    if (!(key in result)) result[key] = { status: 'unknown' }\n  }\n  for (const [key, cached] of Object.entries(loadedCountCache)) {",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
@@ -298,6 +298,30 @@
     {
      "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/cloud/metrics_relay.go",
+     "line": 113,
+     "excerpt": "\t\tfull += \"?\" + values.Encode()\n\t}\n\treq, err := http.NewRequestWithContext(ctx, method, full, body)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"metrics relay: build request: %w\", err)",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "internal/cloud/metrics_source.go",
+     "line": 274,
+     "excerpt": "\nfunc (p *metricsSourcePoller) fetch(ctx context.Context) (MetricsSourceResponse, error) {\n\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, p.hubOrigin+metricsSourcePath, nil)\n\tif err != nil {\n\t\treturn MetricsSourceResponse{}, err",
+     "url": "",
+     "finding": "mcp-go-ssrf-nonliteral-url",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
      "path": "internal/diagnosecli/diagnosecli.go",
      "line": 362,
      "excerpt": "func recordConsentHTTP(base, surface string) error {\n\tbody, _ := json.Marshal(map[string]string{\"surface\": surface})\n\tresp, err := http.Post(base+\"/api/diagnose/consent\", \"application/json\", strings.NewReader(string(body)))\n\tif err != nil {\n\t\treturn err",
@@ -455,7 +479,7 @@
      "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
      "path": "internal/traffic/caretta.go",
-     "line": 832,
+     "line": 847,
      "excerpt": "\tqueryURL := fmt.Sprintf(\"%s%s/api/v1/query?query=%s\", promAddr, basePath, url.QueryEscape(query))\n\n\treq, err := http.NewRequestWithContext(ctx, \"GET\", queryURL, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"creating request: %w\", err)",
      "url": "",
      "finding": "mcp-go-ssrf-nonliteral-url",
@@ -467,7 +491,7 @@
      "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
      "path": "internal/traffic/caretta.go",
-     "line": 1481,
+     "line": 1496,
      "excerpt": "\tdefer cancel()\n\n\treq, err := http.NewRequestWithContext(testCtx, \"GET\", addr+\"/api/v1/query?query=up\", nil)\n\tif err != nil {\n\t\treturn false",
      "url": "",
      "finding": "mcp-go-ssrf-nonliteral-url",
@@ -479,7 +503,7 @@
      "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
      "path": "internal/traffic/caretta.go",
-     "line": 1534,
+     "line": 1549,
      "excerpt": "\tqueryURL := fmt.Sprintf(\"%s%s/api/v1/query?query=%s\", promAddr, basePath, url.QueryEscape(query))\n\n\treq, err := http.NewRequestWithContext(ctx, \"GET\", queryURL, nil)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"creating request: %w\", err)",
      "url": "",
      "finding": "mcp-go-ssrf-nonliteral-url",
@@ -574,9 +598,9 @@
     {
      "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
-     "path": "pkg/prom/transport.go",
-     "line": 83,
-     "excerpt": "\t}\n\n\treq, err := http.NewRequestWithContext(ctx, method, full, requestBody)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"prom.HTTPTransport: build request: %w\", err)",
+     "path": "pkg/prom/openobserve/legacy.go",
+     "line": 267,
+     "excerpt": "\treturn func(ctx context.Context, metric string) ([]string, error) {\n\t\tu := root + \"/streams/\" + url.PathEscape(strings.ToLower(metric)) + \"/schema?type=metrics\"\n\t\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"openobserve: build schema request: %w\", err)",
      "url": "",
      "finding": "mcp-go-ssrf-nonliteral-url",
      "severity": "medium",
@@ -584,49 +608,25 @@
      "deducts": true
     },
     {
-     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
-     "path": "scripts/connection-lifecycle-ui-check.mjs",
-     "line": 22,
-     "excerpt": "const log = (...a) => console.log(t(), ...a)\nconst ann = (ctx) => execFileSync('kubectl', ['--kubeconfig', kubeconfig, '--context', ctx, '-n', 'default', 'get', 'deploy', 'radar-live-probe', '-o', 'jsonpath={.spec.template.metadata.annotations.kubectl\\\\.kubernetes\\\\.io/restartedAt}']).toString()\nconst status = async () => (await fetch(base + '/api/connection?contexts=0')).json()\n\nconst browser = await chromium.launch({ channel: 'chrome', headless: true })",
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "pkg/prom/openobserve/version.go",
+     "line": 82,
+     "excerpt": "\nfunc fetchConfigVersion(ctx context.Context, t *prom.HTTPTransport, u string) (StoreVersion, error) {\n\treq, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)\n\tif err != nil {\n\t\treturn StoreVersion{}, err",
      "url": "",
-     "finding": "mcp-js-ssrf-nonliteral-url",
+     "finding": "mcp-go-ssrf-nonliteral-url",
      "severity": "medium",
      "first_seen": null,
      "deducts": true
     },
     {
-     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
-     "path": "scripts/mcp-agent-test/run.py",
-     "line": 223,
-     "excerpt": "    while time.time() < deadline:\n        try:\n            with urllib.request.urlopen(url, timeout=5) as r:\n                if r.status == 200:\n                    return r.read()",
+     "label": "mcp-go-ssrf-nonliteral-url (medium/low)",
+     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any component is caller-supplied the server can be aimed at hosts it can reach and the caller cannot.",
+     "path": "pkg/prom/transport.go",
+     "line": 83,
+     "excerpt": "\t}\n\n\treq, err := http.NewRequestWithContext(ctx, method, full, requestBody)\n\tif err != nil {\n\t\treturn nil, fmt.Errorf(\"prom.HTTPTransport: build request: %w\", err)",
      "url": "",
-     "finding": "mcp-python-ssrf-nonliteral-url",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
-     "path": "scripts/mcp-agent-test/run.py",
-     "line": 237,
-     "excerpt": "                                 headers={'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream',\n                                          'MCP-Protocol-Version': '2025-11-25'})\n    raw = urllib.request.urlopen(req, timeout=30).read().decode()\n    if not raw.startswith('{'):\n        raw = next(l[6:] for l in raw.splitlines() if l.startswith('data: '))",
-     "url": "",
-     "finding": "mcp-python-ssrf-nonliteral-url",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "mcp-python-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound HTTP request is made to a URL that is not a literal. If any part of it is caller-supplied, the server can be steered at internal hosts \u2014 cloud metadata endpoints, admin ports, other tenants.",
-     "path": "scripts/tls-issues-live/check.py",
-     "line": 164,
-     "excerpt": "def radar_rows(radar, ns):\n    url = f\"{radar.rstrip('/')}/api/issues?namespaces={ns}&limit=1000\"\n    with urllib.request.urlopen(url, timeout=60) as r:\n        body = json.load(r)\n    return [i for i in body.get(\"issues\", []) if i.get(\"kind\") == \"Secret\" and str(i.get(\"reason\", \"\")).startswith(\"TLSCertificate\")]",
-     "url": "",
-     "finding": "mcp-python-ssrf-nonliteral-url",
+     "finding": "mcp-go-ssrf-nonliteral-url",
      "severity": "medium",
      "first_seen": null,
      "deducts": true
@@ -671,7 +671,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "GitHub Token at internal/helm/manifest_redaction_test.go:49; AWS Access Key at internal/server/trivy_reports_access_test.go:27; AWS Access Key at pkg/ai/context/redact_auth_test.go:25; AWS Access Key at pkg/ai/context/redact_auth_test.go:26; GitHub Token at pkg/ai/context/redact_test.go:20; AWS Access Key at pkg/ai/context/redact_test.go:28; GitHub Token at pkg/ai/context/redact_test.go:160; Private Key at web/src/components/diagnose/InvestigationResourceEvidence.test.tsx:26; \u2026and 531 more matches",
+     "detail": "GitHub Token at internal/helm/manifest_redaction_test.go:49; AWS Access Key at internal/server/trivy_reports_access_test.go:27; AWS Access Key at pkg/ai/context/redact_auth_test.go:25; AWS Access Key at pkg/ai/context/redact_auth_test.go:26; GitHub Token at pkg/ai/context/redact_test.go:20; AWS Access Key at pkg/ai/context/redact_test.go:28; GitHub Token at pkg/ai/context/redact_test.go:160; Private Key at web/src/components/diagnose/InvestigationResourceEvidence.test.tsx:26; \u2026and 593 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-25",
+     "detail": "last commit 2 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -720,7 +720,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 12.0 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 13.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -770,9 +770,9 @@
   },
   "dependency_health": {
    "axis": "dependency_health",
-   "score": 87,
-   "reason": "1 vulnerability could not be placed in `03` \u00a76's table and is listed but not scored; 1 dependency file (pkg/go.sum) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 2 lockfiles that were",
-   "assessed_weight": "0.5",
+   "score": 75,
+   "reason": "1 dependency file (pkg/go.sum) was not read as this server's \u2014 it sits inside a nested sub-project, a directory below this one with its own package manifest, and whether it also covers the server cannot be told from the tree \u2014 so the score covers the 2 lockfiles that were",
+   "assessed_weight": "0.66",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
@@ -789,6 +789,54 @@
      "finding": "zod:GHSA-mrhx-c7xc-m3w5",
      "severity": "high",
      "first_seen": "2026-10-24",
+     "deducts": true
+    },
+    {
+     "label": "github.com/prometheus/prometheus 0.307.3 \u2014 GO-2026-5264",
+     "detail": "transitive, CVSS 7.5, fixed in 0.311.3",
+     "path": "go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-5264",
+     "finding": "github.com/prometheus/prometheus:GO-2026-5264",
+     "severity": "high",
+     "first_seen": "2026-11-26",
+     "deducts": true
+    },
+    {
+     "label": "github.com/prometheus/prometheus 0.307.3 \u2014 GO-2026-5710",
+     "detail": "transitive, CVSS 7.5, fixed in 0.311.3",
+     "path": "go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-5710",
+     "finding": "github.com/prometheus/prometheus:GO-2026-5710",
+     "severity": "high",
+     "first_seen": "2026-11-26",
+     "deducts": true
+    },
+    {
+     "label": "github.com/prometheus/prometheus 0.307.3 \u2014 GO-2026-5381",
+     "detail": "transitive, CVSS 6.1, fixed in 0.311.3",
+     "path": "go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-5381",
+     "finding": "github.com/prometheus/prometheus:GO-2026-5381",
+     "severity": "medium",
+     "first_seen": "2026-11-26",
+     "deducts": true
+    },
+    {
+     "label": "github.com/prometheus/prometheus 0.307.3 \u2014 GO-2026-5662",
+     "detail": "transitive, CVSS 6.1, fixed in 0.311.2-0.20260410083055-07c6232d159b",
+     "path": "go.mod",
+     "line": 0,
+     "excerpt": "",
+     "url": "https://osv.dev/vulnerability/GO-2026-5662",
+     "finding": "github.com/prometheus/prometheus:GO-2026-5662",
+     "severity": "medium",
+     "first_seen": "2026-11-26",
      "deducts": true
     },
     {
@@ -814,18 +862,6 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "golang.org/x/crypto 0.58.0 \u2014 GO-2026-5932",
-     "detail": "transitive, no CVSS published, fixed in 0.58.1-0.20261009181718-2f1f834330b2",
-     "path": "go.mod",
-     "line": 0,
-     "excerpt": "",
-     "url": "https://osv.dev/vulnerability/GO-2026-5932",
-     "finding": "golang.org/x/crypto:GO-2026-5932",
-     "severity": "",
-     "first_seen": null,
-     "deducts": false
     }
    ]
   },
@@ -904,7 +940,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "45fda3869ec9870cb8920a04a5f7668d4bcff88bb501c2163eefae1f9799a773",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "registry_entry_hash": "bed62eeece6c8243abe9ec1b4a3b449b7dda28e7e88f5815d1401de4e154bf0f",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

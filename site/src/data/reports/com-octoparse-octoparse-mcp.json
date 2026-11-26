@@ -2,7 +2,7 @@
  "name": "com.octoparse/octoparse-mcp",
  "version": "1.0.0",
  "slug": "com-octoparse-octoparse-mcp",
- "scanned_at": "2026-11-25T02:53:07+00:00",
+ "scanned_at": "2026-11-26T02:42:48+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 120 day(s) before 2026-11-25",
+     "detail": "last commit 121 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -865,6 +865,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ccb4bb0bdbb9df2869fccfcab9375ffaf727616afaf27def65a86f3f00ae7eee",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

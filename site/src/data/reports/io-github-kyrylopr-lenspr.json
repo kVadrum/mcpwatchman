@@ -2,7 +2,7 @@
  "name": "io.github.kyrylopr/lenspr",
  "version": "0.1.1",
  "slug": "io-github-kyrylopr-lenspr",
- "scanned_at": "2026-11-25T03:04:22+00:00",
+ "scanned_at": "2026-11-26T02:51:39+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -142,7 +142,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 274 day(s) before 2026-11-25",
+     "detail": "last commit 275 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +166,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 275 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 276 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -290,7 +290,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T03:04:27+00:00",
+  "fetched_at": "2026-11-26T02:51:43+00:00",
   "system": "PyPI",
   "package": "lenspr",
   "version": "0.1.1",
@@ -303,6 +303,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "00e5085c0fda1f385c3d5961c7fe631a3618bc9fd7ef43c7c31591d9d61a573e",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

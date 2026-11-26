@@ -1,29 +1,29 @@
 {
  "name": "io.github.shashwatgtm/revenue-enablement-mcp",
- "version": "1.2.30",
+ "version": "1.2.33",
  "slug": "io-github-shashwatgtm-revenue-enablement-mcp",
- "scanned_at": "2026-11-25T03:13:25+00:00",
+ "scanned_at": "2026-11-26T02:21:48+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
  "repository_url": "https://github.com/shashwatgtm/revenue-enablement-mcp",
- "package": "npm:@shashwatgtmalpha/revenue-enablement-mcp@1.2.30",
+ "package": "npm:@shashwatgtmalpha/revenue-enablement-mcp@1.2.33",
  "source_state": "fetched",
  "source_subject": "",
  "source_reason": "",
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": null,
- "repository_commit": "1d5a4bab7c83cc1e5206930bcc553aa746557cad",
+ "repository_commit": "b607736352dbbb5387ec3fc511f9184845f67493",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 63,
+ "files_scanned": 62,
  "files_pruned": 16,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
    "score": 89,
-   "reason": "scored on the declared repository, because the published package carries its code only as build output, which is not read as the server's own source; no tag matched this version, so the repository's default branch was read and the findings describe that code, not necessarily the release; 16 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code",
+   "reason": "scored on the declared repository at version 1.2.33, because the published package carries its code only as build output, which is not read as the server's own source; 16 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code",
    "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
@@ -75,6 +75,7 @@
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
+    "project",
     "publisher"
    ],
    "evidence": [
@@ -104,7 +105,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "source was fetched but every file in it was oversized, unreadable or excluded, so no source text could be read, so there is nothing to scan for committed credentials",
+     "detail": "detect-secrets matched 6 credential-shaped string(s), every one from a keyword or entropy heuristic (Base64 High Entropy String, Hex High Entropy String). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Hex High Entropy String at dist/regions.js:19379; Hex High Entropy String at dist/regions.js:19710; Base64 High Entropy String at dist/widget-document.d.ts:1; Base64 High Entropy String at dist/widget-document.d.ts:1; Base64 High Entropy String at dist/widget-document.js:5; Base64 High Entropy String at dist/widget-document.js:5",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +143,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 0 day(s) before 2026-11-25",
+     "detail": "last commit 1 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -166,7 +167,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 8 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 9 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -214,14 +215,12 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 53,
+   "score": 43,
    "reason": "",
-   "assessed_weight": "0.8",
+   "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
-   "unmeasured_faults": [
-    "project"
-   ],
+   "unmeasured_faults": [],
    "evidence": [
     {
      "label": "license",
@@ -249,7 +248,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -287,24 +286,24 @@
   }
  },
  "install_resolution": {
-  "status": "ok",
-  "reason": "",
-  "fault": null,
+  "status": "unavailable",
+  "reason": "deps.dev holds no resolved graph for this version",
+  "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T03:13:36+00:00",
+  "fetched_at": "2026-11-26T02:22:01+00:00",
   "system": "npm",
   "package": "@shashwatgtmalpha/revenue-enablement-mcp",
-  "version": "1.2.30",
-  "nodes": 140,
-  "direct": 2,
+  "version": "1.2.33",
+  "nodes": 0,
+  "direct": 0,
   "skipped_nodes": 0,
   "unresolved": 0,
   "findings": [],
   "findings_total": 0,
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
- "registry_entry_hash": "479816cdbc241d821c9e666ce94d694630cf6866900a97f31d611748334ea807",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "registry_entry_hash": "29d9bd93a9b15f9c80aaf8ab3ea7e5ffb0adef1788005515a83faf7d80afd2ea",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

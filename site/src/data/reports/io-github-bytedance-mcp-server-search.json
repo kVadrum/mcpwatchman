@@ -2,7 +2,7 @@
  "name": "io.github.bytedance/mcp-server-search",
  "version": "1.0.0",
  "slug": "io-github-bytedance-mcp-server-search",
- "scanned_at": "2026-11-25T02:32:57+00:00",
+ "scanned_at": "2026-11-26T02:26:13+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 47 day(s) before 2026-11-25",
+     "detail": "last commit 48 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 38 issue(s) in the last 6 months: 62.3 day(s) to first maintainer comment",
+     "detail": "median over 38 issue(s) in the last 6 months: 63.3 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,7 +252,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-25T02:33:04+00:00",
+  "fetched_at": "2026-11-26T02:26:18+00:00",
   "system": "npm",
   "package": "@agent-infra/mcp-server-search",
   "version": "1.2.29",
@@ -434,6 +434,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "218d5357b8c37e92c3425aa7c4673d0a2db3a588f6ad8a0f2b86929af1c47765",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

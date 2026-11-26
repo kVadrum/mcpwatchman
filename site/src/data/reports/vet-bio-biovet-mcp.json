@@ -2,7 +2,7 @@
  "name": "vet.bio/biovet-mcp",
  "version": "1.1.0",
  "slug": "vet-bio-biovet-mcp",
- "scanned_at": "2026-11-25T03:16:17+00:00",
+ "scanned_at": "2026-11-26T03:01:39+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 66 day(s) before 2026-11-25",
+     "detail": "last commit 67 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9eafb22970c383d7eb5354b2579a22c7c11b17d5cdfc5c5629ae5322a80d596b",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

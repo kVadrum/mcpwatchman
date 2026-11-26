@@ -2,7 +2,7 @@
  "name": "ai.explorium/mcp-explorium",
  "version": "1.0.1",
  "slug": "ai-explorium-mcp-explorium",
- "scanned_at": "2026-11-25T02:43:21+00:00",
+ "scanned_at": "2026-11-26T02:34:24+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 307 day(s) before 2026-11-25",
+     "detail": "last commit 308 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 69.5 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 70.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "no release in 435 days (by releases) \u2014 over a year",
+     "detail": "no release in 436 days (by releases) \u2014 over a year",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -514,6 +514,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "37eff01f7c9c9e40fb254abd05a8efd854d3e211f7f6cebc76c7e914d0441473",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }

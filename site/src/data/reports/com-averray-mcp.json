@@ -2,7 +2,7 @@
  "name": "com.averray/mcp",
  "version": "1.1.0",
  "slug": "com-averray-mcp",
- "scanned_at": "2026-11-25T02:50:39+00:00",
+ "scanned_at": "2026-11-26T02:40:40+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -707,7 +707,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 14 day(s) before 2026-11-25",
+     "detail": "last commit 15 day(s) before 2026-11-26",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -719,7 +719,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 15 issue(s) in the last 6 months: 67.7 day(s) to first maintainer comment",
+     "detail": "median over 15 issue(s) in the last 6 months: 68.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -1456,6 +1456,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d93c99216ced7738499d71e9680416c1ff008fcd439dc9d4d04caa77aa90e5f2",
- "checked_at": "2026-11-25T02:09:21+00:00",
+ "checked_at": "2026-11-26T02:05:46+00:00",
  "findings_tracked_since": "2026-10-10"
 }
