@@ -2,7 +2,7 @@
  "name": "app.apiguru/amazon-data",
  "version": "1.1.69",
  "slug": "app-apiguru-amazon-data",
- "scanned_at": "2026-11-26T02:26:48+00:00",
+ "scanned_at": "2026-11-27T02:32:17+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -93,18 +93,19 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 92,
+   "score": 88,
    "reason": "",
-   "assessed_weight": "0.9",
+   "assessed_weight": "0.65",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
-    "project"
+    "project",
+    "publisher"
    ],
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 7 day(s) before 2026-11-26",
+     "detail": "last commit 8 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 1.6 day(s) to first maintainer comment",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 7 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 8 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,7 +253,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:26:51+00:00",
+  "fetched_at": "2026-11-27T02:32:21+00:00",
   "system": "PyPI",
   "package": "apiguru-mcp",
   "version": "1.1.69",
@@ -265,6 +266,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "523fda9824dbcdd686776419a6fb2d8e24348bed4a5dd432d3c058259511ded1",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "com.see-geo/seegeo",
  "version": "1.0.5",
  "slug": "com-see-geo-seegeo",
- "scanned_at": "2026-11-26T02:42:57+00:00",
+ "scanned_at": "2026-11-27T02:51:34+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:42:58+00:00",
+  "fetched_at": "2026-11-27T02:51:35+00:00",
   "system": "npm",
   "package": "seegeo-mcp",
   "version": "1.0.4",
@@ -267,6 +267,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "da79e6df50df5875c0cba181c1c914bec1ab097a1611a036105970d2fc37ac6f",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "ai.gregbenza/openhouse",
  "version": "1.0.0",
  "slug": "ai-gregbenza-openhouse",
- "scanned_at": "2026-11-26T02:35:47+00:00",
+ "scanned_at": "2026-11-27T02:42:31+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -132,7 +132,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 72 day(s) before 2026-11-26",
+     "detail": "last commit 73 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -144,7 +144,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 47.6 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 48.6 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -841,6 +841,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "299f92baec39b474c3bf00135e05ca8c397a3670080cf93c179d4a69db5661f1",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

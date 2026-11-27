@@ -1,8 +1,8 @@
 {
  "name": "dev.vantagemcp/vantage",
- "version": "1.14.1",
+ "version": "1.15.0",
  "slug": "dev-vantagemcp-vantage",
- "scanned_at": "2026-11-26T02:25:12+00:00",
+ "scanned_at": "2026-11-27T02:24:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -155,7 +155,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 38 day(s) before 2026-11-26",
+     "detail": "last commit 39 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -179,7 +179,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 38 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 39 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -298,7 +298,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "deaa76e4557e44dde7e425aedc4a653f896621f8c20a67f93d4f9de3b17e8b69",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "registry_entry_hash": "a82435f069e33f85cd2db5b08a92cdc297798d66d7aedcff76f90bdc47e3db9b",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

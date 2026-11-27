@@ -2,7 +2,7 @@
  "name": "com.a2awire/data-hacker-news-front-page-tech-news",
  "version": "0.1.2",
  "slug": "com-a2awire-data-hacker-news-front-page-tech-news",
- "scanned_at": "2026-11-26T02:41:21+00:00",
+ "scanned_at": "2026-11-27T02:49:37+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "4f16bb30ae343e8e186645a76940835cb3f78f06afae658dc36aa911c8c10918",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

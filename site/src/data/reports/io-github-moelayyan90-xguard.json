@@ -1,8 +1,8 @@
 {
  "name": "io.github.moelayyan90/xguard",
- "version": "6.1.0",
+ "version": "6.2.0",
  "slug": "io-github-moelayyan90-xguard",
- "scanned_at": "2026-11-26T02:53:11+00:00",
+ "scanned_at": "2026-11-27T02:24:28+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,19 +14,19 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "640323264987f20db63b244727a4c9d498243859",
+ "repository_commit": "9a4d38a7f55938403a895c15d7ce871e5042526d",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 272,
+ "files_scanned": 277,
  "files_pruned": 16,
  "axes": {
   "code_safety": {
    "axis": "code_safety",
-   "score": 20,
+   "score": 17,
    "reason": "5 findings from checks whose precision is not yet measured are listed but not deducted; 16 vendored or minified paths were excluded before scanning; machine-generated bundles are not the server's own code; 1 file could not be parsed and was not scanned",
    "assessed_weight": "0.99",
    "fault": null,
-   "evidence_omitted": 55,
+   "evidence_omitted": 62,
    "unmeasured_faults": [
     "publisher"
    ],
@@ -157,6 +157,30 @@
      "path": "scripts/gblin-canary-compare.mjs",
      "line": 65,
      "excerpt": "      const result=await request(prefix+path,{method:'POST',headers:{'content-type':'application/json','user-agent':'XGuard-GBLIN-unsigned-canary/1.0'},body:'{}'});\n      assert.ok([400,401,403,422].includes(result.status),'empty unsigned financial request must be rejected');\n      protocol[name][path]=result;\n    }\n  }",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "scripts/xguard-domain-inventory.mjs",
+     "line": 46,
+     "excerpt": "    const latest=deployments.toSorted((a,b)=>Date.parse(b.created_on)-Date.parse(a.created_on))[0];\n    assert.ok(latest?.versions?.length);\n    versions[name]={active:latest.versions.map(v=>({version:v.version_id,percent:v.percentage}))};\n    const id=workers?.get(name);\n    if(id && latest.versions.length===1) {",
+     "url": "",
+     "finding": "mcp-js-prototype-pollution-merge-loop",
+     "severity": "medium",
+     "first_seen": null,
+     "deducts": true
+    },
+    {
+     "label": "mcp-js-prototype-pollution-merge-loop (medium/medium)",
+     "detail": "Keys from a caller-supplied object are copied onto a target without excluding __proto__ / constructor / prototype. A tool argument carrying __proto__ then mutates Object.prototype for the whole process, which can turn an unrelated later property read into attacker-controlled data.",
+     "path": "scripts/xguard-domain-inventory.mjs",
+     "line": 56,
+     "excerpt": "      versions[name].worker_id=id;\n    }\n  } catch(e) { versions[name] = {...versions[name],inspection:e.message}; }\n}\nconst report={observed_at:new Date().toISOString(),domain_list:domainList,hosts:[...hosts.values()].sort((a,b)=>a.hostname.localeCompare(b.hostname)),workers:versions};",
      "url": "",
      "finding": "mcp-js-prototype-pollution-merge-loop",
      "severity": "medium",
@@ -606,30 +630,6 @@
      "severity": "medium",
      "first_seen": null,
      "deducts": true
-    },
-    {
-     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
-     "path": "apps/settlement-gateway/xguard-gateway.ts",
-     "line": 561,
-     "excerpt": "  const headers = new Headers({ \"Content-Type\": \"application/json\", \"Accept\": \"application/json\" });\n  if (provider === XPAY && env.XPAY_AUTHORIZATION) headers.set(\"Authorization\", env.XPAY_AUTHORIZATION);\n  const result = await fetch(provider + \"/\" + step, {\n    method: \"POST\", headers, redirect: \"manual\", signal: AbortSignal.timeout(7_000),\n    body: JSON.stringify({ x402Version: 2, paymentPayload: payment, paymentRequirements: payment.accepted }),",
-     "url": "",
-     "finding": "mcp-js-ssrf-nonliteral-url",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
-    },
-    {
-     "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
-     "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
-     "path": "scripts/agent402-smoke.mjs",
-     "line": 5,
-     "excerpt": "const reports = [];\nasync function call(url, init = {}) {\n  const r = await fetch(url, { ...init, headers: { accept: 'application/json', 'cache-control': 'no-cache', 'user-agent': 'XGuard-Agent402-safe-routing-check/1.0', ...init.headers }, redirect: 'manual', signal: AbortSignal.timeout(20000) });\n  assert.equal(r.headers.has('location'), false, url + ': redirect forbidden');\n  assert.equal(r.url, url); const text = await r.text();",
-     "url": "",
-     "finding": "mcp-js-ssrf-nonliteral-url",
-     "severity": "medium",
-     "first_seen": null,
-     "deducts": true
     }
    ]
   },
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 7 day(s) before 2026-11-26",
+     "detail": "last commit 1 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 67 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 68 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -850,7 +850,7 @@
   }
  },
  "install_resolution": null,
- "registry_entry_hash": "8050d3a302f085e17f6437101485a3d47e6fde39eccdb797be84375c55b29e46",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "registry_entry_hash": "898cddb1150cd42638d024681470170f1719f058e07e33aca3e45e8e0a492488",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

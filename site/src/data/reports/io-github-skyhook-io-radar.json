@@ -2,7 +2,7 @@
  "name": "io.github.skyhook-io/radar",
  "version": "1.21.5",
  "slug": "io-github-skyhook-io-radar",
- "scanned_at": "2026-11-26T02:19:43+00:00",
+ "scanned_at": "2026-11-27T02:24:54+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -708,7 +708,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-26",
+     "detail": "last commit 1 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -720,7 +720,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 13.0 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 12.0 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -732,7 +732,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -941,6 +941,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "bed62eeece6c8243abe9ec1b4a3b449b7dda28e7e88f5815d1401de4e154bf0f",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

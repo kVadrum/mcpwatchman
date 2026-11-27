@@ -2,7 +2,7 @@
  "name": "ai.lattiq/x402-trading-signals",
  "version": "1.0.0",
  "slug": "ai-lattiq-x402-trading-signals",
- "scanned_at": "2026-11-26T02:37:07+00:00",
+ "scanned_at": "2026-11-27T02:43:53+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "b72513e7452a8b5c270787267624e161e00ed87227dfd817e7eb010cc1017341",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "ai.kanonik/kanonik",
  "version": "1.1.4",
  "slug": "ai-kanonik-kanonik",
- "scanned_at": "2026-11-26T02:21:46+00:00",
+ "scanned_at": "2026-11-27T02:27:16+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -94,7 +94,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 56,
+   "score": 71,
    "reason": "",
    "assessed_weight": "0.7",
    "fault": null,
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 36 day(s) before 2026-11-26",
+     "detail": "last commit 2 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 42.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -142,7 +142,7 @@
     },
     {
      "label": "bus_factor",
-     "detail": "sole maintainer",
+     "detail": "2 regular authors in the last 12 months",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -252,6 +252,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "3b675979c07f47a1efcb37948494021b575f22529f8b5308638cbf18498ffdad",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

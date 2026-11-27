@@ -2,7 +2,7 @@
  "name": "io.github.Ninjabeam20/sportiq-mcp",
  "version": "0.4.0",
  "slug": "io-github-ninjabeam20-sportiq-mcp",
- "scanned_at": "2026-11-26T02:46:09+00:00",
+ "scanned_at": "2026-11-27T02:55:36+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -94,18 +94,19 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 87,
+   "score": 80,
    "reason": "",
-   "assessed_weight": "0.7",
+   "assessed_weight": "0.45",
    "fault": null,
    "evidence_omitted": 0,
    "unmeasured_faults": [
-    "project"
+    "project",
+    "publisher"
    ],
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 34 day(s) before 2026-11-26",
+     "detail": "last commit 35 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 0.0 day(s) to first maintainer comment",
+     "detail": "this repository has no issues `03` \u00a75's window covers. An unanswered issue scores 0 under \u00a75, but a repository with no issues filed has not failed to answer one.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +256,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:46:12+00:00",
+  "fetched_at": "2026-11-27T02:55:41+00:00",
   "system": "PyPI",
   "package": "sportiq-mcp",
   "version": "0.4.0",
@@ -281,6 +282,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "59f2663700785cce797702e4f91b2b98fb30be3d54587ab82ee9d8243e962b8a",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

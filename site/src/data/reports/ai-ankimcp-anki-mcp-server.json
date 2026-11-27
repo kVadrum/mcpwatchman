@@ -2,7 +2,7 @@
  "name": "ai.ankimcp/anki-mcp-server",
  "version": "0.27.0",
  "slug": "ai-ankimcp-anki-mcp-server",
- "scanned_at": "2026-11-26T02:27:16+00:00",
+ "scanned_at": "2026-11-27T02:32:53+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -104,7 +104,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 19 day(s) before 2026-11-26",
+     "detail": "last commit 20 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -116,7 +116,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 13 issue(s) in the last 6 months: 0.5 day(s) to first maintainer comment",
+     "detail": "median over 12 issue(s) in the last 6 months: 0.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -128,7 +128,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 53 day(s) ago",
+     "detail": "median release gap 4 days (by releases), last release 54 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -254,7 +254,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:27:19+00:00",
+  "fetched_at": "2026-11-27T02:32:58+00:00",
   "system": "npm",
   "package": "@ankimcp/anki-mcp-server",
   "version": "0.27.0",
@@ -340,6 +340,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "74392e8a05b17bc705f4dc54cb17d57154eb5a5841f5fb00df20767bcb60253f",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

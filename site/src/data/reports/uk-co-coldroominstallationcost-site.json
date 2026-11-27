@@ -2,7 +2,7 @@
  "name": "uk.co.coldroominstallationcost/site",
  "version": "1.0.1",
  "slug": "uk-co-coldroominstallationcost-site",
- "scanned_at": "2026-11-26T03:01:44+00:00",
+ "scanned_at": "2026-11-27T03:14:05+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "72c3243047c6cfd3bd6c8bf8e10f4be16b5472b41404683721bf674ea4c1f34f",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

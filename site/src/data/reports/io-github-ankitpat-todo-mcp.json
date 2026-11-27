@@ -2,7 +2,7 @@
  "name": "io.github.AnkitPat/todo-mcp",
  "version": "1.0.0",
  "slug": "io-github-ankitpat-todo-mcp",
- "scanned_at": "2026-11-26T02:44:07+00:00",
+ "scanned_at": "2026-11-27T02:52:57+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0c8974882364740a9b9dbf63b8bfcb1e136369bcf9cb9647b75b3173dda12df5",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

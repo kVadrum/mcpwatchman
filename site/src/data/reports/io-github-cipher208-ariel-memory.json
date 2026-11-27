@@ -2,7 +2,7 @@
  "name": "io.github.Cipher208/ariel-memory",
  "version": "1.0.0",
  "slug": "io-github-cipher208-ariel-memory",
- "scanned_at": "2026-11-26T02:44:42+00:00",
+ "scanned_at": "2026-11-27T02:53:39+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -225,7 +225,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 4 day(s) before 2026-11-26",
+     "detail": "last commit 5 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -237,7 +237,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 3 issue(s) in the last 6 months: 24.4 day(s) to first maintainer comment",
+     "detail": "median over 3 issue(s) in the last 6 months: 25.4 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,7 +249,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 3 days (by releases), last release 39 day(s) ago",
+     "detail": "median release gap 3 days (by releases), last release 40 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -373,7 +373,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:44:43+00:00",
+  "fetched_at": "2026-11-27T02:53:44+00:00",
   "system": "npm",
   "package": "mcp-ariel-memory",
   "version": "1.0.0",
@@ -386,6 +386,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "f044eddb77ab46edf4fd04931dd064dcec8e9151339818d6688b04078aada97f",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

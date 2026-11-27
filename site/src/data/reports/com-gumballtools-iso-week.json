@@ -2,7 +2,7 @@
  "name": "com.gumballtools/iso-week",
  "version": "0.1.0",
  "slug": "com-gumballtools-iso-week",
- "scanned_at": "2026-11-26T02:41:49+00:00",
+ "scanned_at": "2026-11-27T02:50:11+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "dd31c2dd713f217e57dd1130e1842a26ca31b742baabd714cfe2aed41a6905e5",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

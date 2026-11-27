@@ -2,7 +2,7 @@
  "name": "io.github.pijusz/mcp-gsc",
  "version": "0.1.7",
  "slug": "io-github-pijusz-mcp-gsc",
- "scanned_at": "2026-11-26T02:54:45+00:00",
+ "scanned_at": "2026-11-27T03:06:14+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 35 day(s) before 2026-11-26",
+     "detail": "last commit 36 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -155,7 +155,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 35 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 36 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -279,7 +279,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:54:54+00:00",
+  "fetched_at": "2026-11-27T03:06:25+00:00",
   "system": "npm",
   "package": "mcp-gsc",
   "version": "0.1.7",
@@ -389,6 +389,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "8f83959285d82f14f86a9066dc778222bce4f738fab8b3972a34b6ab6550a626",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

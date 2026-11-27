@@ -2,7 +2,7 @@
  "name": "io.github.codeChap/google-analytics",
  "version": "0.1.0",
  "slug": "io-github-codechap-google-analytics",
- "scanned_at": "2026-11-26T02:48:32+00:00",
+ "scanned_at": "2026-11-27T02:58:35+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 92 day(s) before 2026-11-26",
+     "detail": "last commit 93 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -611,6 +611,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0e83dee00483c658bf56d276ed5ca3c4bd80c15c606d7740866460e2e4832a54",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "io.github.DarthSander/agentdata-nl",
  "version": "0.4.0",
  "slug": "io-github-darthsander-agentdata-nl",
- "scanned_at": "2026-11-26T02:44:47+00:00",
+ "scanned_at": "2026-11-27T02:53:49+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "1df90f5c4f258fd4a48a5a6f5026b908a06d1ffabf325764c434c69b7d02c09b",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

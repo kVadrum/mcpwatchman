@@ -2,7 +2,7 @@
  "name": "io.github.1shizaan/debugai-mcp",
  "version": "2.10.0",
  "slug": "io-github-1shizaan-debugai-mcp",
- "scanned_at": "2026-11-26T02:43:44+00:00",
+ "scanned_at": "2026-11-27T02:52:28+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -131,7 +131,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 20 day(s) before 2026-11-26",
+     "detail": "last commit 21 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -281,7 +281,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-26T02:43:49+00:00",
+  "fetched_at": "2026-11-27T02:52:34+00:00",
   "system": "npm",
   "package": "@debugai/mcp",
   "version": "2.10.0",
@@ -294,6 +294,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "cb4d5dff7acd937be1fb8278e680cb50cc536738e585618d1d6a72f1f159cd76",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

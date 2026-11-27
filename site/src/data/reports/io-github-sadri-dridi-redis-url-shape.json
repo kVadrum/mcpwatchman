@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/redis-url-shape",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-redis-url-shape",
- "scanned_at": "2026-11-26T02:58:29+00:00",
+ "scanned_at": "2026-11-27T03:10:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 64 day(s) before 2026-11-26",
+     "detail": "last commit 65 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d3aab0045c3c6bb4db25fd6cfef11ed7a8756f39ecf70326ae42b164942b35f7",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

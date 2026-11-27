@@ -2,7 +2,7 @@
  "name": "ai.arpi/arpi-mcp",
  "version": "1.0.0",
  "slug": "ai-arpi-arpi-mcp",
- "scanned_at": "2026-11-26T02:27:24+00:00",
+ "scanned_at": "2026-11-27T02:33:05+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 141 day(s) before 2026-11-26",
+     "detail": "last commit 142 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 45.8 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 46.8 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "8eae56122c0bd5eb6052d8682901a75815c9a474e7baf3e2583aea24698ec3d5",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

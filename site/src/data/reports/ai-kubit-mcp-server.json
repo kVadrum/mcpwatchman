@@ -2,7 +2,7 @@
  "name": "ai.kubit/mcp-server",
  "version": "1.0.1",
  "slug": "ai-kubit-mcp-server",
- "scanned_at": "2026-11-26T02:36:40+00:00",
+ "scanned_at": "2026-11-27T02:43:27+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 114 day(s) before 2026-11-26",
+     "detail": "last commit 115 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 41.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 42.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "14ad54c1660ed0f684976758bf464140407da1c568dfc1070668e4f16ba98de1",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }

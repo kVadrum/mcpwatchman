@@ -2,7 +2,7 @@
  "name": "app.desktopcommander/remote-desktop-commander",
  "version": "1.1.39",
  "slug": "app-desktopcommander-remote-desktop-commander",
- "scanned_at": "2026-11-26T02:21:10+00:00",
+ "scanned_at": "2026-11-27T02:26:31+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 6 day(s) before 2026-11-26",
+     "detail": "last commit 2 day(s) before 2026-11-27",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 50 issue(s) in the last 6 months: 25.5 day(s) to first maintainer comment",
+     "detail": "median over 50 issue(s) in the last 6 months: 26.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 46 days (by releases), last release 35 day(s) ago",
+     "detail": "median release gap 46 days (by releases), last release 36 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d765064e9ccc719f156f8a3849a590a8f1c6dbdcd8b06d4281c0b00d4243f602",
- "checked_at": "2026-11-26T02:05:46+00:00",
+ "checked_at": "2026-11-27T02:10:02+00:00",
  "findings_tracked_since": "2026-10-10"
 }
