@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/pref_mg_itauna_cnd-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-pref-mg-itauna-cnd-mcp",
- "scanned_at": "2026-11-27T03:03:55+00:00",
+ "scanned_at": "2026-11-28T02:59:46+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 99 day(s) before 2026-11-27",
+     "detail": "last commit 100 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "9cb0d8f18c85158746ef70681020157a4dac73534fcb42f1c80416e9f842926f",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

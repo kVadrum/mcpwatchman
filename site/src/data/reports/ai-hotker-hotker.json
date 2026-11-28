@@ -2,7 +2,7 @@
  "name": "ai.hotker/hotker",
  "version": "1.0.2",
  "slug": "ai-hotker-hotker",
- "scanned_at": "2026-11-27T02:43:14+00:00",
+ "scanned_at": "2026-11-28T02:42:16+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "5531a2a52d13ed357720bad1e89cb2220b46b510a49ba4be8874114f95653f61",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

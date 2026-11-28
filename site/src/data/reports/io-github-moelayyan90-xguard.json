@@ -2,7 +2,7 @@
  "name": "io.github.moelayyan90/xguard",
  "version": "6.2.0",
  "slug": "io-github-moelayyan90-xguard",
- "scanned_at": "2026-11-27T02:24:28+00:00",
+ "scanned_at": "2026-11-28T02:26:01+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "9a4d38a7f55938403a895c15d7ce871e5042526d",
+ "repository_commit": "ae2ffa8c433b2f5dedeecacb00e4844ddb931863",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 277,
+ "files_scanned": 292,
  "files_pruned": 16,
  "axes": {
   "code_safety": {
@@ -668,7 +668,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "Private Key at apps/relay/test/commerce.test.mjs:57; JSON Web Token at docs/evidence/financial-authority/sample-sandbox-receipt.json:2; \u2026and 53 more matches",
+     "detail": "Private Key at apps/relay/test/commerce.test.mjs:57; JSON Web Token at docs/evidence/financial-authority/sample-sandbox-receipt.json:2; JSON Web Token at packages/agent-verifier/conformance/v1.json:68; JSON Web Token at packages/agent-verifier/conformance/v1.json:93; JSON Web Token at packages/agent-verifier/conformance/v1.json:133; JSON Web Token at packages/agent-verifier/conformance/v1.json:158; \u2026and 59 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -705,7 +705,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-27",
+     "detail": "last commit 1 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -729,7 +729,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 4 days (by releases), last release 68 day(s) ago",
+     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -777,14 +777,12 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 28,
+   "score": 23,
    "reason": "",
-   "assessed_weight": "0.8",
+   "assessed_weight": "1",
    "fault": null,
    "evidence_omitted": 0,
-   "unmeasured_faults": [
-    "project"
-   ],
+   "unmeasured_faults": [],
    "evidence": [
     {
      "label": "license",
@@ -812,7 +810,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
+     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -851,6 +849,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "898cddb1150cd42638d024681470170f1719f058e07e33aca3e45e8e0a492488",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

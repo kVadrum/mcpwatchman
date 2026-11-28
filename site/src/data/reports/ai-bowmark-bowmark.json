@@ -2,7 +2,7 @@
  "name": "ai.bowmark/bowmark",
  "version": "8.237.0",
  "slug": "ai-bowmark-bowmark",
- "scanned_at": "2026-11-27T02:24:19+00:00",
+ "scanned_at": "2026-11-28T02:25:52+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 1 day(s) before 2026-11-27",
+     "detail": "last commit 2 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 1 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 2 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -555,7 +555,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:24:23+00:00",
+  "fetched_at": "2026-11-28T02:25:56+00:00",
   "system": "PyPI",
   "package": "bowmark-mcp",
   "version": "2.1.2",
@@ -568,6 +568,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "dd4c8deaba199b1008928c1cba69f107b4fe2579c2b0f5b727fa90db235fab48",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

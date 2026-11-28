@@ -2,7 +2,7 @@
  "name": "ai.boundaryai/boundaryai",
  "version": "0.7.31",
  "slug": "ai-boundaryai-boundaryai",
- "scanned_at": "2026-11-27T02:33:13+00:00",
+ "scanned_at": "2026-11-28T02:32:55+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "4ef61f29a3910fe7dffe1ef1798bfdf09e0e427072981483c50abb6c72e765a7",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

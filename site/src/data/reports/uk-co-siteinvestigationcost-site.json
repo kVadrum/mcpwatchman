@@ -2,7 +2,7 @@
  "name": "uk.co.siteinvestigationcost/site",
  "version": "1.0.1",
  "slug": "uk-co-siteinvestigationcost-site",
- "scanned_at": "2026-11-27T03:13:58+00:00",
+ "scanned_at": "2026-11-28T03:08:36+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "7323b49c9797e46e5f201cc089d04f2b97a7ab072a02de64f845a82641971233",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

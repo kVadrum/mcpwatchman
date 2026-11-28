@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/tz-europe-budapest",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-tz-europe-budapest",
- "scanned_at": "2026-11-27T03:10:35+00:00",
+ "scanned_at": "2026-11-28T03:05:42+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 65 day(s) before 2026-11-27",
+     "detail": "last commit 66 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "a07e7a3b6f1b25aaeed48a27b06dd09e837758a126a028a6a369e2daff89b4c7",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

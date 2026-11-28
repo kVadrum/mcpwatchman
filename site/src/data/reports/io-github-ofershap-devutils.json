@@ -2,7 +2,7 @@
  "name": "io.github.ofershap/devutils",
  "version": "1.0.2",
  "slug": "io-github-ofershap-devutils",
- "scanned_at": "2026-11-27T03:05:01+00:00",
+ "scanned_at": "2026-11-28T03:00:41+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 262 day(s) before 2026-11-27",
+     "detail": "last commit 263 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -130,7 +130,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 284.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 285.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -266,7 +266,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T03:05:05+00:00",
+  "fetched_at": "2026-11-28T03:00:45+00:00",
   "system": "npm",
   "package": "mcp-server-devutils",
   "version": "1.0.2",
@@ -292,6 +292,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "196591acb8f1fa7a01a396bb981d4ba3afd5eb868263fa9b3035b2786509adb5",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

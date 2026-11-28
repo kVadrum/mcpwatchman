@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/tz-europe-uzhgorod",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-tz-europe-uzhgorod",
- "scanned_at": "2026-11-27T03:10:43+00:00",
+ "scanned_at": "2026-11-28T03:05:50+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 65 day(s) before 2026-11-27",
+     "detail": "last commit 66 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "d179b6e53355629cb132076760141b414258c9a67e5efd48be4338e1f7243619",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

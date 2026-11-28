@@ -2,7 +2,7 @@
  "name": "app.wishpool/global-logistics-mcp",
  "version": "0.1.0",
  "slug": "app-wishpool-global-logistics-mcp",
- "scanned_at": "2026-11-27T02:49:37+00:00",
+ "scanned_at": "2026-11-28T02:47:37+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "4ac38e413b025ba1ed4d7bdfb7efa504bfcb8e7b8a26b1db273ecb69e6f46f21",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

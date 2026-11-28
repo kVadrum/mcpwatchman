@@ -2,7 +2,7 @@
  "name": "io.github.CSOAI-ORG/meok-bs7121-mcp",
  "version": "1.0.5",
  "slug": "io-github-csoai-org-meok-bs7121-mcp",
- "scanned_at": "2026-11-27T02:53:15+00:00",
+ "scanned_at": "2026-11-28T02:50:57+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -118,7 +118,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 11 day(s) before 2026-11-27",
+     "detail": "last commit 12 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -266,7 +266,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:53:18+00:00",
+  "fetched_at": "2026-11-28T02:50:59+00:00",
   "system": "PyPI",
   "package": "meok-bs7121-mcp",
   "version": "1.0.5",
@@ -279,6 +279,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "522d61dd63b0d22ec31b93ef73aab976424c510bb6950ebe67f237b6c919ea72",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

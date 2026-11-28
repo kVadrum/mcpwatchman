@@ -2,7 +2,7 @@
  "name": "ai.memoket/memoket",
  "version": "1.0.0",
  "slug": "ai-memoket-memoket",
- "scanned_at": "2026-11-27T02:45:50+00:00",
+ "scanned_at": "2026-11-28T02:44:08+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "c2198e8597d28e0ee051ab701334fa6902512bfe7ed736cbc4ec8f5bd4601d37",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

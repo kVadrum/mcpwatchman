@@ -2,7 +2,7 @@
  "name": "io.alterlab/mcp-server",
  "version": "1.13.33",
  "slug": "io-alterlab-mcp-server",
- "scanned_at": "2026-11-27T02:30:34+00:00",
+ "scanned_at": "2026-11-28T02:30:41+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -166,7 +166,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-27",
+     "detail": "last commit 4 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -190,7 +190,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "released 3 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
+     "detail": "released 4 day(s) ago (by releases), inside `03` \u00a75's 30-day window",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -314,7 +314,7 @@
   "fault": "project",
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:30:41+00:00",
+  "fetched_at": "2026-11-28T02:30:48+00:00",
   "system": "npm",
   "package": "alterlab-mcp-server",
   "version": "1.13.33",
@@ -327,6 +327,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "2bed5572696d5d39f4d7c9e4742628edb875d7258865b36815e8d05885278a91",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

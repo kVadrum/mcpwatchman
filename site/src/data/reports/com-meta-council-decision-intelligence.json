@@ -2,7 +2,7 @@
  "name": "com.meta-council/decision-intelligence",
  "version": "1.4.0",
  "slug": "com-meta-council-decision-intelligence",
- "scanned_at": "2026-11-27T02:51:02+00:00",
+ "scanned_at": "2026-11-28T02:48:45+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "90525dd608d54a35f31dcd52230ca8a6fcc7eb4a5053ec141f4ab109830eb73c",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

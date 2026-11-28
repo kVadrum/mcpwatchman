@@ -2,7 +2,7 @@
  "name": "io.github.pubnub/mcp-server",
  "version": "2.3.2",
  "slug": "io-github-pubnub-mcp-server",
- "scanned_at": "2026-11-27T03:07:20+00:00",
+ "scanned_at": "2026-11-28T03:02:36+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -165,7 +165,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 8 day(s) before 2026-11-27",
+     "detail": "last commit 9 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -177,7 +177,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 284.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (0 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 285.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -189,7 +189,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 14 days (by releases), last release 191 day(s) ago",
+     "detail": "median release gap 14 days (by releases), last release 192 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -313,7 +313,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T03:07:25+00:00",
+  "fetched_at": "2026-11-28T03:02:40+00:00",
   "system": "npm",
   "package": "@pubnub/mcp",
   "version": "2.3.2",
@@ -363,6 +363,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "869e1df5dc0b3cf8022c23718a99fbfaaeafd915139538d315fd9c59f67d935b",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

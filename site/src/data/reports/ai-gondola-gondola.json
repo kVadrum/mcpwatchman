@@ -2,7 +2,7 @@
  "name": "ai.gondola/gondola",
  "version": "0.1.7",
  "slug": "ai-gondola-gondola",
- "scanned_at": "2026-11-27T02:30:51+00:00",
+ "scanned_at": "2026-11-28T02:30:58+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -94,7 +94,7 @@
   },
   "maintenance": {
    "axis": "maintenance",
-   "score": 72,
+   "score": 64,
    "reason": "",
    "assessed_weight": "0.9",
    "fault": null,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 3 day(s) before 2026-11-27",
+     "detail": "last commit 4 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 4 issue(s) in the last 6 months: 59.6 day(s) to first maintainer comment",
+     "detail": "median over 4 issue(s) in the last 6 months: 60.6 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 57 days (by releases), last release 72 day(s) ago",
+     "detail": "median release gap 57 days (by releases), last release 73 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -816,6 +816,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "0b04d22aba29478c9088552fcbd589cbc4d93a3f080f102642bd0ffb7d58ec3f",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

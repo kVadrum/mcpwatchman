@@ -2,7 +2,7 @@
  "name": "ai.newzai.api/NewzAI",
  "version": "1.0.2",
  "slug": "ai-newzai-api-newzai",
- "scanned_at": "2026-11-27T02:46:02+00:00",
+ "scanned_at": "2026-11-28T02:44:18+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 199 day(s) before 2026-11-27",
+     "detail": "last commit 200 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -118,7 +118,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 42.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (1 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 43.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "4d573e86ad9234ac30aee9ab6b470dd23b1f0fb0a2df0af6b43fea278a1e5a1e",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

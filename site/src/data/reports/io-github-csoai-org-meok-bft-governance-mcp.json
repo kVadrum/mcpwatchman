@@ -2,7 +2,7 @@
  "name": "io.github.CSOAI-ORG/meok-bft-governance-mcp",
  "version": "1.0.8",
  "slug": "io-github-csoai-org-meok-bft-governance-mcp",
- "scanned_at": "2026-11-27T02:53:11+00:00",
+ "scanned_at": "2026-11-28T02:50:54+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -264,7 +264,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:53:14+00:00",
+  "fetched_at": "2026-11-28T02:50:56+00:00",
   "system": "PyPI",
   "package": "meok-bft-governance-mcp",
   "version": "1.0.7",
@@ -277,6 +277,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "b7cc90f19edc1f84acc38b84d2e3cf19979eb78b4cf15062a240c96f78f3c9ee",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

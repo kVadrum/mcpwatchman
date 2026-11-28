@@ -2,7 +2,7 @@
  "name": "ai.explorium/mcp-explorium",
  "version": "1.0.1",
  "slug": "ai-explorium-mcp-explorium",
- "scanned_at": "2026-11-27T02:41:03+00:00",
+ "scanned_at": "2026-11-28T02:40:11+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -251,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "37eff01f7c9c9e40fb254abd05a8efd854d3e211f7f6cebc76c7e914d0441473",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "ai.oobeprotocol.sap.mcp/sap-mcp",
  "version": "0.7.1",
  "slug": "ai-oobeprotocol-sap-mcp-sap-mcp",
- "scanned_at": "2026-11-27T02:46:21+00:00",
+ "scanned_at": "2026-11-28T02:44:34+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 47 day(s) before 2026-11-27",
+     "detail": "last commit 48 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "median over 5 issue(s) in the last 6 months: 42.7 day(s) to first maintainer comment",
+     "detail": "median over 5 issue(s) in the last 6 months: 43.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 73 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 74 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -255,7 +255,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:46:27+00:00",
+  "fetched_at": "2026-11-28T02:44:37+00:00",
   "system": "npm",
   "package": "@oobe-protocol-labs/sap-mcp-server",
   "version": "0.7.1",
@@ -473,6 +473,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "101a8f2896ac12f1d91a070c68bde73806f753ff1af794d105feb33262f63f0c",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

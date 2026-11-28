@@ -2,7 +2,7 @@
  "name": "ai.fodda/mcp-server",
  "version": "1.46.132",
  "slug": "ai-fodda-mcp-server",
- "scanned_at": "2026-11-27T02:41:07+00:00",
+ "scanned_at": "2026-11-28T02:40:15+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -14,10 +14,10 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "a2d5275012e86a4b56ee43b521d74a01f124a5cc",
+ "repository_commit": "06c6e8f9fa311f5ea505e430ca819e5ed8fa81c8",
  "registry_state": "listed",
  "registry_note": "",
- "files_scanned": 150,
+ "files_scanned": 151,
  "files_pruned": 0,
  "axes": {
   "code_safety": {
@@ -359,7 +359,7 @@
      "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
      "path": "src/index.ts",
-     "line": 721,
+     "line": 735,
      "excerpt": "async function validateSpt(spt: string): Promise<{ valid: boolean; max_amount_cents: number | null; prices: Record<string, number>; error?: string }> {\n    try {\n        const resp = await axios.get(`${API_BASE_URL}/v1/spt/validate`, {\n            headers: { 'Authorization': `Bearer ${spt}` },\n            timeout: 15000,",
      "url": "",
      "finding": "mcp-js-ssrf-nonliteral-url",
@@ -371,7 +371,7 @@
      "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
      "path": "src/index.ts",
-     "line": 1130,
+     "line": 1144,
      "excerpt": "\n    try {\n        const response = await axios.get(`${websiteBaseUrl}/api/mcp-tokens/${token}`, {\n            headers,\n            timeout: 5000,",
      "url": "",
      "finding": "mcp-js-ssrf-nonliteral-url",
@@ -383,7 +383,7 @@
      "label": "mcp-js-ssrf-nonliteral-url (medium/low)",
      "detail": "An outbound request is made to a URL that is not a literal. If any part is caller-supplied the server can be aimed at internal hosts it can reach and the caller cannot.",
      "path": "src/index.ts",
-     "line": 1212,
+     "line": 1226,
      "excerpt": "                try {\n                    const resolveUrl = `${API_BASE_URL}/v1/auth/clerk-resolve`;\n                    const resolveResp = await axios.post(resolveUrl, { clerk_jwt: rawBearer }, {\n                        headers: { 'X-Internal-Key': process.env.FODDA_INTERNAL_API_KEY || '' },\n                        timeout: 5000,",
      "url": "",
      "finding": "mcp-js-ssrf-nonliteral-url",
@@ -586,7 +586,7 @@
     },
     {
      "label": "secret_handling",
-     "detail": "detect-secrets matched 26 credential-shaped string(s), every one from a keyword or entropy heuristic (Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at PUBLICATION_SUMMARY.md:51; Secret Keyword at scripts/test-durable-jobs.ts:43; Secret Keyword at scripts/test-durable-jobs.ts:47; Secret Keyword at scripts/test_chatgpt_live.mjs:28; Secret Keyword at scripts/test_chatgpt_live.mjs:159; Secret Keyword at scripts/test_claude_live.mjs:18; Secret Keyword at scripts/test_claude_live.mjs:19; Secret Keyword at src/test_analyst.ts:8; Secret Keyword at src/test_bounded_meter_and_card_gate.ts:87; Secret Keyword at src/test_on_request_caller_identity.ts:5; \u2026and 16 more matches",
+     "detail": "detect-secrets matched 28 credential-shaped string(s), every one from a keyword or entropy heuristic (Secret Keyword). Those flag placeholders, variable names and content hashes as readily as credentials, so they do not establish the committed credential `03` \u00a74's 0 asserts, and this sub-check is not scored; Secret Keyword at PUBLICATION_SUMMARY.md:51; Secret Keyword at scripts/test-durable-jobs.ts:43; Secret Keyword at scripts/test-durable-jobs.ts:47; Secret Keyword at scripts/test_chatgpt_live.mjs:28; Secret Keyword at scripts/test_chatgpt_live.mjs:159; Secret Keyword at scripts/test_claude_live.mjs:18; Secret Keyword at scripts/test_claude_live.mjs:19; Secret Keyword at src/test_analyst.ts:8; Secret Keyword at src/test_bounded_meter_and_card_gate.ts:87; Secret Keyword at src/test_on_request_caller_identity.ts:5; \u2026and 18 more matches",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -623,7 +623,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 2 day(s) before 2026-11-27",
+     "detail": "last commit 3 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -635,7 +635,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 45.7 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 46.7 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -647,7 +647,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by releases), last release 51 day(s) ago",
+     "detail": "median release gap 0 days (by releases), last release 52 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -830,6 +830,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "54e1f5fbf677c2ca9a14b84605512b624e0e6f2c84141900ccb3700fc96e6365",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

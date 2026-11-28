@@ -2,7 +2,7 @@
  "name": "io.github.sadri-dridi/uuid6-ok",
  "version": "1.0.0",
  "slug": "io-github-sadri-dridi-uuid6-ok",
- "scanned_at": "2026-11-27T03:11:05+00:00",
+ "scanned_at": "2026-11-28T03:06:11+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 65 day(s) before 2026-11-27",
+     "detail": "last commit 66 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "142595547967f42f6f2e770073df42ad0e99d44919d99ce7e63049d275b45a52",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

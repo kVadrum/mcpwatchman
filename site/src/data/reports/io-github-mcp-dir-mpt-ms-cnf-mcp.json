@@ -2,7 +2,7 @@
  "name": "io.github.mcp-dir/mpt_ms_cnf-mcp",
  "version": "0.1.0",
  "slug": "io-github-mcp-dir-mpt-ms-cnf-mcp",
- "scanned_at": "2026-11-27T03:03:52+00:00",
+ "scanned_at": "2026-11-28T02:59:44+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -106,7 +106,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 99 day(s) before 2026-11-27",
+     "detail": "last commit 100 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -250,6 +250,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "ebdb1ccdb948930604b5c91f99182e250f9febe47ac4ac7fbd19866e38a66b42",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

@@ -2,7 +2,7 @@
  "name": "ai.authoryze/authoryze",
  "version": "1.0.1",
  "slug": "ai-authoryze-authoryze",
- "scanned_at": "2026-11-27T02:33:08+00:00",
+ "scanned_at": "2026-11-28T02:32:51+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 97 day(s) before 2026-11-27",
+     "detail": "last commit 98 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -117,7 +117,7 @@
     },
     {
      "label": "issue_responsiveness",
-     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 55.5 day(s) to first maintainer comment",
+     "detail": "lifetime median (2 issue(s) in the last 6 months, under `03` \u00a75's floor of 3): 56.5 day(s) to first maintainer comment",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,6 +249,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "606452302ab70a7e095552ca620aa1f4d459af031009ca8f26d474573fb7f495",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

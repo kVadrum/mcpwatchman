@@ -2,7 +2,7 @@
  "name": "io.github.jrullan/ducklab",
  "version": "0.7.0",
  "slug": "io-github-jrullan-ducklab",
- "scanned_at": "2026-11-27T03:02:09+00:00",
+ "scanned_at": "2026-11-28T02:58:25+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -336,7 +336,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 5 day(s) before 2026-11-27",
+     "detail": "last commit 6 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -360,7 +360,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 79 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 80 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -493,6 +493,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "71038d73959baa59910b2b7052d5386767465e6969b3000be21a10a2ff78755e",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

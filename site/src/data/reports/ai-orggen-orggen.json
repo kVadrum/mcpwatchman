@@ -2,7 +2,7 @@
  "name": "ai.orggen/orggen",
  "version": "1.0.2",
  "slug": "ai-orggen-orggen",
- "scanned_at": "2026-11-27T02:46:37+00:00",
+ "scanned_at": "2026-11-28T02:44:45+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "",
@@ -14,7 +14,7 @@
  "transport": "streamable-http",
  "transport_mismatch": false,
  "ref_matched_version": false,
- "repository_commit": "7b50416e76ffee44d74c5f2e82426669ca232a16",
+ "repository_commit": "aaf0edc1ae5cb24fc0ad514d8eeae441389a641e",
  "registry_state": "listed",
  "registry_note": "",
  "files_scanned": 0,
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 36 day(s) before 2026-11-27",
+     "detail": "last commit 37 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -177,12 +177,14 @@
   },
   "transparency": {
    "axis": "transparency",
-   "score": 11,
+   "score": 6,
    "reason": "",
-   "assessed_weight": "1",
+   "assessed_weight": "0.8",
    "fault": null,
    "evidence_omitted": 0,
-   "unmeasured_faults": [],
+   "unmeasured_faults": [
+    "project"
+   ],
    "evidence": [
     {
      "label": "license",
@@ -198,7 +200,7 @@
     },
     {
      "label": "readme_quality",
-     "detail": "README.md: configuration documented (+25), states what the server does in the first 200 words (+20)",
+     "detail": "README.md: states what the server does in the first 200 words (+20)",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -210,7 +212,7 @@
     },
     {
      "label": "declared_scopes",
-     "detail": "neither the README nor the MCP manifest documents what the server accesses or what side effects it has",
+     "detail": "specific scope or access documentation is present, but `03` \u00a77's 100 and 60 bands both compare it against scopes INFERRED from static analysis, which is not built yet. Scoring 100 on an empty inference would be a vacuous truth \u2014 'all \u2205 inferred scopes are documented'.",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -249,6 +251,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "377eca078dbd315005dd8b316c27313b1797ad47199da47decdf87bc92828467",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

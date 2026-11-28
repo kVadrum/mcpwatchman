@@ -2,7 +2,7 @@
  "name": "io.github.danielsousaoliveira/cal-auto-python",
  "version": "0.1.0",
  "slug": "io-github-danielsousaoliveira-cal-auto-python",
- "scanned_at": "2026-11-27T02:59:03+00:00",
+ "scanned_at": "2026-11-28T02:55:43+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -105,7 +105,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 78 day(s) before 2026-11-27",
+     "detail": "last commit 79 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -129,7 +129,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by tags), last release 78 day(s) ago",
+     "detail": "median release gap 1 days (by tags), last release 79 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -253,7 +253,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:59:06+00:00",
+  "fetched_at": "2026-11-28T02:55:46+00:00",
   "system": "PyPI",
   "package": "cal-auto-python",
   "version": "0.1.0",
@@ -327,6 +327,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "d416923c34a9b7d96fe77fe68b8efc2eeaebc2827fa8eeaeb2906d5a1495fcc4",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

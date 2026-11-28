@@ -2,7 +2,7 @@
  "name": "io.github.tsviz/actions-pulse",
  "version": "2.3.0",
  "slug": "io-github-tsviz-actions-pulse",
- "scanned_at": "2026-11-27T03:12:15+00:00",
+ "scanned_at": "2026-11-28T03:07:09+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -166,7 +166,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 292 day(s) before 2026-11-27",
+     "detail": "last commit 293 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -190,7 +190,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 1 days (by releases), last release 292 day(s) ago",
+     "detail": "median release gap 1 days (by releases), last release 293 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -911,6 +911,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "68ebf8050b6fd584e9a6f65a6c11b404c0cad07b99aa2081d917fb568ce94efa",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

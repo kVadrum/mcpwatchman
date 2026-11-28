@@ -2,7 +2,7 @@
  "name": "ai.law.mcp/lawyer-search",
  "version": "0.2.3",
  "slug": "ai-law-mcp-lawyer-search",
- "scanned_at": "2026-11-27T02:43:44+00:00",
+ "scanned_at": "2026-11-28T02:42:45+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -116,7 +116,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 182 day(s) before 2026-11-27",
+     "detail": "last commit 183 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -861,6 +861,6 @@
  },
  "install_resolution": null,
  "registry_entry_hash": "7dddc035b16591249029fbc25c320c0661de90168610091e0a5545a57a63865d",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }

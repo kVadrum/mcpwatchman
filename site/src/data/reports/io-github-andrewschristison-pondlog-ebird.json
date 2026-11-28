@@ -2,7 +2,7 @@
  "name": "io.github.andrewschristison/pondlog-ebird",
  "version": "0.1.6-1",
  "slug": "io-github-andrewschristison-pondlog-ebird",
- "scanned_at": "2026-11-27T02:57:08+00:00",
+ "scanned_at": "2026-11-28T02:54:06+00:00",
  "methodology_version": "0.2.0",
  "scanner_version": "0.48.3",
  "ruleset_version": "0.1.4",
@@ -335,7 +335,7 @@
    "evidence": [
     {
      "label": "recency",
-     "detail": "last commit 49 day(s) before 2026-11-27",
+     "detail": "last commit 50 day(s) before 2026-11-28",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -359,7 +359,7 @@
     },
     {
      "label": "release_cadence",
-     "detail": "median release gap 0 days (by tags), last release 143 day(s) ago",
+     "detail": "median release gap 0 days (by tags), last release 144 day(s) ago",
      "path": "",
      "line": 0,
      "excerpt": "",
@@ -485,7 +485,7 @@
   "fault": null,
   "source": "deps.dev",
   "source_url": "https://deps.dev/",
-  "fetched_at": "2026-11-27T02:57:15+00:00",
+  "fetched_at": "2026-11-28T02:54:11+00:00",
   "system": "npm",
   "package": "@pondlog/mcp-ebird",
   "version": "0.1.5",
@@ -511,6 +511,6 @@
   "label": "Resolved by deps.dev, not read from a lockfile the publisher shipped: these are the versions deps.dev's resolver picked for an install of this package, which can differ from what a real install picks. deps.dev records no resolution time and has been measured lagging the npm registry by up to about 30 hours. Listed only \u2014 nothing here changes a score. Data: deps.dev (Open Source Insights), CC BY 4.0."
  },
  "registry_entry_hash": "3f0f8a7ffa44a56d1349f3eb5586c598048fe5ed4b4cb8050d10fea55ccdf417",
- "checked_at": "2026-11-27T02:10:02+00:00",
+ "checked_at": "2026-11-28T02:09:52+00:00",
  "findings_tracked_since": "2026-10-10"
 }
